@@ -10,7 +10,7 @@ import * as AppleAuthentication from 'expo-apple-authentication'
 
 const SignIn = () => {
     const [loading, setLoading] = useState(false);
-    const [ email, setEmail ] = useState('')
+    const [ email, setEmail ] = useState("")
     const [ password, setPassword] = useState("")
     const logoAnime = useSharedValue(0)
     const logoBounce = useSharedValue(-200)

@@ -23,6 +23,7 @@ const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
 const supabaseKey = Deno.env.get('EXPO_PUBLIC_SUPABASE_ANON');
 const supabase = createClient(supabaseUrl, supabaseKey);
 const getCurrDate = new Date();
+getCurrDate.setDate(getCurrDate.getDate())
 const getWeekDate = new Date();
 const currDate = format(getCurrDate, "yyyy-MM-dd");
 getWeekDate.setDate(getCurrDate.getDate() + 6)
@@ -35,12 +36,16 @@ serve(async (req) => {
     const data = await response.json();
 
     // Logging the data to the console
-    console.log(data.data.salah[0]);
-    console.log(data.data.iqamah[0])
     const times = data.data.salah
     const iqamahTimes = data.data.iqamah
 
     const {error} = await supabase.from('prayers').update([{ prayerData : times, iqamahData : iqamahTimes }]).eq('id', 1)
+    for( const value in times[0] ){
+      if( value == 'fajr' || value == 'asr' || value == 'zuhr' || value == 'isha' || value == 'maghrib'){
+        await supabase.from('todays_prayers').upsert({ prayer_name : value, athan_time : times[0][value], iqamahTimes : iqamahTimes[0][value] }).eq('id', 1)
+      }
+      console.log(value, times[0][value])
+    }
     if (error) {
       console.error('Error inserting data:', error.message);
       return new Response(JSON.stringify({ error: error.message }), {

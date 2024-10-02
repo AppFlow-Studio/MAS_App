@@ -1,10 +1,17 @@
 import { registerForPushNotificationsAsync } from '../lib/notifications';
-import { ExpoPushToken } from 'expo-notifications';
+import { ExpoPushToken, NotificationTriggerInput } from 'expo-notifications';
 import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
 import { err } from 'react-native-svg';
+export type PrayerNotificationTemplateProp = {
+  prayer_name : string
+  hour : number
+  minute : number
+  body : string
+  title : string
+}
 Notifications.setNotificationHandler({
   handleNotification : async () =>({
     shouldShowAlert : true,
@@ -43,6 +50,125 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     }
   }
 
+  async function PrayerNotificationTemplate({prayer_name, hour, minute, body, title} : PrayerNotificationTemplateProp ){
+    const trigger = new Date()
+    trigger.setHours(hour)
+    trigger.setMinutes(minute)
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { data: 'goes here', test: { test1: 'more data' } },
+      },
+      trigger
+    });
+  }
+  async function schedulePushNotification() {
+    const { data : todays_prayers , error } = await supabase.from('todays_prayers').select('*')
+    const { data : user_prayer_settings, error : user_setting_error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id)
+    todays_prayers?.map((prayer) => {
+      user_prayer_settings?.map((setting) => {
+        if(setting.prayer == prayer.prayer_name || (prayer.prayer_name == 'zuhr' && setting.prayer == 'dhuhr')){
+          console.log(prayer.prayer_name, setting.notification_settings)
+
+            setting.notification_settings.map(( choice ) => {
+              if( choice == 'Alert at Athan time' ){
+                const date = new Date(prayer.athan_time);
+                // Get the hours and minutes
+                const hours = date.getHours()
+                const minutes = date.getMinutes()
+
+                PrayerNotificationTemplate({ prayer_name : setting.prayer, hour : hours, minute : minutes, title : `${setting.prayer} at ${prayer.athan_time}`, body : 'Time to pray!'}, )
+                console.log('Schedule at', prayer.athan_time)
+              }else if( choice == 'Alert at Iqamah time'){
+                const date = new Date(prayer.athan_time);
+                // Get the hours and minutes
+                const hours = date.getHours()
+                const minutes = date.getMinutes()
+                PrayerNotificationTemplate({ prayer_name : setting.prayer, hour : hours, minute : minutes, title : `Iqamah ${setting.prayer} at ${prayer.iqamah_time}`, body : 'Time to pray!'}, )
+                console.log('Schedule at', prayer.iqamah_time)
+              }else if( choice == 'Alert 30 mins before next prayer' ){
+                if( setting.prayer == 'fajr' ){
+                  const nextPrayerInfo = todays_prayers.filter(e => e.prayer_name == 'zuhr')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const date = new Date(nextPrayerTime);
+                 // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                  date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                  // Get the updated timestamp in ISO format (with timezone info)
+                  const hours = date.getHours()
+                  const minutes = date.getMinutes()
+                  PrayerNotificationTemplate({ prayer_name : setting.prayer, hour : hours, minute : minutes, title : `30 mins before ${nextPrayerInfo[0].prayer_name}`, body : 'Time to pray!'}, )
+
+                }
+                if( setting.prayer == 'dhuhr' ){
+                  const nextPrayerInfo = todays_prayers.filter(e => e.prayer_name == 'asr')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const date = new Date(nextPrayerTime);
+                 // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                  date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                  // Get the updated timestamp in ISO format (with timezone info)
+                  const hours = date.getHours()
+                  const minutes = date.getMinutes()
+                  PrayerNotificationTemplate({ prayer_name : setting.prayer, hour : hours, minute : minutes, title : `30 mins before ${nextPrayerInfo[0].prayer_name}`, body : 'Time to pray!'}, )
+
+                }
+                if( setting.prayer == 'asr' ){
+                  const nextPrayerInfo = todays_prayers.filter(e => e.prayer_name == 'maghrib')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const date = new Date(nextPrayerTime);
+                 // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                  date.setTime(date.getTime() - 30 * 60 * 1000);
+                  const hours = date.getHours()
+                  const minutes = date.getMinutes()
+                  // Get the updated timestamp in ISO format (with timezone info)
+                  PrayerNotificationTemplate({ prayer_name : setting.prayer, hour : hours, minute : minutes, title : `30 mins before ${nextPrayerInfo[0].prayer_name}`, body : 'Time to pray!'}, )
+
+                }
+                if( setting.prayer == 'maghrib' ){
+                  const nextPrayerInfo = todays_prayers.filter(e => e.prayer_name == 'isha')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const date = new Date(nextPrayerTime);
+                 // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                  date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                  const hours = date.getHours()
+                  const minutes = date.getMinutes()
+                  // Get the updated timestamp in ISO format (with timezone info)
+                  PrayerNotificationTemplate({ prayer_name : setting.prayer, hour : hours, minute : minutes, title : `30 mins before ${nextPrayerInfo[0].prayer_name}`, body : 'Time to pray!'}, )
+
+                }
+                if( setting.prayer == 'isha' ){
+                  const nextPrayerInfo = todays_prayers.filter(e => e.prayer_name == 'fajr')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const date = new Date(nextPrayerTime);
+                 // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                  date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                  const hours = date.getHours()
+                  const minutes = date.getMinutes()
+                  // Get the updated timestamp in ISO format (with timezone info)
+                  PrayerNotificationTemplate({ prayer_name : setting.prayer, hour : hours, minute : minutes, title : `30 mins before ${nextPrayerInfo[0].prayer_name}`, body : 'Time to pray!'}, )
+                }
+              }else if( choice == 'Mute'){
+                return
+              }
+          })
+        }
+      })
+    })
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "You've got mail! 📬",
+        body: 'Here is the notification body',
+        data: { data: 'goes here', test: { test1: 'more data' } },
+      },
+      trigger: { seconds: 2 },
+    });
+    }
+
   useEffect(() => {
     registerForPushNotificationsAsync().then( (token : any) => savePushToken(token) );
 
@@ -66,6 +192,8 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
         Notifications.removeNotificationSubscription(responseListener.current);
       }
     };
+
+    schedulePushNotification()
   }, []);
 
   console.log('noti', notification);

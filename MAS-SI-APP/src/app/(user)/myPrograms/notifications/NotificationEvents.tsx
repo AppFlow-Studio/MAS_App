@@ -211,9 +211,11 @@ const renderScene = ({ route } : any) => {
   const renderTabBar = (props : any) => (
     <TabBar
       {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "2.5%", height: "85%", width : "22%", borderRadius : 20  }}
-      style={{ backgroundColor: '#e0e0e0', width : "95%", alignSelf : "center", borderRadius : 20}}
+      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "22%", borderRadius : 20  }}
+      style={{ backgroundColor: '#e0e0e0', alignSelf : "center", borderRadius : 20, height: '9%'}}
       labelStyle={{ color : "white", fontWeight : "bold" }}
+      tabStyle={{ width : layout / 3.5 }}
+      scrollEnabled={true}
     />
   );
 

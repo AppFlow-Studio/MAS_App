@@ -50,11 +50,11 @@ const ClassesAndLecturesSettings = () => {
   useEffect(() => {
     getProgram()
   },[])
-  const array = [1, 2, 3, 4, 5, 6]
+  const array = [1, 2, 3]
   return (
     <View className='flex-1 bg-white' style={{flexGrow: 1}}>
      <StatusBar barStyle={"dark-content"}/>
-     <Stack.Screen options={{ title : '', headerBackTitleVisible : false}}/>
+     <Stack.Screen options={{ title : '', headerBackTitleVisible : false, headerStyle : {backgroundColor : "white"}}}/>
       <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%", paddingBottom : tabBarHeight }}  >
           <View>
             <Animated.Image 
@@ -75,9 +75,9 @@ const ClassesAndLecturesSettings = () => {
             {
               array.map((item , index) => {
                 return(
-                  <View className='flex-col'>
+                  <View className='flex-col' key={index}>
                     <View className='flex-row items-center justify-center'>
-                      <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification}/>
+                      <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} program_id={program_id}/>
                     </View>
                     <View style={{height : 10}}/>
                   </View>

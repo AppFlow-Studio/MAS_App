@@ -70,7 +70,7 @@ export default function homeScreen() {
     }
     const onConfirmButton = async () => {
       console.log(profileFirstName, profileLastName, profileEmail)
-      const { data, error } = await supabase.from('profiles').update({ id : session?.user.id, first_name : profileFirstName, last_name : profileLastName, profile_email : profileEmail,})
+      const { data, error } = await supabase.from('profiles').update({ first_name : profileFirstName, last_name : profileLastName, profile_email : profileEmail}).eq('id', session?.user.id)
       if( data ){
         console.log(data)
       }
@@ -148,15 +148,101 @@ export default function homeScreen() {
             <View style={{height: 250, overflow: "hidden", justifyContent:"center", borderEndStartRadius: 30 ,borderEndEndRadius: 30}} className=''>
               <SalahDisplayWidget prayer={prayer[0]} nextPrayer={prayer[1]}/>
             </View>  
+            <Button onPress={async () => {
+              const {data, error} = await supabase.from('todays_prayers').select('*')
+              console.log(data, error)
+              const { data : userSettings }  = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id)
+              console.log('userSetting', userSettings)
+              data?.map((prayer) => {
+                userSettings?.map((setting) => {
+                  if(setting.prayer == prayer.prayer_name || (prayer.prayer_name == 'zuhr' && setting.prayer == 'dhuhr')){
+                    console.log(prayer.prayer_name, setting.notification_settings)
+                      setting.notification_settings.map(( choice ) => {
+                        if( choice == 'Alert at Athan time' ){
+                          const date = new Date(prayer.athan_time);
+                        // Get the hours and minutes
+                        const hours = date.getHours()
+                        const minutes = date.getMinutes()
+                        console.log( hours, minutes)
+                          console.log('Schedule at', prayer.athan_time)
+                        }else if( choice == 'Alert at Iqamah time'){
+                          console.log('Schedule at', prayer.iqamah_time)
+                        }else if( choice == 'Alert 30 mins before next prayer' ){
+                          if( setting.prayer == 'fajr' ){
+                            const nextPrayerInfo = data.filter(e => e.prayer_name == 'zuhr')
+                            const nextPrayerTime = nextPrayerInfo[0].athan_time
+                            const date = new Date(nextPrayerTime);
+                           // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                            date.setTime(date.getTime() - 30 * 60 * 1000);
 
+                            // Get the updated timestamp in ISO format (with timezone info)
+                            const updatedTimestampz = date.toISOString();
+                            console.log(updatedTimestampz)
+                          }
+                          if( setting.prayer == 'dhuhr' ){
+                            const nextPrayerInfo = data.filter(e => e.prayer_name == 'asr')
+                            const nextPrayerTime = nextPrayerInfo[0].athan_time
+                            const date = new Date(nextPrayerTime);
+                           // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                            date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                            // Get the updated timestamp in ISO format (with timezone info)
+                            const updatedTimestampz = date.toISOString();
+                            console.log(updatedTimestampz)
+                            console.log(nextPrayerInfo)
+                          }
+                          if( setting.prayer == 'asr' ){
+                            const nextPrayerInfo = data.filter(e => e.prayer_name == 'maghrib')
+                            const nextPrayerTime = nextPrayerInfo[0].athan_time
+                            const date = new Date(nextPrayerTime);
+                           // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                            date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                            // Get the updated timestamp in ISO format (with timezone info)
+                            const updatedTimestampz = date.toISOString();
+                            console.log(updatedTimestampz)
+                            console.log(nextPrayerInfo)
+                          }
+                          if( setting.prayer == 'maghrib' ){
+                            const nextPrayerInfo = data.filter(e => e.prayer_name == 'isha')
+                            const nextPrayerTime = nextPrayerInfo[0].athan_time
+                            const date = new Date(nextPrayerTime);
+                           // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                            date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                            // Get the updated timestamp in ISO format (with timezone info)
+                            const updatedTimestampz = date.toISOString();
+                            console.log(updatedTimestampz)
+                            console.log(nextPrayerInfo)
+                          }
+                          if( setting.prayer == 'isha' ){
+                            const nextPrayerInfo = data.filter(e => e.prayer_name == 'fajr')
+                            const nextPrayerTime = nextPrayerInfo[0].athan_time
+                            const date = new Date(nextPrayerTime);
+                           // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
+                            date.setTime(date.getTime() - 30 * 60 * 1000);
+
+                            // Get the updated timestamp in ISO format (with timezone info)
+                            const updatedTimestampz = date.toISOString();
+                            console.log(updatedTimestampz)
+                            console.log(nextPrayerInfo)
+                          }
+                        }else if( choice == 'Mute'){
+                          return
+                        }
+                      })
+                  }
+                })
+              })
+            }}>Test</Button>
           <Link href={'/menu/program'} asChild>
-                <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
-                  <Text className='font-bold text-2xl text-[#0D509D]' style={{textShadowColor: "light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 0.6}} >Weekly Programs</Text>
-                  <View className='flex-row items-center'>
-                    <Text className='text-gray-300'>View All</Text>
-                    <Icon source={'chevron-right'} size={20}/>
-                  </View>
-                </Pressable>
+            <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
+              <Text className='font-bold text-2xl text-[#0D509D]' style={{textShadowColor: "light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 0.6}} >Weekly Programs</Text>
+              <View className='flex-row items-center'>
+                <Text className='text-gray-300'>View All</Text>
+                <Icon source={'chevron-right'} size={20}/>
+              </View>
+            </Pressable>
           </Link>
               <View className='pt-3' style={{height: 250}}>
                 <ProgramsCircularCarousel />

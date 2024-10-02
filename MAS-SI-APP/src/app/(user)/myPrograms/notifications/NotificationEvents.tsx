@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, useWindowDimensions, Button } from 'react-native'
+import { View, Text, ScrollView, useWindowDimensions, Button, FlatList } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import { Stack } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
@@ -10,6 +10,8 @@ import RenderAddedPrograms from '@/src/components/UserProgramComponets/RenderAdd
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { Icon } from 'react-native-paper'
+import { usePrayer } from '@/src/providers/prayerTimesProvider'
+import NotificationPrayerTable from '@/src/components/notificationPrayerTimeTable'
 const NotificationPaidScreen = () => {
   return(
     <ScrollView>
@@ -94,6 +96,39 @@ const ClassesAndLecturesScreen = ( { addedPrograms, layout } : ClassesAndLecture
   )
 }
 
+const SalahTimesScreen = () => {
+  const { prayerTimesWeek } = usePrayer();
+  if( prayerTimesWeek.length == 0 ){
+    return
+  }
+  const [ tableIndex, setTableIndex ] = useState(0)
+  const viewConfig = useRef({ viewAreaCoveragePercentThreshold : 50}).current;
+  const flatlistRef = useRef<FlatList>(null)
+  useEffect(() => {
+    flatlistRef.current?.scrollToIndex({
+      index : tableIndex,
+      animated : true
+    })  
+  }, [tableIndex])
+  return (
+    <View className='items-center justify-center '>
+              <FlatList 
+                data={prayerTimesWeek}
+                renderItem={({item, index}) => <NotificationPrayerTable prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index}/>}
+                horizontal
+                bounces={false}
+                showsHorizontalScrollIndicator={false}
+                pagingEnabled
+                scrollEventThrottle={32}
+                viewabilityConfig={viewConfig}
+                contentContainerStyle={{flex:1,marginTop:'5%'}}
+                ref={flatlistRef}
+                nestedScrollEnabled
+              />
+            </View>
+  )
+}
+
 
 const NotificationEvents = () => {
   const { session } = useAuth()
@@ -162,18 +197,21 @@ const renderScene = ({ route } : any) => {
       return <ClassesAndLecturesScreen addedPrograms={addedPrograms} layout={layout} />
     case "third" :
       return <NotificationEventsScreen addedEvents={addedEvents} layout={layout} />
+    case "forth" :
+      return <SalahTimesScreen />
   }
 }
   const routes = [
     { key: 'first', title: 'Paid' },
     { key: 'second', title: 'Classes & Lectures' },
-    { key : 'third', title: 'Events'}
+    { key : 'third', title: 'Events'},
+    { key : 'forth', title: 'Salah Times'}
   ]
 
   const renderTabBar = (props : any) => (
     <TabBar
       {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "3.5%", height: "85%", width : "25%", borderRadius : 20  }}
+      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "2.5%", height: "85%", width : "22%", borderRadius : 20  }}
       style={{ backgroundColor: '#e0e0e0', width : "95%", alignSelf : "center", borderRadius : 20}}
       labelStyle={{ color : "white", fontWeight : "bold" }}
     />

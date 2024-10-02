@@ -37,6 +37,21 @@ const GreetingScreen = () => {
     const prevLeftBorderWidth = useSharedValue(0)
     const maxTranslateX = (width * .7) - 80 
     const swipedToEnd = useSharedValue<boolean>(false)
+
+    const swipeTextOpacity = useAnimatedStyle(() => ({
+      opacity: guestSwipeTranslateX.value > 70 ? 0 : 1,
+    }));
+    const forTextOpacity = useAnimatedStyle(() => ({
+      opacity: guestSwipeTranslateX.value > 100 ? 0 : 1,
+    }));
+    const guestTextOpacity = useAnimatedStyle(() => ({
+      opacity: guestSwipeTranslateX.value > 150 ? 0 : 1,
+    }));
+    const accessTextOpacity = useAnimatedStyle(() => ({
+      opacity: guestSwipeTranslateX.value > 200 ? 0 : 1,
+    }));
+
+    
     const guestSwipeAnimation = useAnimatedStyle(() => {
         return{
         transform: [
@@ -125,9 +140,20 @@ const GreetingScreen = () => {
                       <BlinkingIcon />
                     </Animated.View>
                 </GestureDetector>
-                <Animated.View className='z-[-1]'>
-                    <Text className='text-center text-gray-400'>swipe for guest access</Text>
-                </Animated.View>
+                <Animated.View className="flex-row z-[-1]">
+              <Animated.Text style={[swipeTextOpacity]} className="text-center text-gray-400">
+                swipe{" "}
+              </Animated.Text>
+              <Animated.Text style={[forTextOpacity]} className="text-center text-gray-400">
+                for{" "}
+              </Animated.Text>
+              <Animated.Text style={[guestTextOpacity]} className="text-center text-gray-400">
+                guest{" "}
+              </Animated.Text>
+              <Animated.Text style={[accessTextOpacity]} className="text-center text-gray-400">
+                access
+              </Animated.Text>
+            </Animated.View>
                 <Pressable style={{backgroundColor : 'gray', height: '90%', width : 80, alignItems : 'center', borderRadius : 40, justifyContent : 'center' }} className='z-[2]'>
                     <Icon source={'arrow-right-top'} size={20}/>
                 </Pressable>

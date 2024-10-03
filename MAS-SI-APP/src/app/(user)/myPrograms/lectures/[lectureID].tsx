@@ -120,7 +120,7 @@ export default function LecturesData() {
 
   return(
     <>
-        <Stack.Screen options={{ title : currentLecture?.lecture_name, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}}} />
+        <Stack.Screen options={{ title : currentLecture?.lecture_name, headerTintColor : '#007AFF', headerStyle : {backgroundColor : 'white',}}} />
         <StatusBar barStyle={'dark-content'}/>
         <YoutubePlayer 
           height={layoutHeight / 4}

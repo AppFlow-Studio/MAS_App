@@ -1,7 +1,7 @@
 import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable } from 'react-native';
 import React, { useState, useEffect, useRef, useContext, useCallback} from 'react';
 import { gettingPrayerData, prayerTimesType, Profile } from '@/src/types';
-import { format } from 'date-fns';
+import { format, parse, setHours, setMinutes, subMinutes } from 'date-fns';
 import { ThePrayerData} from '@/src/components/getPrayerData';
 import { usePrayer } from '@/src/providers/prayerTimesProvider';
 import SalahDisplayWidget from '@/src/components/salahDisplayWidget';
@@ -147,7 +147,64 @@ export default function homeScreen() {
 
             <View style={{height: 250, overflow: "hidden", justifyContent:"center", borderEndStartRadius: 30 ,borderEndEndRadius: 30}} className=''>
               <SalahDisplayWidget prayer={prayer[0]} nextPrayer={prayer[1]}/>
-            </View>  
+            </View>
+            <Button onPress={async () => {
+              const { data : userAddedPrograms, error : addedProgramsError } = await supabase.from('added_notifications_programs').select('*').eq('user_id', session?.user.id)
+              const { data : userProgramSettings, error : userSettingsError } = await supabase.from('program_notifications_settings').select('*').eq('user_id', session?.user.id)
+          
+              userAddedPrograms?.map((AddedProgram) => {
+                userProgramSettings?.map((ProgramSettings) => {
+                  if(AddedProgram.program_id == ProgramSettings.program_id){
+                    ProgramSettings.notification_settings.map( async (setting) => {
+                      if( setting == 'When Program Starts' ){
+                        const program_time = await supabase.from('programs').select('program_start_time, program_days').eq('program_id', AddedProgram.program_id).single()
+                        const currentDate = new Date()
+                        const dayOfWeek = format(currentDate, 'EEEE')
+                        if( program_time.data?.program_days.includes(dayOfWeek)){
+                          const timeProgramStart = program_time.data.program_start_time
+                          const time = timeProgramStart.split(':')
+                          const hour = Number(time[0])
+                          const minute = Number(time[1])
+                          
+                        }
+                      }
+                      if( setting == '30 Mins Before' ){
+                        const program_time = await supabase.from('programs').select('program_start_time, program_days').eq('program_id', AddedProgram.program_id).single()
+                        const currentDate = new Date()
+                        const dayOfWeek = format(currentDate, 'EEEE')
+                        console.log(dayOfWeek)
+                        if( program_time.data?.program_days.includes(dayOfWeek) ){
+                          const timeProgramStart = program_time.data.program_start_time
+                          const time = timeProgramStart.split(':')
+                          const hour = Number(time[0])
+                          const minute = Number(time[1])
+                          const date = setHours(new Date(), hour)
+                          const result = subMinutes(setMinutes(date, minute), 30)
+                          
+                          console.log(result)
+                        }
+                      }
+                      if( setting == 'Day Before' ){
+                        const program_time = await supabase.from('programs').select('program_start_time, program_days').eq('program_id', AddedProgram.program_id).single()
+                        const DaysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                        const DayOfProgram = program_time.data?.program_days
+                        DayOfProgram.map((day) => {
+                          const DayIndex = DaysOfWeek.indexOf(day)
+                          const currentDate = new Date()
+                          const dayOfWeek = format(currentDate, 'EEEE')
+                          if( dayOfWeek == 'Monday' ){
+                            
+                          }
+                          if( dayOfWeek == DaysOfWeek[DayIndex - 1]){
+                            console.log(DaysOfWeek[DayIndex - 1])
+                          }
+                        })
+                      }
+                    })
+                  }
+                })
+              })
+            }}>Get Program Settings</Button>
             <Button onPress={async () => {
               const {data, error} = await supabase.from('todays_prayers').select('*')
               console.log(data, error)

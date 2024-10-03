@@ -16,6 +16,7 @@ import { useRoute } from '@react-navigation/native'
 import { useForm, SubmitHandler, Controller } from "react-hook-form"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SubmissionFormSchema, submissionFormSchema, businessInfoSubmissions, BusinessInfoSchema } from '@/src/components/forms/Personal-Info'
+import Animated, { Easing, FadeIn, FadeInLeft, FadeInRight, FadeOut, FadeOutLeft, FadeOutRight, useAnimatedStyle } from 'react-native-reanimated'
 const BusinessAdsDurationInfoTooltip = () => {
     return(
         <Menu>
@@ -44,7 +45,8 @@ const BusinessAds = () => {
   const tabBarHeight = useBottomTabBarHeight() * 3.7
   const { height, width } = Dimensions.get('screen')
   const [ currentStage, setCurrentStage ] = useState(0)
-
+  
+  
   const methods = useForm<SubmissionFormSchema>({
     resolver: zodResolver(submissionFormSchema),
     mode: 'onBlur',
@@ -147,7 +149,7 @@ const BusinessAds = () => {
                 <Divider style={{ backgroundColor : 'black'}}/>     
             </View>
             { currentStage == 0 && (
-                    <View className='flex-1 flex-col gap-y-8 mt-5' > 
+                    <Animated.View className='flex-1 flex-col gap-y-8 mt-5' entering={FadeInLeft.duration(500).easing(Easing.inOut(Easing.quad))} exiting={FadeOut} > 
                         {personalStageQuestions.map((item, index) => {
                             return(
                                 <View className='w-[90%] self-center flex-2' key={index}>
@@ -204,10 +206,10 @@ const BusinessAds = () => {
                                 <Text>Next</Text>
                             </Button>
                         </View>
-                    </View>
+                    </Animated.View>
                 )} 
-                { currentStage == 1 ? (
-                    <View className='flex-1 flex-col gap-y-3 mt-5'> 
+                { currentStage == 1 && (
+                    <Animated.View className='flex-1 flex-col gap-y-3 mt-5' entering={FadeInLeft.duration(500).easing(Easing.inOut(Easing.quad))} exiting={FadeOut}> 
                         {businessStageQuestions.map((item, index) => {
                             return(
                                 <View className='w-[90%] self-center flex-2' key={index}>
@@ -241,8 +243,8 @@ const BusinessAds = () => {
                                         }}
                                     />
                                 </View>
-                            )
-                        })}
+                            )}
+                        )}
                         <View className='flex-row items-center w-[100%] justify-between flex-2 px-5' > 
                             <Button className=' bg-gray-500 ' mode='contained' theme={{ roundness : 1 }} textColor='white' onPress={onGoBack}>
                                 <Text>Back</Text>
@@ -266,9 +268,10 @@ const BusinessAds = () => {
                                 <Text>Next</Text>
                             </Button>
                         </View>
-                    </View>
-                ) : currentStage == 2 ? (
-                    <View className='flex-col'>
+                    </Animated.View>
+                )} 
+                { currentStage == 2 && (
+                    <Animated.View className='flex-col' entering={FadeInLeft.duration(500).easing(Easing.inOut(Easing.quad))}>
                         <View className='flex-row justify-between items-center px-2'> 
                             <Text className='text-gray-400 text-xl'>Duration</Text>
                             <BusinessAdsDurationInfoTooltip />
@@ -304,8 +307,8 @@ const BusinessAds = () => {
                                 <Text>Submit</Text>
                             </Button>
                         </View>
-                    </View>
-                ) : <></>
+                    </Animated.View>
+                ) 
             }
         </View>
         </ScrollView>

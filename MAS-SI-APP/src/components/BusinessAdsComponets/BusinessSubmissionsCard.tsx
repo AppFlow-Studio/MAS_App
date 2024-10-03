@@ -15,7 +15,12 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
     const onItemPress = () => {
         setOpened(!opened)
     }
-
+    const textAnimatedStyle = useAnimatedStyle(() => {
+        const opacity = opened ? withTiming(1, { duration : 1000}) : withTiming(0, { duration : 100})
+        return{
+            opacity : opacity
+        }
+    })
     const animatedStyle = useAnimatedStyle(() => {
         const animatedHeight = opened ? withTiming(300) : withTiming(0);
         return{
@@ -56,9 +61,9 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
                 <Icon source={'check'} size={30} color='white'/>
             </View>
             <View className='flex-col items-center '>
-                <Text>Application Recieved</Text>
+                <Animated.Text style={textAnimatedStyle}>Application Recieved</Animated.Text>
                 <View className=''>
-                    <Text className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been sent to MAS Staten Island!</Text>
+                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been sent to MAS Staten Island!</Animated.Text>
                 </View>
             </View>
         </View>
@@ -74,9 +79,9 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
 
             </View>
             <View className='flex-col items-center '>
-                <Text>Under Review</Text>
+                <Animated.Text style={textAnimatedStyle}>Under Review</Animated.Text>
                 <View className=''>
-                    <Text className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been seen by MAS Staten Island and is under review</Text>
+                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been seen by MAS Staten Island and is under review</Animated.Text>
                 </View>
             </View>
         </View>
@@ -89,9 +94,9 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
         <View className=' h-[100%] w-[13%]' style={{ backgroundColor : submission.status == 'SUBMITTED' || submission.status == 'REVIEW'  ? 'gray' : 'green', borderRadius : 50 }}>
         </View>
             <View className='flex-col items-center '>
-                <Text>Approved</Text>
+                <Animated.Text style={textAnimatedStyle}>Approved</Animated.Text>
                 <View className=''>
-                    <Text className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been approved. MAS Staten Island will reach out to you when they put up your flyer</Text>
+                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been approved. MAS Staten Island will reach out to you when they put up your flyer</Animated.Text>
                 </View>
             </View>
         </View>

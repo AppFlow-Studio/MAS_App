@@ -112,7 +112,8 @@ const AllLikedLectures = () => {
       {
         event : "*",
         schema : "public",
-        table : "liked_lectures"
+        table : "liked_lectures",
+        filter: `user_id=eq.${session?.user.id}`
       },
       (payload) => fetchLikedLectures()
     ).subscribe()
@@ -122,7 +123,8 @@ const AllLikedLectures = () => {
       {
         event : "*",
         schema : "public",
-        table : "liked_event_lectures"
+        table : "liked_event_lectures",
+        filter: `user_id=eq.${session?.user.id}`
       },
       (payload) => fetchLikedEventLectures()
     ).subscribe()

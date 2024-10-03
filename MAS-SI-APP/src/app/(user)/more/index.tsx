@@ -95,7 +95,7 @@ const Index = () => {
                       <View style={{ borderWidth : 3, borderColor : '#E0E0E0', borderRadius : 50 ,backgroundColor : '#E0E0E0'}}>
                         <Icon source={"shopping-outline"} size={25} color='#BDBDBD'/>
                       </View>
-                      <Text className='text-2xl ml-1'>MAS Shop</Text>
+                      <Text className='text-2xl ml-1 font-semibold'>MAS Shop</Text>
                     </View>
                     <Icon source={'chevron-right'} size={25} color='#BDBDBD'/>
                 </View>
@@ -115,7 +115,7 @@ const Index = () => {
                     <View style={{ borderWidth : 3, borderColor : '#E0E0E0', borderRadius : 50 ,backgroundColor : '#E0E0E0'}}>
                       <Icon source={"cards-heart-outline"} size={25} color='#BDBDBD'/>
                     </View>
-                    <Text className='text-2xl ml-1'>Donate</Text>
+                    <Text className='text-2xl ml-1 font-semibold'>Donate</Text>
                   </View>
                   <Icon source={'chevron-right'} size={25} color='#BDBDBD'/>
                 </View>

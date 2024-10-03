@@ -19,14 +19,19 @@ const BusinessSubmissions = () => {
     if( data ){
       setSubmissions(data)
     }
+    if( error) {
+      console.log(error)
+    }
   }
   const tabBarHeight = useBottomTabBarHeight() + 30
+
   useEffect(() => {
     getSubmissions()
     const updateSubmissions = supabase.channel('listen for new added applications').on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: "business_ads_submissions",
+      filter:`user_id=eq.${session?.user.id}`
     },
     (payload) => getSubmissions()
   ).subscribe()

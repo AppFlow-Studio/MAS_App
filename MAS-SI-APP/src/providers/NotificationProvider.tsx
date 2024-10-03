@@ -4,7 +4,7 @@ import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
-import { err } from 'react-native-svg';
+import { format } from 'date-fns';
 export type PrayerNotificationTemplateProp = {
   prayer_name : string
   hour : number
@@ -63,7 +63,34 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
       trigger
     });
   }
-  async function schedulePushNotification() {
+
+  async function scheduleProgramPushNotifications(){
+    const { data : userAddedPrograms, error : addedProgramsError } = await supabase.from('added_notifications_programs').select('*').eq('user_id', session?.user.id)
+    const { data : userProgramSettings, error : userSettingsError } = await supabase.from('program_notifications_settings').select('*').eq('user_id', session?.user.id)
+
+    userAddedPrograms?.map((AddedProgram) => {
+      userProgramSettings?.map((ProgramSettings) => {
+        if(AddedProgram.program_id == ProgramSettings.program_id){
+          ProgramSettings.notification_settings.map( async (setting) => {
+            if( setting == 'When Program Starts'){
+              const program_time = await supabase.from('programs').select('program_start_time, program_days').eq('program_id', AddedProgram.program_id).single()
+              const currentDate = new Date()
+              const dayOfWeek = format(currentDate, 'EEEE')
+              if( program_time.data?.program_days.includes(dayOfWeek)){
+                const timeProgramStart = program_time.data.program_start_time
+                const timeDate = new Date(timeProgramStart)
+                console.log(timeDate)
+              }
+            }
+          })
+        }
+      })
+    })
+
+  }
+
+
+  async function schedulePrayerPushNotifications() {
     const { data : todays_prayers , error } = await supabase.from('todays_prayers').select('*')
     const { data : user_prayer_settings, error : user_setting_error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id)
     todays_prayers?.map((prayer) => {

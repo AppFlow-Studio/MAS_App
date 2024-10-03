@@ -130,7 +130,7 @@ const prayerDetails = () => {
                 return(
                   <View className='flex-col' key={index}>
                     <View className='flex-row items-center justify-center'>
-                      <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} item={item} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} prayerName={prayerName}/>
+                      <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} item={item} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} prayerName={prayerName!}/>
                     </View>
                     <View style={{height : 10}}/>
                   </View>

@@ -36,8 +36,8 @@ export default function RootLayout() {
     <GestureHandlerRootView>
       <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
         <AuthProvider>
-            <PrayerTimesProvider>
-              
+          <PrayerTimesProvider>
+
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <BottomSheetModalProvider>
                   <MenuProvider>
@@ -51,8 +51,8 @@ export default function RootLayout() {
                   </MenuProvider>
                 </BottomSheetModalProvider>
               </ThemeProvider>
-              
-            </PrayerTimesProvider>
+
+          </PrayerTimesProvider>
         </AuthProvider>
       </StripeProvider>
     </GestureHandlerRootView>

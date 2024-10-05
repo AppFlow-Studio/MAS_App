@@ -9,22 +9,25 @@ import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { LinearGradient } from 'expo-linear-gradient'
 import YoutubePlayer from "react-native-youtube-iframe"
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
-import { Divider, Icon } from 'react-native-paper'
+import { Button, Divider, Icon } from 'react-native-paper'
 import { Stack } from 'expo-router'
 import { initializePaymentSheet, openPaymentSheet } from '@/src/lib/stripe'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import OtherAmountDonationSheet from '@/src/components/ShopComponets/OtherAmountDonationSheet'
 import { supabase } from '@/src/lib/supabase'
+import { useStripe } from '@stripe/stripe-react-native'
 type DonationGoalType = {
     date : string
     amount : number
     amountGiven : number
 }
 const Donation = () => {
+  const { retrievePaymentIntent } = useStripe()
   const layout = useWindowDimensions().width
   const layoutHeight = useWindowDimensions().height
   const [ playing, setPlaying ] = useState(false)
   const [ buttonOn, setButtonOn ] = useState(true)
+  const [ newDonationAnimation, setNewDonationAnimation ] = useState(false)
   const [ currentDonations, setCurrentDonations ] = useState([])
   const layoutMargin = 40
   const [ selectedDate, setSelectedDate ] = useState('Total')
@@ -41,18 +44,22 @@ const Donation = () => {
   const handlePresentModalPress = () => bottomSheetRef.current?.present();
   const callForDonationAmount = async (amount : number) => {
     setButtonOn(false)
-    await initializePaymentSheet(Math.floor(amount * 100))
+    const paymentIntent = await initializePaymentSheet(Math.floor(amount * 100))
     const paymentSuccess = await openPaymentSheet()
     if(paymentSuccess){
       const { data : getLatestTotal , error } = await supabase.from('donations').select('*').order('date', { ascending : false }).limit(1).single()
       const { error : insertError } = await supabase.from('donations').insert({ amount : getLatestTotal.amount + amount, amountGiven : amount })
+      const { error : emailError } = await supabase.functions.invoke('donation-confirmation-email',{ body : { donation_amount : amount } })
+      if( emailError ){
+        console.log(emailError)
+      }
       if( insertError ){
         console.log(insertError)
       }
-      console.log(getLatestTotal)
-      console.log('Payment Success')
+      setButtonOn(true)
     }else{
       console.log('Failed')
+      setButtonOn(true)
     }
     setButtonOn(true)
   }
@@ -107,7 +114,7 @@ const Donation = () => {
             </View>
         </View>
         <View style={{ width : '90%', height: layoutHeight / 2.8, shadowColor : 'black', shadowOffset : { width : 0, height : 0}, shadowOpacity : 1, shadowRadius : 2, borderRadius : 20, justifyContent : 'center', alignItems : 'center', backgroundColor : 'white', marginTop : 5, alignSelf : 'center' }}> 
-          {currentDonations.length > 0 &&<DonationChart CHART_HEIGHT={layoutHeight / 3} CHART_WIDTH={layout * .89}  DONATION_GOAL={DONATIONGOAL} CHART_MARGIN={layoutMargin} CURR_DONATIONS={currentDonations} setSelectedDate={setSelectedDate} selectedValue={selectedValue}/>}        
+          {currentDonations.length > 0 &&<DonationChart CHART_HEIGHT={layoutHeight / 3} CHART_WIDTH={layout * .89}  DONATION_GOAL={DONATIONGOAL} CHART_MARGIN={layoutMargin} CURR_DONATIONS={currentDonations} setSelectedDate={setSelectedDate} selectedValue={selectedValue} setNewDonationAnimation={setNewDonationAnimation} newDonationAnimation={newDonationAnimation}/>}        
         </View> 
         <View style={{ width : layout, height : layoutHeight / 5, backgroundColor : 'white', flexWrap : "wrap", flexDirection : 'row', columnGap : 5, justifyContent : 'center', marginTop : "10%", rowGap : 5 }}>
             {DonationButtonBoxs.map((item, index) => (

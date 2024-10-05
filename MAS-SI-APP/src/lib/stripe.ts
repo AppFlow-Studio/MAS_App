@@ -1,7 +1,7 @@
 import { Alert } from "react-native"
 import { supabase } from "./supabase"
 import { initPaymentSheet, presentPaymentSheet } from "@stripe/stripe-react-native"
-
+import { useStripe } from "@stripe/stripe-react-native"
 const fetchPaymentSheetParam = async ( amount : number ) => {
     const { data, error } = await supabase.functions.invoke('payment-sheet', { body : { amount :  amount } })
     if( data ){
@@ -17,7 +17,7 @@ const fetchPaymentSheetParam = async ( amount : number ) => {
 export const initializePaymentSheet = async ( amount : number ) => {
     console.log('Payment Sheet Amount', amount)
     const { paymentIntent, publishableKey, customer, ephemeralKey } = await fetchPaymentSheetParam(amount)
-    console.log(paymentIntent, publishableKey)
+    console.log(paymentIntent, publishableKey )
     if( !paymentIntent || !publishableKey ) return
 
     const { error } = await initPaymentSheet({
@@ -27,8 +27,9 @@ export const initializePaymentSheet = async ( amount : number ) => {
         customerEphemeralKeySecret : ephemeralKey,
         defaultBillingDetails : {
             name : 'Jane Doe'
-        }
+        },
     })
+    return paymentIntent
 }
 
 export const openPaymentSheet = async () => {

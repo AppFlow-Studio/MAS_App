@@ -4,7 +4,7 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { stripe } from "../_utils/stripe.ts";
+import { retrievePaymentIntent, stripe } from "../_utils/stripe.ts";
 import { createOrRetrieveProfile } from '../_utils/supabase.ts';
 
 serve(async (req) => {

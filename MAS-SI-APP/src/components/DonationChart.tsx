@@ -2,7 +2,7 @@ import { View  } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import {Canvas, useCanvasRef, Circle, Skia, Path, useFont, Text, Group, Line} from "@shopify/react-native-skia";
 import { curveBasis, line, scaleLinear, scalePoint } from 'd3';
-import { clamp, runOnJS, SharedValue, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
+import { clamp, runOnJS, SharedValue, useAnimatedStyle, useDerivedValue, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { format } from 'date-fns';
 import { LineChart } from 'react-native-chart-kit';
 import { Gesture, GestureDetector, PanGestureHandlerEventPayload } from 'react-native-gesture-handler';
@@ -21,6 +21,8 @@ type DonationChartProp = {
     CHART_MARGIN : number
     setSelectedDate : ( selectedDate : string ) => void
     selectedValue : SharedValue<number>
+    setNewDonationAnimation : ( newDonationAnimation : boolean ) => void
+    newDonationAnimation : boolean
 }
 
 type AxisTextProp = {
@@ -99,7 +101,7 @@ type DonationEntry = {
     return Object.values(aggregated).sort((a, b) => a.year - b.year);
   };
   
-const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WIDTH, CHART_MARGIN, setSelectedDate, selectedValue} : DonationChartProp ) => {
+const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WIDTH, CHART_MARGIN, setSelectedDate, selectedValue, setNewDonationAnimation, newDonationAnimation } : DonationChartProp ) => {
   const font = useFont(require('@/assets/fonts/SpaceMono-Regular.ttf'), 12)
   const animationLine = useSharedValue(0)
   const cx = useSharedValue(0)
@@ -114,8 +116,6 @@ const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WID
     animationLine.value = withTiming(1, { duration : 2000 })
     selectedValue.value = withTiming(totalDonations, { duration : 2000 })
   }, []) 
-
-  
   const xDomain = Array.from({ length: 2026 - 2017 + 1 }, (_, i) => (2017 + i).toString())
   const xRange = [CHART_MARGIN, CHART_WIDTH - CHART_MARGIN]
 

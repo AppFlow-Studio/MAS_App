@@ -172,11 +172,11 @@ const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WID
   const CurrDonationsPath = createCurrDonLine(aggregatedDataArray, '#57BA47');
   const stepX = x.step()
   const maxClampValue = x(aggregatedDataArray[aggregatedDataArray.length - 1].year.toString())!
+
   const handleGestureEvent = (e : PanGestureHandlerEventPayload) => {
     'worklet'
 
-    const index = Math.floor(e.absoluteX / stepX)
-    
+    const index = Math.floor(e.absoluteX / stepX) - 1
     if( index < aggregatedDataArray.length )
     { 
         runOnJS(setSelectedDate)(aggregatedDataArray[index].year.toString())
@@ -189,16 +189,16 @@ const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WID
             cy.value = getYForX(path, Math.floor(clampValue))!
     }
     else{
-        runOnJS(setSelectedDate)('Total')
-        selectedValue.value = withTiming(totalDonations)
-        const clampValue = clamp(
-            (aggregatedDataArray.length - 1) * stepX + CHART_MARGIN, 
-            CHART_MARGIN, 
-            maxClampValue
-            )
-            cx.value = clampValue
-            cy.value = getYForX(path, Math.floor(clampValue))!
-        }
+      runOnJS(setSelectedDate)('Total')
+      selectedValue.value = withTiming(totalDonations)
+      const clampValue = clamp(
+          (aggregatedDataArray.length - 1) * stepX + CHART_MARGIN, 
+          CHART_MARGIN, 
+          maxClampValue
+          )
+          cx.value = clampValue
+          cy.value = getYForX(path, Math.floor(clampValue))!
+      }
   }
 
   const pan = Gesture.Pan()
@@ -234,14 +234,14 @@ const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WID
             />
         )
     )}
-    {yLabels.map((label, index) => (
+    { yLabels.map((label, index) => (
           <YAxisText
             key={`y-axis-${index}`}
             x={CHART_MARGIN * 1.6} // Adjust as needed
             y={y(label)}
             text={`$${Math.round((label/1000000)).toString()}M`}
           />
-        ))}   
+        )) }   
     { showCursor && <Cursor cx={cx} cy={cy} height={CHART_HEIGHT}/> }
     </Canvas>
     </GestureDetector>

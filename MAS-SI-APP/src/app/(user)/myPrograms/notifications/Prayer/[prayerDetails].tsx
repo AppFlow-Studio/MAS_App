@@ -1,4 +1,4 @@
-import { Dimensions, Image, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Dimensions, Image, ImageSourcePropType, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import React, { useState } from 'react'
 import { Stack, useLocalSearchParams } from 'expo-router'
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
@@ -12,7 +12,7 @@ import { err } from 'react-native-svg';
 
 type PrayerDetailsParams = {
   prayerName?: string;
-  prayerImage?: string  
+  prayerImage?: ImageSourcePropType  
 };
 const getCurrDate = new Date();
 getCurrDate.setDate(getCurrDate.getDate())
@@ -112,7 +112,7 @@ const prayerDetails = () => {
          <Stack.Screen options={{ title : prayerName, headerBackTitleVisible : false}}/>
          <View className='mt-4'>
             <Image
-              source={ { uri: prayerImage || defaultProgramImage }}
+              source={prayerImage}
               style={{width: width / 1.2, height: 300, borderRadius: 8 } }
               resizeMode='stretch'
             />

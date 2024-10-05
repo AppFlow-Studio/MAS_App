@@ -12,6 +12,7 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  ImageSourcePropType,
 } from "react-native";
 import AlertBell from "../app/(user)/menu/alertBell";
 import { usePrayer } from "../providers/prayerTimesProvider";
@@ -43,7 +44,7 @@ const NotificationPrayerTable = ({
   
 
 
-  const goToPrayer = (prayerName: string, prayerImage: string) => {
+  const goToPrayer = (prayerName: string, prayerImage: ImageSourcePropType) => {
     navigation.navigate("myPrograms", {
       screen: "notifications/Prayer/[prayerDetails]",
       params: { prayerName:prayerName, prayerImage:prayerImage  },
@@ -54,45 +55,23 @@ const NotificationPrayerTable = ({
   return (
     <View style={{ width: width }} className="items-center">
       <View className="items-center  justify-center w-[95%]">
-        <View
-          className="flex-row justify-between items-center  p-2 rounded-3xl bg-white h-[60] w-[80%]"
-          style={{
-            shadowColor: "black",
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 1,
-            shadowRadius: 4,
-          }}
-        >
-          <Pressable onPress={backPress}>
-            <Icon source="chevron-left" size={30} color="black" />
-          </Pressable>
-          <View className="flex-col items-center justify-center">
-            <Text className="text- font-bold">{prayerData.date}</Text>
-            <Text className="text-23 font-bold text-gray-400">
-              {prayerData.hijri_month} {prayerData.hijri_date}
-            </Text>
-          </View>
-          <Pressable onPress={nextPress}>
-            <Icon source="chevron-right" size={30} color="black" />
-          </Pressable>
-        </View>
-        <View className="mt-3 w-[100%]">
+        <View className="w-[100%]">
           <ScrollView
-            style={{ width: "100%", height: "85%", paddingLeft:'4%'}}
+            style={{ width: "100%", height: "95%", paddingLeft:'4%'}}
             showsVerticalScrollIndicator={false}
           >
             <TouchableOpacity 
             onPress={ () => 
               goToPrayer(
                  "Fajr",
-              "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHPLhsm_3J3PcjukQghAbtiCDrmuQFdlznkA&s"
+             require('@/assets//images/fajr.png')
               )
             }
              className="flex-row mt-4">
               <Image
-                source={{
-                  uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHPLhsm_3J3PcjukQghAbtiCDrmuQFdlznkA&s",
-                }}
+                source={
+                  require('@/assets//images/fajr.png')
+                }
                 style={{
                   width: width * 0.35,
                   height: height * 0.15,
@@ -132,14 +111,14 @@ const NotificationPrayerTable = ({
              onPress={ () => 
               goToPrayer(
                 "Dhuhr",
-                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCUc3iNcwPaVn2fhKUz84MQc93RIoiJHk8xA&s"
+                require('@/assets/images/dhuhr.png')
               )
             }
              className="flex-row mt-4">
               <Image
-                source={{
-                  uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCUc3iNcwPaVn2fhKUz84MQc93RIoiJHk8xA&s",
-                }}
+                source={                
+                  require('@/assets/images/dhuhr.png')
+                }
                 style={{
                   width: width * 0.35,
                   height: height * 0.15,
@@ -179,14 +158,14 @@ const NotificationPrayerTable = ({
             onPress={ () => 
               goToPrayer(
                 "Asr",
-                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZ6VwwcAoWmwpHzOOOc9DY1N9YbrhYD9NBVQ&s"
+                require('@/assets/images/asr.png')
               )
             }
              className="flex-row mt-4">
               <Image
-                source={{
-                  uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZ6VwwcAoWmwpHzOOOc9DY1N9YbrhYD9NBVQ&s",
-                }}
+                source={
+                  require('@/assets/images/asr.png')
+                }
                 style={{
                   width: width * 0.35,
                   height: height * 0.15,
@@ -226,14 +205,14 @@ const NotificationPrayerTable = ({
               onPress={ () => 
                 goToPrayer(
                   "Maghrib",
-                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6c9DdHxdQZrKtJTYS6--EnGRYGyZwY2Jssw&s"
+                  require('@/assets/images/maghrib.png')
                 )
               }
              className="flex-row mt-4">
               <Image
-                source={{
-                  uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6c9DdHxdQZrKtJTYS6--EnGRYGyZwY2Jssw&s",
-                }}
+                source={                
+                  require('@/assets/images/maghrib.png')
+                }
                 style={{
                   width: width * 0.35,
                   height: height * 0.15,
@@ -275,14 +254,14 @@ const NotificationPrayerTable = ({
              onPress={ () =>
               goToPrayer(
                 "Isha",
-                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWLgezuh78d0dRryoe1GtveuxncCGzFdBKiQ&s"
+                require('@/assets/images/isha.png')
               )
             }
              className="flex-row mt-4">
               <Image
-                source={{
-                  uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWLgezuh78d0dRryoe1GtveuxncCGzFdBKiQ&s",
-                }}
+                source={
+                  require('@/assets/images/isha.png')
+                }
                 style={{
                   width: width * 0.35,
                   height: height * 0.15,

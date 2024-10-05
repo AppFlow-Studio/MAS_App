@@ -4,9 +4,16 @@ import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
-import { format } from 'date-fns';
+import { format, setHours, setMinutes, subMinutes } from 'date-fns';
 export type PrayerNotificationTemplateProp = {
   prayer_name : string
+  hour : number
+  minute : number
+  body : string
+  title : string
+}
+export type ProgramNotificationTemplate = {
+  program_name : string
   hour : number
   minute : number
   body : string
@@ -64,6 +71,20 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     });
   }
 
+
+  async function ProgramNotificationTemplate({program_name, hour, minute, body, title} : ProgramNotificationTemplate ){
+    const trigger = new Date()
+    trigger.setHours(hour)
+    trigger.setMinutes(minute)
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { data: 'goes here', test: { test1: 'more data' } },
+      },
+      trigger
+    });
+  }
   async function scheduleProgramPushNotifications(){
     const { data : userAddedPrograms, error : addedProgramsError } = await supabase.from('added_notifications_programs').select('*').eq('user_id', session?.user.id)
     const { data : userProgramSettings, error : userSettingsError } = await supabase.from('program_notifications_settings').select('*').eq('user_id', session?.user.id)
@@ -72,15 +93,49 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
       userProgramSettings?.map((ProgramSettings) => {
         if(AddedProgram.program_id == ProgramSettings.program_id){
           ProgramSettings.notification_settings.map( async (setting) => {
-            if( setting == 'When Program Starts'){
+            if( setting == 'When Program Starts' ){
               const program_time = await supabase.from('programs').select('program_start_time, program_days').eq('program_id', AddedProgram.program_id).single()
               const currentDate = new Date()
               const dayOfWeek = format(currentDate, 'EEEE')
               if( program_time.data?.program_days.includes(dayOfWeek)){
                 const timeProgramStart = program_time.data.program_start_time
-                const timeDate = new Date(timeProgramStart)
-                console.log(timeDate)
+                const time = timeProgramStart.split(':')
+                const hour = Number(time[0])
+                const minute = Number(time[1])
+                ProgramNotificationTemplate({program_name : 'Program Starting Now', hour : hour, minute : minute, body : 'A Program you follow is happening now', title : 'Program Starting Now'})
               }
+            }
+            if( setting == '30 Mins Before' ){
+              const program_time = await supabase.from('programs').select('program_start_time, program_days').eq('program_id', AddedProgram.program_id).single()
+              const currentDate = new Date()
+              const dayOfWeek = format(currentDate, 'EEEE')
+              console.log(dayOfWeek)
+              if( program_time.data?.program_days.includes(dayOfWeek) ){
+                const timeProgramStart = program_time.data.program_start_time
+                const time = timeProgramStart.split(':')
+                const hour = Number(time[0])
+                const minute = Number(time[1])
+                const date = setHours(new Date(), hour)
+                const result = subMinutes(setMinutes(date, minute), 30)
+                
+                console.log(result)
+              }
+            }
+            if( setting == 'Day Before' ){
+              const program_time = await supabase.from('programs').select('program_start_time, program_days').eq('program_id', AddedProgram.program_id).single()
+              const DaysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+              const DayOfProgram = program_time.data?.program_days
+              DayOfProgram.map((day) => {
+                const DayIndex = DaysOfWeek.indexOf(day)
+                const currentDate = new Date()
+                const dayOfWeek = format(currentDate, 'EEEE')
+                if( dayOfWeek == 'Monday' ){
+                  
+                }
+                if( dayOfWeek == DaysOfWeek[DayIndex - 1]){
+                  console.log(DaysOfWeek[DayIndex - 1])
+                }
+              })
             }
           })
         }
@@ -198,6 +253,8 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     registerForPushNotificationsAsync().then( (token : any) => savePushToken(token) );
+    
+    scheduleProgramPushNotifications()
 
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
@@ -220,7 +277,6 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
       }
     };
 
-    schedulePushNotification()
   }, []);
 
   console.log('noti', notification);

@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, useWindowDimensions, Pressable, Image } from 'react-native'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import DonationChart from '@/src/components/DonationChart'
 import { format } from 'date-fns'
 import { SharedValue, useDerivedValue, useSharedValue } from 'react-native-reanimated'
@@ -14,6 +14,7 @@ import { Stack } from 'expo-router'
 import { initializePaymentSheet, openPaymentSheet } from '@/src/lib/stripe'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import OtherAmountDonationSheet from '@/src/components/ShopComponets/OtherAmountDonationSheet'
+import { supabase } from '@/src/lib/supabase'
 type DonationGoalType = {
     date : string
     amount : number
@@ -24,6 +25,7 @@ const Donation = () => {
   const layoutHeight = useWindowDimensions().height
   const [ playing, setPlaying ] = useState(false)
   const [ buttonOn, setButtonOn ] = useState(true)
+  const [ currentDonations, setCurrentDonations ] = useState([])
   const layoutMargin = 40
   const [ selectedDate, setSelectedDate ] = useState('Total')
   const onStateChange = useCallback((state : any) => {
@@ -40,31 +42,52 @@ const Donation = () => {
   const callForDonationAmount = async (amount : number) => {
     setButtonOn(false)
     await initializePaymentSheet(Math.floor(amount * 100))
-    await openPaymentSheet()
+    const paymentSuccess = await openPaymentSheet()
+    if(paymentSuccess){
+      const { data : getLatestTotal , error } = await supabase.from('donations').select('*').order('date', { ascending : false }).limit(1).single()
+      const { error : insertError } = await supabase.from('donations').insert({ amount : getLatestTotal.amount + amount, amountGiven : amount })
+      if( insertError ){
+        console.log(insertError)
+      }
+      console.log(getLatestTotal)
+      console.log('Payment Success')
+    }else{
+      console.log('Failed')
+    }
     setButtonOn(true)
   }
   const selectedValue = useSharedValue(0)
   const DONATIONGOAL : DonationGoalType[] = [
-        {date : "2017-02-01T05:00:00.000Z", amount : 0, amountGiven : 0},
-        {date : "2026-02-01T05:00:00.000Z", amount : 13000000, amountGiven : 0}
+    {date : "2017-02-01T05:00:00.000Z", amount : 0, amountGiven : 0},
+    {date : "2026-02-01T05:00:00.000Z", amount : 13000000, amountGiven : 0}
   ]
 
-  const currDonations : DonationGoalType[] = [
-    {date : "2017-02-01T05:00:00.000Z", amount : 0, amountGiven : 0},
-    {date : "2018-02-01T05:00:00.000Z", amount : 1850000, amountGiven : 1850000},
-    {date : "2019-02-01T05:00:00.000Z", amount : 3000000, amountGiven : 1150000},
-    {date : "2020-02-01T05:00:00.000Z", amount : 5571000, amountGiven : 2571000},
-    {date : "2021-02-01T05:00:00.000Z", amount : 6023000, amountGiven : 452000},
-    {date : "2022-02-01T05:00:00.000Z", amount : 7172830, amountGiven : 1149830},
-    {date : "2023-02-01T05:00:00.000Z", amount : 8000000, amountGiven : 827170},
-    {date : "2024-02-01T05:00:00.000Z", amount : 8332100, amountGiven : 332100},
-    {date : "2024-02-01T05:00:00.000Z", amount : 8532100, amountGiven : 200000.02},
-  ] 
   { /* 1857000, 3714000, 5571000, 7428000, 9285000, 11142000, 13000000 */ }
+  const getDonations = async ( ) => {
+    const { data , error } = await supabase.from('donations').select('*').order('date', { ascending : true })
+    if( data ){
+      setCurrentDonations(data)
+    }
+  }
+  useEffect(() => {
+    getDonations()
+    const DonationUpdate = supabase.channel('Check for new donations').on(
+      'postgres_changes',
+     {
+       event: '*',
+       schema: 'public',
+       table: 'donations',
+     },
+     (payload) => getDonations()
+     )
+     .subscribe()
+
+     return () => { supabase.removeChannel( DonationUpdate ) }
+  }, [])
   const font = useFont(require('@/assets/fonts/SpaceMono-Regular.ttf'), 20)
   if(!font) {return null}
   const DonationButtonBoxs = [30, 50, 100, 250]
-  const currTotalAmount = currDonations[currDonations.length - 1].amount
+  const currTotalAmount =  currentDonations && currentDonations.length > 0 ? currentDonations[currentDonations.length - 1].amount : 0
   const perctangeToGoal = ((currTotalAmount / 13000000 ) * 100).toFixed(1)
   return (
     <ScrollView style={{ width : layout, height : layoutHeight, backgroundColor : "white" }} contentContainerStyle={{ paddingBottom : tabBarHeight }}> 
@@ -84,7 +107,7 @@ const Donation = () => {
             </View>
         </View>
         <View style={{ width : '90%', height: layoutHeight / 2.8, shadowColor : 'black', shadowOffset : { width : 0, height : 0}, shadowOpacity : 1, shadowRadius : 2, borderRadius : 20, justifyContent : 'center', alignItems : 'center', backgroundColor : 'white', marginTop : 5, alignSelf : 'center' }}> 
-            <DonationChart CHART_HEIGHT={layoutHeight / 3} CHART_WIDTH={layout * .89}  DONATION_GOAL={DONATIONGOAL} CHART_MARGIN={layoutMargin} CURR_DONATIONS={currDonations} setSelectedDate={setSelectedDate} selectedValue={selectedValue}/>
+          {currentDonations.length > 0 &&<DonationChart CHART_HEIGHT={layoutHeight / 3} CHART_WIDTH={layout * .89}  DONATION_GOAL={DONATIONGOAL} CHART_MARGIN={layoutMargin} CURR_DONATIONS={currentDonations} setSelectedDate={setSelectedDate} selectedValue={selectedValue}/>}        
         </View> 
         <View style={{ width : layout, height : layoutHeight / 5, backgroundColor : 'white', flexWrap : "wrap", flexDirection : 'row', columnGap : 5, justifyContent : 'center', marginTop : "10%", rowGap : 5 }}>
             {DonationButtonBoxs.map((item, index) => (

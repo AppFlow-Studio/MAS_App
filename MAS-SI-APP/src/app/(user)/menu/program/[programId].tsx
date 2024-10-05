@@ -167,6 +167,9 @@ async function getUserPlaylists(){
     }
     else{
       const { error } = await supabase.from("added_notifications_programs").insert({user_id :session?.user.id, program_id : programId})
+      if( error ){
+        console.log(error)
+      }
       setProgramInNotifications(true)
       addedToNoti()
     }

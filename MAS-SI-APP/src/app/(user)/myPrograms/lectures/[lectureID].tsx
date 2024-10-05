@@ -119,8 +119,8 @@ export default function LecturesData() {
 
 
   return(
-    <>
-        <Stack.Screen options={{ title : currentLecture?.lecture_name, headerTintColor : '#007AFF', headerStyle : {backgroundColor : 'white',}}} />
+    <View className='flex-1 bg-[#ededed]'>
+        <Stack.Screen options={{ title : currentLecture?.lecture_name, headerTintColor : 'black', headerStyle : {backgroundColor : 'white',}}} />
         <StatusBar barStyle={'dark-content'}/>
         <YoutubePlayer 
           height={layoutHeight / 4}
@@ -130,6 +130,7 @@ export default function LecturesData() {
           videoId={currentLecture?.lecture_link}
           onChangeState={onStateChange}
         />
+
         <View className='mt-[5]'/>
         <TabView
           navigationState={{ index, routes }}
@@ -139,7 +140,7 @@ export default function LecturesData() {
           renderTabBar={renderTabBar}
           style={{ backgroundColor : "#ededed"}}
         />
-    </>
+    </View>
   )
 }
 

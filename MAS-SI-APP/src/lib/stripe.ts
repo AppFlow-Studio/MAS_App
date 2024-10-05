@@ -3,7 +3,7 @@ import { supabase } from "./supabase"
 import { initPaymentSheet, presentPaymentSheet } from "@stripe/stripe-react-native"
 
 const fetchPaymentSheetParam = async ( amount : number ) => {
-    const { data, error } = await supabase.functions.invoke('payment-sheet', { body : { amount } })
+    const { data, error } = await supabase.functions.invoke('payment-sheet', { body : { amount :  amount } })
     if( data ){
         console.log(data)
         return data
@@ -11,13 +11,13 @@ const fetchPaymentSheetParam = async ( amount : number ) => {
    if( error ){
     Alert.alert(error.message)
    }
-   return {}
-    
+   return {}    
 }       
 
 export const initializePaymentSheet = async ( amount : number ) => {
     console.log('Payment Sheet Amount', amount)
     const { paymentIntent, publishableKey, customer, ephemeralKey } = await fetchPaymentSheetParam(amount)
+    console.log(paymentIntent, publishableKey)
     if( !paymentIntent || !publishableKey ) return
 
     const { error } = await initPaymentSheet({
@@ -37,5 +37,6 @@ export const openPaymentSheet = async () => {
         console.log(error)
         return false
     }
+    console.log('Payment Went Through')
     return true
 }

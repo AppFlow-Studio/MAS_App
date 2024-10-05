@@ -112,20 +112,20 @@ const SalahTimesScreen = () => {
   }, [tableIndex])
   return (
     <View className='items-center justify-center '>
-              <FlatList 
-                data={prayerTimesWeek}
-                renderItem={({item, index}) => <NotificationPrayerTable prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index}/>}
-                horizontal
-                bounces={false}
-                showsHorizontalScrollIndicator={false}
-                pagingEnabled
-                scrollEventThrottle={32}
-                viewabilityConfig={viewConfig}
-                contentContainerStyle={{flex:1,marginTop:'5%'}}
-                ref={flatlistRef}
-                nestedScrollEnabled
-              />
-            </View>
+      <FlatList 
+        data={prayerTimesWeek}
+        renderItem={({item, index}) => <NotificationPrayerTable prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index}/>}
+        horizontal
+        bounces={false}
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
+        scrollEventThrottle={32}
+        viewabilityConfig={viewConfig}
+        contentContainerStyle={{flex:1,marginTop:'5%'}}
+        ref={flatlistRef}
+        nestedScrollEnabled
+      />
+    </View>
   )
 }
 
@@ -169,7 +169,9 @@ const NotificationEvents = () => {
         {
           event: '*',
           schema : "public",
-          table: "added_notifications"
+          table: "added_notifications",
+          filter:`user_id=eq.${session?.user.id}`
+
         },
         (payload) => getAddedEvents()
       )
@@ -180,12 +182,13 @@ const NotificationEvents = () => {
         {
           event: '*',
           schema : "public",
-          table: "added_notifications_programs"
+          table: "added_notifications_programs",
+          filter:`user_id=eq.${session?.user.id}`
         },
         (payload) => getAddedProgram()
       )
       .subscribe()
-      return () => { supabase.removeChannel( listenForAddedEvents ) ; supabase.removeChannel(listenForAddedPrograms)}
+      return () => { supabase.removeChannel( listenForAddedEvents ) ; supabase.removeChannel( listenForAddedPrograms )}
   },[])
 
 

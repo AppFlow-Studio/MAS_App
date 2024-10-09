@@ -15,12 +15,8 @@ const RenderMyLibraryProgram = ( {program_id} : RenderProgramProp) => {
   const [ program, setProgram ] = useState<Program>()
   async function fetchUserProgram(){
     const { data, error } = await supabase.from("programs").select("*").eq("program_id ",  program_id).single()
-    if(error){
-      console.log(error)
-    }
     if(data){
     setProgram(data)
-    console.log(data)
     }
   }
 

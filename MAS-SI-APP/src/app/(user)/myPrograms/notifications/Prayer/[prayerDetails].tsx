@@ -109,7 +109,7 @@ const prayerDetails = () => {
   return (
     <ScrollView className='flex-1 bg-white' style={{flexGrow: 1}} contentContainerStyle={{alignItems: "center" , paddingBottom : tabBarHeight}}>
      <StatusBar barStyle={"dark-content"}/>
-         <Stack.Screen options={{ title : prayerName, headerBackTitleVisible : false}}/>
+         <Stack.Screen options={{ title : prayerName, headerBackTitleVisible : false,  headerTintColor : 'black', headerStyle : {backgroundColor : "white"}}}/>
          <View className='mt-4'>
             <Image
               source={prayerImage}

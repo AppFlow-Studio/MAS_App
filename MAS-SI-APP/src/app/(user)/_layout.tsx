@@ -50,6 +50,24 @@ const toastConfig = {
           </View>
         </BlurView>
       </Pressable>
+  ),
+  ProgramAddedToPrograms : ({props} : any) => (
+    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
+        <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' >
+          <View>
+              <Image source={{ uri : props.props.program_img || defaultProgramImage }} style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
+          </View>
+          <View className='flex-col pl-2'>
+            <View>
+              <Text>1 Program Added to Library</Text>
+            </View>
+            <View className='flex-row'>
+              <Text className='text-sm'>{props.props.program_name}</Text>
+              <Icon source={'chevron-right'} size={20} />
+            </View>
+          </View>
+        </BlurView>
+      </Pressable>
   )
 }
 type TabButtonProps = {

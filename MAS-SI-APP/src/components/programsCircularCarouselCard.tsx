@@ -53,7 +53,7 @@ export default function ProgramsCircularCarouselCard( {program, index, listItemW
           style={{width: "100%", height: "100%", resizeMode: "stretch", overflow :"hidden", borderRadius: 20}} 
           />
         </View>
-          <Text className='text-center mt-3 font-bold'>{program.program_desc}</Text>
+          <Text className='text-center mt-3 font-bold' numberOfLines={2} >{program.program_desc}</Text>
         </Pressable>
       </Link>
     </Animated.View>

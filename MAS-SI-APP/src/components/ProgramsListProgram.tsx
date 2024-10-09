@@ -114,7 +114,7 @@ export default function ProgramsListProgram( {program} : ProgramsListProgramProp
         <View style={{ width: "100%", height: 120, marginHorizontal: 5}}>
             <Link  href={ `/menu/program/${program.program_id}`}
                 asChild >
-                <TouchableOpacity>
+                <TouchableOpacity className='items-center'>
                     <View style={{flexDirection: "row",alignItems: "center", justifyContent: "center"}}>
                         <Animated.View style={{justifyContent: "center", alignItems: "center", backgroundColor: "white", borderRadius: 15}}>
                             <Animated.Image 

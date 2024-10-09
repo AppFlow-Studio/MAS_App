@@ -108,10 +108,11 @@ const ProgramInfo = () => {
           </View>
           {programForm &&programForm?.length > 0 ? ( 
           <>
-          <View className='bg-white'>
+          <View className='pt-1'/>
+          <View className='bg-white pt-1'>
               <Text className='text-left text-2xl font-bold text-black ml-4'>Form: </Text>
             </View>
-            <ScrollView className='pt-5 w-[100%]  bg-white flex-col gap-y-2' contentContainerStyle={{ alignItems : 'center' , paddingBottom : Tab }} bounces={false}>
+            <ScrollView className='mt-5 w-[100%]  bg-white flex-col gap-y-2' contentContainerStyle={{ alignItems : 'center' , paddingBottom : Tab }} bounces={false}>
                   { programForm ? programForm.map((item, index) => {
                     if( item.question_type == 'text_input' ) {
                       return <View className='w-[95%]' key={index}><TextInputForm item={item} setIsReady={setIsReady} isReady={isReady} index={index}/></View>

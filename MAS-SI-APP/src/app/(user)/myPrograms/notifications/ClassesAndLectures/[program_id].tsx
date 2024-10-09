@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react'
 import { Program } from '@/src/types'
 import { useAuth } from '@/src/providers/AuthProvider'
 import { supabase } from '@/src/lib/supabase'
-import { Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated'
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { Icon } from 'react-native-paper'
 import NotificationCard from "@/src/app/(user)/myPrograms/notifications/NotificationCard"
+import * as Haptics from 'expo-haptics'
+import { Menu, MenuOption, MenuOptions, MenuTrigger } from 'react-native-popup-menu'
 const ClassesAndLecturesSettings = () => {
   const { program_id } = useLocalSearchParams()
   const { session } = useAuth()
@@ -47,6 +49,37 @@ const ClassesAndLecturesSettings = () => {
     }
   })
 
+  const HeaderRight = () => {
+    const router = useRouter()
+    const removeFromLibrary = async () => {
+      const { error } = await supabase.from('added_notifications_programs').delete().eq("user_id", session?.user.id).eq("program_id", program_id)
+      const { error : errorSettings} = await supabase.from("program_notifications_settings").delete().eq("user_id", session?.user.id).eq("program_id", program_id)
+      if( error ){
+        alert(error)
+      }else{
+        Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        )
+      }
+      router.back()
+    }
+    return(
+      <Menu>
+      <MenuTrigger>
+        <Icon source={"dots-horizontal"} color='black' size={25}/>
+      </MenuTrigger>
+      <MenuOptions customStyles={{optionsContainer: {width: 200, borderRadius: 8, marginTop: 20, padding: 8}}}>
+        <MenuOption onSelect={removeFromLibrary}>
+          <View className='flex-row justify-between items-center'>
+           <Text className='text-red-600 '>Delete From Library</Text> 
+           <Icon source="delete" color='red' size={15}/>
+          </View>
+        </MenuOption>
+      </MenuOptions>
+    </Menu>          
+    )
+  }
+  
   useEffect(() => {
     getProgram()
   },[])
@@ -54,7 +87,7 @@ const ClassesAndLecturesSettings = () => {
   return (
     <View className='flex-1 bg-white' style={{flexGrow: 1}}>
      <StatusBar barStyle={"dark-content"}/>
-     <Stack.Screen options={{ title : '', headerBackTitleVisible : false, headerStyle : {backgroundColor : "white"}}}/>
+     <Stack.Screen options={{ title : '', headerBackTitleVisible : false, headerStyle : {backgroundColor : "white"}, headerRight : () => <HeaderRight />, }} />
       <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%", paddingBottom : tabBarHeight }}  >
           <View>
             <Animated.Image 

@@ -7,7 +7,6 @@ const MoreLayout = () => {
     <Stack>
         <Stack.Screen name='index' options={{ headerShown : false }} />
         <Stack.Screen name='MasShop' />
-        <Stack.Screen name='Donation' />
     </Stack>
   )
 }

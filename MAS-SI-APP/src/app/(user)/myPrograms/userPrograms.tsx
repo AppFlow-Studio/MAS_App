@@ -57,6 +57,9 @@ export default function userPrograms() {
 
   async function getLatestAddedFlier(){
     const { data : checkForProgram , error } = await supabase.from("added_notifications_programs").select("program_id").eq('user_id', session?.user.id).order('created_at', { ascending : false }).limit(1).single()
+    if( error ){
+      setLatestFlier(undefined)
+    }
     if( checkForProgram ){
       const { data : programInfo , error } = await supabase.from("programs").select("*").eq("program_id", checkForProgram.program_id).single()
       if( programInfo ){
@@ -64,6 +67,9 @@ export default function userPrograms() {
       }
     }else{
       const { data : checkForEvent, error } = await supabase.from("added_notifications").select("event_id").eq('user_id', session?.user.id).order("created_at", { ascending : false }).limit(1).single()
+      if( error ){
+        setLatestFlierEvent(undefined)
+      }
       if( checkForEvent ){
         const { data : eventInfo , error } = await supabase.from("events").select("*").eq("event_id", checkForEvent.event_id).single()
         if( eventInfo ){
@@ -86,6 +92,7 @@ export default function userPrograms() {
         event: "*",
         schema: "public",
         table : "added_programs",
+        filter : `user_id=eq.${session?.user.id}`
       },
       (payload) => getUserProgramLibrary()
     )
@@ -97,12 +104,24 @@ export default function userPrograms() {
         event: "*",
         schema: "public",
         table : "user_playlist",
+        filter : `user_id=eq.${session?.user.id}`
       },
       (payload) => getUserPlaylists()
     )
     .subscribe()
 
-    return() => { supabase.removeChannel(channel); supabase.removeChannel(channel2) }
+    const channel3 = supabase.channel('user_notifications').on(
+      "postgres_changes",
+      {
+        event : '*',
+        schema : 'public',
+        table : 'added_notifications_programs',
+        filter : `user_id=eq.${session?.user.id}`
+      },
+      (payload) => getLatestAddedFlier()
+    )
+    .subscribe()
+    return() => { supabase.removeChannel(channel); supabase.removeChannel(channel2); supabase.removeChannel(channel3) }
   }, [])
   async function signInWithEmail() {
     setLoading(true);
@@ -224,7 +243,7 @@ export default function userPrograms() {
       </View> 
       <View className='w-[130] h-[130] ml-2 mt-2'>
         { latestFlier ? (
-          <Link  href={`/menu/program/${latestFlier.program_id}`} asChild>
+          <Link  href={`/myPrograms/notifications/ClassesAndLectures/${latestFlier.program_id}`} asChild>
               <Pressable style={{justifyContent: "center", alignItems: "center", backgroundColor: "white", borderRadius: 15, shadowColor : "black", shadowOffset : {width : 0, height : 1}, shadowOpacity : 1, shadowRadius :1}} className=''>
               <Image 
                   source={{ uri: latestFlier.program_img || defaultProgramImage }}

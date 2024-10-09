@@ -1,6 +1,6 @@
 import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, ScrollView} from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { useLocalSearchParams, Stack, router } from 'expo-router';
+import { useLocalSearchParams, Stack, router, useRouter } from 'expo-router';
 import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
 import { Divider, Portal, Modal, IconButton, Icon, Button } from 'react-native-paper';
 import { Lectures, SheikDataType, Program, UserPlaylistType } from '@/src/types';
@@ -113,6 +113,7 @@ const programLectures = () => {
   }, [])
 
   const HeaderRight = () => {
+    const router = useRouter()
     const removeFromLibrary = async () => {
       const { error } = await supabase.from("added_programs").delete().eq("user_id", session?.user.id).eq("program_id", programId)
       if( error ){
@@ -122,6 +123,7 @@ const programLectures = () => {
           Haptics.NotificationFeedbackType.Success
         )
       }
+      router.back()
     }
     return(
       <Menu>
@@ -150,7 +152,7 @@ const programLectures = () => {
             style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
             resizeMode='stretch'
           />
-          <View className='bg-white' style={{paddingBottom : Tab * 3}}>
+          <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
             <Text className='text-center mt-2 text-xl text-black font-bold'>{program?.program_name}</Text>
             <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{program?.program_speaker}</Text>
               <View className='ml-3'>

@@ -19,8 +19,8 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { format } from "https://esm.sh/date-fns@3.6.0";
 // Supabase client setup
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseKey = Deno.env.get('SUPABASE_ANON');
+const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
+const supabaseKey = Deno.env.get('EXPO_PUBLIC_SUPABASE_ANON');
 const supabase = createClient(supabaseUrl, supabaseKey);
 const getCurrDate = new Date();
 getCurrDate.setDate(getCurrDate.getDate())

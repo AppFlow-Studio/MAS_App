@@ -34,7 +34,7 @@ const Kids = () => {
     <FlatList 
         data={kidsPrograms}
         renderItem={({item}) => <ProgramsListProgram program={item}/>}
-        ItemSeparatorComponent={() => <Divider style={{width: "50%", alignSelf: "center", height: 1}}/>}
+        ItemSeparatorComponent={() => <Divider style={{width: "50%", alignSelf: "center", height: 0.5, backgroundColor : 'lightgray'}}/>}
         contentContainerStyle={{rowGap: 15}}
       />
     </View>

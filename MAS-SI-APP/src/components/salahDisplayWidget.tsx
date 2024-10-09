@@ -81,7 +81,7 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
                 iqamah: prayer.iqa_isha
             }
             setCurrentSalah(ishaSalah)
-            onSetCurrentPrayer('Fajr')
+            onSetCurrentPrayer('Isha')
 
         }
         else if(salahArray[salahIndex] == "nextDayFajr"){

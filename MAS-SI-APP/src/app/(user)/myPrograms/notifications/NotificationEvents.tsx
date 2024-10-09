@@ -215,18 +215,17 @@ const renderScene = ({ route } : any) => {
     <TabBar
       {...props}
       indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "22%", borderRadius : 20  }}
-      style={{ backgroundColor: '#e0e0e0', alignSelf : "center", borderRadius : 20, height: '9%'}}
+      style={{ backgroundColor: '#0D509D', alignSelf : "center",  height: '9%'}}
       labelStyle={{ color : "white", fontWeight : "bold" }}
       tabStyle={{ width : layout / 3.5 }}
       scrollEnabled={true}
     />
   );
-
-
+ //#0D509D
   return (
     <>
     <Stack.Screen options={{ title : "Notification Center", headerBackTitleVisible : false, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}}}/>
-    <View className='pt-2 bg-[#ededed]'/>
+    <View className='bg-[#ededed]'/>
     <TabView
       navigationState={{ index, routes }}
       renderScene={renderScene}

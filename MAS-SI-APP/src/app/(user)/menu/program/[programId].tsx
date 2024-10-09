@@ -30,6 +30,7 @@ const ProgramLectures = () => {
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
   const [ programInNotfications, setProgramInNotifications ] = useState(false)
+  const [ programInPrograms, setProgramInPrograms ] = useState(false)
   const [ addToPlaylistVisible, setAddToPlaylistVisible ] = useState(false)
   const [ lectureToBeAddedToPlaylist, setLectureToBeAddedToPlaylist ] = useState<string>("")
   const [ playlistAddingTo, setPlaylistAddingTo ] = useState<string[]>([])
@@ -68,8 +69,12 @@ const ProgramLectures = () => {
   }
   if ( data ) {
     const { data : checkIfExists , error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq("program_id", programId).single()
+    const { data : programExists , error : programError } = await supabase.from('added_programs').select('*').eq('user_id', session?.user.id).eq('program_id', programId).single()
     if( checkIfExists ){
       setProgramInNotifications(true)
+    }
+    if( programExists ){
+      setProgramInPrograms(true)
     }
     setProgram(data)
   }
@@ -160,9 +165,21 @@ async function getUserPlaylists(){
       topOffset : 50,
     })
   }
+  const addToProgramsNoti = () => {
+    const goToProgram = () => {
+      navigation.navigate('myPrograms')
+    }
+    Toast.show({
+      type : 'ProgramAddedToPrograms',
+      props : { props : program, onPress : goToProgram },
+      position : 'top',
+      topOffset : 50,
+    })
+  }
    const handlePress = async () => {
     if( programInNotfications ) {
       const { error } = await supabase.from("added_notifications_programs").delete().eq("user_id" , session?.user.id).eq("program_id", programId)
+      const { error : settingsError } = await supabase.from('program_notifications_settings').delete().eq('user_id', session?.user.id).eq("program_id", programId)
       setProgramInNotifications(false)
     }
     else{
@@ -177,11 +194,69 @@ async function getUserPlaylists(){
       Haptics.NotificationFeedbackType.Success
     )
   }
+  const addToPrograms = async () => {
+    if( programInPrograms ){
+      const { error } = await supabase.from("added_programs").delete().eq("user_id" , session?.user.id).eq("program_id", programId)
+      setProgramInPrograms(false)
+    }
+    else{
+      const { error } = await supabase.from("added_programs").insert({user_id :session?.user.id, program_id : programId})
+      if( error ){
+        console.log(error)
+      }
+      setProgramInPrograms(true)
+      addToProgramsNoti()
+    }
+    Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success
+    )
+  }
    return(
-    <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
-       {programInNotfications ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }
-    </Pressable>
+    <View className='flex-row items-center gap-x-5'>
+      <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
+        {programInNotfications ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }
+      </Pressable>
+      <Pressable onPress={addToPrograms}>
+        { programInPrograms ?  <Icon source={'minus-circle-outline'} color='#007AFF' size={30}/> : <Icon source={"plus-circle-outline"} color='#007AFF' size={30}/>}
+      </Pressable>
+    </View>
    )
+  }
+
+  const AddToProgramsButton = () => {
+    const addToProgramsNoti = () => {
+      const goToProgram = () => {
+        navigation.navigate('myPrograms')
+      }
+      Toast.show({
+        type : 'ProgramAddedToPrograms',
+        props : { props : program, onPress : goToProgram },
+        position : 'top',
+        topOffset : 50,
+      })
+    }
+    const addToPrograms = async () => {
+      if( programInPrograms ){
+        const { error } = await supabase.from("added_programs").delete().eq("user_id" , session?.user.id).eq("program_id", programId)
+        setProgramInPrograms(false)
+      }
+      else{
+        const { error } = await supabase.from("added_programs").insert({user_id :session?.user.id, program_id : programId})
+        if( error ){
+          console.log(error)
+        }
+        setProgramInPrograms(true)
+        addToProgramsNoti()
+      }
+      Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      )
+    }
+    return(
+      <Pressable onPress={addToPrograms}>
+        { programInPrograms ?  <Icon source={'minus-circle'} color='#007AFF' size={30}/> : <Icon source={"plus-circle-outline"} color='#007AFF' size={30}/>}
+      </Pressable>
+    )
   }
   
   const onDonePress = async () => {
@@ -229,7 +304,7 @@ async function getUserPlaylists(){
   const currDate = new Date().toISOString()
   return (
     <View className='flex-1 bg-white' style={{flexGrow: 1}}>
-     <Stack.Screen options={ { title: "" , headerBackTitleVisible : false, headerRight : () => { if(isBefore(currDate, program?.program_end_date!)){ return ( <NotificationBell /> )}}, headerStyle : {backgroundColor : "white"} } } />
+     <Stack.Screen options={ { title: "" , headerBackTitleVisible : false, headerRight : () => { if(isBefore(currDate, program?.program_end_date!)){ return ( <NotificationBell /> )} else{ return <AddToProgramsButton />}}, headerStyle : {backgroundColor : "white"} } } />
      <StatusBar barStyle={"dark-content"}/>
       <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%" }} >
           

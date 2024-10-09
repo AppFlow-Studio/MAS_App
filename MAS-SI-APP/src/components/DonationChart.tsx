@@ -177,7 +177,7 @@ const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WID
     'worklet'
 
     const index = Math.floor(e.absoluteX / stepX) - 1
-    if( index < aggregatedDataArray.length )
+    if( index < aggregatedDataArray.length && index >= 0 )
     { 
         runOnJS(setSelectedDate)(aggregatedDataArray[index].year.toString())
         selectedValue.value = withTiming(aggregatedDataArray[index].amountGiven)
@@ -192,7 +192,7 @@ const DonationChart = ( {DONATION_GOAL, CURR_DONATIONS,  CHART_HEIGHT, CHART_WID
       runOnJS(setSelectedDate)('Total')
       selectedValue.value = withTiming(totalDonations)
       const clampValue = clamp(
-          (aggregatedDataArray.length - 1) * stepX + CHART_MARGIN, 
+          (aggregatedDataArray.length) - 1 * stepX + CHART_MARGIN, 
           CHART_MARGIN, 
           maxClampValue
           )

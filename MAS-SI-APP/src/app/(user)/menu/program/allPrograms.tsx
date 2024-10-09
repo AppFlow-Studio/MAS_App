@@ -51,7 +51,7 @@ export default function ProgramsScreen(){
   const seperator = () =>{
     return (
     <View style={{ alignItems: "center", marginVertical: 3}}>
-      <Divider style={{height: 1, width: "50%",}}/>
+      <Divider style={{height: 0.5, width: "50%", backgroundColor : 'lightgray'}}/>
     </View>
   )
   }
@@ -65,7 +65,7 @@ export default function ProgramsScreen(){
         data={shownData} 
         renderItem={({item}) => <ProgramsListProgram program={item}/>}
         ItemSeparatorComponent={() => seperator()}
-        contentContainerStyle={{rowGap: 1}}
+        contentContainerStyle={{ rowGap: 1 }}
       />
       </View>
     </View>

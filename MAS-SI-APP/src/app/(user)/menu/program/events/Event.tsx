@@ -32,7 +32,7 @@ const Event = () => {
       <FlatList 
           data={eventsData}
           renderItem={({item}) => <RenderEvents event={item}/>}
-          ItemSeparatorComponent={() => <Divider style={{width: "50%", alignSelf: "center", height: 1}}/>}
+          ItemSeparatorComponent={() => <Divider style={{width: "50%", alignSelf: "center", height: 0.5, backgroundColor : 'lightgray'}}/>}
           contentContainerStyle={{rowGap: 15}}
         />
       </View>

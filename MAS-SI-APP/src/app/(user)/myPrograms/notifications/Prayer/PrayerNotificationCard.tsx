@@ -65,8 +65,9 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
         setChecked( false )
       }
       else if( selectedNotification ){
-        setSelectedNotification([...selectedNotification, index])
-        setChecked( true )
+          const setPlaylist = selectedNotification?.filter(id => id !== 3)
+          setSelectedNotification([...setPlaylist, index])
+          setChecked( true )
       }
       else{
           setSelectedNotification([index])
@@ -99,9 +100,12 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
         }
     }
   }
+
   useEffect(() => {
     getSettings()
   },[])
+
+  console.log(selectedNotification)
   return (
         <Animated.View style={[{ height : height, width : width, borderRadius : 20, shadowColor : "black", shadowOpacity : 1, shadowRadius : 1, shadowOffset : {width : 0, height : 0} }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
             <Pressable onPress={handlePress} style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center"  }]}>

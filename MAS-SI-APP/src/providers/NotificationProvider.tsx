@@ -85,6 +85,7 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
       trigger
     });
   }
+
   async function scheduleProgramPushNotifications(){
     const { data : userAddedPrograms, error : addedProgramsError } = await supabase.from('added_notifications_programs').select('*').eq('user_id', session?.user.id)
     const { data : userProgramSettings, error : userSettingsError } = await supabase.from('program_notifications_settings').select('*').eq('user_id', session?.user.id)
@@ -251,6 +252,18 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     });
     }
 
+    const testSchedule = async () => {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Time's up!",
+          body: 'Change sides!',
+        },
+        trigger: {
+          seconds: 2,
+        },
+      });
+    }
+
   useEffect(() => {
     registerForPushNotificationsAsync().then( (token : any) => savePushToken(token) );
     
@@ -265,7 +278,9 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
       Notifications.addNotificationResponseReceivedListener((response) => {
         console.log('response', response);
       });
-
+    
+    testSchedule()
+    
     return () => {
       if (notificationListener.current) {
         Notifications.removeNotificationSubscription(

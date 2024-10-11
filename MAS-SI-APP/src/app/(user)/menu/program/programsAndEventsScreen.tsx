@@ -32,11 +32,17 @@ const ThirdRoute = () => (
 const FourthRoute = () => (
   <Event />
 )
+const FifthRoute =() => (
+  <Pace />
+)
+
+
 const renderScene = SceneMap({
   first: FirstRoute,
   second: SecondRoute,
   third : ThirdRoute,
-  fourth : FourthRoute
+  fourth : FourthRoute,
+  fifth: FifthRoute
 });
 
 
@@ -127,7 +133,8 @@ const ProgramsAndEventsScreen = () => {
     { key: 'first', title: 'Upcoming' },
     { key: 'second', title: 'Kids'},
     { key: 'third', title : 'Programs & Tarbiya'},
-    { key: 'fourth', title : 'Events'}
+    { key: 'fourth', title : 'Events'},
+    { key: 'fifth', title : 'Pace Flyers'}
   ]);
   const renderTabBar = (props : any) => (
     <TabBar

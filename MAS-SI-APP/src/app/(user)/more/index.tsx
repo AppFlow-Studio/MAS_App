@@ -1,15 +1,16 @@
-import { View, Text, ScrollView, useWindowDimensions, Image, Pressable, StatusBar } from 'react-native'
+import { View, Text, ScrollView, useWindowDimensions, Image, Pressable, StatusBar,  } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import LottieView from 'lottie-react-native'
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
-import { Button, Icon } from 'react-native-paper'
+import { Button, Icon, Portal, TextInput, Modal } from 'react-native-paper'
 import { Link } from 'expo-router'
 import { Profile } from '@/src/types'
 import { useAuth } from '@/src/providers/AuthProvider'
 import { supabase } from '@/src/lib/supabase'
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import SignInAnonModal from '@/src/components/SignInAnonModal'
+import Toast from 'react-native-toast-message'
 
 const Index = () => {
   const [ profile, setProfile ] = useState<Profile>()
@@ -20,6 +21,11 @@ const Index = () => {
   const [ anonStatus, setAnonStatus ] = useState(true)
   const tabBarHeight = useBottomTabBarHeight() + 60
   const spin = useSharedValue(0)
+    const [ profileFirstName , setProfileFirstName ] = useState('')
+  const [ profileLastName , setProfileLastName ] = useState('')
+  const [ profileEmail, setProfileEmail ] = useState('')
+    const [loading, setLoading] = useState(true)
+    const [editProfileVisible, setEditProfileVisible] = React.useState(false);
   const flip = useAnimatedStyle(() => {
     const spinVal = interpolate(spin.value, [0, 1], [0, 360])
     return{
@@ -57,6 +63,21 @@ const Index = () => {
   useEffect(() => {
     checkIfAnon()
   }, [session])
+  const hideModal = () => setEditProfileVisible(false);
+  const onConfirmButton =() => {
+    Toast.show({
+      type: 'success',
+      text1: "Profile are Sccussfully Edited",
+      position: 'top',
+      topOffset : 50,
+      visibilityTime: 2000,
+    });
+    setEditProfileVisible(false);
+    setProfileFirstName('');
+    setProfileLastName('');
+    setProfileEmail('');
+
+  }
   return (
     <ScrollView className='bg-white pt-[18%] h-[100%]'>
       <StatusBar barStyle={'dark-content'}/>
@@ -78,7 +99,7 @@ const Index = () => {
               <Text>{profile?.profile_email}</Text>
             </View>
             <View className='pt-2'>
-              <Button mode='contained' buttonColor='#007AFF' textColor='white' className='w-[150]'>Edit Profile</Button>
+              <Button mode='contained' buttonColor='#007AFF' textColor='white' className='w-[150]' onPress={()=> setEditProfileVisible(true)}>Edit Profile </Button>
             </View>
           </View>
       </View>
@@ -241,6 +262,61 @@ const Index = () => {
           </View>
       </View>
       <SignInAnonModal visible={visible} setVisible={setVisible}/>
+      <View style={[{paddingBottom : tabBarHeight}]}></View>
+      <Portal>
+      <Modal  visible={editProfileVisible} onDismiss={hideModal} contentContainerStyle={{
+          height : '60%',
+          width : '95%',
+          borderRadius : 10,
+          backgroundColor : 'white',
+          alignSelf : 'center',
+          alignItems : 'center'
+               }}>
+                <View className='flex-col'>
+                  <View>
+                    <Text className='text-center font-bold text-3xl'>Edit Profile </Text>
+                  </View>
+                  <View>
+                    <Text className='mt-2 mb-1 ml-3'>Enter Your First Name</Text>
+                    <TextInput
+                    mode='outlined'
+                    theme={{ roundness : 50 }}
+                    style={{ width: 300, backgroundColor: "#e8e8e8", height: 45 }}
+                    activeOutlineColor='#0D509D'
+                    value={profileFirstName}
+                    onChangeText={setProfileFirstName}
+                    placeholder="First Name"
+                    textColor='black'
+                    />
+                    <Text className='mt-2 mb-1 ml-3'>Enter Your Last Name</Text>
+                  <TextInput
+                    mode='outlined'
+                    theme={{ roundness : 50 }}
+                    style={{ width: 300, backgroundColor: "#e8e8e8", height: 45, }}
+                    activeOutlineColor='#0D509D'
+                    value={profileLastName}
+                    onChangeText={setProfileLastName}
+                    placeholder="Last Name"
+                    textColor='black'
+                    />
+                  <Text className='mt-2 mb-1 ml-3'>Enter Your Email</Text>
+                  <TextInput
+                    mode='outlined'
+                    theme={{ roundness : 50 }}
+                    style={{ width: 300, backgroundColor: "#e8e8e8", height: 45 }}
+                    activeOutlineColor='#0D509D'
+                    value={profileEmail}
+                    onChangeText={setProfileEmail}
+                    placeholder="Email"
+                    textColor='black'
+                    />
+                  </View>
+                  <View className='self-center'>
+                    <Button  mode='contained' buttonColor='#57BA47' textColor='white' className='w-[300] h-15 mt-8' onPress={onConfirmButton}>Submit</Button>
+                  </View>
+                  </View>
+              </Modal>
+              </Portal>
     </ScrollView>
   )
 }

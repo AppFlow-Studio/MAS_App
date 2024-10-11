@@ -36,7 +36,7 @@ const PaceLecture = () => {
     }
     const array = [1,2,3,4,5]
     return(
-      <View className='items-center bg=[#fafafa]'>
+      <View className='items-center bg=[#ededed]'>
       
       <View className='mt-2'/>
         <ScrollView 
@@ -57,7 +57,7 @@ const PaceLecture = () => {
   }
   const LectureAISummay = () => {
     return(
-      <ScrollView className='flex-1' contentContainerStyle={{ alignItems : "center", backgroundColor : "#fafafa" }}>
+      <ScrollView className='flex-1' contentContainerStyle={{ alignItems : "center", backgroundColor : "#ededed" }}>
       <View className='flex-col items-center mt-3'>
           <Text className='font-bold text-black text-2xl text-center'>Pace 1</Text>
           <Text className='font-bold text-gray-400'>Dr.Zakir Naki</Text>
@@ -98,7 +98,7 @@ const PaceLecture = () => {
       <YoutubePlayer 
         height={layoutHeight / 4}
         width={layout * 0.98}
-        webViewStyle={{ borderRadius : 20, marginLeft : '2%', marginTop : 8, backgroundColor : "#fafafa" }}
+        webViewStyle={{ borderRadius : 20, marginLeft : '2%', marginTop : 8, backgroundColor : "#ededed" }}
         play={playing}
         videoId={'https://youtu.be/9xwazD5SyVg'}
         onChangeState={onStateChange}
@@ -110,7 +110,7 @@ const PaceLecture = () => {
         onIndexChange={setIndex}
         initialLayout={{ width: layout }}
         renderTabBar={renderTabBar}
-        style={{ backgroundColor : "#fafafa"}}
+        style={{ backgroundColor : "#ededed"}}
       />
   
     </>

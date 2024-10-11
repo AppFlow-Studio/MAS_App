@@ -5,12 +5,14 @@ import { Icon, Button, Divider } from 'react-native-paper';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { initializePaymentSheet, openPaymentSheet } from '@/src/lib/stripe';
+import { router } from 'expo-router';
 type Ref = BottomSheetModal
 type CheckoutSheetProp = {
     promo : string
 }
 const CheckoutSheet = forwardRef<Ref, CheckoutSheetProp>(({promo}, ref) => {
     const snapPoints = useMemo(() => ["25%"], []);
+    const [ checkoutOn, setCheckoutOn ] = useState(true)
     const { session } = useAuth()
     const [ subTotal, setSubTotal ] = useState(0)
     const renderBackDrop = useCallback( (props : any ) => <BottomSheetBackdrop appearsOnIndex={0} disappearsOnIndex={-1} {...props}/> , [])
@@ -27,9 +29,27 @@ const CheckoutSheet = forwardRef<Ref, CheckoutSheetProp>(({promo}, ref) => {
         }
     }
     const checkout = async () => {
-        await initializePaymentSheet(subTotal)
-        await openPaymentSheet
-    }
+        setCheckoutOn(false)
+        await initializePaymentSheet(subTotal * 100)
+        const paymentSucess = await openPaymentSheet()
+        if( paymentSucess ){
+            const { data : cart, error : cartError } = await supabase.from('user_cart').select('*').eq('user_id', session?.user.id)
+            const { data : profile, error : profileError } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single()
+            const { error : emailError } = await supabase.functions.invoke('purchase-confirmation-email', { body : { cart : cart, profile : profile, amount : subTotal }})
+            if( emailError ){
+                console.log(emailError)
+            }else{
+                const { error } = await supabase.from('user_cart').delete().eq('user_id', session?.user.id)
+                router.back()
+            }
+            console.log('Payment went through')
+        }
+        if( !paymentSucess) {
+            console.log('Payment fail')
+        }
+       
+        setCheckoutOn(true)
+    }   
     useEffect(() => {
         getTotal()
         const cart = supabase.channel('Cart changes')
@@ -73,7 +93,7 @@ const CheckoutSheet = forwardRef<Ref, CheckoutSheetProp>(({promo}, ref) => {
                     <Text className='text-xl text-gray-400'>Total:</Text>
                     <Text className='text-xl font-bold'>${subTotal}</Text>
                 </View>
-                <Pressable  style={{ backgroundColor : '#57BA47', flexDirection : 'column', justifyContent : 'center', alignItems : 'center', borderRadius : 20, height: 40}} onPress={checkout} >
+                <Pressable  style={{ backgroundColor : '#57BA47', flexDirection : 'column', justifyContent : 'center', alignItems : 'center', borderRadius : 20, height: 40}} onPress={checkout} disabled={!checkoutOn}>
                     <Text className='text-white font-bold text-xl'>Pay Now</Text>
                 </Pressable>
             </View>

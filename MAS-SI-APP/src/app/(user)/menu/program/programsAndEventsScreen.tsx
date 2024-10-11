@@ -139,7 +139,7 @@ const ProgramsAndEventsScreen = () => {
   const renderTabBar = (props : any) => (
     <TabBar
       {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "45%", width : "20%", left : "2.5%", borderRadius : 20  }}
+      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "45%", width : "15%", left : "2.5%", borderRadius : 20  }}
       style={{ backgroundColor: '#0D509D', width : "100%", alignSelf : "center", paddingTop : '15%'}}
       labelStyle={{ color : "white", fontWeight : "bold", textAlign :'center' }}
       scrollEnabled

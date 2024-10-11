@@ -64,19 +64,19 @@ const Index = () => {
     checkIfAnon()
   }, [session])
   const hideModal = () => setEditProfileVisible(false);
-  const onConfirmButton =() => {
+  const onConfirmButton = async () => {
     Toast.show({
       type: 'success',
-      text1: "Profile are Sccussfully Edited",
+      text1: "Profile are Sucessfully Edited",
       position: 'top',
       topOffset : 50,
       visibilityTime: 2000,
     });
+    const { error } = await supabase.from('profiles').update({ first_name : profileFirstName, last_name : profileLastName, profile_email : profileEmail }).eq('id', session?.user.id)
     setEditProfileVisible(false);
     setProfileFirstName('');
     setProfileLastName('');
     setProfileEmail('');
-
   }
   return (
     <ScrollView className='bg-white pt-[18%] h-[100%]'>

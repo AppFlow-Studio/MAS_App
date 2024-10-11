@@ -67,6 +67,7 @@ const ProgramInfo = () => {
     const handleBuyNow = async () => {
       await initializePaymentSheet(Math.floor(program?.program_price! * 100))
       await openPaymentSheet()
+    
     }
 
     const addToCart = async () => {
@@ -122,13 +123,13 @@ const ProgramInfo = () => {
                     }
                   }) : <></>}
                   <View className='px-3 w-[100%] pt-3'>
-                      <Button mode='contained' style={{ backgroundColor : "#57BA47", }} icon={ () => <Icon source={"cart-outline"} size={20} color={ buttonOn ? 'white' : 'gray'} />} onPress={handlePresentModalPress} disabled={!buttonOn} >Add to Cart</Button>
+                      <Button mode='contained' style={{ backgroundColor : "#57BA47", }} icon={ () => <Icon source={"cart-outline"} size={20} color={ buttonOn ? 'white' : 'gray'} />} onPress={handlePresentModalPress} disabled={!buttonOn} textColor='white'>Add to Cart</Button>
                   </View>
             </ScrollView>
           </>
           ) : (
            <View className='px-3 w-[100%] pt-3'>
-            <Button mode='contained' style={{ backgroundColor : "#57BA47", }} icon={ () => <Icon source={"cart-outline"} size={20} color={ buttonOn ? 'white' : 'gray'} />} onPress={handlePresentModalPress} disabled={!buttonOn} >Add to Cart</Button>
+            <Button mode='contained' style={{ backgroundColor : "#57BA47", }} icon={ () => <Icon source={"cart-outline"} size={20} color={ buttonOn ? 'white' : 'gray'} />} onPress={handlePresentModalPress} disabled={!buttonOn} textColor='white'>Add to Cart</Button>
           </View>
           )
           }

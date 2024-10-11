@@ -12,7 +12,7 @@ const Event = () => {
   const [ eventsData, setEventsData ] = useState<EventsType[]>()
   const [ searchBarInput, setSearchBarInput ] = useState("")
   const  fetchEventsData =  async () => {
-    const { data, error } = await supabase.from("events").select("*").eq("has_lecture", true)
+    const { data, error } = await supabase.from("events").select("*").eq("has_lecture", true).eq('pace', false)
     if( error ) {
       console.log(error)
     }

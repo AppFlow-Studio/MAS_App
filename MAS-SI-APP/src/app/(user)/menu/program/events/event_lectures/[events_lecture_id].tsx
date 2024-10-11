@@ -59,7 +59,7 @@ const EventsLectureID = () => {
       }
       const array = [1,2,3,4,5]
       return(
-        <View className='items-center bg=[#fafafa]'>
+        <View className='items-center bg=[#ededed]'>
         
         <View className='mt-2'/>
           <ScrollView 
@@ -105,7 +105,7 @@ const EventsLectureID = () => {
     }
     const LectureAISummay = () => {
       return(
-        <ScrollView className='flex-1' contentContainerStyle={{ alignItems : "center", backgroundColor : "#fafafa" }}>
+        <ScrollView className='flex-1' contentContainerStyle={{ alignItems : "center",  backgroundColor : "#ededed"}}>
         <View className='flex-col items-center mt-3'>
             <Text className='font-bold text-black text-2xl text-center'>{currentLecture?.event_lecture_name}</Text>
             <Text className='font-bold text-gray-400'>{currentLecture?.event_lecture_speaker}</Text>
@@ -157,7 +157,7 @@ const EventsLectureID = () => {
     }
   
     return(
-      <>
+      <View className='flex-1 bg-[#ededed]'>
           <Stack.Screen options={{ title : currentLecture?.event_lecture_name, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white'} }} />
           <YoutubePlayer 
             height={layoutHeight / 4}
@@ -191,10 +191,10 @@ const EventsLectureID = () => {
           onIndexChange={setIndex}
           initialLayout={{ width: layout }}
           renderTabBar={renderTabBar}
-          style={{ backgroundColor : "#fafafa"}}
+          style={{  backgroundColor : "#ededed" }}
         />
       
-      </>
+      </View>
     )
 }
 

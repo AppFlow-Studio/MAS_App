@@ -2,19 +2,22 @@ import { Image, StyleSheet, Text, View } from 'react-native'
 import React from 'react'
 import { TouchableOpacity } from 'react-native'
 import { Link } from 'expo-router'
-
-const PaceFlyers = () => {
+import { EventsType } from '@/src/types'
+type PaceFlyersProp = {
+  pace : EventsType
+}
+const PaceFlyers = ({pace} : PaceFlyersProp) => {
   return (
     <View>
-      <Link  href={`/menu/program/pace/PaceFlyerDetails`} asChild>
+      <Link  href={`/menu/program/pace/${pace.event_id}`} asChild>
         <TouchableOpacity>
             <View className='flex-row item-center justify-center'>
-                    <Image source={{uri:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQg_7JzUkZJrybZdO44EKshHqhwmcWj7dKdFA&s'}}     
+                    <Image source={{uri: pace.event_img}}     
                     style={{width: 130, height: 100, objectFit: "fill", borderRadius: 8}}
                />
                       <View className='mt-2 items-center justify-center bg-white' style={{ borderRadius: 20, marginLeft: "10%", width: 200}}>
-                          <Text style={{textAlign: "center", fontWeight: "bold"}}>Pace Name </Text>
-                          <Text style={{textAlign: "center"}}>By: DR Zakir Naike</Text>
+                          <Text style={{textAlign: "center", fontWeight: "bold"}}>{pace.event_name}</Text>
+                          <Text style={{textAlign: "center"}}>By: {pace.event_speaker}</Text>
                       </View>
                 </View>
                </TouchableOpacity>

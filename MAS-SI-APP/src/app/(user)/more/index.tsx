@@ -91,12 +91,12 @@ const Index = () => {
             style={[{ width : 100, height : 100, borderRadius : 50, borderColor : "yellow", borderWidth : 2 }, flip]}
           />
         </Pressable>
-        <View className='flex-col mt-1'>
-            <View className='bg-white p-1 rounded-xl border-2'>
-              <Text>{profile?.first_name}</Text>
+        <View className='flex-col mt-1 items-center'>
+            <View className='bg-white p-2 rounded-xl border-2'>
+              <Text numberOfLines={1}>{profile?.first_name} {profile?.last_name}</Text>
             </View>
-            <View className='bg-white p-1 rounded-xl border-2 mt-3'>
-              <Text>{profile?.profile_email}</Text>
+            <View className='bg-white p-2 rounded-xl border-2 mt-3'>
+              <Text numberOfLines={1}>{profile?.profile_email}</Text>
             </View>
             <View className='pt-2'>
               <Button mode='contained' buttonColor='#007AFF' textColor='white' className='w-[150]' onPress={()=> setEditProfileVisible(true)}>Edit Profile </Button>

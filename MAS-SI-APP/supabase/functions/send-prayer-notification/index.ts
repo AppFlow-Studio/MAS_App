@@ -7,6 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import {Expo} from 'https://esm.sh/expo-server-sdk';
 console.log("Hello from Functions!")
+
 serve(async (req) => {
   const prayer_push_token = Deno.env.get('EXPO_PUBLIC_PRAYER_PUSH_TOKEN')
 

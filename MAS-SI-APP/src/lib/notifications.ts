@@ -35,6 +35,7 @@ async function sendPushNotification(
   });
 }
 
+
 export async function registerForPushNotificationsAsync() {
   let token;
 

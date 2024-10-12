@@ -188,7 +188,6 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
               <View className='bg-white' style={{paddingBottom : Tab * 3}}>
                 <Text className='text-center mt-2 text-xl text-black font-bold'>{event_name}</Text>
                 <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{event_speaker}</Text>
-                  <View className='ml-3'>
                     {
                         eventLectures ? eventLectures.map((item, index) => {
                             return (
@@ -199,7 +198,6 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
                             )
                         }) : <></>
                     }
-                  </View>
               </View>
     
               <Portal>

@@ -2,6 +2,7 @@ import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { ExpoPushToken, NotificationTriggerInput } from 'expo-notifications';
 import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
+import * as TaskManager from 'expo-task-manager';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
 import { format, setHours, setMinutes, subMinutes } from 'date-fns';
@@ -252,6 +253,7 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     });
     }
 
+
     const testSchedule = async () => {
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -299,5 +301,6 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
 
   return <>{children}</>;
 };
+
 
 export default NotificationProvider;

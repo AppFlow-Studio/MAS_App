@@ -292,6 +292,7 @@ export default function homeScreen() {
                 })
               })
             }}>Test</Button>
+            <Button onPress={ async () => await supabase.functions.invoke('send-prayer-notification')}>Test Push</Button>
           <Link href={'/menu/program'} asChild>
             <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
               <Text className='font-bold text-2xl text-[#0D509D]' style={{textShadowColor: "light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 0.6}} >Weekly Programs</Text>

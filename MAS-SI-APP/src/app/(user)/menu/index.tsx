@@ -228,6 +228,7 @@ export default function homeScreen() {
                           if( setting.prayer == 'fajr' ){
                             const nextPrayerInfo = data.filter(e => e.prayer_name == 'zuhr')
                             const nextPrayerTime = nextPrayerInfo[0].athan_time
+                            
                             const date = new Date(nextPrayerTime);
                            // Subtract 30 minutes (30 * 60 * 1000 milliseconds)
                             date.setTime(date.getTime() - 30 * 60 * 1000);

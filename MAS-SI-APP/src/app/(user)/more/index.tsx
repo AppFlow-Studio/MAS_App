@@ -126,6 +126,33 @@ const Index = () => {
                 </Pressable>
               </Link>
             </Pressable>
+            <Link href={"/more/Admin/AdminScreen"} asChild>
+            <Pressable className='w-[100%] bg-gray-50  mt-5 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>
+                  <View className='flex-row items-center justify-between px-1 w-[100%]'>
+                    <Text className=' text-gray-400'>Admin Button</Text>
+                  </View>
+                  <View className='flex-row w-[100%] items-center justify-between pt-1'>
+                    <View  className='flex-row items-center'>
+                      <View style={{ borderWidth : 3, borderColor : '#E0E0E0', borderRadius : 50 ,backgroundColor : '#E0E0E0' }}>
+                        <Icon source={"bell-outline"} size={25} color='#BDBDBD'/>
+                      </View>
+                      <Text className='text-2xl font-semibold ml-1'>Admin</Text>
+                   </View>
+                  </View>
+                  <View className='w-[100%] flex-col'>
+                    <Pressable className='p-1 flex-row items-center justify-between pt-1'>
+                      <Text className=' text-gray-400'>Send to Everyone</Text>
+                      <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
+                    </Pressable>
+
+                    <Pressable className='p-1 flex-row items-center justify-between'>
+                      <Text className=' text-gray-400'>Programs and Events</Text>
+                      <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
+                    </Pressable>
+                  </View>
+              </Pressable>
+              </Link>
+
             <Link href={"/more/Donation"} asChild>
               <Pressable className='w-[100%] bg-gray-50  mt-5 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>
                 <View className='flex-row items-center justify-between px-1 w-[100%]'>

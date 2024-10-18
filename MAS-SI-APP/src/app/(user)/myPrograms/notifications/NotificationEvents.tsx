@@ -138,7 +138,7 @@ const NotificationEvents = () => {
   const layout = useWindowDimensions().width
   const tabBarHeight = useBottomTabBarHeight()
   const getAddedEvents = async () => {
-    const { data ,error } = await supabase.from("added_notifications").select("*").eq("user_id", session?.user.id).order("created_at", { ascending : false })
+    const { data ,error } = await supabase.from("added_notifications_events").select("*").eq("user_id", session?.user.id).order("created_at", { ascending : false })
     if( error ){
         console.log( error)
     }
@@ -169,7 +169,7 @@ const NotificationEvents = () => {
         {
           event: '*',
           schema : "public",
-          table: "added_notifications",
+          table: "added_notifications_events",
           filter:`user_id=eq.${session?.user.id}`
 
         },

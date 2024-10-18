@@ -117,6 +117,8 @@ export type EventsType = {
     is_kids : boolean
     is_fourteen_plus : boolean
     is_education : boolean
+    event_start_date : string
+    event_end_date: string
 }
 
 export type EventLectureType = {

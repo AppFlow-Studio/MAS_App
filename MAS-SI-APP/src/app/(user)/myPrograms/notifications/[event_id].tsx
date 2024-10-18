@@ -9,6 +9,7 @@ import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewO
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import NotificationCard from './NotificationCard'
 import { Icon } from 'react-native-paper'
+import NotificationEventCard from './NotificationEventCard'
 const NotificationEventSettings = () => {
   const { event_id } = useLocalSearchParams()
   const { session } = useAuth()
@@ -57,11 +58,11 @@ const NotificationEventSettings = () => {
     getProgram()
   },[])
 
-  const array = [ 1, 2, 3, 4, 5, 6]
+  const array = [ 1, 2, 3]
   return (
     <View className='flex-1 bg-white' style={{flexGrow: 1}}>
      <StatusBar barStyle={"dark-content"}/>
-     <Stack.Screen options={{ title : ''}}/>
+     <Stack.Screen options={{ title : '',  headerStyle : {backgroundColor : "white"}}}/>
       <Animated.ScrollView 
       ref={scrollRef}  
       scrollEventThrottle={16} 
@@ -89,7 +90,7 @@ const NotificationEventSettings = () => {
                 return(
                   <View className='flex-col'>
                     <View className='flex-row items-center justify-center'>
-                      <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification}/>
+                      <NotificationEventCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} event_id={event_id}/>
                     </View>
                     <View style={{height : 10}}/>
                   </View>

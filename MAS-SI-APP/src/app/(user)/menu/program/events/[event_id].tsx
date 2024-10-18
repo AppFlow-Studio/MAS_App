@@ -10,6 +10,7 @@ import { Stack } from 'expo-router'
 import Toast from 'react-native-toast-message'
 import { useAuth } from '@/src/providers/AuthProvider'
 import * as Haptics from 'expo-haptics'
+import { isBefore } from 'date-fns'
 const EventInfo = () => {
   const { session } = useAuth()
   const navigation = useNavigation<any>()
@@ -19,6 +20,10 @@ const EventInfo = () => {
   const [ eventInNotification, setEventInNotification ] = useState(false)
   const fetchEventInfo = async () => {
     const { data , error } = await supabase.from("events").select("*").eq("event_id", event_id).single()
+    const { data : InNotifications, error : InNotificationsError } = await supabase.from('added_notifications_events').select('*').eq('event_id', event_id).eq('user_id', session?.user.id)
+    if( InNotifications ){
+      setEventInNotification(true)
+    }
     if( error ){
         console.log(error)
     }
@@ -41,31 +46,21 @@ const EventInfo = () => {
         navigation.navigate('myPrograms', { screen : 'notifications/[event_id]', params : { event_id : event_id}, initial: false  })
       }
       Toast.show({
-        type : 'addProgramToNotificationsToast',
+        type : 'addEventToNotificationsToast',
         props : { props : eventInfoData, onPress : goToProgram },
         position : 'top',
         topOffset : 50,
       })
     }
-    const addToProgramsNoti = () => {
-      const goToProgram = () => {
-        navigation.navigate('myPrograms')
-      }
-      Toast.show({
-        type : 'ProgramAddedToPrograms',
-        props : { props : eventInfoData, onPress : goToProgram },
-        position : 'top',
-        topOffset : 50,
-      })
-    }
+
      const handlePress = async () => {
       if( eventInNotification ) {
-        const { error } = await supabase.from("added_notifications_programs").delete().eq("user_id" , session?.user.id).eq("program_id", event_id)
-        const { error : settingsError } = await supabase.from('program_notifications_settings').delete().eq('user_id', session?.user.id).eq("program_id", event_id)
+        const { error } = await supabase.from("added_notifications_events").delete().eq("user_id" , session?.user.id).eq("event_id", event_id)
+        const { error : settingsError } = await supabase.from('event_notification_settings').delete().eq('user_id', session?.user.id).eq("event_id", event_id)
         setEventInNotification(false)
       }
       else{
-        const { error } = await supabase.from("added_notifications_programs").insert({user_id :session?.user.id, program_id : event_id})
+        const { error } = await supabase.from("added_notifications_events").insert({user_id :session?.user.id, event_id : event_id})
         if( error ){
           console.log(error)
         }
@@ -85,7 +80,7 @@ const EventInfo = () => {
      )
     }
 
-    
+  const currDate = new Date().toISOString()
   return (
     <>
        <Stack.Screen options={{ headerBackTitleVisible : false, title : "", headerStyle : {backgroundColor : "white"}, headerRight : () => <NotificationBell /> }}/>

@@ -13,8 +13,8 @@ const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
 const supabaseKey = Deno.env.get('EXPO_PUBLIC_SUPABASE_ANON');
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const schedule_notification = async ( user_id, push_notification_token, program_id, message, notification_type, program_name, notification_time ) => {
-  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, program_id : program_id, message : message, notification_type : notification_type, program_name : program_name, notification_time : notification_time})
+const schedule_notification = async ( user_id, push_notification_token, message, notification_type, program_event_name, notification_time ) => {
+  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, message : message, notification_type : notification_type, program_event_name : program_event_name, notification_time : notification_time})
   if( error ){
     console.log(error)
   }
@@ -47,6 +47,7 @@ serve(async (req) => {
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
     const { data : UserSettings, error : UserSettingsError } = await supabase.from('program_notifications_settings').select('*')
+    const { data : UserSettingsEvents, error : UserSettingsEventsError } = await supabase.from('event_notification_settings').select('*')
     const UserSignedUpPrograms : any[] = [{
       id: 3,
       program_id: "e09db866-71af-407a-968d-672c55d807b7",
@@ -65,6 +66,8 @@ serve(async (req) => {
       program_start_time: "10:45:00",
       program_days: [ "Thursday" ]
     }]
+    const UserSignedUpEvents : any[] = []
+
     if( UserSettings ){
       await Promise.all(UserSettings.map( async ( program ) => {
         console.log(program)
@@ -97,7 +100,7 @@ serve(async (req) => {
                       
                       // schedule notification
                       const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                      await schedule_notification(program.user_id, user_push_token.push_notification_token, program.program_id, `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)  
+                      await schedule_notification(program.user_id, user_push_token.push_notification_token, `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)  
                     }
                   }) 
                 )
@@ -106,12 +109,12 @@ serve(async (req) => {
               if( program_days.includes( daysOfWeek[day-1] ) ){
                 if( setting == 'When Program Starts' ){
                   const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                  await schedule_notification(program.user_id, user_push_token.push_notification_token, program.program_id, `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
+                  await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
                 }
                 else if( setting == '30 Mins Before' ){
                   const start_time = setTimeToCurrentDate(program_info.program_start_time)
                   start_time.setMinutes(start_time.getMinutes() - 30)
-                  await schedule_notification(program.user_id, user_push_token.push_notification_token, program.program_id, `${program_info.program_name} is Starting in 30 Mins!`, '30 Mins Before', program_info.program_name, start_time)
+                  await schedule_notification(program.user_id, user_push_token.push_notification_token, `${program_info.program_name} is Starting in 30 Mins!`, '30 Mins Before', program_info.program_name, start_time)
                 }
               }
               else{
@@ -141,7 +144,7 @@ serve(async (req) => {
                   if( day - 1 == ( program_day - 1 % 7 ) ){
                     // schedule notification
                     const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                    await schedule_notification(program.user_id, user_push_token.push_notification_token, program.program_id, `${program_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', program_info.program_name, start_time)  
+                    await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', program_info.program_name, start_time)  
                   }
                 }) 
               )
@@ -150,13 +153,112 @@ serve(async (req) => {
             if( program_days.includes( daysOfWeek[day-1] ) ){
               if( setting == 'When Program Starts' ){
                 const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                await schedule_notification(program.user_id, user_push_token.push_notification_token, program.program_id, `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
+                await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
               }
               else if( setting == '30 Mins Before' ){
                 const start_time = setTimeToCurrentDate(program_info.program_start_time)
                 start_time.setMinutes(start_time.getMinutes() - 30)
-                await schedule_notification(program.user_id, user_push_token.push_notification_token, program.program_id, `${program_info.program_name} is Starting in 30 Mins!`, '30 Mins Before', program_info.program_name, start_time)
+                await schedule_notification(program.user_id, user_push_token.push_notification_token, `${program_info.program_name} is Starting in 30 Mins!`, '30 Mins Before', program_info.program_name, start_time)
               }
+            }
+            else{
+              return
+            }
+        }))
+        } 
+
+      }))
+    }
+
+    if( UserSettingsEvents ){
+       await Promise.all(UserSettingsEvents.map( async ( event ) => {
+        console.log(event)
+        const { data : user_push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', event.user_id).single()
+        console.log('User Push Token', user_push_token)
+        if( !user_push_token ){
+          return
+        }
+        // if program dosnt exist in usersignedupprograms call it and get its info 
+        if( !UserSignedUpEvents.some(e => e.event_id == event.event_id) ){
+          console.log(UserSignedUpPrograms)
+          // Get Program Info and Current Day 
+          const { data : event_info, error } = await supabase.from('events').select('*').eq('event_id', event.event_id).single() 
+          console.log(event_info)
+          const currentDate = new Date()
+          const day = currentDate.getDay()
+          console.log('Current Day: ', day)
+          const event_days = event_info.event_days
+          console.log('program days', event_days)
+          // Run Through User Settings for this program
+          await Promise.all(event.notification_settings.map( async ( setting : string ) => {
+
+              if( setting == 'Day Before' ){
+                console.log('program days', event_days)
+                await Promise.all( event_days.map( async ( days : string ) => {
+                    const event_day = daysOfWeek.indexOf(days)
+                    console.log('curr day', day - 1)
+                    console.log(event_day - 1 % 7, days )
+                    if( day - 1 == ( event_day - 1 % 7 ) ){
+                      
+                      // schedule notification
+                      const start_time = setTimeToCurrentDate(event_info.program_start_time)
+                      await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.program_name} is Starting Now!`, 'When Program Starts', event_info.program_name, start_time)  
+                    }
+                  }) 
+                )
+              } 
+
+              if( event_days.includes( daysOfWeek[day-1] ) ){
+                if( setting == 'When Program Starts' ){
+                  const start_time = setTimeToCurrentDate(event_info.event_start_time)
+                  await schedule_notification(event.user_id, user_push_token.push_notification_token,`${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
+                }
+                else if( setting == '30 Mins Before' ){
+                  const start_time = setTimeToCurrentDate(event_info.event_start_time)
+                  start_time.setMinutes(start_time.getMinutes() - 30)
+                  await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting in 30 Mins!`, '30 Mins Before', event_info.event_name, start_time)
+                }
+              }
+              else{
+                return
+              }
+          }))
+          UserSignedUpEvents.push(event_info)
+        }
+
+        else{
+          const event_info_array = UserSignedUpEvents.filter(obj => {
+            return obj.event_id == event.event_id
+          })
+          console.log(event_info_array)
+          const event_info = event_info_array[0]
+          await Promise.all(event.notification_settings.map( async ( setting : string ) => {
+            const event_days = event_info.event_days
+            const currentDate = new Date()
+            const day = currentDate.getDay()
+            if( setting == 'Day Before' ){           
+              await Promise.all( event_days.map( async ( days : string ) => {
+                  const event_day = daysOfWeek.indexOf(days)
+                  console.log('curr day', day - 1)
+                  console.log(event_day - 1 % 7, days )
+                  if( day - 1 == ( event_day - 1 % 7 ) ){
+                    // schedule notification
+                    const start_time = setTimeToCurrentDate(event_info.event_start_time)
+                    await schedule_notification(event.user_id, user_push_token.push_notification_token, event.event_id, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
+                  }
+                }) 
+              )
+            }
+
+            if( event_days.includes( daysOfWeek[day-1] ) ){
+              if( setting == 'When Program Starts' ){
+                  const start_time = setTimeToCurrentDate(event_info.event_start_time)
+                  await schedule_notification(event.user_id, user_push_token.push_notification_token, event.event_id, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
+              }
+              else if( setting == '30 Mins Before' ){
+                const start_time = setTimeToCurrentDate(event_info.event_start_time)
+                start_time.setMinutes(start_time.getMinutes() - 30)
+                await schedule_notification(event.user_id, user_push_token.push_notification_token, event.event_id, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)              }
             }
             else{
               return

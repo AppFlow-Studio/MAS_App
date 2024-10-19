@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import React, { useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 
@@ -9,10 +9,9 @@ const SendToEveryoneScreen = () => {
   const totalUsers = 1000;
 
   const hideModal = () => setPreviewModal(false);
-  const sendNotification = () =>{
-    setPreviewModal(!previewModal),
-    setNotificationMessage('')
-  }
+  const sendNotification = () => {
+    setPreviewModal(!previewModal), setNotificationMessage("");
+  };
   return (
     <View
       style={{
@@ -57,32 +56,50 @@ const SendToEveryoneScreen = () => {
           onDismiss={hideModal}
           contentContainerStyle={{
             height: "55%",
-            width: "95%",
+            width: '95%',
             borderRadius: 10,
             backgroundColor: "white",
             alignSelf: "center",
             alignItems: "center",
-            justifyContent:'flex-start',
-            paddingTop:'5%',
-            paddingHorizontal:'2%'
-
+            justifyContent: "flex-start",
+            paddingTop: "5%",
+            paddingHorizontal: "2%",
           }}
         >
           <View>
-              <Text className="font-bold text-3xl">Preview Notification </Text>
+            <Text className="font-bold text-3xl">Preview Notification </Text>
             <View
               style={{
-                height: 250,
+                width: 340,
+                height: "30%",
                 marginTop: "4%",
-                borderColor:'gray',
-                borderWidth:2,
-                borderRadius:4,
-                padding:'3%'
+                borderColor: "gray",
+                borderWidth: 2,
+                borderRadius: 10,
+                padding: "3%",
+                flexDirection: "row",
+                alignItems: "center",
               }}
             >
-              <Text className="text-base font-bold w-80 ">{notificationMessage}</Text>
+              <Image
+                source={{
+                  uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
+                }}
+                className="h-14 w-12"
+              />
+              <View className="px-4">
+                <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
+                  <Text className="text-lg font-bold">MAS</Text>
+                  <Text className="text-gray-400">Yesterday, 10:20PM</Text>
+                </View>
+                <View style={{width:'90%'}} >
+                <Text numberOfLines={2} className="text-base text-black">{notificationMessage}</Text>
+                </View>
+              </View>
             </View>
-            <Text className="self-end mt-1 font-bold">Total Users: {totalUsers}</Text>
+            <Text className="self-end mt-1 font-bold">
+              Total Users: {totalUsers}
+            </Text>
             <View className="self-center">
               <Button
                 mode="contained"

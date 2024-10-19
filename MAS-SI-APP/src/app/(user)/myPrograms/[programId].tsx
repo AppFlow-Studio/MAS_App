@@ -223,7 +223,4 @@ const programLectures = () => {
 }
 
 
-const styles={
-  programImageStyle: "h-200 w-300"
-}
 export default programLectures

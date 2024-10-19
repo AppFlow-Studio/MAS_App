@@ -109,7 +109,10 @@ const BusinessAds = () => {
             const personalInfo = methods.getValues()
             const businessInfo = businessMethods.getValues()
             if( business_flyer_url ) {
-                const { data, error } = await supabase.from('business_ads_submissions').insert({'personal_full_name' : personalInfo.name, 'personal_phone_number' : personalInfo.phoneNumber, 'personal_email' : personalInfo.email, 'business_name': businessInfo.businessName, 'business_address' : businessInfo.address, 'business_phone_number': businessInfo.businessPhoneNumber, 'business_email' : businessInfo.businessEmail,  'business_flyer_duration' : selectedDuration[0], 'business_flyer_img' : business_flyer_url.publicUrl, user_id : session?.user.id })
+                const onApprove = async () => {
+                    const { error } = await supabase.from('business_ads_submissions').update({ status : 'APPROVED' }).eq('business_flyer_img', business_flyer_url.publicUrl)
+                }
+                const { data, error } = await supabase.from('business_ads_submissions').insert({'personal_full_name' : personalInfo.name, 'personal_phone_number' : personalInfo.phoneNumber, 'personal_email' : personalInfo.email, 'business_name': businessInfo.businessName, 'business_address' : businessInfo.address, 'business_phone_number': businessInfo.businessPhoneNumber, 'business_email' : businessInfo.businessEmail,  'business_flyer_duration' : selectedDuration[0], 'business_flyer_img' : business_flyer_url.publicUrl, user_id : session?.user.id, onApprove : onApprove })
                 if( error ){
                     console.log(error)
                 }else{

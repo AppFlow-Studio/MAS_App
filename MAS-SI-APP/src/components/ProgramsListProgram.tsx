@@ -18,6 +18,7 @@ type ProgramsListProgramProps = {
 export default function ProgramsListProgram( {program} : ProgramsListProgramProps){
     const { session } = useAuth()
     const [ programImg, setProgramImg ] = useState('')
+    const [ speakerString, setSpeakerString ] = useState<string []>()
     const swipeableRef = useRef<Swipeable>(null);
    
     const closeSwipeable = () => {
@@ -93,23 +94,27 @@ export default function ProgramsListProgram( {program} : ProgramsListProgramProp
         }
         
     }
-      const getData = async (key : string) => {
-        try {
-          const value = await AsyncStorage.getItem(key);
-          if (value !== null) {
-            // Data found
-            const img = JSON.parse(value)
-            return img.program_img
-          } else {
-            // No data found
-            console.log('No data found for key:', key);
-            return
-          }
-        } catch (error) {
-          console.error('Error retrieving data:', error);
-        }
+      const getData = async () => {
+        let speaker_string : string[] = program?.program_speaker.map(() => {return ''})
+        await Promise.all(
+        program?.program_speaker.map( async ( speaker_id : string, index : number) => {
+            const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
+            if ( speakerInfo ){
+            if (index == program.program_speaker.length - 1 ){
+                speaker_string[index]=speakerInfo.speaker_name
+            }
+            else {
+                speaker_string[index]= speakerInfo.speaker_name + ' & '
+            }
+            }
+        })
+        )
+
+        setSpeakerString(speaker_string.join(''))
       };
-    
+    useEffect(() => {
+        getData()
+    })
     return(
         <View style={{ width: "100%", height: 120, marginHorizontal: 5}}>
             <Link  href={ `/menu/program/${program.program_id}`}
@@ -125,7 +130,7 @@ export default function ProgramsListProgram( {program} : ProgramsListProgramProp
                         <View>
                             <View className='mt-2 items-center justify-center bg-white' style={{height: "80%", borderRadius: 20, marginLeft: "10%", width: 200}}>
                                 <Text style={{textAlign: "center", fontWeight: "bold"}}>{program.program_name}</Text>
-                                <Text style={{textAlign: "center"}}>By: {program.program_speaker}</Text>
+                                <Text style={{textAlign: "center"}}>By: {speakerString}</Text>
                             </View>
                         </View>
                     </View>

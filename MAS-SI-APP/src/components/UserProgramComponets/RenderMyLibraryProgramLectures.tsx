@@ -140,10 +140,10 @@ const RenderMyLibraryProgramLectures = ( {lecture, index, speaker, setPlayAnimat
       
       <View className='bg-white mt-2'>
         <Pressable>
-        <View className='ml-2 flex-row items-center' >
+        <View className='flex-row items-center' >
           <Link href={`/myPrograms/lectures/${lecture.lecture_id}`}>
             <View className='w-[35] h-[25] items-center justify-center mb-2'>
-              <Text className='text-xl font-bold text-gray-400 ml-2' >{index + 1}</Text>
+              <Text className='text-xl font-bold text-gray-400' >{index + 1}</Text>
             </View>
             <View className='flex-col justify-center' style={{width: width / 1.5}}>
               <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1, }} numberOfLines={1}>{lecture.lecture_name}</Text>

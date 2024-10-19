@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image, Button, StyleSheet } from 'react-native'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { EventsType } from '@/src/types'
 import { Link } from "expo-router"
 import { defaultProgramImage } from '../ProgramsListProgram'
@@ -12,6 +12,8 @@ type RenderEventsProp = {
 const RenderEvents = ( {event} : RenderEventsProp ) => {
   const { session } = useAuth()
   const [ isSwiped, setIsSwiped ] = useState(false) 
+  const [ speakerString, setSpeakerString ] = useState()
+  
   const swipeableRef = useRef<Swipeable>(null)
   const [ index, setIndex ] = useState(0)
   const addToNotifications = async () => {
@@ -26,17 +28,29 @@ const RenderEvents = ( {event} : RenderEventsProp ) => {
     }
   };
 
-  const rightSideButton = () => {
-    return (
-        <View style={{width: "80%", height: "80%", justifyContent: "center", alignItems: "center"}}>
-            <Button
-                title='Add To Notifications'
-                onPress={() => {addToNotifications(); closeSwipeable()}}
-            />
-        </View>
+  const getSpeakers = async () => {
+    const speakers : any[] = []
+    let speaker_string : string[] = event.event_speaker.map(() => {return ''})
+    await Promise.all(
+      event.event_speaker.map( async ( speaker_id : string, index : number) => {
+        const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
+        if ( speakerInfo ){
+          if (index == event.event_speaker.length - 1 ){
+            speaker_string[index]=speakerInfo.speaker_name
+          }
+          else {
+            speaker_string[index]= speakerInfo.speaker_name + ' & '
+          }
+        }
+      })
     )
-}
+    setSpeakerString(speaker_string.join(''))
+    console.log('speakers', speaker_string)
+  }
 
+  useEffect(() =>{
+    getSpeakers()
+  },[])
   return (
     <View className='h-[120] w-[100%]' style={{marginHorizontal: 10}}>
         <Link  href={`/menu/program/events/${event.event_id}`} asChild>
@@ -52,7 +66,7 @@ const RenderEvents = ( {event} : RenderEventsProp ) => {
                     <View>
                       <View className='mt-2 items-center justify-center bg-white' style={{height: "80%", borderRadius: 20, marginLeft: "10%", width: 200}}>
                           <Text style={{textAlign: "center", fontWeight: "bold"}}>{event.event_name}</Text>
-                          <Text style={{textAlign: "center"}}>By: {event.event_speaker}</Text>
+                          <Text style={{textAlign: "center"}}>By: {speakerString}</Text>
                       </View>
                     </View>
                 </View>

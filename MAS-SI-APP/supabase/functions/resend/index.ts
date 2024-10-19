@@ -4,13 +4,22 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Supabase client setup
+const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
+const supabaseKey = Deno.env.get('EXPO_PUBLIC_SUPABASE_ANON');
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log("Hello from Functions!")
 const RESEND_API_KEY = Deno.env.get('RESEND_KEY')
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   const { submission } = await req.json()
-
+  const onApprove = async () => {
+    const { error } = await supabase.from('business_ads_submissions').update({ status : 'APPROVED' }).eq('business_flyer_img', submission.business_flyer_img)
+  }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -113,6 +122,10 @@ Deno.serve(async (req) => {
                   </div>
                   
                   <img src="${submission.business_flyer_img}" alt="Business Flyer Image" width="600" height="600">
+
+                  <button type="button" style="background-color: green; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;" onclick=${submission.onApprove}>
+                    Approve
+                  </button>
               </div>
               <div class="footer">
                   <p>&copy; 2024 MAS Staten Island</p>

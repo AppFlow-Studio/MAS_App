@@ -29,7 +29,8 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
     const { session } = useAuth()    
     const [ eventLectures, setEventLectures ] = useState<EventLectureType[] | null>(null)
     const [ visible, setVisible ] = useState(false);
-    const [ speakerData, setSpeakerData ] = useState<SheikDataType>()
+    const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>()
+    const [ speakerString, setSpeakerString ] = useState('')
     const showModal = () => setVisible(true);
     const hideModal = () => setVisible(false);
     const [ playlistAddingTo, setPlaylistAddingTo ] = useState<string[]>([])
@@ -62,34 +63,53 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
         ]
       }
     })
+
+    const getSpeakers = async () => {
+      const speakers : any[] = []
+      let speaker_string : string[] = event_speaker.map(() => {return ''})
+      await Promise.all(
+        event_speaker.map( async ( speaker_id : string, index : number) => {
+          const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
+          if ( speakerInfo ){
+            if (index == event_speaker.length - 1 ){
+              speaker_string[index]=speakerInfo.speaker_name
+            }
+            else {
+              speaker_string[index]= speakerInfo.speaker_name + ' & '
+            }
+            speakers.push(speakerInfo)
+          }
+        })
+      )
+      setSpeakerData(speakers)
+      setSpeakerString(speaker_string.join(''))
+      console.log('speakers', speaker_string)
+    }
     const GetSheikData =  () => {
-      const getInfo = async () => {
-        const {data : speakerInfo, error} = await supabase.from('speaker_data').select('*').eq('speaker_name', event_speaker).single()
-        if ( speakerInfo ){
-          setSpeakerData(speakerInfo)
-        }
-      
-      }
-      useEffect(() => {
-        getInfo()
-      }, [])
       return( 
         <View className='flex-1'>
-          <View className=' flex-row'>
-            <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='contain'/>
+        
+        { 
+          speakerData?.map((speakerData) => (
+          <>
+            <Animated.View className=' flex-row'>
+                <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='contain'/>
             <View className='flex-col px-5'>
               <Text className='text-xl font-bold'>Name: </Text>
               <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
             </View>
-          </View>
+          </Animated.View>
     
-          <ScrollView className='flex-col py-3' contentContainerStyle={{ }}>
+          <View className='flex-col py-3'>
             { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
             { speakerData?.speaker_creds.map( (cred, i) => {
-              return <Text key={i}> <Icon source="cards-diamond-outline"  size={15}/> {cred} </Text>
+              return <Text key={i}> <Icon source="cards-diamond-outline"  size={15}/> {cred} {'\n'}</Text>
             })}
-          </ScrollView>
-        </View>
+          </View>
+          </>
+          ))
+        }
+      </View>
       )
     } 
     const fetchEventLectures = async () => {
@@ -149,6 +169,7 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
     }
     useEffect(() => {
         fetchEventLectures()
+        getSpeakers()
         getUserPlaylists()
         const listenForUserPlaylistChanges = supabase
         .channel('listen for user playlist event adds')
@@ -187,7 +208,7 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
     
               <View className='bg-white' style={{paddingBottom : Tab * 3}}>
                 <Text className='text-center mt-2 text-xl text-black font-bold'>{event_name}</Text>
-                <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{event_speaker}</Text>
+                <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{speakerString}</Text>
                     {
                         eventLectures ? eventLectures.map((item, index) => {
                             return (
@@ -201,8 +222,10 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
               </View>
     
               <Portal>
-                <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "35%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
-                  <GetSheikData />
+                <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "55%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
+                  <ScrollView className='flex-1'>
+                    <GetSheikData />
+                  </ScrollView>
                 </Modal>
               </Portal>
               <Portal>

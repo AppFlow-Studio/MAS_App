@@ -36,13 +36,13 @@ const BusinessSubmissions = () => {
     (payload) => getSubmissions()
   ).subscribe()
 
-  return () =>{ supabase.removeChannel(updateSubmissions)}
+  return () =>{ supabase.removeChannel(updateSubmissions) }
   }, [])
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => {
-      getSubmissions()
+    setTimeout(async () => {
+      await getSubmissions()
       setRefreshing(false);
     }, 2000);
   }, []);

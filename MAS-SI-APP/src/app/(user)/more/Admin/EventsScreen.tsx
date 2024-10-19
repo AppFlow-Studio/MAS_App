@@ -33,7 +33,7 @@ const EventsScreen = () => {
 
   return (
     <View className='flex-1'>
-      <Text className="font-bold text-2xl p-3 ">events</Text>
+      <Text className="font-bold text-2xl p-3 ">Events</Text>
       <View className='flex-1 grow'>
         <FlatList 
         style={{ flex : 1 }}

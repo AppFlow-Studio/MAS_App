@@ -1,45 +1,67 @@
 import { StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { supabase } from "@/src/lib/supabase";
 
-const SendToEveryoneScreen = () => {
+const EventsNotificationScreen = () => {
+  const { event_id } = useLocalSearchParams();
   const [notificationMessage, setNotificationMessage] = useState("");
+  const [ users, setUsers ] = useState<any>([])
   const [previewModal, setPreviewModal] = useState(false);
-  const [ total_users, setTotalUsers ] = useState(0)
-  const [ userInfo, setUserInfo ] = useState([])
-  const getUsersInfo = async () => {
-    const { data : profile, error } = await supabase.from('profiles').select('push_notification_token').not('push_notification_token', 'is', null)
-    if( profile ){
-      profile.map((item) => {
-        item['message'] = notificationMessage
-      })
-      setUserInfo(profile)
-    }else{
-      console.log( error )
-    }
-  }
-
-  const onSend = async () => {
-    if( userInfo.length > 0 ){
-      await supabase.functions.invoke('send-prayer-notification', {body :{ notifications_batch : userInfo }})
-    }
-  }
   const characterLimit = 255;
-  const totalUsers = 1000;
+  const totalUsers = 100;
+  const getUsers = async () => {
+    const { data : users, error } = await supabase.from('added_notifications_events').select('*').eq('event_id', event_id)
+    if( users ){
+      setUsers(users)
+    }
+    if( error ){
+      console.log('error', error)
+    }
+  }
 
   const hideModal = () => setPreviewModal(false);
-  const sendNotification = async () =>{
-    setPreviewModal(!previewModal),
-    await onSend()
-    setNotificationMessage('')
-  }
+  const sendNotification = async() => {
+    setPreviewModal(!previewModal), setNotificationMessage(""); await onSend();
+  };
 
+  const onSend = async () => {
+    const notification_batch : any[] = []
+    await Promise.all(
+      users.map( async ( user ) => {
+        const { data : profile, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).not('push_notification_token', 'is', null).single()
+        if( profile ){
+          profile['message'] = notificationMessage
+          notification_batch.push(profile)
+        }
+      })
+    )
+    if( notification_batch.length > 0){
+      const { error } = await supabase.functions.invoke('send-prayer-notification', { body : { notifications_batch : notification_batch}})
+      if(error){
+        console.log(error)
+      }
+    } 
+  }
+  useEffect(() => {
+    getUsers()
+  },[])
   return (
+    <>
+      <Stack.Screen
+        options={{
+          headerBackTitleVisible: false,
+          headerStyle: { backgroundColor: "white" },
+          title : ''
+        }}
+      />
+   
     <View
       style={{
         flex: 1,
         paddingHorizontal: "4%",
+        backgroundColor : '#ededed'
       }}
     >
       <Text className="text-xl mt-4">Notification Message</Text>
@@ -64,7 +86,7 @@ const SendToEveryoneScreen = () => {
       <Text className="text-right text-gray-500 mt-1">{`${notificationMessage.length}/${characterLimit} characters`}</Text>
 
       <Button
-        onPress={async () => {setPreviewModal(true); await getUsersInfo()} }
+        onPress={() => setPreviewModal(true)}
         className="h-13 items-center mt-6"
         mode="contained"
         buttonColor="#57BA47"
@@ -84,27 +106,28 @@ const SendToEveryoneScreen = () => {
             backgroundColor: "white",
             alignSelf: "center",
             alignItems: "center",
-            justifyContent:'flex-start',
-            paddingTop:'5%',
-            paddingHorizontal:'2%'
-
+            justifyContent: "flex-start",
+            paddingTop: "5%",
+            paddingHorizontal: "2%",
           }}
         >
           <View>
-              <Text className="font-bold text-3xl">Preview Notification </Text>
+            <Text className="font-bold text-3xl">Preview Notification </Text>
             <View
               style={{
                 height: 250,
                 marginTop: "4%",
-                borderColor:'gray',
-                borderWidth:2,
-                borderRadius:4,
-                padding:'3%'
+                borderColor: "gray",
+                borderWidth: 2,
+                borderRadius: 4,
+                padding: "3%",
               }}
             >
-              <Text className="text-base font-bold w-80 ">{notificationMessage}</Text>
+              <Text className="text-base font-bold w-80">
+                {notificationMessage}
+              </Text>
             </View>
-            <Text className="self-end mt-1 font-bold">Total Users: {totalUsers}</Text>
+            <Text className="self-end mt-1 font-bold">Event Users: {totalUsers}</Text>
             <View className="self-center">
               <Button
                 mode="contained"
@@ -120,9 +143,10 @@ const SendToEveryoneScreen = () => {
         </Modal>
       </Portal>
     </View>
+    </>
   );
 };
 
-export default SendToEveryoneScreen;
+export default EventsNotificationScreen;
 
 const styles = StyleSheet.create({});

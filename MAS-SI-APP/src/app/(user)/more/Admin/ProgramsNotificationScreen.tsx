@@ -1,29 +1,59 @@
 import { StyleSheet, Text, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
+import { supabase } from "@/src/lib/supabase";
 
 const ProgramsEventNotificationScreen = () => {
-  const { name } = useLocalSearchParams();
+  const { program_id } = useLocalSearchParams();
   const [notificationMessage, setNotificationMessage] = useState("");
+  const [ users, setUsers ] = useState<any>([])
   const [previewModal, setPreviewModal] = useState(false);
   const characterLimit = 255;
   const totalUsers = 100;
-
-  console.log("name", name);
+  const getUsers = async () => {
+    const { data : users, error } = await supabase.from('added_notifications_programs').select('*').eq('program_id', program_id)
+    if( users ){
+      setUsers(users)
+    }
+    if( error ){
+      console.log('error', error)
+    }
+  }
 
   const hideModal = () => setPreviewModal(false);
-  const sendNotification = () => {
-    setPreviewModal(!previewModal), setNotificationMessage("");
+  const sendNotification = async() => {
+    setPreviewModal(!previewModal), setNotificationMessage(""); await onSend();
   };
+
+  const onSend = async () => {
+    const notification_batch : any[] = []
+    await Promise.all(
+      users.map( async ( user ) => {
+        const { data : profile, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).not('push_notification_token', 'is', null).single()
+        if( profile ){
+          profile['message'] = notificationMessage
+          notification_batch.push(profile)
+        }
+      })
+    )
+    if( notification_batch.length > 0){
+      const { error } = await supabase.functions.invoke('send-prayer-notification', { body : { notifications_batch : notification_batch}})
+      if(error){
+        console.log(error)
+      }
+    } 
+  }
+  useEffect(() => {
+    getUsers()
+  },[])
   return (
     <>
       <Stack.Screen
         options={{
-          title: name,
           headerBackTitleVisible: false,
-          headerTintColor: "black",
           headerStyle: { backgroundColor: "white" },
+          title : ''
         }}
       />
    
@@ -31,6 +61,7 @@ const ProgramsEventNotificationScreen = () => {
       style={{
         flex: 1,
         paddingHorizontal: "4%",
+        backgroundColor : '#ededed'
       }}
     >
       <Text className="text-xl mt-4">Notification Message</Text>

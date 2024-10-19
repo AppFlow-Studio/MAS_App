@@ -7,6 +7,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { retrievePaymentIntent, stripe } from "../_utils/stripe.ts";
 import { createOrRetrieveProfile } from '../_utils/supabase.ts';
 
+
 serve(async (req) => {
   try {
     const { amount } = await req.json();
@@ -23,6 +24,7 @@ serve(async (req) => {
       currency: 'usd',
       customer: customer,
     });
+   
 
     const res = {
       publishableKey: Deno.env.get('EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY'),

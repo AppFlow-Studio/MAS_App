@@ -3,34 +3,39 @@ import React, { useState } from "react";
 import { Stack } from "expo-router";
 import { SceneMap, TabBar, TabView } from "react-native-tab-view";
 import SendToEveryoneScreen from "./SendToEveryoneScreen";
-import ProgramsAndEventsScreen from "./ProgramsAndEventsScreen";
-
+import ProgramsScreen from "./ProgramsScreen";
+import EventsScreen from "./EventsScreen";
 const SendToEveryone = () => (
  <SendToEveryoneScreen />
 );
 
-const ProgramsAndEvents = () => (
- <ProgramsAndEventsScreen/>
+const Programsscreen = () => (
+ <ProgramsScreen/>
 );
 
+const Eventsscreen = () => (
+  <EventsScreen/>
+)
 const AdminScreen = () => {
   const layout = useWindowDimensions().width;
   const [index, setIndex] = useState(0);
 
   const renderScene = SceneMap({
     first: SendToEveryone,
-    second: ProgramsAndEvents,
+    second: Programsscreen,
+    third : Eventsscreen
   });
   
   const routes = [
     { key: 'first', title: 'Send to Everyone' },
-    { key: 'second', title: 'Programs and Events' },
+    { key: 'second', title: 'Programs' },
+    { key : 'third', title : 'Events' }
   ];
   
   const renderTabBar = (props : any) => (
     <TabBar
     {...props}
-    indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "90%", width : "45%", left : "3%", borderRadius : 20  }}
+    indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "90%", width : "30%", left : "1%", borderRadius : 20  }}
     style={{ backgroundColor: '#0D509D', width : "100%", height:'8%', justifyContent:'center', alignSelf : "center"}}
     labelStyle={{ color : "white", fontWeight : "bold" }}
     />
@@ -59,4 +64,3 @@ const AdminScreen = () => {
 
 export default AdminScreen;
 
-const styles = StyleSheet.create({});

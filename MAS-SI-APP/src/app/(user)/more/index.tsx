@@ -19,7 +19,7 @@ const Index = () => {
   const height = useWindowDimensions().height
   const [ visible, setVisible ] = useState(false)
   const [ anonStatus, setAnonStatus ] = useState(true)
-  const tabBarHeight = useBottomTabBarHeight() + 60
+  const tabBarHeight = useBottomTabBarHeight() + 10
   const spin = useSharedValue(0)
     const [ profileFirstName , setProfileFirstName ] = useState('')
   const [ profileLastName , setProfileLastName ] = useState('')
@@ -57,6 +57,7 @@ const Index = () => {
       return
     }
   }
+
   useEffect(() => {
     getProfile()
   }, [])

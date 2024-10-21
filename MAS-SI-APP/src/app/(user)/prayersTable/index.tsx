@@ -6,6 +6,7 @@ import { usePrayer } from '@/src/providers/prayerTimesProvider';
 import { gettingPrayerData } from '@/src/types';
 import { Divider } from 'react-native-paper';
 import { Link } from 'expo-router';
+import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 
 
 export default function Index() {
@@ -30,30 +31,36 @@ export default function Index() {
     })  
   }, [tableIndex])
   return (
-    <View className='h-full  bg-white'>
-          <StatusBar barStyle={"dark-content"} />
-          <View className='items-center justify-center '>
-          <ImageBackground
-            source={require('@/assets/images/PrayerTimesHeader.jpg')}
-            style={{ height : height, justifyContent :'center' }}
-            imageStyle={{ height : height / 2.7, opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10}}
-          >
-            <View className=' h-[400] items-center justify-center '>
-              <FlatList 
-                data={prayerTimesWeek}
-                renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index}/>}
-                horizontal
-                bounces={false}
-                showsHorizontalScrollIndicator={false}
-                pagingEnabled
-                scrollEventThrottle={32}
-                viewabilityConfig={viewConfig}
-                contentContainerStyle={{justifyContent: "center", alignItems: "center"}}
-                ref={flatlistRef}
-              />
-            </View>
-            </ImageBackground>
+    <View className='h-[100%]  bg-white'>
+      <StatusBar barStyle={"dark-content"} />
+      <View className='items-center justify-center '>
+      <ImageBackground
+        source={require('@/assets/images/PrayerTimesHeader.jpg')}
+        style={{ height : height / 1.7 , justifyContent : 'flex-end' }}
+        imageStyle={{ height : height / 3.5, opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10}}
+        className=''
+      >
+        <View className=' h-[300] items-center justify-center '>
+          <FlatList 
+            data={prayerTimesWeek}
+            renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index}/>}
+            horizontal
+            bounces={false}
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            scrollEventThrottle={32}
+            viewabilityConfig={viewConfig}
+            contentContainerStyle={{justifyContent: "center", alignItems: "center"}}
+            ref={flatlistRef}
+          />
+        </View>
+        </ImageBackground>
+        <View className=' w-[95%] h-[250] bg-gray-500 p-1 self-center mt-5 ' style={{ borderRadius : 20 }}>
+          <View className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }}>
+            <ApprovedAds />
           </View>
+        </View>
+      </View>
     </View>
   )
 }

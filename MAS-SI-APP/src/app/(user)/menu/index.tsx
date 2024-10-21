@@ -18,24 +18,26 @@ import LinkToDonationModal from '@/src/components/LinkToDonationModal';
 import LottieView from 'lottie-react-native';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
+import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 export default function homeScreen() {
   const { onSetPrayerTimesWeek, prayerTimesWeek } = usePrayer()
   const { session } = useAuth()
+  const [ ads, setAds ] = useState(true)
   const [ profile, setProfile ] = useState<Profile>()
   const [ profileFirstName , setProfileFirstName ] = useState('')
   const [ profileLastName , setProfileLastName ] = useState('')
   const [ profileEmail, setProfileEmail ] = useState('')
   const [ confirmProfile, setConfirmProfile ] = useState(false)
-    const [loading, setLoading] = useState(true)
-    const [visible, setVisible] = React.useState(false);
-    const showModal = () => setVisible(true);
-    const hideModal = () => setVisible(false);
-    const tabBarHeight = useBottomTabBarHeight();
-    const bottomSheetRef = useRef<BottomSheetModal>(null);
-    const animation = useRef<LottieView>(null);
-    const { width } = Dimensions.get("window")
-    const scrollRef = useAnimatedRef<Animated.ScrollView>()
-    const scrollOffset = useSharedValue(0)
+  const [loading, setLoading] = useState(true)
+  const [visible, setVisible] = React.useState(false);
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
+  const tabBarHeight = useBottomTabBarHeight();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const animation = useRef<LottieView>(null);
+  const { width } = Dimensions.get("window")
+  const scrollRef = useAnimatedRef<Animated.ScrollView>()
+  const scrollOffset = useSharedValue(0)
     const scrollHandler = useAnimatedScrollHandler(event => {
       scrollOffset.value = event.contentOffset.y;
     });
@@ -87,6 +89,12 @@ export default function homeScreen() {
         const weekInfo  : gettingPrayerData[] = ThePrayerData({prayerTimes})
         onSetPrayerTimesWeek(weekInfo)
         setLoading(false)
+    }
+    const checkForAds =  async () => {
+      const { data, error } = await supabase.from('approved_business_ads').select('*')
+      if( data ){
+        
+      }
     }
     useEffect( () => {
       getProfile();
@@ -160,7 +168,14 @@ export default function homeScreen() {
               <View className='pt-3' style={{height: 250}}>
                 <ProgramsCircularCarousel />
               </View>
-              <View className='pl-3 flex-row pt-10'>
+              { ads && 
+                <View className=' w-[95%] h-[250] bg-gray-300 p-1 self-center mt-4' style={{ borderRadius : 20 }}>
+                  <View className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }}>
+                    <ApprovedAds />
+                  </View>
+                </View>
+              }
+              <View className='pl-3 flex-row pt-6'>
                   <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
               </View>
               <View className='pt-2'>

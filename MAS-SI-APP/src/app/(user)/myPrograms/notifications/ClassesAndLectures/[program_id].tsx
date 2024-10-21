@@ -11,6 +11,7 @@ import { Icon } from 'react-native-paper'
 import NotificationCard from "@/src/app/(user)/myPrograms/notifications/NotificationCard"
 import * as Haptics from 'expo-haptics'
 import { Menu, MenuOption, MenuOptions, MenuTrigger } from 'react-native-popup-menu'
+
 const ClassesAndLecturesSettings = () => {
   const { program_id } = useLocalSearchParams()
   const { session } = useAuth()
@@ -110,7 +111,7 @@ const ClassesAndLecturesSettings = () => {
                 return(
                   <View className='flex-col' key={index}>
                     <View className='flex-row items-center justify-center'>
-                      <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} program_id={program_id}/>
+                      <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} program_id={program_id} programInfo={program}/>
                     </View>
                     <View style={{height : 10}}/>
                   </View>

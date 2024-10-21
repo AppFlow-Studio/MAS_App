@@ -6,6 +6,8 @@ import { Icon } from 'react-native-paper'
 import { supabase } from '@/src/lib/supabase'
 import { useAuth } from '@/src/providers/AuthProvider'
 import { err } from 'react-native-svg'
+import { Program } from '@/src/types'
+import { isBefore } from 'date-fns'
 type NotificationCardProp = {
     height : number
     width : number
@@ -14,12 +16,40 @@ type NotificationCardProp = {
     setSelectedNotification : ( selectedNotification : number[] ) => void
     selectedNotification : number[]
     program_id : string | string[]
+    programInfo : Program
 }
-const NotificationCard = ({height , width, index, scrollY, setSelectedNotification, selectedNotification, program_id} : NotificationCardProp) => {
+
+const schedule_notification = async ( user_id, push_notification_token, message, notification_type, program_event_name, notification_time ) => {
+  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, message : message, notification_type : notification_type, program_event_name : program_event_name, notification_time : notification_time})
+  if( error ){
+    console.log(error)
+  }
+}
+
+function setTimeToCurrentDate(timeString : string ) {
+
+  // Split the time string into hours, minutes, and seconds
+  const [hours, minutes, seconds] = timeString.split(':').map(Number);
+
+  // Create a new Date object with the current date
+  const timestampWithTimeZone = new Date();
+
+  // Set the time with setHours (adjust based on local timezone or UTC as needed)
+  timestampWithTimeZone.setHours(hours , minutes, seconds, 0); // No milliseconds
+
+  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
+  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
+
+  return timestampISO
+}
+
+
+const NotificationCard = ({height , width, index, scrollY, setSelectedNotification, selectedNotification, program_id, programInfo} : NotificationCardProp) => {
   const { session } = useAuth()
   const scale = useSharedValue(1)
   const [ checked , setChecked ] = useState(false)
-  
+  const [ pushToken, setPushToken ] = useState()
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const onPress = async () => {
     const { data : currentSettings, error } = await supabase.from('program_notifications_settings').select('*').eq('user_id', session?.user.id).eq('program_id', program_id ).single()
     if(currentSettings == null) {
@@ -39,8 +69,37 @@ const NotificationCard = ({height , width, index, scrollY, setSelectedNotificati
       }
       else{
         settings.push(CardOptions[index])
+        const currentDay = new Date()
+        const day = currentDay.getDay()
+        const programStartTime = setTimeToCurrentDate(programInfo.program_start_time)
+        const program_days = programInfo.program_days
+        if( index == 0 ){
+          await Promise.all(program_days.map( async ( days ) => {
+            const indexOfDay = daysOfWeek.indexOf(days)
+            if( ( indexOfDay - 1 ) % 6 == day ){
+              await schedule_notification(session?.user.id, pushToken,  `${programInfo.program_name} is Tomorrow`, 'Day Before', programInfo.program_name, programStartTime)
+            }
+          }))
+        }else {
+          if( program_days.includes(daysOfWeek[day]) && isBefore( currentDay, programStartTime )){
+            if( index == 1 ){
+              await schedule_notification(session?.user.id, pushToken,  `${programInfo.program_name} is Starting Now!`, 'When Program Starts', programInfo.program_name, programStartTime)
+            }
+            else if( index == 2 && isBefore(currentDay, programStartTime) ){
+              const start_time = setTimeToCurrentDate(programInfo.program_start_time)
+              start_time.setMinutes(start_time.getMinutes() - 30)
+              await schedule_notification(session?.user.id, pushToken, `${programInfo.program_name} is Starting in 30 Mins!`, '30 Mins Before', programInfo.program_name, start_time)
+            }
+          }else{
+            return
+          }
+        }
         const {data, error} = await supabase.from('program_notifications_settings').update({notification_settings : settings}).eq('program_id', program_id).eq('user_id', session?.user.id, )
       }
+
+
+
+
     }
   }
   const handlePress = () => {
@@ -67,6 +126,10 @@ const NotificationCard = ({height , width, index, scrollY, setSelectedNotificati
   }
   const getSettings = async () => {
     const { data , error } = await supabase.from('program_notifications_settings').select('notification_settings').eq('program_id', program_id).eq('user_id', session?.user.id, ).single()
+    const { data : user_push_token } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+    if( user_push_token ){
+      setPushToken(user_push_token.push_notification_token)
+    }
     if( error ) {
       return
     }

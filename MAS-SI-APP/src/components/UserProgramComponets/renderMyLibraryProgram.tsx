@@ -18,16 +18,12 @@ const RenderMyLibraryProgram = ( {program_id} : RenderProgramProp) => {
     const { data, error } = await supabase.from("programs").select("*").eq("program_id ",  program_id).single()
     if(data){
     setProgram(data)
-    }
-  }
-
-  const getSpeakers = async () => {
-    let speaker_string : string[] = program.program_speaker.map(() => {return ''})
+    let speaker_string : string[] = data.program_speaker.map(() => {return ''})
     await Promise.all(
-      program.program_speaker.map( async ( speaker_id : string, index : number) => {
+      data.program_speaker.map( async ( speaker_id : string, index : number) => {
         const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
         if ( speakerInfo ){
-          if (index == program.program_speaker.length - 1 ){
+          if (index == data.program_speaker.length - 1 ){
             speaker_string[index]=speakerInfo.speaker_name
           }
           else {
@@ -38,13 +34,12 @@ const RenderMyLibraryProgram = ( {program_id} : RenderProgramProp) => {
     )
     setSpeakerString(speaker_string.join(''))
     console.log('speakers', speaker_string)
+    }
   }
 
   useEffect(() => {
     fetchUserProgram()
-    getSpeakers()
-  }, [session])
-
+  }, [])
 
   return (
     <View style={{ width: 170, height: 200, justifyContent: "center", alignItems: "center"}} className=''>

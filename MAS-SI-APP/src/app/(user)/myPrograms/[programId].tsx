@@ -1,5 +1,5 @@
 import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, ScrollView} from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useLocalSearchParams, Stack, router, useRouter } from 'expo-router';
 import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
 import { Divider, Portal, Modal, IconButton, Icon, Button } from 'react-native-paper';
@@ -13,6 +13,8 @@ import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-m
 import * as Haptics from "expo-haptics"
 import { Link } from 'expo-router';
 import RenderAddToUserPlaylistsListProgram from '@/src/components/RenderAddToUserPlaylistsList';
+import CreatePlaylistBottomSheet from '@/src/components/UserProgramComponets/CreatePlaylistBottomSheet';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 const programLectures = () => {
   const { session } = useAuth()
   const { programId } = useLocalSearchParams();
@@ -21,9 +23,14 @@ const programLectures = () => {
   const [ visible, setVisible ] = useState(false);
   const [ addToPlaylistVisible, setAddToPlaylistVisible ] = useState(false)
   const [ lectureToBeAddedToPlaylist, setLectureToBeAddedToPlaylist ] = useState<string>("")
+  const [ playlistAddingTo, setPlaylistAddingTo ] = useState<string[]>([])
+  const [ speakerString, setSpeakerString ] = useState('')
+  const [ speakerData, setSpeakerData ] = useState<any[]>([])
   const [ playAnimation , setPlayAnimation ] = useState( false )
   const [ lectureInfoAnimation, setLectureInfoAnimation ] = useState<Lectures>()
   const [ usersPlaylists, setUsersPlaylists ] = useState<UserPlaylistType[]>()
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const handlePresentModalPress = () => bottomSheetRef.current?.present();
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
   const hideAddToPlaylist = () => setAddToPlaylistVisible(false)
@@ -86,6 +93,25 @@ const programLectures = () => {
       }
       if ( data ) {
         setProgram(data)
+        const speakers : any[] = []
+        let speaker_string : string[] = data.program_speaker.map(() => {return ''})
+        await Promise.all(
+          data.program_speaker.map( async ( speaker_id : string, index : number) => {
+            const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
+            if ( speakerInfo ){
+              if (index == data.program_speaker.length - 1 ){
+                speaker_string[index]=speakerInfo.speaker_name
+              }
+              else {
+                speaker_string[index]= speakerInfo.speaker_name + ' & '
+              }
+              speakers.push(speakerInfo)
+            }
+          })
+        )
+        setSpeakerData(speakers)
+        setSpeakerString(speaker_string.join(''))
+        console.log('speakers', speaker_string)
       }
     }
     async function getProgramLectures() {
@@ -154,7 +180,7 @@ const programLectures = () => {
           />
           <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
             <Text className='text-center mt-2 text-xl text-black font-bold'>{program?.program_name}</Text>
-            <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{program?.program_speaker}</Text>
+            <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{speakerString}</Text>
               <View className='ml-3'>
                 {
                   lectures && lectures?.length > 0  ? lectures.map((item, index) => {
@@ -204,20 +230,35 @@ const programLectures = () => {
           }
           <Portal>
             <Modal visible={addToPlaylistVisible} onDismiss={hideAddToPlaylist} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "50%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
-              <ScrollView>
-                  { usersPlaylists ? usersPlaylists.map(( item, index) => {
-                    return( <RenderAddToUserPlaylistsListProgram playlist={item} lectureToBeAdded={lectureToBeAddedToPlaylist} setAddToPlaylistVisible={setAddToPlaylistVisible} />)
-                  })
-                  :( 
+            <View className=' h-[100%]'>
+                  <View className='flex-row items-center justify-between'>
+                    <Text className='text-xl font-bold text-black'>Save To...</Text>
+                    <Button style={{ alignItems : "center", justifyContent : "center"}} textColor='#007AFF' onPress={() => {setAddToPlaylistVisible(false); handlePresentModalPress()}}><Text className='text-2xl'>+</Text><Text> New Playlist</Text></Button>
+                  </View>
+                <Divider />
+                  { usersPlaylists ?
+                  <View className='flex-1'>
+                    <ScrollView className='mt-2'>
+                    {usersPlaylists.map(( item, index) => {
+                        return(<View className='mt-2'><RenderAddToUserPlaylistsListProgram playlist={item} lectureToBeAdded={lectureToBeAddedToPlaylist} setAddToPlaylistVisible={setAddToPlaylistVisible} setPlaylistAddingTo={setPlaylistAddingTo} playListAddingTo={playlistAddingTo}/></View>)
+                      })
+                    }
+                  </ScrollView>
+                  <Divider />
+                  </View>
+                  :
+                  ( 
                   <View className=' items-center justify-center '> 
                       <Text> No User Playlists Yet </Text>
                   </View>
                   )
                 }
-              </ScrollView>
+              </View>
             </Modal>
         </Portal>
       </Animated.ScrollView>
+      <CreatePlaylistBottomSheet ref={bottomSheetRef}/>
+
       </View>
   )
 }

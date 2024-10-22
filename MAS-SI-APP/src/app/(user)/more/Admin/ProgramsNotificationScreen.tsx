@@ -116,29 +116,28 @@ const ProgramsEventNotificationScreen = () => {
             <View
               style={{
                 width: 340,
-                height: "30%",
+                height: "28%",
                 marginTop: "4%",
-                borderColor: "gray",
-                borderWidth: 2,
-                borderRadius: 10,
+                borderRadius: 20,
                 padding: "3%",
                 flexDirection: "row",
                 alignItems: "center",
+                backgroundColor:"#0D509D"
               }}
             >
               <Image
                 source={{
                   uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
                 }}
-                className="h-14 w-12"
+                className="h-11 w-11 rounded-xl "
               />
-              <View className="px-4">
+              <View className="px-2">
                 <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
-                  <Text className="text-lg font-bold">MAS</Text>
+                  <Text className="text-lg font-bold text-white">MAS</Text>
                   <Text className="text-gray-400">Yesterday, 10:20PM</Text>
                 </View>
                 <View style={{width:'90%'}} >
-                <Text numberOfLines={2} className="text-base text-black">{notificationMessage}</Text>
+                <Text numberOfLines={2} className="text-base text-yellow-100">{notificationMessage}</Text>
                 </View>
               </View>
             </View>

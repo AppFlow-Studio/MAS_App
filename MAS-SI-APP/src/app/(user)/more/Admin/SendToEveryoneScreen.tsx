@@ -1,6 +1,7 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 import React, { useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
+import { BlurView } from "expo-blur";
 import { supabase } from "@/src/lib/supabase";
 
 const SendToEveryoneScreen = () => {
@@ -88,36 +89,45 @@ const SendToEveryoneScreen = () => {
             paddingHorizontal: "2%",
           }}
         >
-          <View>
+          <View >
             <Text className="font-bold text-3xl">Preview Notification </Text>
             <View
               style={{
                 width: 340,
-                height: "30%",
+                height: "28%",
                 marginTop: "4%",
-                borderColor: "gray",
-                borderWidth: 2,
-                borderRadius: 10,
-                padding: "3%",
-                flexDirection: "row",
-                alignItems: "center",
+                borderRadius: 20,
+                
               }}
             >
-              <Image
-                source={{
-                  uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
+              <BlurView
+                style={{
+                  width: 340,
+                  height: "100%",
+                  borderRadius: 20,
+                  padding : '2%',
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor:"#959595",
+                  overflow : 'hidden'
                 }}
-                className="h-14 w-12"
-              />
-              <View className="px-4">
-                <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
-                  <Text className="text-lg font-bold">MAS</Text>
-                  <Text className="text-gray-400">Yesterday, 10:20PM</Text>
+              >
+                <Image
+                  source={{
+                    uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
+                  }}
+                  className="h-11 w-11 rounded-xl "
+                />
+                <View className="px-2">
+                  <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
+                    <Text className="text-lg font-bold text-white">MAS</Text>
+                    <Text className="text-gray-400">Yesterday, 10:20PM</Text>
+                  </View>
+                  <View style={{width:'90%'}} >
+                  <Text numberOfLines={2} className="text-base text-white">{notificationMessage}</Text>
+                  </View>
                 </View>
-                <View style={{width:'90%'}} >
-                <Text numberOfLines={2} className="text-base text-black">{notificationMessage}</Text>
-                </View>
-              </View>
+              </BlurView>
             </View>
             <Text className="self-end mt-1 font-bold">
               Total Users: {totalUsers}

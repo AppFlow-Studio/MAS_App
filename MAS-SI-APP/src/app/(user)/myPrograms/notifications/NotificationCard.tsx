@@ -69,32 +69,32 @@ const NotificationCard = ({height , width, index, scrollY, setSelectedNotificati
       }
       else{
         settings.push(CardOptions[index])
-        const currentDay = new Date()
-        const day = currentDay.getDay()
-        const programStartTime = setTimeToCurrentDate(programInfo.program_start_time)
-        const program_days = programInfo.program_days
-        if( index == 0 ){
-          await Promise.all(program_days.map( async ( days ) => {
-            const indexOfDay = daysOfWeek.indexOf(days)
-            if( ( indexOfDay - 1 ) % 6 == day ){
-              await schedule_notification(session?.user.id, pushToken,  `${programInfo.program_name} is Tomorrow`, 'Day Before', programInfo.program_name, programStartTime)
+        if ( pushToken ) {
+          const currentDay = new Date()
+          const day = currentDay.getDay()
+          const programStartTime = setTimeToCurrentDate(programInfo.program_start_time)
+          const program_days = programInfo.program_days
+          if( index == 0 ){
+            await Promise.all(program_days.map( async ( days ) => {
+              const indexOfDay = daysOfWeek.indexOf(days)
+              if( ( indexOfDay - 1 ) % 6 == day ){
+                await schedule_notification(session?.user.id, pushToken,  `${programInfo.program_name} is Tomorrow`, 'Day Before', programInfo.program_name, programStartTime)
+              }
+            }))
+            }else {
+              if( program_days.includes(daysOfWeek[day]) && isBefore( currentDay, programStartTime )){
+                if( index == 1 ){
+                  await schedule_notification(session?.user.id, pushToken,  `${programInfo.program_name} is Starting Now!`, 'When Program Starts', programInfo.program_name, programStartTime)
+                }
+                else if( index == 2 && isBefore(currentDay, programStartTime) ){
+                  const start_time = setTimeToCurrentDate(programInfo.program_start_time)
+                  start_time.setMinutes(start_time.getMinutes() - 30)
+                  await schedule_notification(session?.user.id, pushToken, `${programInfo.program_name} is Starting in 30 Mins!`, '30 Mins Before', programInfo.program_name, start_time)
+                }
+              }
             }
-          }))
-        }else {
-          if( program_days.includes(daysOfWeek[day]) && isBefore( currentDay, programStartTime )){
-            if( index == 1 ){
-              await schedule_notification(session?.user.id, pushToken,  `${programInfo.program_name} is Starting Now!`, 'When Program Starts', programInfo.program_name, programStartTime)
-            }
-            else if( index == 2 && isBefore(currentDay, programStartTime) ){
-              const start_time = setTimeToCurrentDate(programInfo.program_start_time)
-              start_time.setMinutes(start_time.getMinutes() - 30)
-              await schedule_notification(session?.user.id, pushToken, `${programInfo.program_name} is Starting in 30 Mins!`, '30 Mins Before', programInfo.program_name, start_time)
-            }
-          }else{
-            return
-          }
-        }
-        const {data, error} = await supabase.from('program_notifications_settings').update({notification_settings : settings}).eq('program_id', program_id).eq('user_id', session?.user.id, )
+        } 
+        const { error } = await supabase.from('program_notifications_settings').update({notification_settings : settings}).eq('program_id', program_id).eq('user_id', session?.user.id, )
       }
 
 

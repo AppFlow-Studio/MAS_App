@@ -121,8 +121,9 @@ export type EventsType = {
     is_education : boolean
     event_start_date : string
     event_end_date: string
+    event_start_time : string
+    event_days : string []
 }
-
 export type EventLectureType = {
     id : number,
     event_lecture_id : string

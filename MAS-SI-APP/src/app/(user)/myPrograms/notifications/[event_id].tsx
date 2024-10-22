@@ -22,7 +22,7 @@ const NotificationEventSettings = () => {
   const NOTICARDHEIGHT  = layoutHeight / 12
   const NOTICARDWIDTH  = layout * 0.8
 
-  const getProgram = async( ) => {
+  const getEvent = async( ) => {
     const { data, error } = await supabase.from('events').select("*").eq("event_id", event_id ).single()
     if( data ){
       setEvent(data)
@@ -55,7 +55,7 @@ const NotificationEventSettings = () => {
       setActive(index)
     }
   useEffect(() => {
-    getProgram()
+    getEvent()
   },[])
 
   const array = [ 1, 2, 3]
@@ -90,7 +90,7 @@ const NotificationEventSettings = () => {
                 return(
                   <View className='flex-col'>
                     <View className='flex-row items-center justify-center'>
-                      <NotificationEventCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} event_id={event_id}/>
+                      <NotificationEventCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} event_id={event_id} eventInfo={event!}/>
                     </View>
                     <View style={{height : 10}}/>
                   </View>

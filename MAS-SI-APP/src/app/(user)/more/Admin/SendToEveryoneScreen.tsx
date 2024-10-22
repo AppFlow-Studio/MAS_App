@@ -1,6 +1,7 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 import React, { useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
+import { BlurView } from "expo-blur";
 
 const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -66,7 +67,7 @@ const SendToEveryoneScreen = () => {
             paddingHorizontal: "2%",
           }}
         >
-          <View>
+          <View >
             <Text className="font-bold text-3xl">Preview Notification </Text>
             <View
               style={{
@@ -74,27 +75,37 @@ const SendToEveryoneScreen = () => {
                 height: "28%",
                 marginTop: "4%",
                 borderRadius: 20,
-                padding: "3%",
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor:"#0D509D"
+                
               }}
             >
-              <Image
-                source={{
-                  uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
+              <BlurView
+                style={{
+                  width: 340,
+                  height: "100%",
+                  borderRadius: 20,
+                  padding : '2%',
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor:"#959595",
+                  overflow : 'hidden'
                 }}
-                className="h-11 w-11 rounded-xl "
-              />
-              <View className="px-2">
-                <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
-                  <Text className="text-lg font-bold text-white">MAS</Text>
-                  <Text className="text-gray-400">Yesterday, 10:20PM</Text>
+              >
+                <Image
+                  source={{
+                    uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
+                  }}
+                  className="h-11 w-11 rounded-xl "
+                />
+                <View className="px-2">
+                  <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
+                    <Text className="text-lg font-bold text-white">MAS</Text>
+                    <Text className="text-gray-400">Yesterday, 10:20PM</Text>
+                  </View>
+                  <View style={{width:'90%'}} >
+                  <Text numberOfLines={2} className="text-base text-white">{notificationMessage}</Text>
+                  </View>
                 </View>
-                <View style={{width:'90%'}} >
-                <Text numberOfLines={2} className="text-base text-yellow-100">{notificationMessage}</Text>
-                </View>
-              </View>
+              </BlurView>
             </View>
             <Text className="self-end mt-1 font-bold">
               Total Users: {totalUsers}

@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import React, { useEffect, useState } from "react";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { supabase } from "@/src/lib/supabase";
 
@@ -94,6 +94,13 @@ const EventsNotificationScreen = () => {
       >
         Preview
       </Button>
+
+      <Text className="text-xl mt-4"> Upload Program Lecture</Text>
+      <Link  href={'/(user)/more/Admin/UploadEventLectures'} asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Upload Lecture</Text>
+          </TouchableOpacity>
+      </Link>
 
       <Portal>
         <Modal

@@ -29,9 +29,7 @@ const AdPagination = ( { data, scrollX } : adPagination) => {
     )
 }   
 
-const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50,
-  }).current;
+
 const ApprovedAds = () => {
   const [ ads, setAds ] = useState<any[]>([])
   const [ index, setIndex ] = useState(0)
@@ -88,8 +86,8 @@ const ApprovedAds = () => {
             pagingEnabled
             snapToAlignment="center"
             showsHorizontalScrollIndicator={false}
-            onScroll={handleOnScroll}
         >
+
             {
                 ads && ads.length > 0 ? ads.map(( adsInfo ) => {
                     return(

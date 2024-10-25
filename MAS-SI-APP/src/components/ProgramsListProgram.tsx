@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link, router } from 'expo-router';
 import  Swipeable, { SwipeableProps }  from 'react-native-gesture-handler/Swipeable';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-export const defaultProgramImage = "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0"
+export const defaultProgramImage = "@/assets/images/MASHomeLogo.png"
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider'; 
 import * as Haptics from "expo-haptics"
@@ -123,7 +123,7 @@ export default function ProgramsListProgram( {program} : ProgramsListProgramProp
                     <View style={{flexDirection: "row",alignItems: "center", justifyContent: "center"}}>
                         <Animated.View style={{justifyContent: "center", alignItems: "center", backgroundColor: "white", borderRadius: 15}}>
                             <Animated.Image 
-                                source={{ uri: program.program_img || defaultProgramImage }}
+                                source={{ uri: program.program_img || require(defaultProgramImage) }}
                                 style={{width: 130, height: 100, objectFit: "cover", borderRadius: 15}}                                    
                             />
                         </Animated.View>

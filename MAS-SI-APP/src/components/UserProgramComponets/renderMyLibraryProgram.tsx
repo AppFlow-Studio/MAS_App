@@ -33,7 +33,6 @@ const RenderMyLibraryProgram = ( {program_id} : RenderProgramProp) => {
       })
     )
     setSpeakerString(speaker_string.join(''))
-    console.log('speakers', speaker_string)
     }
   }
 

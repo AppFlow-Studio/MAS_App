@@ -7,6 +7,7 @@ import { gettingPrayerData } from '@/src/types';
 import { Divider } from 'react-native-paper';
 import { Link } from 'expo-router';
 import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
+import { BlurView } from 'expo-blur';
 
 
 export default function Index() {
@@ -55,10 +56,10 @@ export default function Index() {
           />
         </View>
         </ImageBackground>
-        <View className=' w-[95%] h-[250] bg-gray-500 p-1 self-center mt-5 ' style={{ borderRadius : 20 }}>
-          <View className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }}>
+        <View className=' w-[95%] h-[250] bg-gray-300 p-1 self-center mt-5 ' style={{ borderRadius : 20 }}>
+          <BlurView className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }} intensity={80}>
             <ApprovedAds />
-          </View>
+          </BlurView>
         </View>
       </View>
     </View>

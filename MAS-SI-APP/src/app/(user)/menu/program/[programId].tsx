@@ -149,7 +149,7 @@ async function getUserPlaylists(){
           speakerData?.map((speakerData) => (
           <>
             <Animated.View className=' flex-row'>
-                <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='contain'/>
+                <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
             <View className='flex-col px-5'>
               <Text className='text-xl font-bold'>Name: </Text>
               <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
@@ -159,7 +159,7 @@ async function getUserPlaylists(){
           <View className='flex-col py-3'>
             { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
             { speakerData?.speaker_creds.map( (cred, i) => {
-              return <Text key={i}> <Icon source="cards-diamond-outline"  size={15}/> {cred} {'\n'}</Text>
+              return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
             })}
           </View>
           </>
@@ -334,7 +334,7 @@ async function getUserPlaylists(){
        
           <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
             <Text className='text-center mt-2 text-xl text-black font-bold'>{program?.program_name}</Text>
-            <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{speakerString}</Text>
+            <Text className='text-center mt-2  text-[#0D509D] w-[60%] self-center' onPress={showModal} numberOfLines={1}>{speakerString}</Text>
               <View>
                 {
                   lectures && lectures?.length >= 1 ? lectures.map((item, index) => {

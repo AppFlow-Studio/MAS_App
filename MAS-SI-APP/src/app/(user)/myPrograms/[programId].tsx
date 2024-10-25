@@ -167,7 +167,35 @@ const programLectures = () => {
     </Menu>          
     )
   }
-  console.log(lectures)
+
+  const GetSheikData =  () => {
+    return( 
+      <View className='flex-1'>
+        
+        { 
+          speakerData?.map((speakerData) => (
+          <>
+            <Animated.View className=' flex-row'>
+                <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+            <View className='flex-col px-5'>
+              <Text className='text-xl font-bold'>Name: </Text>
+              <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
+            </View>
+          </Animated.View>
+    
+          <View className='flex-col py-3'>
+            { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
+            { speakerData?.speaker_creds.map( (cred, i) => {
+              return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
+            })}
+          </View>
+          </>
+          ))
+        }
+      </View>
+    )
+  } 
+
   return (
     <View className='flex-1 bg-white' style={{flexGrow: 1}}>
       <Stack.Screen options={{ title : "", headerBackTitleVisible: false, headerRight :() => <HeaderRight />, headerStyle : {backgroundColor : "white"}}} />
@@ -207,8 +235,10 @@ const programLectures = () => {
               </View>
           </View>
           <Portal>
-            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "35%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
-              <View></View>
+            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "55%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
+              <ScrollView className='flex-1'>
+                <GetSheikData />
+              </ScrollView>
             </Modal>
           </Portal>
          { playAnimation ? 

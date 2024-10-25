@@ -19,6 +19,7 @@ import LottieView from 'lottie-react-native';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
+import { BlurView } from 'expo-blur';
 export default function homeScreen() {
   const { onSetPrayerTimesWeek, prayerTimesWeek } = usePrayer()
   const { session } = useAuth()
@@ -170,12 +171,12 @@ export default function homeScreen() {
               </View>
               { ads && 
                 <View className=' w-[95%] h-[250] bg-gray-300 p-1 self-center mt-4' style={{ borderRadius : 20 }}>
-                  <View className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }}>
+                  <BlurView className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }} intensity={80}>
                     <ApprovedAds />
-                  </View>
+                  </BlurView>
                 </View>
               }
-              <View className='pl-3 flex-row pt-6'>
+              <View className='pl-3 flex-row pt-4'>
                   <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
               </View>
               <View className='pt-2'>

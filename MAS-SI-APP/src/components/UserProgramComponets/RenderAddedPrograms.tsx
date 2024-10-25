@@ -35,7 +35,6 @@ export default function RenderAddedPrograms( {program_id} : ProgramsListProgramP
               </View>
               <View className='lex-col w-[170] h-[40] flex-shrink'>
                   <Text className='text-black font-bold' numberOfLines={1}>{program?.program_name}</Text>
-                  <Text className='text-gray-500' numberOfLines={1}>{program?.program_speaker}</Text>
               </View>
             </TouchableOpacity>
         </Link>

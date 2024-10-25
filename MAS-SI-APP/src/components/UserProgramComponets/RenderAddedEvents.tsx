@@ -38,7 +38,6 @@ const RenderAddedEvents = ( {event_id} : RenderEventProp ) => {
               </View>
               <View className='flex-col w-[170] h-[40] flex-shrink'>
                   <Text className='text-black font-bold'  numberOfLines={1}>{event?.event_name}</Text>
-                  <Text className='text-gray-500' numberOfLines={1}>{event?.event_speaker}</Text>
               </View>
             </TouchableOpacity>
         </Link>

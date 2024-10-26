@@ -34,6 +34,11 @@ const EventsScreen = () => {
   return (
     <View className='flex-1'>
       <Text className="font-bold text-2xl p-3 ">Events</Text>
+      <Link  href={'/(user)/more/Admin/AddNewEventScreen'} asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2 ml-3 mb-2 rounded-md items-center">
+            <Text className="font-bold text-sm text-white">Add New Event</Text>
+          </TouchableOpacity>
+      </Link>
       <View className='flex-1 grow'>
         <FlatList 
         style={{ flex : 1 }}

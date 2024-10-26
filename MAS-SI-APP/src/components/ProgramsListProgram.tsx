@@ -123,7 +123,7 @@ export default function ProgramsListProgram( {program} : ProgramsListProgramProp
                     <View style={{flexDirection: "row",alignItems: "center", justifyContent: "center"}}>
                         <Animated.View style={{justifyContent: "center", alignItems: "center", backgroundColor: "white", borderRadius: 15}}>
                             <Animated.Image 
-                                source={{ uri: program.program_img || require(defaultProgramImage) }}
+                                source={{ uri: program.program_img || require('@/assets/images/MASHomeLogo.png') }}
                                 style={{width: 130, height: 100, objectFit: "cover", borderRadius: 15}}                                    
                             />
                         </Animated.View>

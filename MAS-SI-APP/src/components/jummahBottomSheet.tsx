@@ -11,44 +11,42 @@ type Ref = BottomSheetModal;
 
 export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({jummahSpeaker, jummahSpeakerImg, jummahTopic, jummahDesc, jummahNum}, ref) => {
     const snapPoints = useMemo(() => ["50%", "75%"], []);
-    const [ speakerData, setSpeakerData ] = useState<SheikDataType>()
+    const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>()
     const [ visible, setVisible ] = useState(false);
     const showModal = () => setVisible(true);
     const hideModal = () => setVisible(false);
   
+
     const GetSheikData =  () => {
-      const getInfo = async () => {
-        const {data : speakerInfo, error} = await supabase.from('speaker_data').select('*').eq('speaker_name', jummahSpeaker).single()
-        if ( speakerInfo ){
-          setSpeakerData(speakerInfo)
-        }
-        if(error) {
-          console.log(error)
-        }
-      }
-      useEffect(() => {
-        getInfo()
-      }, [])
       return( 
         <View className='flex-1'>
-          <View className=' flex-row'>
-            <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='contain'/>
-            <View className='flex-col px-5'>
-              <Text className='text-xl font-bold text-black'>Name: </Text>
-              <Text className='pt-2 font-semibold text-black'> {speakerData?.speaker_name} </Text>
+          { 
+            speakerData?.map((speakerData) => (
+            <>
+              <View className=' flex-row'>
+                  <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+              <View className='flex-col px-5'>
+                <Text className='text-xl font-bold'>Name: </Text>
+                <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
+              </View>
             </View>
-          </View>
-    
-          <ScrollView className='flex-col py-3' contentContainerStyle={{ flex : 1 }}>
-            { speakerData?.speaker_name == "MAS" ? <Text className='font-bold text-black'>Impact </Text> :  <Text className='font-bold text-black'>Credentials: </Text> } 
-            { speakerData?.speaker_creds.map( (cred, i) => {
-              return <Text key={i} className='text-black'> <Icon source="cards-diamond-outline"  size={15}/> {cred} {'\n'}</Text>
-            })}
-          </ScrollView>
+      
+            <View className='flex-col py-3'>
+              { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
+              { speakerData?.speaker_creds.map( (cred, i) => {
+                return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
+              })}
+            </View>
+            </>
+            ))
+          }
         </View>
       )
     } 
 
+    const getJummah = async () => {
+
+    }
 
 
     const renderBackDrop = useCallback( (props : any ) => <BottomSheetBackdrop appearsOnIndex={0} disappearsOnIndex={-1} {...props}/> , [])

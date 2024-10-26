@@ -1,8 +1,9 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import React, { useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { BlurView } from "expo-blur";
 import { supabase } from "@/src/lib/supabase";
+import { Link } from "expo-router";
 
 const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -72,6 +73,18 @@ const SendToEveryoneScreen = () => {
       >
         Preview
       </Button>
+      
+      <Link href={'/more/Admin/JummahDataScreen'} asChild>
+        <Button
+          className="h-13 items-center mt-6 self-center w-[80%]"
+          mode="contained"
+          buttonColor="#57BA47"
+          textColor="white"
+          >
+          Update Jummah Data
+        </Button>
+      </Link>
+
 
       <Portal>
         <Modal

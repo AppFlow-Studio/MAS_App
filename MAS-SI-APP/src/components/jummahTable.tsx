@@ -2,9 +2,10 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { DataTable } from 'react-native-paper';
 import { JummahBottomSheetProp, gettingPrayerData, prayerTimeData } from '../types';
 import { JummahBottomSheet } from './jummahBottomSheet';
-import React, { useRef, forwardRef, useState } from 'react';
+import React, { useRef, forwardRef, useState, useEffect } from 'react';
 import {BottomSheetModal, useBottomSheetModal } from "@gorhom/bottom-sheet"
 import { IconButton } from 'react-native-paper';
+import { supabase } from '../lib/supabase';
 type JummahTimeProp = {
     jummah : gettingPrayerData
 }
@@ -16,6 +17,7 @@ type jummahTableProp = {
 type Ref = BottomSheetModal;
 export const JummahTable = forwardRef<Ref,jummahTableProp>(({jummahData}, ref) => {
   const [ clickedState, setClickedState ] = useState(0)
+  const [ jummah, setJummah ] = useState<any[]>([])
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const { dismiss } = useBottomSheetModal();
   const jummahTimes = ["12:15 PM", "1:00 PM", "1:45PM", "3:40PM"]
@@ -33,6 +35,17 @@ export const JummahTable = forwardRef<Ref,jummahTableProp>(({jummahData}, ref) =
       />
     )
   }  
+
+  const getJummahData = async () => {
+    const { data, error } =  await supabase.from('jummah').select('*')
+    if( data ){
+      setJummah(data)
+    }
+  }
+
+  useEffect(() => {
+    //getJummahData()
+  }, [])
   return (
     <>
       <View className="ml-14 mr-14 items-center"style={{height: 350}}>
@@ -78,7 +91,7 @@ export const JummahTable = forwardRef<Ref,jummahTableProp>(({jummahData}, ref) =
             </TouchableOpacity>
         </ScrollView>
       </View>
-      <JummahBottomSheet jummahSpeaker={jummahData[clickedState].jummahSpeaker} jummahSpeakerImg={jummahData[clickedState].jummahSpeakerImg} jummahTopic={jummahData[clickedState].jummahTopic} jummahDesc={jummahData[clickedState].jummahDesc} jummahNum={jummahData[clickedState].jummahNum} ref={bottomSheetRef} />
+      <JummahBottomSheet jummahSpeaker={jummah[clickedState].speaker} jummahSpeakerImg={jummahData[clickedState].jummahSpeakerImg} jummahTopic={jummah[clickedState].topic} jummahDesc={jummah[clickedState].desc} jummahNum={jummahData[clickedState].jummahNum} ref={bottomSheetRef} />
       </>
   )
 }

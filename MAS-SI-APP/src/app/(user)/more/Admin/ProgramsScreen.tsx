@@ -35,8 +35,8 @@ const ProgramsScreen = () => {
     <View className='flex-1'>
       <Text className="font-bold text-2xl p-3 ">Programs</Text>
       <Link  href={'/(user)/more/Admin/AddNewProgramScreen'} asChild >
-          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2 ml-3 mb-2 rounded-md">
-            <Text className="font-bold text-sm text-white">Add New Program</Text>
+          <TouchableOpacity className="bg-[#57BA47] w-[40%] px-3 py-2 ml-3 mb-2 rounded-md">
+            <Text className="font-bold text-sm text-white text-center">Add New Program</Text>
           </TouchableOpacity>
       </Link>
       <View className='flex-1 grow'>

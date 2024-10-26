@@ -1,15 +1,26 @@
-import React, { useState } from "react";
-import { Text, View, Image, ScrollView, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native";
 import { Stack } from "expo-router";
-import { TextInput, Checkbox, Chip, Menu, Button } from "react-native-paper";
+import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import moment from "moment";
 import Toast from "react-native-toast-message";
+import { useBottomTabBarHeight  } from "@react-navigation/bottom-tabs";
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from 'react-native-popup-menu';
+import * as FileSystem from 'expo-file-system';
+import { decode } from "base64-arraybuffer";
+import { format } from "date-fns";
+import { supabase } from "@/src/lib/supabase";
 
 const AddNewEventScreen = () => {
   const [eventName, setEventName] = useState<string>("");
-  const [eventImage, setEventImage] = useState<string | null>(null);
+  const [eventImage, setEventImage] = useState<ImagePicker.ImagePickerAsset>();
   const [eventDescription, setEventDescription] = useState<string>("");
   const [eventSpeaker, setEventSpeaker] = useState<string>("");
   const [eventSpeakersList, setEventSpeakersList] = useState<string[]>([]);
@@ -33,7 +44,16 @@ const AddNewEventScreen = () => {
   const [isPace, setIsPace] = useState<boolean>(false);
   const [musicPace, setMusicPace] = useState<boolean>(false);
   const [dancePace, setDancePace] = useState<boolean>(false);
-
+  const [ speakers, setSpeakers ] = useState<any[]>([])
+  const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
+  const [ hasLectures, sethasLectures ]  = useState(false)
+  const tabHeight = useBottomTabBarHeight() + 20
+  const getSpeakers = async () => {
+    const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
+    if( data ){
+      setSpeakers(data)
+    }
+  }
   const days = [
     "Monday",
     "Tuesday",
@@ -56,7 +76,7 @@ const AddNewEventScreen = () => {
       allowsEditing: true,
     });
     if (!result.canceled && result.assets) {
-      setEventImage(result.assets[0].uri);
+      setEventImage(result.assets[0]);
     }
   };
 
@@ -116,18 +136,75 @@ const AddNewEventScreen = () => {
     });
   };
 
+  const handleSpeakerPress = (speaker_id : string) => {
+    if( speakerSelected.includes(speaker_id)){
+      const removeSpeaker = speakerSelected.filter(id => id != speaker_id)
+      setSpeakerSelected(removeSpeaker)
+    }
+    else if( speakerSelected.length == 0 ){
+      setSpeakerSelected([speaker_id])
+    } else if( speakerSelected.length > 0 ){
+      setSpeakerSelected([...speakerSelected, speaker_id])
+    }
+  }
+  const SpeakersData = (speakers  : any ) => {
+    return(
+      <Menu>
+        <MenuTrigger style={{ marginLeft  : 10 }}>
+          { speakerSelected.length == 0 ? <Text className="text-blue-600">Select Speakers</Text> : <Text>{speakerSelected.length} Speaker(s) Chosen</Text>}
+        </MenuTrigger>
+        <MenuOptions optionsContainerStyle={{  borderRadius  : 10, paddingHorizontal : 4, paddingVertical : 4}}>
+          {
+            speakers.speakers && speakers.speakers.length > 0 ? speakers.speakers.map(( speaker ) =>{
+              return(
+                <MenuOption onSelect={() => handleSpeakerPress(speaker.speaker_id)}>
+                  <Text className="text-black ">{speaker.speaker_name} { speakerSelected.includes(speaker.speaker_id) ? <Icon source={'check'} color="green" size={15}/> : <></>}</Text>
+                </MenuOption>
+              )
+            }) : <></>
+          }
+        </MenuOptions>
+      </Menu>
+    )
+  }
+  const onSumbit = async () => {
+    if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && eventImage) {
+      const base64 = await FileSystem.readAsStringAsync(eventImage.uri, { encoding: 'base64' });
+      const filePath = `${eventName.trim()}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
+      const contentType = eventImage.type === 'image' ? 'image/png' : 'video/mp4';
+      const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
+      if( image ){
+        const { data : event_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
+        const time =  format(eventStartTime!, 'p').trim()
+        const { error } = await supabase.from('events').insert({ event_name : eventName, event_img : event_img_url.publicUrl, event_desc : eventDescription, event_speaker : speakerSelected, has_lectures : hasLectures, event_start_date : eventStartDate, event_end_date : eventEndDate, event_is_paid : isPaid, event_price : Number(EventPrice), is_kids : isForKids, is_fourteen_plus : isFor14Plus, is_education: isEducational, event_start_time :time, event_days : eventDays })
+        if( error ){
+          console.log(error)
+        }
+        handleSubmit()
+      }else{
+        Alert.alert(image_upload_error.message)
+        return
+      }
+    }else{
+      Alert.alert('Please Fill All Info Before Proceeding')
+    }
+  }
+  useEffect(() =>{
+    getSpeakers()
+  }, [])
   return (
     <>
       <Stack.Screen
         options={{
           headerBackTitleVisible: false,
           headerStyle: { backgroundColor: "white" },
+          headerTintColor : 'black',
           title: "Add New Event",
         }}
       />
-      <View style={{ padding: 16 }}>
+      <View style={{ padding: 16, backgroundColor : 'white' }}>
         <ScrollView
-          contentContainerStyle={{ paddingBottom: "20%" }}
+          contentContainerStyle={{ paddingBottom: tabHeight }}
           showsVerticalScrollIndicator={false}
         >
           <Text className="text-base font-bold mb-1 ml-2">
@@ -136,7 +213,7 @@ const AddNewEventScreen = () => {
           <TextInput
             mode="outlined"
             theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10 }}
+            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
             activeOutlineColor="#0D509D"
             value={eventName}
             onChangeText={setEventName}
@@ -150,7 +227,7 @@ const AddNewEventScreen = () => {
           <TextInput
             mode="outlined"
             theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10 }}
+            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
             multiline
             activeOutlineColor="#0D509D"
             value={eventDescription}
@@ -162,34 +239,7 @@ const AddNewEventScreen = () => {
           <Text className="text-base font-bold mb-1 mt-2 ml-2">
             Add Event Speakers
           </Text>
-
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10 }}
-            activeOutlineColor="#0D509D"
-            value={eventSpeaker}
-            onChangeText={setEventSpeaker}
-            placeholder="Enter Speaker Name"
-            onSubmitEditing={addSpeaker}
-            textColor="black"
-          />
-
-          <TouchableOpacity
-            onPress={addSpeaker}
-            disabled={!eventSpeaker}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">Add Speaker</Text>
-          </TouchableOpacity>
+         { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
 
           <View
             style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}
@@ -209,71 +259,57 @@ const AddNewEventScreen = () => {
             Upload Event Image
           </Text>
 
-          <TouchableOpacity
-            onPress={pickImage}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">Upload</Text>
-          </TouchableOpacity>
-          {eventImage && (
+         
+          {eventImage ? (
+            <Pressable onPress={pickImage}>
             <Image
-              source={{ uri: eventImage }}
+              source={{ uri: eventImage.uri }}
               style={{
                 width: "50%",
-                height: "10%",
-                marginVertical: "2%",
+                height: 110,
+                marginVertical: "1%",
+                alignSelf : "center",
+                borderRadius: 15
               }}
               resizeMode="contain"
-            />
-          )}
+            /> 
+            </Pressable>
+          ): (
+              <TouchableOpacity
+              onPress={pickImage}
+              style={{
+                backgroundColor: "#57BA47",
+                width: "30%",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 2,
+                marginLeft: "2%",
+                paddingVertical: "1%",
+              }}
+            >
+              <Text className="text-base font-bold text-white">Upload</Text>
+            </TouchableOpacity>
+            )
+          }
 
           <Text className="text-base font-bold mb-1 mt-2 ml-2">
             Select Event Days
           </Text>
 
-          {/* Dropdown for event days using TouchableOpacity */}
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <TouchableOpacity
-                onPress={() => setMenuVisible(true)}
-                style={{
-                  backgroundColor: "#57BA47",
-                  width: "30%",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: 2,
-                  marginLeft: "2%",
-                  paddingVertical: "1%",
-                }}
-              >
-                <Text className="text-base font-bold text-white">
-                  {eventDays.length > 0 ? eventDays.join(", ") : "Select Days"}
-                </Text>
-              </TouchableOpacity>
-            }
-          >
-            {days.map((day) => (
-              <Menu.Item
-                key={day}
-                onPress={() => {
-                  toggleDaySelection(day);
-                  setMenuVisible(false);
-                }}
-                title={day}
+          {days.map((day, index) => (
+            <Pressable
+              key={index}
+              style={{ flexDirection: "row", alignItems: "center" }}
+              onPress={() => toggleDaySelection(day)}
+            >
+              <Checkbox
+                status={eventDays.includes(day) ? "checked" : "unchecked"}
+                onPress={() => toggleDaySelection(day)}
+                color="#57BA47"
               />
-            ))}
-          </Menu>
-
+              <Text>{day}</Text>
+            </Pressable>
+          ))}
           <Text className="text-base font-bold mt-2 ml-2">
             Select Event Start Date
           </Text>
@@ -367,36 +403,7 @@ const AddNewEventScreen = () => {
             />
           )}
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Select Event End Time
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowEndTimePicker(true)}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">
-              {eventEndTime ? formatTime(eventEndTime) : "Select Time"}
-            </Text>
-          </TouchableOpacity>
-          {showEndTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              display="default"
-              onChange={(event, time) => {
-                setShowEndTimePicker(false);
-                if (time) setEventEndTime(time);
-              }}
-            />
-          )}
+          
 
           <View
             style={{
@@ -528,7 +535,7 @@ const AddNewEventScreen = () => {
             buttonColor="#57BA47"
             textColor="white"
             theme={{ roundness: 1 }}
-            onPress={handleSubmit}
+            onPress={async () => await onSumbit()}
           >
             Submit Event
           </Button>

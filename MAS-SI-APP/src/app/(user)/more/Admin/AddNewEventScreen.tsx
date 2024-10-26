@@ -36,7 +36,7 @@ const AddNewEventScreen = () => {
     useState<boolean>(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState<boolean>(false);
   const [isPaid, setIsPaid] = useState<boolean>(false);
-  const [EventPrice, setEventPrice] = useState<string>("");
+  const [EventPrice, setEventPrice] = useState<string>("0");
   const [isForKids, setIsForKids] = useState<boolean>(false);
   const [isFor14Plus, setIsFor14Plus] = useState<boolean>(false);
   const [isEducational, setIsEducational] = useState<boolean>(false);
@@ -109,7 +109,7 @@ const AddNewEventScreen = () => {
 
   const handleSubmit = () => {
     setEventName("");
-    setEventImage(null);
+    setEventImage(undefined);
     setEventDescription("");
     setEventSpeaker("");
     setEventSpeakersList([]);
@@ -126,6 +126,8 @@ const AddNewEventScreen = () => {
     setIsPace(false);
     setMusicPace(false);
     setDancePace(false)
+    setSpeakerSelected([])
+    sethasLectures(false)
 
     Toast.show({
       type: "success",
@@ -172,11 +174,11 @@ const AddNewEventScreen = () => {
       const base64 = await FileSystem.readAsStringAsync(eventImage.uri, { encoding: 'base64' });
       const filePath = `${eventName.trim()}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = eventImage.type === 'image' ? 'image/png' : 'video/mp4';
-      const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
+      const { data : image, error :image_upload_error } = await supabase.storage.from('event_flyers').upload(filePath, decode(base64));
       if( image ){
-        const { data : event_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
+        const { data : event_img_url} = await supabase.storage.from('event_flyers').getPublicUrl(image?.path)
         const time =  format(eventStartTime!, 'p').trim()
-        const { error } = await supabase.from('events').insert({ event_name : eventName, event_img : event_img_url.publicUrl, event_desc : eventDescription, event_speaker : speakerSelected, has_lectures : hasLectures, event_start_date : eventStartDate, event_end_date : eventEndDate, event_is_paid : isPaid, event_price : Number(EventPrice), is_kids : isForKids, is_fourteen_plus : isFor14Plus, is_education: isEducational, event_start_time :time, event_days : eventDays })
+        const { error } = await supabase.from('events').insert({ event_name : eventName, event_img : event_img_url.publicUrl, event_desc : eventDescription, event_speaker : speakerSelected, has_lecture : hasLectures, event_start_date : eventStartDate, event_end_date : eventEndDate, is_paid : isPaid, event_price : Number(EventPrice), is_kids : isForKids, is_fourteen_plus : isFor14Plus, is_education: isEducational, event_start_time :time, event_days : eventDays })
         if( error ){
           console.log(error)
         }
@@ -235,6 +237,24 @@ const AddNewEventScreen = () => {
             placeholder="Event Description"
             textColor="black"
           />
+          
+          <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
+          <Pressable
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginVertical: "4%",
+            }}
+            onPress={() => sethasLectures(!hasLectures)}
+          >
+            <Checkbox
+              status={hasLectures ? "checked" : "unchecked"}
+              onPress={() => sethasLectures(!hasLectures)}
+              color="#57BA47"
+              
+            />
+            <Text className="text-base font-bold">Event Has Lectures? </Text>
+          </Pressable>
 
           <Text className="text-base font-bold mb-1 mt-2 ml-2">
             Add Event Speakers
@@ -403,14 +423,15 @@ const AddNewEventScreen = () => {
             />
           )}
 
-          
-
-          <View
+          <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
+ 
+          <Pressable
             style={{
               flexDirection: "row",
               alignItems: "center",
               marginVertical: "4%",
             }}
+            onPress={() => setIsPaid(!isPaid)}
           >
             <Checkbox
               status={isPaid ? "checked" : "unchecked"}
@@ -418,7 +439,7 @@ const AddNewEventScreen = () => {
               color="#57BA47"
             />
             <Text className="text-base font-bold">Event is Paid</Text>
-          </View>
+          </Pressable>
           {isPaid && (
             <View>
               <Text className="text-base font-bold mb-1 ml-2">
@@ -437,12 +458,13 @@ const AddNewEventScreen = () => {
               />
             </View>
           )}
-          <View
+          <Pressable
             style={{
               flexDirection: "row",
               alignItems: "center",
               marginBottom: "4%",
             }}
+            onPress={() => setIsForKids(!isForKids)}
           >
             <Checkbox
               status={isForKids ? "checked" : "unchecked"}
@@ -450,14 +472,15 @@ const AddNewEventScreen = () => {
               color="#57BA47"
             />
             <Text className="text-base font-bold">Event is For Kids</Text>
-          </View>
+          </Pressable>
 
-          <View
+          <Pressable
             style={{
               flexDirection: "row",
               alignItems: "center",
               marginBottom: "4%",
             }}
+            onPress={() => setIsFor14Plus(!isFor14Plus)}
           >
             <Checkbox
               status={isFor14Plus ? "checked" : "unchecked"}
@@ -465,13 +488,14 @@ const AddNewEventScreen = () => {
               color="#57BA47"
             />
             <Text className="text-base font-bold">Event is For 14+</Text>
-          </View>
-          <View
+          </Pressable>
+          <Pressable
             style={{
               flexDirection: "row",
               alignItems: "center",
               marginBottom: "4%",
             }}
+            onPress={() => setIsEducational(!isEducational)}
           >
             <Checkbox
               status={isEducational ? "checked" : "unchecked"}
@@ -479,7 +503,7 @@ const AddNewEventScreen = () => {
               color="#57BA47"
             />
             <Text className="text-base font-bold">Event is For Education</Text>
-          </View>
+          </Pressable>
 
           <View
             style={{

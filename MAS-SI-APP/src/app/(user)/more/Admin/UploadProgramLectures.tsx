@@ -3,11 +3,13 @@ import { Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { TextInput, Button, Menu } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
-import { Stack } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import moment from "moment";
+import { supabase } from "@/src/lib/supabase";
 
 const UploadProgramLectures = () => {
-    const [lectureProgram, setLectureProgram] = useState<string | null>(null);
+  const { program_id } = useLocalSearchParams();
+  const [lectureProgram, setLectureProgram] = useState<string | null>(null);
   const [lectureName, setLectureName] = useState<string>("");
   const [lectureSpeaker, setLectureSpeaker] = useState<string>("");
   const [lectureLink, setLectureLink] = useState<string>("");
@@ -19,6 +21,8 @@ const UploadProgramLectures = () => {
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
 
   const programs = ["Program A", "Program B", "Program C"];
+
+
 
   const handleSubmit = () => {
     if (!lectureProgram || !lectureName || !lectureSpeaker || !lectureLink || !lectureDate || !lectureTime) {
@@ -58,58 +62,43 @@ const UploadProgramLectures = () => {
     setLectureDate(null);
     setLectureTime(null);
   };
+
+  const onUploadLecture = async () => {
+    if (!lectureName || !lectureSpeaker || !lectureLink || !lectureDate || !lectureTime) {
+      Toast.show({
+        type: "error",
+        text1: "All fields are required!",
+        position: "top",
+        topOffset: 50,
+      });
+      return;
+    }else{
+      const { error } = await supabase.from('program_lectures').insert({ lecture_program : program_id, lecture_name : lectureName, lecture_speaker : lectureSpeaker, lecture_link : lectureLink, lectureDate : lectureDate,lecture_time : lectureTime})
+      handleSubmit()
+    }
+  }
   return (
     <>
     <Stack.Screen
       options={{
         headerBackTitleVisible: false,
         headerStyle: { backgroundColor: "white" },
+        headerTintColor : 'black',
         title: "Upload Lecture",
       }}
     />
-    <View style={{ padding: 16 }}>
+    <View style={{ padding: 16, backgroundColor : 'white', flex : 1 }}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: "20%" }}
+        contentContainerStyle={{  }}
         showsVerticalScrollIndicator={false}
       >
-        <Text className="text-base font-bold mb-1 ml-2">Select Program</Text>
-        <Menu
-          visible={menuVisible}
-          onDismiss={() => setMenuVisible(false)}
-          anchor={
-            <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={{
-                backgroundColor: "#57BA47",
-                padding: 10,
-                borderRadius: 5,
-                marginBottom: 10,
-                width: "100%",
-              }}
-            >
-              <Text style={{ color: "white", textAlign: "center" }}>
-                {lectureProgram || "Select Program"}
-              </Text>
-            </TouchableOpacity>
-          }
-        >
-          {programs.map((program) => (
-            <Menu.Item
-              key={program}
-              onPress={() => {
-                setLectureProgram(program);
-                setMenuVisible(false);
-              }}
-              title={program}
-            />
-          ))}
-        </Menu>
+        
 
         <Text className="text-base font-bold mb-1 ml-2">Lecture Title</Text>
         <TextInput
           mode="outlined"
           theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10 }}
+          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
           activeOutlineColor="#0D509D"
           value={lectureName}
           onChangeText={setLectureName}
@@ -121,7 +110,7 @@ const UploadProgramLectures = () => {
         <TextInput
           mode="outlined"
           theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10 }}
+          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
           activeOutlineColor="#0D509D"
           value={lectureSpeaker}
           onChangeText={setLectureSpeaker}
@@ -133,7 +122,7 @@ const UploadProgramLectures = () => {
         <TextInput
           mode="outlined"
           theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10 }}
+          style={{ width: "100%", height: 45, marginBottom: 10 , backgroundColor : 'white'}}
           activeOutlineColor="#0D509D"
           value={lectureLink}
           onChangeText={setLectureLink}
@@ -217,20 +206,10 @@ const UploadProgramLectures = () => {
             buttonColor="#57BA47"
             textColor="white"
             theme={{ roundness: 1 }}
-            onPress={handleSubmit}
+            onPress={async () => await onUploadLecture()}
             style={{ width: "48%" }}
           >
             Upload Lecture
-          </Button>
-
-          <Button
-            mode="outlined"
-            textColor="black"
-            theme={{ roundness: 1 }}
-            onPress={handleCancel}
-            style={{ width: "48%" }}
-          >
-            Cancel
           </Button>
         </View>
       </ScrollView>

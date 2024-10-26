@@ -218,6 +218,9 @@ const AddNewProgramScreen = () => {
             placeholder="Program Description"
             textColor="black"
           />
+
+          <Text className="text-black font-bold ml-4 mt-4">Program Type: (If unchecked will default to false)</Text>
+          
           <Pressable
             style={{
               flexDirection: "row",
@@ -379,6 +382,9 @@ const AddNewProgramScreen = () => {
               }}
             />
           )}
+
+        <Text className="text-black font-bold ml-4 mt-4">Program Type: (If unchecked will default to false)</Text>
+
 
           <Pressable
             style={{

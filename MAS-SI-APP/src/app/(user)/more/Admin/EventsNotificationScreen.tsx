@@ -95,13 +95,31 @@ const EventsNotificationScreen = () => {
         Preview
       </Button>
 
-      <Text className="text-xl mt-4"> Upload Program Lecture</Text>
+      <Text className="text-xl mt-4"> Upload Event Lecture</Text>
       <Link  href={{
         pathname : '/(user)/more/Admin/UploadEventLectures',
         params : { event_id }
         }} asChild >
           <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
             <Text className="font-bold text-sm text-white">Upload Lecture</Text>
+          </TouchableOpacity>
+      </Link>
+
+      <Text className="text-xl mt-4"> Update Event Lecture</Text>
+      <Link  href={
+         '/(user)/more/Admin/EventLecturesScreen'
+        } asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update Lecture</Text>
+          </TouchableOpacity>
+      </Link>
+
+      <Text className="text-xl mt-4"> Update Event </Text>
+      <Link  href={
+         '/(user)/more/Admin/UpdateEventScreen'
+        } asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] items-center py-2  mb-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update</Text>
           </TouchableOpacity>
       </Link>
 

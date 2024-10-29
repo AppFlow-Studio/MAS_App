@@ -100,10 +100,31 @@ const ProgramsEventNotificationScreen = () => {
         pathname : '/(user)/more/Admin/UploadProgramLectures',
         params : { program_id : program_id, }
         }} asChild >
-          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  my-2 rounded-md">
             <Text className="font-bold text-sm text-white">Upload Lecture</Text>
           </TouchableOpacity>
       </Link>
+
+      <Text className="text-xl mt-4"> Update Program Lecture</Text>
+      <Link  href={{
+        pathname : '/(user)/more/Admin/ProgramLecturesScreen',
+        params : { program_id : program_id, }
+        }} asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] items-center py-2  my-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update</Text>
+          </TouchableOpacity>
+      </Link>
+
+      <Text className="text-xl mt-4"> Update Program</Text>
+      <Link  href={{
+        pathname : '/(user)/more/Admin/UpdateProgramScreen',
+        params : { program_id : program_id, }
+        }} asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] items-center py-2  my-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update</Text>
+          </TouchableOpacity>
+      </Link>
+    
 
       <Portal>
         <Modal

@@ -3,15 +3,16 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import { toDate } from 'date-fns'
-
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 const ProgramsScreen = () => {
+  const tabBar = useBottomTabBarHeight()
   const [ programs, setPrograms ] = useState<any[]>([])
   
   const getPrograms = async () => {
-    const { data : UserPrograms, error  } = await supabase.from('added_notifications_programs').select('program_id')
+    const { data : UserPrograms, error  } = await supabase.from('programs').select('*')
 
     if( UserPrograms ){
-    const filteredUserPrograms = UserPrograms?.filter((obj1, i, arr) => 
+   {/* const filteredUserPrograms = UserPrograms?.filter((obj1, i, arr) => 
       arr.findIndex(obj2 => (obj2.program_id === obj1.program_id)) === i)
     const AllPrograms : any[] = []
     await Promise.all(filteredUserPrograms?.map( async (id) => {
@@ -20,10 +21,8 @@ const ProgramsScreen = () => {
           AllPrograms.push(program)
         }
       })
-    )
-    setPrograms(AllPrograms)
-
-
+    ) */}
+    setPrograms(UserPrograms)
     }
 
   }
@@ -32,7 +31,7 @@ const ProgramsScreen = () => {
   }, [])
 
   return (
-    <View className='flex-1'>
+    <View className='flex-1 grow' style={{ paddingBottom : tabBar + 30 }}>
       <Text className="font-bold text-2xl p-3 ">Programs</Text>
       <Link  href={'/(user)/more/Admin/AddNewProgramScreen'} asChild >
           <TouchableOpacity className="bg-[#57BA47] w-[40%] px-3 py-2 ml-3 mb-2 rounded-md">
@@ -41,11 +40,11 @@ const ProgramsScreen = () => {
       </Link>
       <View className='flex-1 grow'>
         <FlatList 
-        style={{ flex : 1 }}
+        style={{flex : 1 }}
         data={programs}
         renderItem={({item}) =>(
           <View style={{marginHorizontal: 2}}>
-          <Link  href={{pathname: '/(user)/more/Admin/ProgramsNotificationScreen', params: {program_id: item.program_id}}}
+          <Link  href={{pathname: '/(user)/more/Admin/ProgramsNotificationScreen', params: {program_id: item.program_id, has_lecture : item.has_lectures}}}
 
               asChild >
               <TouchableOpacity>

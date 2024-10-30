@@ -5,10 +5,11 @@ import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { supabase } from "@/src/lib/supabase";
 
 const ProgramsEventNotificationScreen = () => {
-  const { program_id } = useLocalSearchParams();
+  const { program_id, has_lecture } = useLocalSearchParams();
   const [notificationMessage, setNotificationMessage] = useState("");
   const [ users, setUsers ] = useState<any>([])
   const [previewModal, setPreviewModal] = useState(false);
+  const [ hasLectures, sethasLectures ] = useState(has_lecture == 'true')
   const characterLimit = 255;
   const totalUsers = 100;
   const getUsers = async () => {
@@ -95,15 +96,41 @@ const ProgramsEventNotificationScreen = () => {
         Preview
       </Button>
 
-      <Text className="text-xl mt-4"> Upload Program Lecture</Text>
+    {
+    hasLectures &&  
+    (<>
+    <Text className="text-xl mt-4"> Upload Program Lecture</Text>
       <Link  href={{
         pathname : '/(user)/more/Admin/UploadProgramLectures',
         params : { program_id : program_id, }
         }} asChild >
-          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  my-2 rounded-md">
             <Text className="font-bold text-sm text-white">Upload Lecture</Text>
           </TouchableOpacity>
       </Link>
+      </>)
+      }
+
+      <Text className="text-xl mt-4"> Update Program Lecture</Text>
+      <Link  href={{
+        pathname : '/(user)/more/Admin/ProgramLecturesScreen',
+        params : { program_id : program_id, }
+        }} asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] items-center py-2  my-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update</Text>
+          </TouchableOpacity>
+      </Link>
+
+      <Text className="text-xl mt-4"> Update Program</Text>
+      <Link  href={{
+        pathname : '/(user)/more/Admin/UpdateProgramScreen',
+        params : { program_id : program_id, }
+        }} asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] items-center py-2  my-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update</Text>
+          </TouchableOpacity>
+      </Link>
+    
 
       <Portal>
         <Modal

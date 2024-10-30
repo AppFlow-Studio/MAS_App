@@ -5,9 +5,10 @@ import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { supabase } from "@/src/lib/supabase";
 
 const EventsNotificationScreen = () => {
-  const { event_id } = useLocalSearchParams();
+  const { event_id, has_lecture } = useLocalSearchParams();
   const [notificationMessage, setNotificationMessage] = useState("");
   const [ users, setUsers ] = useState<any>([])
+  const[ hasLectures, sethasLectures ] = useState<boolean>(has_lecture == 'true')
   const [previewModal, setPreviewModal] = useState(false);
   const characterLimit = 255;
   const totalUsers = 100;
@@ -95,13 +96,38 @@ const EventsNotificationScreen = () => {
         Preview
       </Button>
 
-      <Text className="text-xl mt-4"> Upload Program Lecture</Text>
+      <Text className="text-xl mt-4"> Upload Event Lecture</Text>
       <Link  href={{
         pathname : '/(user)/more/Admin/UploadEventLectures',
         params : { event_id }
         }} asChild >
           <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
             <Text className="font-bold text-sm text-white">Upload Lecture</Text>
+          </TouchableOpacity>
+      </Link>
+
+    { hasLectures == true&& (
+      <>
+      <Text className="text-xl mt-4"> Update Event Lecture</Text>
+      <Link  href={
+         '/(user)/more/Admin/EventLecturesScreen'
+        } asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update Lecture</Text>
+          </TouchableOpacity>
+      </Link>
+      </>
+      )
+      }
+
+      <Text className="text-xl mt-4"> Update Event </Text>
+      <Link  href={
+        { pathname : '/(user)/more/Admin/UpdateEventScreen',
+          params : { event_id : event_id }
+        }
+        } asChild >
+          <TouchableOpacity className="bg-[#57BA47] w-[35%] items-center py-2  mb-2 rounded-md">
+            <Text className="font-bold text-sm text-white">Update</Text>
           </TouchableOpacity>
       </Link>
 

@@ -3,27 +3,17 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import { toDate } from 'date-fns'
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 
 const EventsScreen = () => {
+  const tabBar = useBottomTabBarHeight()
   const [ events, setevents ] = useState<any[]>([])
   
   const getevents = async () => {
-    const { data : Userevents, error  } = await supabase.from('added_notifications_events').select('event_id')
+    const { data : Userevents, error  } = await supabase.from('events').select('*')
 
-    if( Userevents.length > 0 && Userevents ){
-    const filteredUserevents = Userevents?.filter((obj1, i, arr) => 
-      arr.findIndex(obj2 => (obj2.event_id === obj1.event_id)) === i)
-    const Allevents : any[] = []
-    await Promise.all(filteredUserevents?.map( async (id) => {
-      const { data : program, error } = await supabase.from('events').select('*').eq('event_id', id.event_id).single()
-        if( program ){
-          Allevents.push(program)
-        }
-      })
-    )
-    setevents(Allevents)
-
-
+    if( Userevents ){
+      setevents(Userevents)
     }
 
   }
@@ -32,7 +22,7 @@ const EventsScreen = () => {
   }, [])
 
   return (
-    <View className='flex-1'>
+    <View className='flex-1' style={{ paddingBottom : tabBar + 30 }}>
       <Text className="font-bold text-2xl p-3 ">Events</Text>
       <Link  href={'/(user)/more/Admin/AddNewEventScreen'} asChild >
           <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2 ml-3 mb-2 rounded-md items-center">
@@ -45,7 +35,7 @@ const EventsScreen = () => {
         data={events}
         renderItem={({item}) =>(
           <View style={{marginHorizontal: 2}}>
-          <Link  href={{pathname: '/(user)/more/Admin/EventsNotificationScreen', params: {event_id: item.event_id}}}
+          <Link  href={{pathname: '/(user)/more/Admin/EventsNotificationScreen', params: {event_id: item.event_id, has_lecture : item.has_lecture}}}
 
               asChild >
               <TouchableOpacity>

@@ -11,7 +11,7 @@ type JummahTimeProp = {
 }
 
 type jummahTableProp = {
-  jummahData : JummahBottomSheetProp[]
+  jummahData : JummahBottomSheetProp
 }
 
 type Ref = BottomSheetModal;
@@ -91,7 +91,7 @@ export const JummahTable = forwardRef<Ref,jummahTableProp>(({jummahData}, ref) =
             </TouchableOpacity>
         </ScrollView>
       </View>
-      <JummahBottomSheet jummahSpeaker={jummah[clickedState].speaker} jummahSpeakerImg={jummahData[clickedState].jummahSpeakerImg} jummahTopic={jummah[clickedState].topic} jummahDesc={jummah[clickedState].desc} jummahNum={jummahData[clickedState].jummahNum} ref={bottomSheetRef} />
+      <JummahBottomSheet jummahSpeaker={jummahData.speaker} jummahSpeakerImg={jummahData.jummahSpeakerImg} jummahTopic={jummahData.topic} jummahDesc={jummahData.desc} jummahNum={jummahData.jummahNum} ref={bottomSheetRef} />
       </>
   )
 }

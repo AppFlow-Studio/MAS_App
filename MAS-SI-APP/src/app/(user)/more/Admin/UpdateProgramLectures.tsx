@@ -1,59 +1,55 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { TextInput, Button, Menu } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { Stack, useLocalSearchParams } from "expo-router";
 import moment from "moment";
+import { supabase } from "@/src/lib/supabase";
 
 const UpdateProgramLectures = () => {
-  const { program_id } = useLocalSearchParams();
+  const { lecture } = useLocalSearchParams();
   const [lectureProgram, setLectureProgram] = useState<string | null>(null);
-  const [lectureName, setLectureName] = useState<string>("");
+  const [lectureName, setLectureName] = useState<string>('');
   const [lectureSpeaker, setLectureSpeaker] = useState<string>("");
   const [lectureLink, setLectureLink] = useState<string>("");
   const [lectureAI, setLectureAI] = useState<string>("");
-  const [lectureDate, setLectureDate] = useState<Date | null>(null);
-  const [lectureTime, setLectureTime] = useState<Date | null>(null);
+  const [lectureDate, setLectureDate] = useState<string>('');
+  const [lectureTime, setLectureTime] = useState<string>('');
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
-
   const programs = ["Program A", "Program B", "Program C"];
 
 
 
   const handleSubmit = () => {
-
-
     Toast.show({
       type: "success",
       text1: "Lecture Uploaded Successfully",
       position: "top",
       topOffset: 50,
     });
-
-    // Reset fields
-    setLectureProgram(null);
-    setLectureName("");
-    setLectureSpeaker("");
-    setLectureLink("");
-    setLectureAI("");
-    setLectureDate(null);
-    setLectureTime(null);
   };
-
-  const handleCancel = () => {
-    setLectureProgram(null);
-    setLectureName("");
-    setLectureSpeaker("");
-    setLectureLink("");
-    setLectureAI("");
-    setLectureDate(null);
-    setLectureTime(null);
-  };
-
-  const onUploadLecture = () => {}
+  const getLecture = async () => {
+    const { data, error } = await supabase.from('program_lectures').select('*').eq('lecture_id', lecture).single()
+    if( data ){
+      setLectureDate(data.lecture_date)
+      setLectureName(data.lecture_name)
+      setLectureSpeaker(data.lecture_speaker)
+      setLectureLink(data.lecture_link)
+      setLectureTime(data.lecture_time)
+    }
+   }
+  const onUploadLecture = async () => {
+    if( lectureName && lectureTime && lectureDate && lectureSpeaker && lectureLink ){
+      const { error } = await supabase.from('program_lectures').update({ lecture_time : lectureTime, lecture_name : lectureName, lecture_link : lectureLink ,lecture_date  : lectureDate, lecture_speaker : lectureSpeaker}).eq('lecture_id', lecture)
+      handleSubmit()
+    }
+  }
+  useEffect(() => {
+    getLecture()
+  }, [])
   return (
     <>
     <Stack.Screen
@@ -133,20 +129,10 @@ const UpdateProgramLectures = () => {
           }}
         >
           <Text style={{ color: "white", textAlign: "center" }}>
-            {lectureDate ? moment(lectureDate).format("MM/DD/YYYY") : "Update Date"}
+            { lectureDate }
           </Text>
         </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={new Date()}
-            mode="date"
-            display="default"
-            onChange={(event, date) => {
-              setShowDatePicker(false);
-              if (date) setLectureDate(date);
-            }}
-          />
-        )}
+       
 
         {/* Lecture Time */}
         <Text className="text-base font-bold mb-1 ml-2">Update Lecture Time</Text>
@@ -161,20 +147,9 @@ const UpdateProgramLectures = () => {
           }}
         >
           <Text style={{ color: "white", textAlign: "center" }}>
-            {lectureTime ? moment(lectureTime).format("hh:mm A") : "Update Time"}
+            { lectureTime }
           </Text>
         </TouchableOpacity>
-        {showTimePicker && (
-          <DateTimePicker
-            value={new Date()}
-            mode="time"
-            display="default"
-            onChange={(event, time) => {
-              setShowTimePicker(false);
-              if (time) setLectureTime(time);
-            }}
-          />
-        )}
 
         {/* Buttons */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

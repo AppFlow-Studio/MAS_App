@@ -88,7 +88,7 @@ const Index = () => {
         </Pressable>
         <Pressable style={{  shadowColor : "black", shadowOffset : {width : 0, height : 0}, shadowOpacity : 1, shadowRadius : 5  }} onPress={() => (spin.value = spin.value ? 0 : 1)}>
           <Animated.Image 
-            source={{ uri : defaultProgramImage }}
+            source={require('@/assets/images/MASHomeLogo.png')}
             style={[{ width : 100, height : 100, borderRadius : 50, borderColor : "yellow", borderWidth : 2 }, flip]}
           />
         </Pressable>

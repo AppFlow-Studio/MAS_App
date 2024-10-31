@@ -95,7 +95,8 @@ const EventsNotificationScreen = () => {
       >
         Preview
       </Button>
-
+      { hasLectures == true&& (
+      <>
       <Text className="text-xl mt-4"> Upload Event Lecture</Text>
       <Link  href={{
         pathname : '/(user)/more/Admin/UploadEventLectures',
@@ -106,11 +107,12 @@ const EventsNotificationScreen = () => {
           </TouchableOpacity>
       </Link>
 
-    { hasLectures == true&& (
-      <>
-      <Text className="text-xl mt-4"> Update Event Lecture</Text>
+    
+      <Text className="text-xl mt-4"> Update Existing Event Lecture</Text>
       <Link  href={
-         '/(user)/more/Admin/EventLecturesScreen'
+         {pathname : '/(user)/more/Admin/EventLecturesScreen',
+          params : { event_id : event_id }
+         }
         } asChild >
           <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2  mb-2 rounded-md">
             <Text className="font-bold text-sm text-white">Update Lecture</Text>

@@ -5,10 +5,25 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
-import { Link, Stack } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Link, Stack, useLocalSearchParams } from "expo-router";
+import { supabase } from "@/src/lib/supabase";
+import { object } from "zod";
 
 const ProgramLecturesScreen = () => {
+  const { program_id } = useLocalSearchParams()
+  const [ lecture, setLecture ] = useState<any[]>([])
+
+  const getLectures = async () => {
+    const { data, error } = await supabase.from('program_lectures').select('*').eq('lecture_program', program_id)
+    if ( data ) {
+      setLecture(data)
+    }
+  }
+
+  useEffect(() => {
+    getLectures()
+  }, [])
   return (
     <>
       <Stack.Screen
@@ -28,16 +43,19 @@ const ProgramLecturesScreen = () => {
       >
         <Text className="text-xl my-4">Program Lectures</Text>
         <FlatList
-          data={[1, 2, 3, 4, 5]}
+          data={lecture}
           renderItem={({ item, index }) => (
-            <Link  href={'/(user)/more/Admin/UpdateProgramLectures'} asChild >
+            <Link  href={{
+              pathname : '/(user)/more/Admin/UpdateProgramLectures',
+              params : {lecture : item.lecture_id }
+              }} asChild >
             <TouchableOpacity className="mb-3 flex-row product border-gray-300 pb-2" style={{borderBottomWidth:0.5}}>
-                 <Text className="text-lg font-bold mt-2 mr-4 text-gray-500">{item}:</Text>
+                 <Text className="text-lg font-bold mt-2 mr-4 text-gray-500"></Text>
               <View>
                 <Text className="text-lg font-bold">
-                  Program Lecture {item}{" "}
+                 {index + 1}. {item.lecture_name}
                 </Text>
-                <Text className="text-base ">Jun-0{index}, 2024 </Text>
+                <Text className="text-base ">{item.lecture_date}</Text>
               </View>
               
             </TouchableOpacity>
@@ -51,4 +69,3 @@ const ProgramLecturesScreen = () => {
 
 export default ProgramLecturesScreen;
 
-const styles = StyleSheet.create({});

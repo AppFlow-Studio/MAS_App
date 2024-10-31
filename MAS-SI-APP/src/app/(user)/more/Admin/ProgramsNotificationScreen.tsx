@@ -108,10 +108,9 @@ const ProgramsEventNotificationScreen = () => {
             <Text className="font-bold text-sm text-white">Upload Lecture</Text>
           </TouchableOpacity>
       </Link>
-      </>)
-      }
+     
 
-      <Text className="text-xl mt-4"> Update Program Lecture</Text>
+      <Text className="text-xl mt-4"> Update Existing Program Lecture</Text>
       <Link  href={{
         pathname : '/(user)/more/Admin/ProgramLecturesScreen',
         params : { program_id : program_id, }
@@ -120,7 +119,8 @@ const ProgramsEventNotificationScreen = () => {
             <Text className="font-bold text-sm text-white">Update</Text>
           </TouchableOpacity>
       </Link>
-
+      </>)
+      }
       <Text className="text-xl mt-4"> Update Program</Text>
       <Link  href={{
         pathname : '/(user)/more/Admin/UpdateProgramScreen',

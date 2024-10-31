@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { TextInput, Button, Menu } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { Stack, useLocalSearchParams } from "expo-router";
 import moment from "moment";
+import { supabase } from "@/src/lib/supabase";
 
 
 const UpdateEventLectures = () => {
-  const { event_id } = useLocalSearchParams();
+  const { lecture } = useLocalSearchParams();
   const [lectureEvent, setLectureEvent] = useState<string | null>(null);
   const [lectureName, setLectureName] = useState<string>("");
   const [lectureSpeaker, setLectureSpeaker] = useState<string>("");
@@ -20,12 +21,37 @@ const UpdateEventLectures = () => {
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
 
-  const events = ["Event A", "Event B", "Event C"];
+  const getLecture = async () => {
+    const { data, error } = await supabase.from('events_lectures').select('*').eq('lecture_id', lecture).single()
+    if( data ){
+      setLectureDate(data.lecture_date)
+      setLectureName(data.lecture_name)
+      setLectureSpeaker(data.lecture_speaker)
+      setLectureLink(data.lecture_link)
+      setLectureTime(data.lecture_time)
+    }
+   }
+
+
+
+  const handleSubmit = () => {
+    Toast.show({
+      type: "success",
+      text1: "Lecture Uploaded Successfully",
+      position: "top",
+      topOffset: 50,
+    });
+  };
 
   const onUpdateLecture = async () => {
-
+    if( lectureName && lectureTime && lectureDate && lectureSpeaker && lectureLink ){
+      const { error } = await supabase.from('event_lectures').update({ event_lecture_time : lectureTime, event_lecture_name : lectureName, event_lecture_link : lectureLink , event_lecture_date  : lectureDate, event_lecture_speaker : lectureSpeaker}).eq('event_lecture_id', lecture)
+      handleSubmit()
+    }
   }
-  
+  useEffect(() => {
+    getLecture()
+  }, [])
   return (
     <>
       <Stack.Screen

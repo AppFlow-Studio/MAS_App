@@ -87,11 +87,10 @@ export type salahDisplayWidget = {
 }
 
 export type JummahBottomSheetProp = {
-    jummahSpeaker : string,
-    jummahSpeakerImg : string,
-    jummahTopic : string,
-    jummahNum: string,
-    jummahDesc: string
+    topic : string,
+    desc : string,
+    speaker : string,
+    jummah_time : string
 }
 
 export type TabArrayType = {

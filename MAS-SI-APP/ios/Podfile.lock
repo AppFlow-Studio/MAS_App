@@ -313,6 +313,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - Yoga
   - EXStructuredHeaders (3.8.0)
+  - EXTaskManager (11.8.2):
+    - ExpoModulesCore
+    - UMAppLoader
   - EXUpdates (0.25.24):
     - DoubleConversion
     - EASClient
@@ -1620,6 +1623,8 @@ PODS:
     - ExpoModulesCore
   - RNCAsyncStorage (1.23.1):
     - React-Core
+  - RNDateTimePicker (8.0.1):
+    - React-Core
   - RNGestureHandler (2.16.2):
     - DoubleConversion
     - glog
@@ -1731,6 +1736,7 @@ PODS:
     - StripeUICore (= 23.26.0)
   - StripeUICore (23.26.0):
     - StripeCore (= 23.26.0)
+  - UMAppLoader (4.6.0)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -1766,6 +1772,7 @@ DEPENDENCIES:
   - ExpoWebBrowser (from `../node_modules/expo-web-browser/ios`)
   - EXSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - EXStructuredHeaders (from `../node_modules/expo-structured-headers/ios`)
+  - EXTaskManager (from `../node_modules/expo-task-manager/ios`)
   - EXUpdates (from `../node_modules/expo-updates/ios`)
   - EXUpdatesInterface (from `../node_modules/expo-updates-interface/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -1831,6 +1838,7 @@ DEPENDENCIES:
   - ReactNativeIosContextMenu (from `../node_modules/react-native-ios-context-menu`)
   - ReactNativeIosUtilities (from `../node_modules/react-native-ios-utilities`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
   - RNReanimated (from `../node_modules/react-native-reanimated`)
@@ -1838,6 +1846,7 @@ DEPENDENCIES:
   - RNSharedElement (from `../node_modules/react-native-shared-element`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - "stripe-react-native (from `../node_modules/@stripe/stripe-react-native`)"
+  - UMAppLoader (from `../node_modules/unimodules-app-loader/ios`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -1927,6 +1936,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-splash-screen/ios"
   EXStructuredHeaders:
     :path: "../node_modules/expo-structured-headers/ios"
+  EXTaskManager:
+    :path: "../node_modules/expo-task-manager/ios"
   EXUpdates:
     :path: "../node_modules/expo-updates/ios"
   EXUpdatesInterface:
@@ -2054,6 +2065,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-ios-utilities"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  RNDateTimePicker:
+    :path: "../node_modules/@react-native-community/datetimepicker"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
   RNGoogleSignin:
@@ -2068,6 +2081,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-svg"
   stripe-react-native:
     :path: "../node_modules/@stripe/stripe-react-native"
+  UMAppLoader:
+    :path: "../node_modules/unimodules-app-loader/ios"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -2108,6 +2123,7 @@ SPEC CHECKSUMS:
   ExpoWebBrowser: 7595ccac6938eb65b076385fd23d035db9ecdc8e
   EXSplashScreen: fbf0ec78e9cee911df188bf17b4fe51d15a84b87
   EXStructuredHeaders: cb8d1f698e144f4c5547b4c4963e1552f5d2b457
+  EXTaskManager: 9c3520305c3aa1b4a12a7c6d1e3f85f2779c06e9
   EXUpdates: b8f1d850bb9eac11cb634c6213134664f01592ff
   EXUpdatesInterface: 996527fd7d1a5d271eb523258d603f8f92038f24
   FBLazyVector: ac12dc084d1c8ec4cc4d7b3cf1b0ebda6dab85af
@@ -2176,6 +2192,7 @@ SPEC CHECKSUMS:
   ReactNativeIosContextMenu: e5f972174bd78ab3a552bd6ee4745762ffaa42b3
   ReactNativeIosUtilities: 638290fbfaa093c1b50d1f926715d77cabcae759
   RNCAsyncStorage: 826b603ae9c0f88b5ac4e956801f755109fa4d5c
+  RNDateTimePicker: b6a9b35a785ecbe12b4e7d6de5439d0aa4614146
   RNGestureHandler: 2282cfbcf86c360d29f44ace393203afd5c6cff7
   RNGoogleSignin: 08dc4ba7eac2096c7fecfe109f0950fa4683c803
   RNReanimated: 35f9ac9c3ac42d0497ebd1cce5c39d7687a8493e
@@ -2193,6 +2210,7 @@ SPEC CHECKSUMS:
   StripePaymentSheet: b7cab74c10a5a4b225f948e225dda427a6899e08
   StripePaymentsUI: 1f0cbac9145149fbbb87e27660af0d3be91aae98
   StripeUICore: d6803286f1e2b80c62c320b304503c87bf65de3c
+  UMAppLoader: f17a5ee8e85b536ace0fc254b447a37ed198d57e
   Yoga: 950bbfd7e6f04790fdb51149ed51df41f329fcc8
 
 PODFILE CHECKSUM: 0968481ca38bf2be046e8e526db45fb4d14a52b4

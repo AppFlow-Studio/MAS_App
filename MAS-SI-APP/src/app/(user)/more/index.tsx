@@ -106,7 +106,7 @@ const Index = () => {
       </View>
       <View className='items-center flex-1' style={{ paddingBottom : tabBarHeight }}>
           <View className='flex-1 flex-col items-center pb-10 w-[95%]' style={{ borderRadius : 20, shadowColor : 'black', shadowOffset : { width : 0, height : 0.5}, shadowOpacity : 1, shadowRadius : 1  }}>
-          <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5'>
+         {/* <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5'>
             <Link href={"/more/MasShopHomeScreen"} asChild disabled={anonStatus}>
               <Pressable className='w-[100%] bg-gray-50  mt-5 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>
                 <View className='flex-row items-center justify-between px-1 w-[100%]'>
@@ -126,7 +126,7 @@ const Index = () => {
                 </View>
                 </Pressable>
               </Link>
-            </Pressable>
+            </Pressable> */}
 
            {profile?.role == 'ADMIN' &&  
            <Link href={"/more/Admin/AdminScreen"} asChild>

@@ -9,9 +9,9 @@ import { supabase } from '../lib/supabase';
 
 type Ref = BottomSheetModal;
 
-export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({jummahSpeaker, jummahSpeakerImg, jummahTopic, jummahDesc, jummahNum}, ref) => {
+export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({speaker, topic, desc, jummah_time}, ref) => {
     const snapPoints = useMemo(() => ["50%", "75%"], []);
-    const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>()
+    const [ speakerData, setSpeakerData ] = useState<SheikDataType>()
     const [ visible, setVisible ] = useState(false);
     const showModal = () => setVisible(true);
     const hideModal = () => setVisible(false);
@@ -21,35 +21,40 @@ export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({jummah
       return( 
         <View className='flex-1'>
           { 
-            speakerData?.map((speakerData) => (
+            speakerData && (
             <>
               <View className=' flex-row'>
                   <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
               <View className='flex-col px-5'>
-                <Text className='text-xl font-bold'>Name: </Text>
-                <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
+                <Text className='text-xl font-bold text-black'>Name: </Text>
+                <Text className='pt-2 font-semibold text-black'> {speakerData?.speaker_name} </Text>
               </View>
             </View>
       
             <View className='flex-col py-3'>
-              { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
+              { speakerData?.speaker_name == "MAS" ? <Text className='font-bold text-black'>Impact </Text> :  <Text className='font-bold text-black'>Credentials: </Text> } 
               { speakerData?.speaker_creds.map( (cred, i) => {
-                return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
+                return <Text key={i} className='text-black'> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
               })}
             </View>
             </>
-            ))
+            )
           }
         </View>
       )
-    } 
-
-    const getJummah = async () => {
-
     }
 
+    const getSpeaker = async () => {
+      const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker).single()
+      if( speakerInfo ){
+        setSpeakerData(speakerInfo)
+      }
+    }
 
-    const renderBackDrop = useCallback( (props : any ) => <BottomSheetBackdrop appearsOnIndex={0} disappearsOnIndex={-1} {...props}/> , [])
+  useEffect(() => {
+    getSpeaker()
+  }, [])
+  const renderBackDrop = useCallback( (props : any ) => <BottomSheetBackdrop appearsOnIndex={0} disappearsOnIndex={-1} {...props}/> , [])
   return (
     <BottomSheetModal
         ref={ref}
@@ -60,26 +65,26 @@ export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({jummah
         handleIndicatorStyle={{backgroundColor: "white"}}
         backdropComponent={renderBackDrop}
     >
-      <Text variant="headlineMedium" style={{marginLeft: 5, color : "white", fontWeight : "bold"}}>{jummahNum} Prayer</Text>
+      <Text variant="headlineMedium" style={{marginLeft: 5, color : "white", fontWeight : "bold"}}>{jummah_time} Prayer</Text>
       <View className=' bg-white h-full mt-1 pt-2' style={{borderRadius: 40}}>
         <View className='flex-row w-[100%] justify-between px-5 items-center'>
           <Text className='font-bold text-3xl text-black'>Topic:</Text>
-          <Text className='text-3xl font-semibold text-black'>{jummahTopic}</Text>
+          <Text className='text-3xl font-semibold text-black'>{topic}</Text>
         </View>
         <Divider style={{width : "90%", alignSelf: "center"}}/>
         <View className='flex-row items-center justify-between px-1'>
           <Text className='font-bold text-black text-2xl ml-4'>Speaker:</Text> 
-          <Button onPress={showModal} style={{cursor: "pointer"}} > <Text variant='titleMedium' style={{color : "blue", textDecorationLine: "underline"}}>{jummahSpeaker}</Text> </Button>
+          <Button onPress={showModal} style={{cursor: "pointer"}} > <Text variant='titleMedium' style={{color : "blue", textDecorationLine: "underline"}}>{speakerData?.speaker_name}</Text> </Button>
         </View>
         <View className=''>
          <Text className='font-semi text-black text-2xl ml-4'>Description:</Text> 
          <ScrollView className='h-[40%] w-[90%] self-center rounded-lg bg-white border-gray-400 border-2' contentContainerStyle={{ paddingHorizontal : 4 }}>
-          <Text className='text-lg text-black'>{jummahDesc}</Text>
+          <Text className='text-lg text-black'>{desc}</Text>
          </ScrollView>
         </View>
 
         <Portal>
-        <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, width: "90%", borderRadius: 35, alignSelf: "center", height : '50%'}} >
+        <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, width: "90%", borderRadius: 35, alignSelf: "center", height : '50%' }} >
           <GetSheikData />
         </Modal>
       </Portal>

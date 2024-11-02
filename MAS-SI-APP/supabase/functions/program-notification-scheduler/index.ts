@@ -244,7 +244,7 @@ serve(async (req) => {
                   if( day - 1 == ( event_day - 1 % 7 ) ){
                     // schedule notification
                     const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                    await schedule_notification(event.user_id, user_push_token.push_notification_token, event.event_id, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
+                    await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
                   }
                 }) 
               )
@@ -253,12 +253,12 @@ serve(async (req) => {
             if( event_days.includes( daysOfWeek[day-1] ) ){
               if( setting == 'When Program Starts' ){
                   const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                  await schedule_notification(event.user_id, user_push_token.push_notification_token, event.event_id, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
+                  await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
               }
               else if( setting == '30 Mins Before' ){
                 const start_time = setTimeToCurrentDate(event_info.event_start_time)
                 start_time.setMinutes(start_time.getMinutes() - 30)
-                await schedule_notification(event.user_id, user_push_token.push_notification_token, event.event_id, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)              }
+                await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)              }
             }
             else{
               return

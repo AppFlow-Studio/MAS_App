@@ -116,37 +116,7 @@ export default function homeScreen() {
         </View>
       )
     }
-   const prayer = prayerTimesWeek
-    const jummahData : JummahBottomSheetProp[] = [
-      {
-        jummahSpeaker : "Sh.Abdelrahman Badawy",
-        jummahSpeakerImg : "",
-        jummahTopic : "United Hope",
-        jummahNum: "12:15 PM",
-        jummahDesc: "How to increase your iman and stand for Palestine"
-      },
-      {
-        jummahSpeaker : "T",
-        jummahSpeakerImg : "T",
-        jummahTopic : "T",
-        jummahNum: "1:00 PM",
-        jummahDesc: "How to increase your iman and stand for Palestine"
-      },
-      {
-        jummahSpeaker : "3",
-        jummahSpeakerImg : "3",
-        jummahTopic : "3",
-        jummahNum: "1:45 PM",
-        jummahDesc: "How to increase your iman and stand for Palestine"
-      },
-      {
-        jummahSpeaker : "4",
-        jummahSpeakerImg : "4",
-        jummahTopic : "4",
-        jummahNum: "3:40PM",
-        jummahDesc: "How to increase your iman and stand for Palestine"
-      }
-    ]
+    const prayer = prayerTimesWeek
     return (
       <Animated.ScrollView ref={scrollRef} className="bg-white h-full flex-1" onScroll={scrollHandler}>
             <StatusBar barStyle={"dark-content"}/>
@@ -193,7 +163,7 @@ export default function homeScreen() {
             </View>
             <View className='justify-center items-center w-[95%] m-auto pt-2' style={{shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6}}>
               <ImageBackground style={{width:"100%", height: 450, justifyContent: "center"}} source={require("@/assets/images/jummahSheetBackImg.png")} resizeMode='stretch' imageStyle={{ borderRadius: 20 }}>
-                <JummahTable jummahData={jummahData} ref={bottomSheetRef}/>
+                <JummahTable ref={bottomSheetRef}/>
               </ImageBackground>
             </View>
             <View style={[{paddingBottom : tabBarHeight}]}></View>

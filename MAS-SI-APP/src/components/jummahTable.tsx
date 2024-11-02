@@ -15,7 +15,7 @@ type jummahTableProp = {
 }
 
 type Ref = BottomSheetModal;
-export const JummahTable = forwardRef<Ref,jummahTableProp>(({jummahData}, ref) => {
+export const JummahTable = forwardRef<Ref,{}>(({}, ref) => {
   const [ clickedState, setClickedState ] = useState(0)
   const [ jummah, setJummah ] = useState<any[]>([])
   const bottomSheetRef = useRef<BottomSheetModal>(null);
@@ -37,15 +37,16 @@ export const JummahTable = forwardRef<Ref,jummahTableProp>(({jummahData}, ref) =
   }  
 
   const getJummahData = async () => {
-    const { data, error } =  await supabase.from('jummah').select('*')
+    const { data, error } =  await supabase.from('jummah').select('*').order('id', { ascending : true })
     if( data ){
       setJummah(data)
     }
   }
 
   useEffect(() => {
-    //getJummahData()
+    getJummahData()
   }, [])
+
   return (
     <>
       <View className="ml-14 mr-14 items-center"style={{height: 350}}>
@@ -91,8 +92,8 @@ export const JummahTable = forwardRef<Ref,jummahTableProp>(({jummahData}, ref) =
             </TouchableOpacity>
         </ScrollView>
       </View>
-      <JummahBottomSheet jummahSpeaker={jummahData.speaker} jummahSpeakerImg={jummahData.jummahSpeakerImg} jummahTopic={jummahData.topic} jummahDesc={jummahData.desc} jummahNum={jummahData.jummahNum} ref={bottomSheetRef} />
-      </>
+    {jummah.length > 0 && <JummahBottomSheet speaker={jummah[clickedState].speaker} topic={jummah[clickedState].topic} desc={jummah[clickedState].desc} jummah_time={jummah[clickedState].prayer_time} ref={bottomSheetRef}/>}
+    </>
   )
 }
 )

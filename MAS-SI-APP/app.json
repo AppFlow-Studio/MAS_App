@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "MAS Staten Island",
-    "slug": "MAS Staten Island",
+    "slug": "MAS-SI-APP",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/MASHomeLogo.png",

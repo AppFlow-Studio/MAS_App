@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'MAS-SI-APP'
+rootProject.name = 'MAS Staten Island'
 
 dependencyResolutionManagement {
   versionCatalogs {

@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "MASSIAPP.app"
-               BlueprintName = "MASSIAPP"
-               ReferencedContainer = "container:MASSIAPP.xcodeproj">
+               BuildableName = "MASStatenIsland.app"
+               BlueprintName = "MASStatenIsland"
+               ReferencedContainer = "container:MASStatenIsland.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "MASSIAPPTests.xctest"
-               BlueprintName = "MASSIAPPTests"
-               ReferencedContainer = "container:MASSIAPP.xcodeproj">
+               BuildableName = "MASStatenIslandTests.xctest"
+               BlueprintName = "MASStatenIslandTests"
+               ReferencedContainer = "container:MASStatenIsland.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "MASSIAPP.app"
-            BlueprintName = "MASSIAPP"
-            ReferencedContainer = "container:MASSIAPP.xcodeproj">
+            BuildableName = "MASStatenIsland.app"
+            BlueprintName = "MASStatenIsland"
+            ReferencedContainer = "container:MASStatenIsland.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "MASSIAPP.app"
-            BlueprintName = "MASSIAPP"
-            ReferencedContainer = "container:MASSIAPP.xcodeproj">
+            BuildableName = "MASStatenIsland.app"
+            BlueprintName = "MASStatenIsland"
+            ReferencedContainer = "container:MASStatenIsland.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

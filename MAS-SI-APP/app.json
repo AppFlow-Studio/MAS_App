@@ -1,16 +1,16 @@
 {
   "expo": {
     "name": "MAS Staten Island",
-    "slug": "MAS-SI-APP",
-    "version": "1.0.0",
+    "slug": "MAS Staten Island",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/MASHomeLogo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/MASsplash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "white"
     },
     "ios": {
       "supportsTablet": true,

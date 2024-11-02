@@ -75,12 +75,6 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
 
                 </View>
 
-
-                    <View className='flex-col mt-4 justify-center items-center px-3'>
-                    <Image source={require("@/assets/images/googlelog2.png")} style={{ width : 250, height: 55, objectFit: 'fill'}} className='mb-1'/>
-                        <Image source={require("@/assets/images/apple-signinbutton-560.png")} style={{ width : 300, height: 50, objectFit: 'cover'}} className='mb-1'/>
-                    </View>
-
                     </View>
                     <View className='mt-5'/>
                     <Button  mode='contained' onPress={signInWithEmail} disabled={loading} buttonColor='#57BA47' textColor='white' className='w-[150]'>LOGIN</Button>

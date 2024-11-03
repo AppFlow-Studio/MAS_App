@@ -23,7 +23,7 @@ import { BlurView } from 'expo-blur';
 export default function homeScreen() {
   const { onSetPrayerTimesWeek, prayerTimesWeek } = usePrayer()
   const { session } = useAuth()
-  const [ ads, setAds ] = useState(true)
+  const [ ads, setAds ] = useState(false)
   const [ profile, setProfile ] = useState<Profile>()
   const [ profileFirstName , setProfileFirstName ] = useState('')
   const [ profileLastName , setProfileLastName ] = useState('')
@@ -91,15 +91,9 @@ export default function homeScreen() {
         onSetPrayerTimesWeek(weekInfo)
         setLoading(false)
     }
-    const checkForAds =  async () => {
-      const { data, error } = await supabase.from('approved_business_ads').select('*')
-      if( data ){
-        
-      }
-    }
     useEffect( () => {
       getProfile();
-      getPrayer()
+      getPrayer();
     }, [])
     useEffect(() => {
       if( profileFirstName && profileLastName && profileEmail ){
@@ -139,13 +133,7 @@ export default function homeScreen() {
               <View className='pt-3' style={{height: 250}}>
                 <ProgramsCircularCarousel />
               </View>
-              { ads && 
-                <View className=' w-[95%] h-[250] bg-gray-300 p-1 self-center mt-4' style={{ borderRadius : 20 }}>
-                  <BlurView className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }} intensity={80}>
-                    <ApprovedAds />
-                  </BlurView>
-                </View>
-              }
+              <ApprovedAds />
               <View className='pl-3 flex-row pt-4'>
                   <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
               </View>

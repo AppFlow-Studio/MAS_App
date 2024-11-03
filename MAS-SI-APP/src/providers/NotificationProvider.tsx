@@ -6,6 +6,7 @@ import * as TaskManager from 'expo-task-manager';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
 import { format, setHours, setMinutes, subMinutes } from 'date-fns';
+import { Alert } from 'react-native';
 export type PrayerNotificationTemplateProp = {
   prayer_name : string
   hour : number
@@ -37,7 +38,6 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     useState<Notifications.Notification>();
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
-  console.log('session',session?.user.id)
 
   const savePushToken = async ( newToken : ExpoPushToken | undefined ) => {
     console.log('called savePushToken')
@@ -47,15 +47,16 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
       return;
     }
     if( session?.user.id ){
-      console.log('session exits')
+      console.log('session exists')
+      const { error } = await supabase.from('profiles').update({  push_notification_token : newToken }).eq('id', session?.user.id)
+      if( error ){
+        Alert.alert(error.message)
+      }
     }
     else{
       console.log('session fail')
     }
-    const { error } = await supabase.from('profiles').update({  push_notification_token : newToken }).eq('id', session?.user.id)
-    if( error ){
-      console.log('error', error)
-    }
+   
   }
 
   async function PrayerNotificationTemplate({prayer_name, hour, minute, body, title} : PrayerNotificationTemplateProp ){
@@ -254,50 +255,33 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     }
 
 
-    const testSchedule = async () => {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Time's up!",
-          body: 'Change sides!',
-        },
-        trigger: {
-          seconds: 2,
-        },
-      });
-    }
-
   useEffect(() => {
-    registerForPushNotificationsAsync().then( (token : any) => savePushToken(token) );
+    if( session ){
+      console.log('session',session?.user.id)
+      registerForPushNotificationsAsync().then( (token : any) => savePushToken(token) );
     
-    scheduleProgramPushNotifications()
-
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        setNotification(notification);
-      });
-
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log('response', response);
-      });
-    
-    testSchedule()
-    
-    return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
-      }
-    };
-
-  }, []);
-
-  console.log('noti', notification);
-  console.log(expoPushToken);
+      notificationListener.current =
+        Notifications.addNotificationReceivedListener((notification) => {
+          setNotification(notification);
+        });
+  
+      responseListener.current =
+        Notifications.addNotificationResponseReceivedListener((response) => {
+          console.log('response', response);
+        });
+          
+      return () => {
+        if (notificationListener.current) {
+          Notifications.removeNotificationSubscription(
+            notificationListener.current
+          );
+        }
+        if (responseListener.current) {
+          Notifications.removeNotificationSubscription(responseListener.current);
+        }
+      };
+    }
+  }, [session]);
 
   return <>{children}</>;
 };

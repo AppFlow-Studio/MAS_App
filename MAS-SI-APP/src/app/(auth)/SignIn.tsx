@@ -7,11 +7,13 @@ import Animated , { useAnimatedStyle, useSharedValue, withTiming, Easing, Reduce
 import { StatusBar } from "react-native"
 import { Platform } from 'react-native'
 import * as AppleAuthentication from 'expo-apple-authentication'
+import { useAuth } from '@/src/providers/AuthProvider';
 
 const SignIn = () => {
     const [loading, setLoading] = useState(false);
     const [ email, setEmail ] = useState("")
     const [ password, setPassword] = useState("")
+    const { session } = useAuth()
     const logoAnime = useSharedValue(0)
     const logoBounce = useSharedValue(-200)
     const logoMountAnimeStyle = useAnimatedStyle(() => {
@@ -128,6 +130,10 @@ const SignIn = () => {
                 console.log(JSON.stringify({ error, user }, null, 2))
                 if (!error) {
                   // User is signed in.
+                  const{
+                    error,
+                    data
+                  } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
                 }
               } else {
                 throw new Error('No identityToken.')

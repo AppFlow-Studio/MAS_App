@@ -38,34 +38,12 @@ function setTimeToCurrentDate(timeString : string ) {
 }
 
 serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
-  }
-
   const scheduler = async () => {
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
     const { data : UserSettings, error : UserSettingsError } = await supabase.from('program_notifications_settings').select('*')
     const { data : UserSettingsEvents, error : UserSettingsEventsError } = await supabase.from('event_notification_settings').select('*')
-    const UserSignedUpPrograms : any[] = [{
-      id: 3,
-      program_id: "e09db866-71af-407a-968d-672c55d807b7",
-      program_name: "Lesson from Surah Yusuf",
-      program_img: "https://pklldvgwaccokqcygmzr.supabase.co/storage/v1/object/sign/fliers/Lesson_Surah_Yusuf.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJmbGllcnMvTGVzc29uX1N1cmFoX1l1c3VmLnBuZyIsImlhdCI6MTcyMDYzOTY4MiwiZXhwIjoxNzUyMTc1NjgyfQ.qlcrexLWyY-SBIVxuX161IxlwNUMMmLmaNsLmM4_Ky0&t=2024-07-10T19%3A28%3A02.225Z",
-      program_desc: "Break down of Surah Yusuf ",
-      program_speaker: "Sh.Abdelrahman Badawy",
-      has_lectures: true,
-      program_start_date: "2024-07-17T01:02:52.461789+00:00",
-      program_end_date: "2025-07-17T01:03:25+00:00",
-      program_is_paid: false,
-      program_price: 0,
-      is_kids: false,
-      is_fourteen_plus: false,
-      is_education: false,
-      program_start_time: "10:45:00",
-      program_days: [ "Thursday" ]
-    }]
+    const UserSignedUpPrograms : any[] = []
     const UserSignedUpEvents : any[] = []
 
     if( UserSettings ){
@@ -272,7 +250,7 @@ serve(async (req) => {
 
   await scheduler()
   return new Response(
-    JSON.stringify(data),
+    JSON.stringify(''),
     { headers: { "Content-Type": "application/json" } },
   )
 })

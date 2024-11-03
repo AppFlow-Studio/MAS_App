@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Image, Dimensions, Animated } from 'react-nativ
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/src/lib/supabase'
 import { Extrapolation, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import { BlurView } from 'expo-blur'
 type adPagination = { 
     data : any,
     scrollX : any
@@ -78,8 +79,12 @@ const ApprovedAds = () => {
   useEffect( () => {
     getAds()
   }, [])
+  if ( ads.length < 1 ){
+    return <></>
+  } 
   return (
-      <View>
+      <View className=' w-[95%] h-[250] bg-gray-300 p-1 self-center mt-5 ' style={{ borderRadius : 20 }}>
+        <BlurView className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }} intensity={80}>
         <ScrollView className='w-[100%] h-[100%]'
             contentContainerStyle={{ width : '100%', height : '100%', borderRadius : 19,overflow : 'hidden' }}
             horizontal
@@ -98,6 +103,7 @@ const ApprovedAds = () => {
                 }) : <></>
             }
         </ScrollView>
+        </BlurView>
       </View>
   )
 }

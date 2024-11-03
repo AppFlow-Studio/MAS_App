@@ -122,13 +122,13 @@ export default function AlertBell( {salah} : salahProp ) {
   }, [])
   return (
     <TouchableOpacity className='flex-row items-center justify-center' onPress={() => setBellClick(true)}>
-      <Icon
-      source="bell" 
-      color="grey"
-      size={11.5}
-      />
       <Menu>
-        <MenuTrigger>
+        <MenuTrigger style={{ flexDirection : 'row', alignItems : 'center', justifyContent : 'center'}}>
+            <Icon
+          source="bell" 
+          color="grey"
+          size={11.5}
+          />
           <Text className='font-bold text-[#0D509D] text-lg pl-2'>{salah}</Text>
         </MenuTrigger>
         <MenuOptions optionsContainerStyle={{ borderRadius : 10, width : 250, paddingVertical : 3 }}>

@@ -132,7 +132,7 @@ const UpdateEventScreen = () => {
   const handleSubmit = () => {
     Toast.show({
       type: "success",
-      text1: "Event Successfully Added",
+      text1: "Event Successfully Updated",
       position: "top",
       topOffset: 50,
       visibilityTime: 2000,
@@ -191,7 +191,7 @@ const UpdateEventScreen = () => {
     }
   }
   const onUpdate = async  () => {
-    if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && eventImage) {
+    if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && (eventImage || imgURL)) {
       if ( eventImage ){
         const base64 = await FileSystem.readAsStringAsync(eventImage.uri, { encoding: 'base64' });
         if ( eventName == originalName ){

@@ -20,7 +20,7 @@ const EventInfo = () => {
   const [ eventInNotification, setEventInNotification ] = useState(false)
   const fetchEventInfo = async () => {
     const { data , error } = await supabase.from("events").select("*").eq("event_id", event_id).single()
-    const { data : InNotifications, error : InNotificationsError } = await supabase.from('added_notifications_events').select('*').eq('event_id', event_id).eq('user_id', session?.user.id)
+    const { data : InNotifications, error : InNotificationsError } = await supabase.from('added_notifications_events').select('*').eq('event_id', event_id).eq('user_id', session?.user.id).single()
     if( InNotifications ){
       setEventInNotification(true)
     }

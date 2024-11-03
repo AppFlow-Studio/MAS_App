@@ -119,6 +119,7 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
                         underlineColor='gray'
                         activeUnderlineColor='gray'
                         contentStyle={{ backgroundColor : 'white'}}
+                        textColor='black'
                     />
                 </View>
             </View>

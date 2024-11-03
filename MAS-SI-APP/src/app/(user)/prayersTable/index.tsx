@@ -56,11 +56,7 @@ export default function Index() {
           />
         </View>
         </ImageBackground>
-        <View className=' w-[95%] h-[250] bg-gray-300 p-1 self-center mt-5 ' style={{ borderRadius : 20 }}>
-          <BlurView className=' bg-white w-[100%] h-[100%]' style={{ borderRadius : 19,overflow : 'hidden' }} intensity={80}>
-            <ApprovedAds />
-          </BlurView>
-        </View>
+        <ApprovedAds />
       </View>
     </View>
   )

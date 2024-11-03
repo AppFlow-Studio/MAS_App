@@ -7,7 +7,7 @@ const LinkToDonationModal = () => {
   const navigation = useNavigation<any>()
   const router = useRouter()
   return (
-            <Pressable  style={{width: "100%", height: 200, justifyContent :"center", alignItems : 'center',shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, borderRadius : 20 }} onPress={() => router.replace('/(user)/more/Donation')}>
+            <Pressable  style={{width: "100%", height: 200, justifyContent :"center", alignItems : 'center',shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, borderRadius : 20 }} onPress={() => router.replace('/(user)/more')}>
                 <ImageBackground 
                     source={require('@/assets/images/MASDonation4.png')}
                     style={{ width: '95%', height : '100%', borderRadius : 20, alignSelf : 'center', justifyContent : 'flex-end'}}

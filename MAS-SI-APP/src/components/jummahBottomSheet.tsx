@@ -65,20 +65,19 @@ export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({speake
         handleIndicatorStyle={{backgroundColor: "white"}}
         backdropComponent={renderBackDrop}
     >
-      <Text variant="headlineMedium" style={{marginLeft: 5, color : "white", fontWeight : "bold"}}>{jummah_time} Prayer</Text>
-      <View className=' bg-white h-full mt-1 pt-2' style={{borderRadius: 40}}>
-        <View className='flex-row w-[100%] justify-between px-5 items-center'>
-          <Text className='font-bold text-3xl text-black'>Topic:</Text>
-          <Text className='text-3xl font-semibold text-black'>{topic}</Text>
+      <Text variant="headlineMedium" style={{marginLeft: 5, color : "white", fontWeight : "bold"}} className='px-6 p-2'>{jummah_time} Prayer</Text>
+      <View className=' bg-white h-full mt-1 pt-2 p-2' style={{borderRadius: 40}}>
+        <View className='flex-row w-[100%] justify-evenly px-5 items-center pt-2'>
+          <Text className='text-3xl font-semibold text-black' numberOfLines={2}>{topic}</Text>
         </View>
         <Divider style={{width : "90%", alignSelf: "center"}}/>
-        <View className='flex-row items-center justify-between px-1'>
+        <View className='flex-row items-center justify-between px-1 p-1'>
           <Text className='font-bold text-black text-2xl ml-4'>Speaker:</Text> 
           <Button onPress={showModal} style={{cursor: "pointer"}} > <Text variant='titleMedium' style={{color : "blue", textDecorationLine: "underline"}}>{speakerData?.speaker_name}</Text> </Button>
         </View>
-        <View className=''>
+        <View className='p-1'>
          <Text className='font-semi text-black text-2xl ml-4'>Description:</Text> 
-         <ScrollView className='h-[40%] w-[90%] self-center rounded-lg bg-white border-gray-400 border-2' contentContainerStyle={{ paddingHorizontal : 4 }}>
+         <ScrollView className='h-[58%] w-[90%] self-center rounded-lg bg-white border-gray-400 border-2' contentContainerStyle={{ paddingHorizontal : 4 }}>
           <Text className='text-lg text-black'>{desc}</Text>
          </ScrollView>
         </View>

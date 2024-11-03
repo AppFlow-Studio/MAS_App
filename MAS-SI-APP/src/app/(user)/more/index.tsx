@@ -53,8 +53,9 @@ const Index = () => {
   const SignInModalCheck = () => {
     if( anonStatus ){
       setVisible(true)
+      return true
     }else{
-      return
+      return false
     }
   }
 
@@ -68,7 +69,7 @@ const Index = () => {
   const onConfirmButton = async () => {
     Toast.show({
       type: 'success',
-      text1: "Profile are Sucessfully Edited",
+      text1: "Profile is Sucessfully Edited",
       position: 'top',
       topOffset : 50,
       visibilityTime: 2000,
@@ -86,13 +87,15 @@ const Index = () => {
         <Pressable className='w-[100%] px-10' onPress={async () =>  await supabase.auth.signOut()}>
           <Text className='text-right text-gray-400'>Logout</Text>
         </Pressable>
-        <Pressable style={{  shadowColor : "black", shadowOffset : {width : 0, height : 0}, shadowOpacity : 1, shadowRadius : 5  }} onPress={() => (spin.value = spin.value ? 0 : 1)}>
+        <Pressable style={{  shadowColor : "black", shadowOffset : {width : 0, height : 0}, shadowOpacity : 1, shadowRadius : 5  }} onPress={() => (spin.value = spin.value ? 0 : 1)} className='mt-3'>
           <Animated.Image 
             source={require('@/assets/images/MASHomeLogo.png')}
             style={[{ width : 100, height : 100, borderRadius : 50, borderColor : "yellow", borderWidth : 2 }, flip]}
           />
         </Pressable>
-        <View className='flex-col mt-1 items-center'>
+
+     { !anonStatus &&  
+     <View className='flex-col mt-4 items-center'>
             <View className='bg-white p-2 rounded-xl border-2'>
               <Text numberOfLines={1}>{profile?.first_name} {profile?.last_name}</Text>
             </View>
@@ -100,9 +103,10 @@ const Index = () => {
               <Text numberOfLines={1}>{profile?.profile_email}</Text>
             </View>
             <View className='pt-2'>
-              <Button mode='contained' buttonColor='#007AFF' textColor='white' className='w-[150]' onPress={()=> setEditProfileVisible(true)}>Edit Profile </Button>
+              <Button mode='contained' buttonColor='#007AFF' textColor='white' className='w-[150]' onPress={()=> !SignInModalCheck() ?  setEditProfileVisible(true) : ''} disabled={anonStatus}>Edit Profile </Button>
             </View>
-          </View>
+        </View>
+      }
       </View>
       <View className='items-center flex-1' style={{ paddingBottom : tabBarHeight }}>
           <View className='flex-1 flex-col items-center pb-10 w-[95%]' style={{ borderRadius : 20, shadowColor : 'black', shadowOffset : { width : 0, height : 0.5}, shadowOpacity : 1, shadowRadius : 1  }}>

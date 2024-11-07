@@ -24,7 +24,7 @@ function setTimeToCurrentDate(timeString) {
   const timestampWithTimeZone = new Date();
 
   // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
+  timestampWithTimeZone.setHours(hours + 5, minutes, seconds, 0); // No milliseconds
 
   // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
   const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
@@ -52,7 +52,7 @@ serve(async (req) => {
                 if( UserPushToken && UserPushToken.push_notification_token ){
                   console.log(prayer.athan_time)
                   const PrayerTime = setTimeToCurrentDate(prayer.athan_time)
-                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `Time to pray ${prayer.prayer_name}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
+                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name, message : `Time to pray ${prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
                   if( error ){
                     console.log(error)
                   }
@@ -78,7 +78,7 @@ serve(async (req) => {
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).single()
               if( UserPushToken &&  UserPushToken.push_notification_token ){
                 const PrayerTime = setTimeToCurrentDate(prayer.iqamah_time)
-                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `Iqamah for ${prayer.prayer_name}`, push_notification_token : UserPushToken.push_notification_token,  notification_type : 'Alert at Iqamah time'})
+                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name, message : `Iqamah for ${prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name}`, push_notification_token : UserPushToken.push_notification_token,  notification_type : 'Alert at Iqamah time'})
                 if( error ){
                   console.log(error)
                 }
@@ -119,7 +119,7 @@ serve(async (req) => {
               const nextPrayerTime = nextPrayerInfo[0].athan_time
               const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
               PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
-              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before asr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : 'Dhuhr', message : `30 mins before asr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
               if( error ){
                 console.log(error)
               }

@@ -87,6 +87,22 @@ const toastConfig = {
         </BlurView>
       </Pressable>
   ),
+  ConfirmNotificationOption : ( { props } : any ) => (
+    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
+      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' >
+
+        <View className='flex-col pl-2'>
+          <View>
+            <Text>{props.props.message} : {props.props.time}</Text>
+          </View>
+          <View className='flex-row'>
+            <Text className='text-sm'>{props.props.prayer}</Text>
+            <Icon source={'chevron-right'} size={20} />
+          </View>
+        </View>
+      </BlurView>
+    </Pressable>
+  )
 }
 type TabButtonProps = {
   props: BottomTabBarButtonProps,

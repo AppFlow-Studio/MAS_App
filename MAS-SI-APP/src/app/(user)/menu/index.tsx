@@ -155,6 +155,7 @@ export default function homeScreen() {
               </ImageBackground>
             </View>
             <View style={[{paddingBottom : tabBarHeight}]}></View>
+
             <Portal>
               <Modal dismissable={false} visible={visible} onDismiss={hideModal} contentContainerStyle={{ height : '70%', width : '95%', borderRadius : 10, backgroundColor : 'white', alignSelf : 'center', alignItems : 'center' }}>
                 <View className='flex-col'>
@@ -202,30 +203,9 @@ export default function homeScreen() {
                   </View>
               </Modal>
             </Portal>
+            
       </Animated.ScrollView>
     )
     
   }
-
-const styles = StyleSheet.create({
-  masLogoBox: {
-    width: 500,
-    height: 50
-  },
-  massiLogo : {
-    width: 500,
-    height: 75,
-    resizeMode: "contain",
-    justifyContent: "center",
-  },
-  background: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 850
-  },
-  
-});
-
 

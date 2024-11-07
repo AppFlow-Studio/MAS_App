@@ -6,11 +6,34 @@ import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-m
 import Toast from 'react-native-toast-message'
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
+import { format, isBefore } from 'date-fns';
 
 type salahProp = {
   salah: string,
+  iqamah : string,
+  athan : string
 }
-export default function AlertBell( {salah} : salahProp ) {
+
+function setTimeToCurrentDate(timeString : string) {
+ 
+  // Split the time string into hours, minutes, and seconds
+  const spliterr = timeString.split(':')
+  spliterr[1] = spliterr[1].match(/.{1,3}/g)!
+  const [hours, minutes, seconds] = timeString.split(':').map(Number);
+  console.log(hours, minutes,seconds)
+  // Create a new Date object with the current date
+  const timestampWithTimeZone = new Date();
+
+  // Set the time with setHours (adjust based on local timezone or UTC as needed)
+  timestampWithTimeZone.setHours(hours, minutes, seconds, 0); // No milliseconds
+
+  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
+  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
+
+  return timestampISO
+}
+
+export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
   const [bellClick, setBellClick] = useState(false);
   const [ alertAthan, setAlertAthan ] = useState(false)
   const [ alert30Before, setAlert30Before ] = useState(false)
@@ -57,51 +80,81 @@ export default function AlertBell( {salah} : salahProp ) {
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : ['Alert at Athan time'] }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
       }else{
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : ['Mute'] }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
-        showToast(salahOption)
+        showToast(salahOption, salah, '')
       }
     }
     if( salahOption == 'Alert at Athan time' ){
         if( alertArray.includes(salahOption) ){
           const filterOutSetting = alertArray.filter(setting => setting != salahOption)
           const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : filterOutSetting }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
+          const { error : scheduleError } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption)
         }
         else{
           alertArray.push(salahOption)
           const checkForMute = alertArray.filter(setting => setting != 'Mute')
           const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : checkForMute }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
-          showToast(salahOption)
+          const currentTime = new Date()
+          const PrayerTime = setTimeToCurrentDate(athan)
+          if( isBefore(currentTime, PrayerTime) ){
+            const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+            if( UserPushToken && UserPushToken.push_notification_token ){
+            const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Time to pray ${salah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
+            }          
+          }
+          
+          showToast(salahOption, salah, athan)
         }
     }else if( salahOption == 'Alert 30 mins before next prayer' ){
+      console.log( athan, iqamah )
       if( alertArray.includes(salahOption) ){
         const filterOutSetting = alertArray.filter(setting => setting != salahOption)
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : filterOutSetting }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
+        const { error : scheduleError } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption)
       }
       else{
         alertArray.push(salahOption)
         const checkForMute = alertArray.filter(setting => setting != 'Mute')
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : checkForMute }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
-        showToast(salahOption)
+        const currentTime = new Date()
+        const PrayerTime = setTimeToCurrentDate(athan)
+        console.log(PrayerTime)
+        if( isBefore(currentTime, PrayerTime) ){
+          const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+          if( UserPushToken && UserPushToken.push_notification_token ){
+          PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
+          const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Time to pray ${salah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+          }          
+        }
+        const time = format(PrayerTime, 'p')
+        showToast(salahOption, salah, time)
       }
     }else if( salahOption == 'Alert at Iqamah time'){
       if( alertArray.includes(salahOption) ){
         const filterOutSetting = alertArray.filter(setting => setting != salahOption)
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : filterOutSetting }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
+        const { error : scheduleError } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption)
       }
       else{
         alertArray.push(salahOption)
         const checkForMute = alertArray.filter(setting => setting != 'Mute')
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : checkForMute }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
-        showToast(salahOption)
+        const currentTime = new Date()
+        const PrayerTime = setTimeToCurrentDate(athan)
+        if( isBefore(currentTime, PrayerTime) ){
+          const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+          if( UserPushToken && UserPushToken.push_notification_token ){
+          const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Time to pray ${salah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Iqamah time'})
+          }          
+        }
+        showToast(salahOption, salah, iqamah)
       }
     }
     getUserSetting()
   }
-  const showToast = (message: string) => {
+  const showToast = (message: string, prayer : string, time : string) => {
     Toast.show({
-      type: 'success',
-      text1: message,
-      position: 'top',
-      topOffset : 50,
+      type: 'ConfirmNotificationOption',
+      props : { message, prayer, time },
       visibilityTime: 2000,
     });
   };

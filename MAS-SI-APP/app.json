@@ -18,10 +18,6 @@
       "usesAppleSignIn": true
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/MASHomeLogo.png",
-        "backgroundColor": "#ffffff"
-      },
       "package": "com.anonymous.MASSIAPP"
     },
     "web": {

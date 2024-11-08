@@ -222,6 +222,7 @@ const Index = () => {
                   </View>
               </Pressable>
 
+            <Link href={'/more/Upcoming'} asChild>
               <Pressable className='w-[100%] bg-gray-50  mt-5 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>
                   <View className='flex-row items-center justify-between px-1 w-[100%]'>
                     <Text className=' text-gray-400'>Want To Stay Connected</Text>
@@ -255,8 +256,8 @@ const Index = () => {
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
                     </Pressable>                
                   </View>
-              </Pressable>
-
+                </Pressable>
+              </Link>
               <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5 bg-gray-50 rounded-xl'>
                 <Link href={'/more/BusinessSponsersScreen'} asChild disabled={anonStatus} className='border'>
                   <Pressable className='w-[100%] bg-gray-50 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>

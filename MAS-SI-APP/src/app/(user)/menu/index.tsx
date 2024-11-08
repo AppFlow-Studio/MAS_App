@@ -160,6 +160,9 @@ export default function homeScreen() {
               <Modal dismissable={false} visible={visible} onDismiss={hideModal} contentContainerStyle={{ height : '70%', width : '95%', borderRadius : 10, backgroundColor : 'white', alignSelf : 'center', alignItems : 'center' }}>
                 <View className='flex-col'>
                   <View>
+                    <Image source={require('@/assets/images/MASHomeLogo.png')} style={{ width : '80%', height : '20%' }}/>
+                  </View>
+                  <View>
                     <Text className='text-center font-bold text-3xl'>Welcome</Text>
                   </View>
                   <View className='items-center'>

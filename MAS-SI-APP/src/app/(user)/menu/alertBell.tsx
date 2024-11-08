@@ -15,22 +15,22 @@ type salahProp = {
 }
 
 function setTimeToCurrentDate(timeString : string) {
- 
-  // Split the time string into hours, minutes, and seconds
-  const spliterr = timeString.split(':')
-  spliterr[1] = spliterr[1].match(/.{1,3}/g)!
-  const [hours, minutes, seconds] = timeString.split(':').map(Number);
-  console.log(hours, minutes,seconds)
-  // Create a new Date object with the current date
-  const timestampWithTimeZone = new Date();
-
-  // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours, minutes, seconds, 0); // No milliseconds
-
-  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
-  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
-
-  return timestampISO
+  const date = new Date(); // Get the current date
+  const [time, modifier] = timeString.split(/([APM])/); // Split the time and the AM/PM modifier
+  
+  let [hours, minutes] = time.split(':').map(Number);
+  
+  if (modifier === 'PM' && hours !== 12) {
+    hours += 12;
+  }
+  if (modifier === 'AM' && hours === 12) {
+    hours = 0;
+  }
+  
+  date.setHours(hours);
+  date.setMinutes(minutes);
+  date.setSeconds(0); // Optional: Set seconds to 0
+  return date
 }
 
 export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
@@ -155,7 +155,8 @@ export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
     Toast.show({
       type: 'ConfirmNotificationOption',
       props : { message, prayer, time },
-      visibilityTime: 2000,
+      visibilityTime: 3000,
+      topOffset : 60
     });
   };
   useEffect(() => {

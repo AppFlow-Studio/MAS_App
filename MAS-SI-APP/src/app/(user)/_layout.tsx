@@ -89,16 +89,19 @@ const toastConfig = {
   ),
   ConfirmNotificationOption : ( { props } : any ) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' >
+      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-2 max-w-[90%] max-h-[60]' >
 
         <View className='flex-col pl-2'>
           <View>
-            <Text>{props.props.message} : {props.props.time}</Text>
+            <Text className="text-white">{props.message} : {props.time}</Text>
           </View>
           <View className='flex-row'>
-            <Text className='text-sm'>{props.props.prayer}</Text>
-            <Icon source={'chevron-right'} size={20} />
+            <Text className='text-md font-bold text-white'>{props.prayer}</Text>
           </View>
+        </View>
+        <View className="pl-5"/>
+        <View className="bg-white p-1 rounded-full">
+              <Icon source={'check'} size={20} color="green"/>
         </View>
       </BlurView>
     </Pressable>
@@ -128,7 +131,7 @@ const TabButton = ({ props, items }: TabButtonProps) => {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={{ alignItems: "center", flex: 1, marginTop: 4.5 }}
+      style={{ alignItems: "center", flex: 1, marginTop: 4.5, height : '200%' }}
     >
       <Animatable.View
         className='justify-center items-center'
@@ -141,6 +144,9 @@ const TabButton = ({ props, items }: TabButtonProps) => {
       <Animatable.Text
         ref={textRef}
         style={{ fontSize: 14, color: "black", textAlign: "center", fontWeight: "bold" }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        allowFontScaling
       >
         {items?.title ? items?.title : ""}
       </Animatable.Text>

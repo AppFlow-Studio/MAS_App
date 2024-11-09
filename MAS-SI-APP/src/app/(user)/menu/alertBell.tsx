@@ -12,28 +12,27 @@ type salahProp = {
   salah: string,
   iqamah : string,
   athan : string
+  nextPrayerAthan : string
 }
 
 function setTimeToCurrentDate(timeString : string) {
   const date = new Date(); // Get the current date
   const [time, modifier] = timeString.split(/([APM])/); // Split the time and the AM/PM modifier
-  
   let [hours, minutes] = time.split(':').map(Number);
   
-  if (modifier === 'PM' && hours !== 12) {
+  if (modifier === 'P' && hours !== 12) {
     hours += 12;
   }
-  if (modifier === 'AM' && hours === 12) {
+  if (modifier === 'A' && hours === 12) {
     hours = 0;
   }
-  
   date.setHours(hours);
   date.setMinutes(minutes);
   date.setSeconds(0); // Optional: Set seconds to 0
   return date
 }
 
-export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
+export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : salahProp ) {
   const [bellClick, setBellClick] = useState(false);
   const [ alertAthan, setAlertAthan ] = useState(false)
   const [ alert30Before, setAlert30Before ] = useState(false)
@@ -84,7 +83,8 @@ export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
       }
     }
     if( salahOption == 'Alert at Athan time' ){
-        if( alertArray.includes(salahOption) ){
+        const { data : checkForSchedule, error : scheduleError } = await supabase.from('prayer_notification_schedule').select('*').eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption).single()
+        if( alertArray.includes(salahOption) || checkForSchedule ){
           const filterOutSetting = alertArray.filter(setting => setting != salahOption)
           const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : filterOutSetting }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
           const { error : scheduleError } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption)
@@ -104,9 +104,10 @@ export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
           
           showToast(salahOption, salah, athan)
         }
-    }else if( salahOption == 'Alert 30 mins before next prayer' ){
+    }else if( salahOption == 'Alert 30mins before next prayer' ){
       console.log( athan, iqamah )
-      if( alertArray.includes(salahOption) ){
+      const { data : checkForSchedule, error : scheduleError } = await supabase.from('prayer_notification_schedule').select('*').eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption).single()
+      if( alertArray.includes(salahOption) || checkForSchedule){
         const filterOutSetting = alertArray.filter(setting => setting != salahOption)
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : filterOutSetting }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
         const { error : scheduleError } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption)
@@ -116,20 +117,21 @@ export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
         const checkForMute = alertArray.filter(setting => setting != 'Mute')
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : checkForMute }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
         const currentTime = new Date()
-        const PrayerTime = setTimeToCurrentDate(athan)
+        const PrayerTime = setTimeToCurrentDate(nextPrayerAthan)
         console.log(PrayerTime)
         if( isBefore(currentTime, PrayerTime) ){
           const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
           if( UserPushToken && UserPushToken.push_notification_token ){
           PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
-          const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Time to pray ${salah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+          const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `30mins left to pray ${salah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
           }          
         }
         const time = format(PrayerTime, 'p')
         showToast(salahOption, salah, time)
       }
     }else if( salahOption == 'Alert at Iqamah time'){
-      if( alertArray.includes(salahOption) ){
+      const { data : checkForSchedule, error : scheduleError } = await supabase.from('prayer_notification_schedule').select('*').eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption).single()
+      if( alertArray.includes(salahOption) || checkForSchedule){
         const filterOutSetting = alertArray.filter(setting => setting != salahOption)
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : filterOutSetting }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
         const { error : scheduleError } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption)
@@ -190,9 +192,9 @@ export default function AlertBell( {salah, iqamah, athan} : salahProp ) {
           {alertAthan ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
           <Text className='ml-[20%]'>Alert at Athan time</Text>
          </MenuOption>
-         <MenuOption onSelect={async () => await onPressOption('Alert 30 mins before next prayer')} style={{ flexDirection : 'row' }}>
+         <MenuOption onSelect={async () => await onPressOption('Alert 30mins before next prayer')} style={{ flexDirection : 'row' }}>
             {alert30Before? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
-            <Text className='ml-3' numberOfLines={1} adjustsFontSizeToFit>Alert 30 mins before next prayer</Text>
+            <Text className='ml-3' numberOfLines={1} adjustsFontSizeToFit>Alert 30mins before next prayer</Text>
          </MenuOption>
          <MenuOption onSelect={async() => await onPressOption('Alert at Iqamah time')} style={{ flexDirection : 'row' }}>
             {alertIqamah ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }

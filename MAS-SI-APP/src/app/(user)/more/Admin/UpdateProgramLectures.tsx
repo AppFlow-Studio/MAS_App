@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Text, View, ScrollView, TouchableOpacity } from "react-native";
-import { TextInput, Button, Menu } from "react-native-paper";
+import { TextInput, Button, Menu, IconButton, Modal } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -19,6 +19,9 @@ const UpdateProgramLectures = () => {
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
+  const [ keyNotes, setKeyNotes ] = useState<string[]>([]);
+  const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
+  const [ keyNoteInput, setKeyNoteInput ] = useState<string>("");
   const programs = ["Program A", "Program B", "Program C"];
 
 
@@ -39,11 +42,13 @@ const UpdateProgramLectures = () => {
       setLectureSpeaker(data.lecture_speaker)
       setLectureLink(data.lecture_link)
       setLectureTime(data.lecture_time)
+      setKeyNotes(data.lecture_key_notes)
+      setLectureAI(data.lecture_ai)
     }
    }
   const onUploadLecture = async () => {
     if( lectureName && lectureTime && lectureDate && lectureSpeaker && lectureLink ){
-      const { error } = await supabase.from('program_lectures').update({ lecture_time : lectureTime, lecture_name : lectureName, lecture_link : lectureLink ,lecture_date  : lectureDate, lecture_speaker : lectureSpeaker}).eq('lecture_id', lecture)
+      const { error } = await supabase.from('program_lectures').update({ lecture_time : lectureTime, lecture_name : lectureName, lecture_link : lectureLink ,lecture_date  : lectureDate, lecture_speaker : lectureSpeaker, lecture_ai : lectureAI, lecture_key_notes : keyNotes}).eq('lecture_id', lecture)
       handleSubmit()
     }
   }
@@ -103,18 +108,37 @@ const UpdateProgramLectures = () => {
           textColor="black"
         />
 
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture AI Notes</Text>
+        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Summary</Text>
         <TextInput
           mode="outlined"
           theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 100, marginBottom: 10 }}
+          style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
           activeOutlineColor="#0D509D"
           multiline
           value={lectureAI}
           onChangeText={setLectureAI}
-          placeholder="Enter AI Notes or Comments"
+          placeholder="Enter AI Summary"
           textColor="black"
         />
+
+
+      <Text className="text-base font-bold mb-1 ml-2">Lecture KeyNotes</Text>
+          {
+            keyNotes?.map((note, index) => {
+              return(
+                <View className="items-center flex-row " key={index}>
+                  <IconButton icon={'window-minimize'} size={15} iconColor="red" onPress={() => {
+                  const filtered = keyNotes.filter(notes => notes != note )
+                  setKeyNotes(filtered)
+                  }}/>
+                  <Text key={index} className="items-center ml-4 p-1 justify-center">{note}</Text>
+                </View>
+              )
+            })
+          }
+          <Button onPress={() => setKeyNoteModal(true)} >
+            Add KeyNotes
+          </Button>
 
         {/* Lecture Date */}
         <Text className="text-base font-bold mb-1 ml-2">Update Lecture Date</Text>
@@ -165,6 +189,44 @@ const UpdateProgramLectures = () => {
           </Button>
         </View>
       </ScrollView>
+
+      <Modal visible={keyNoteModal} onDismiss={() => setKeyNoteModal(false)} contentContainerStyle={{backgroundColor : 'white' , borderRadius : 8, width : '90%', height : '50%', alignSelf : 'center' }}>
+            <View className="w-[100%] self-center p-5 flex-1">
+              <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              style={{ width: "100%", height: 200, marginBottom: 10, backgroundColor : 'white' }}
+              activeOutlineColor="#0D509D"
+              multiline
+              value={keyNoteInput}
+              onChangeText={setKeyNoteInput}
+              placeholder="Enter Key Note"
+              textColor="black"
+              />
+            </View>
+            <View className="flex-1 justify-end pb-8">
+              <Button
+                    mode="contained"
+                    buttonColor="#57BA47"
+                    textColor="white"
+                    theme={{ roundness: 1 }}
+                    onPress={ () => {
+                      if( keyNotes.length < 1 && keyNoteInput){
+                        setKeyNotes([keyNoteInput])
+                      }else if(keyNoteInput ){
+                        setKeyNotes([...keyNotes, keyNoteInput])
+                      }
+
+                      setKeyNoteInput("")
+                      setKeyNoteModal(false)
+                    } }
+                    style={{ width: "48%", alignSelf : 'center'}}
+                >
+                  Confirm
+                </Button>
+            </View>
+          </Modal>
+          
     </View>
   </>
 );

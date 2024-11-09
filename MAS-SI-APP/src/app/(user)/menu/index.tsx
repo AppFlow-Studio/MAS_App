@@ -11,7 +11,7 @@ import BottomSheet, { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { JummahBottomSheetProp } from '@/src/types';
 import LinkToVolunteersModal from '@/src/components/linkToVolunteersModal';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, useAnimatedScrollHandler, withTiming, Easing } from 'react-native-reanimated';
+import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, useAnimatedScrollHandler, withTiming, Easing, FadeIn } from 'react-native-reanimated';
 import { Button, TextInput, Portal, Modal, Icon  } from 'react-native-paper';
 import { Link } from 'expo-router';
 import LinkToDonationModal from '@/src/components/LinkToDonationModal';
@@ -112,7 +112,8 @@ export default function homeScreen() {
     }
     const prayer = prayerTimesWeek
     return (
-      <Animated.ScrollView ref={scrollRef} className="bg-white h-full flex-1" onScroll={scrollHandler}>
+      <Animated.ScrollView ref={scrollRef} className="bg-white h-full flex-1" onScroll={scrollHandler} 
+      >
             <StatusBar barStyle={"dark-content"}/>
             <View className='justify-center items-center mt-[12%] '>
               <Animated.Image source={require("@/assets/images/massiLogo2.png")} style={[{width: width / 2, height: 75, justifyContent: "center" }, imageAnimatedStyle]} />

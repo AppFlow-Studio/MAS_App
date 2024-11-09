@@ -58,7 +58,7 @@ export default function LecturesData() {
       const index = scrollPositon / KEYNOTECARDHEIGHT + 20;
       setActive(index)
     }
-    const array = [ 1, 2, 3, 4, 5]
+    const array = currentLecture?.lecture_key_notes
     return(
       <View className='items-center bg=[#ededed]'>
        <View className='mt-2'/>
@@ -75,7 +75,7 @@ export default function LecturesData() {
             {array ? array.map((item,index) => {
               return (
                 <>
-                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} />
+                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} keynote={item}/>
                 <View style={{ height : 20 }}/> 
                 </>             
               )
@@ -153,7 +153,7 @@ export default function LecturesData() {
         />
         <View className='mt-[5]'/>
         { loading && (
-          <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '64%', justifyContent : 'center', top : '37%', backgroundColor : '#ededed', alignItems : 'center' }, playMASAnimation]}>
+          <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '55%', justifyContent : 'center', top : '36%', backgroundColor : '#ededed', alignItems : 'center' }, playMASAnimation]}>
             <LottieView
               autoPlay
               loop={false}
@@ -161,10 +161,11 @@ export default function LecturesData() {
                 width: '100%',
                 height: '100%',
               }}
-              source={require('@/assets/lottie/DataProcessing.json')}
+              source={require('@/assets/lottie/MASLogoAnimation3.json')}
               onAnimationFinish={() => {
                 fadeOutAnimation();
               }}
+              speed={3}
             />
           </Animated.View>
         ) }

@@ -8,7 +8,7 @@ import { Icon } from "react-native-paper";
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { useAuth } from "@/src/providers/AuthProvider";
 import LottieView from 'lottie-react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, runOnJS } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, runOnJS, FadeIn } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message'
 import { View, Text, Image } from 'react-native'
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
@@ -194,6 +194,7 @@ export default function TabLayout() {
             onAnimationFinish={() => {
               fadeOutAnimation();
             }}
+            speed={1.5}
           />
         </Animated.View>
       ) }

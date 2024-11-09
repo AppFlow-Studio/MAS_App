@@ -8,6 +8,7 @@ export type Lectures ={
     lecture_ai: string | "N/A",
     lecture_date: string | "N/A",
     lecture_time: string
+    lecture_key_notes : string[]
 }
 export type Program = {
     id : number,
@@ -132,6 +133,7 @@ export type EventLectureType = {
     event_lecture_desc : string,
     event_lecture_link: string,
     event_lecture_date : string
+    event_lecture_keynotes : string[]
 }
 
 export type UserPlaylistType = {

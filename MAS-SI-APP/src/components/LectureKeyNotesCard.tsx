@@ -6,8 +6,9 @@ type LectureKeyNotesCardProp = {
     width : number
     index : number
     scrollY : number
+    keynote : string
 }
-const LectureKeyNotesCard = ({height, width, index, scrollY} : LectureKeyNotesCardProp) => {
+const LectureKeyNotesCard = ({height, width, index, scrollY, keynote} : LectureKeyNotesCardProp) => {
   const opacity = useSharedValue(0.3)
 
   const inputRange = [
@@ -30,7 +31,7 @@ const LectureKeyNotesCard = ({height, width, index, scrollY} : LectureKeyNotesCa
 
   return (
     <Animated.View style={[{ height : height, width : width, backgroundColor : "white", borderRadius : 15, paddingHorizontal : 10, paddingVertical : 10 }, cardStyle, {marginTop : index === 0 ? 20: 0}, {marginBottom : index === 4 ? 20 : 0}]}>
-      <Text>LectureKeyNotesCard</Text>
+      <Text>{keynote}</Text>
     </Animated.View>
   )
 }

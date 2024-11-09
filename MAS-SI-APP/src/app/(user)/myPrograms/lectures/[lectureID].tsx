@@ -55,7 +55,7 @@ export default function LecturesData() {
       const index = scrollPositon / KEYNOTECARDHEIGHT + 20;
       setActive(index)
     }
-    const array = [ 1, 2, 3, 4, 5]
+    const array = currentLecture?.lecture_key_notes
     return(
       <View className='items-center bg=[#ededed]'>
        <View className='mt-2'/>
@@ -72,7 +72,7 @@ export default function LecturesData() {
             {array ? array.map((item,index) => {
               return (
                 <>
-                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} />
+                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} keynote={item}/>
                 <View style={{ height : 20 }}/> 
                 </>             
               )

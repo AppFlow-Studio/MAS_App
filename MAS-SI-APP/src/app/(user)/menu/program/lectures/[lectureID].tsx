@@ -161,7 +161,7 @@ export default function LecturesData() {
                 width: '100%',
                 height: '100%',
               }}
-              source={require('@/assets/lottie/checker.json')}
+              source={require('@/assets/lottie/DataProcessing.json')}
               onAnimationFinish={() => {
                 fadeOutAnimation();
               }}

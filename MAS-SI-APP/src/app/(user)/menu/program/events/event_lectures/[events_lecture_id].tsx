@@ -178,7 +178,7 @@ const EventsLectureID = () => {
                   height: '75%',
                   backgroundColor: 'white',
                 }}
-                source={require('@/assets/lottie/checker.json')}
+                source={require('@/assets/lottie/DataProcessing.json')}
                 onAnimationFinish={() => {
                   fadeOutAnimation();
                 }}

@@ -84,7 +84,10 @@ const Index = () => {
     <ScrollView className='bg-white pt-[18%] h-[100%]'>
       <StatusBar barStyle={'dark-content'}/>
       <View className='w-[100%] items-center justify-center' style={{ height : height / 3 }}>
-        <Pressable className='w-[100%] px-10' onPress={async () =>  await supabase.auth.signOut()}>
+        <Pressable className='w-[100%] px-10' onPress={async () =>  {
+          await supabase.from('profiles').update({ push_notification_token : null }).eq('id', session?.user.id)
+          await supabase.auth.signOut()
+          }}>
           <Text className='text-right text-gray-400'>Logout</Text>
         </Pressable>
         <Pressable style={{  shadowColor : "black", shadowOffset : {width : 0, height : 0}, shadowOpacity : 1, shadowRadius : 5  }} onPress={() => (spin.value = spin.value ? 0 : 1)} className='mt-3'>

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, useWindowDimensions, Button, FlatList } from 'react-native'
+import { View, Text, ScrollView, useWindowDimensions, Button, FlatList, Pressable } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import { Stack } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
@@ -9,9 +9,10 @@ import ProgramsListProgram from '@/src/components/ProgramsListProgram'
 import RenderAddedPrograms from '@/src/components/UserProgramComponets/RenderAddedPrograms'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
-import { Icon } from 'react-native-paper'
+import { Icon, IconButton } from 'react-native-paper'
 import { usePrayer } from '@/src/providers/prayerTimesProvider'
 import NotificationPrayerTable from '@/src/components/notificationPrayerTimeTable'
+import { useRouter } from 'expo-router'
 const NotificationPaidScreen = () => {
   return(
     <ScrollView>
@@ -222,9 +223,10 @@ const renderScene = ({ route } : any) => {
     />
   );
  //#0D509D
+  const router = useRouter()
   return (
     <>
-    <Stack.Screen options={{ title : "Notification Center", headerBackTitleVisible : false, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}}}/>
+    <Stack.Screen options={{ title : "Notification Center", headerBackTitleVisible : false, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}, headerLeft : () => ( <Pressable className='items-start mr-2' onPress={() => router.back()}><Icon source={'chevron-left'} color='black' size={30} /></Pressable>)}}/>
     <View className='bg-[#ededed]'/>
     <TabView
       navigationState={{ index, routes }}

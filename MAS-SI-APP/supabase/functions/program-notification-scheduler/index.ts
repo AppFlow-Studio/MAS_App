@@ -29,7 +29,7 @@ function setTimeToCurrentDate(timeString : string ) {
   const timestampWithTimeZone = new Date();
 
   // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
+  timestampWithTimeZone.setHours(hours + 5, minutes, seconds, 0); // No milliseconds
 
   // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
   const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
@@ -62,7 +62,8 @@ serve(async (req) => {
           console.log(program_info)
           const currentDate = new Date()
           const day = currentDate.getDay()
-          console.log('Current Day: ', day)
+          console.log('Current Day: ', daysOfWeek[day])
+          console.log(currentDate)
           const program_days = program_info.program_days
           console.log('program days', program_days)
           // Run Through User Settings for this program
@@ -72,19 +73,20 @@ serve(async (req) => {
                 console.log('program days', program_days)
                 await Promise.all( program_days.map( async ( days : string ) => {
                     const program_day = daysOfWeek.indexOf(days)
-                    console.log('curr day', day - 1)
-                    console.log(program_day - 1 % 7, days )
-                    if( day - 1 == ( program_day - 1 % 7 ) ){
+                    console.log('curr day', day )
+                    console.log('program day before: ', (program_day - 1) % 7 )
+                    console.log('program_day', program_day)
+                    if( 1 == ( (program_day - 1) % 7 ) ){
                       
                       // schedule notification
                       const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                      await schedule_notification(program.user_id, user_push_token.push_notification_token, `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)  
+                      await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', program_info.program_name, start_time)  
                     }
                   }) 
                 )
               } 
 
-              if( program_days.includes( daysOfWeek[day-1] ) ){
+              if( program_days.includes( daysOfWeek[day] ) ){
                 if( setting == 'When Program Starts' ){
                   const start_time = setTimeToCurrentDate(program_info.program_start_time)
                   await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
@@ -118,8 +120,8 @@ serve(async (req) => {
               await Promise.all( program_days.map( async ( days : string ) => {
                   const program_day = daysOfWeek.indexOf(days)
                   console.log('curr day', day - 1)
-                  console.log(program_day - 1 % 7, days )
-                  if( day - 1 == ( program_day - 1 % 7 ) ){
+                  console.log(( program_day - 1 ) % 7, days )
+                  if( day == ( (program_day - 1) % 7 ) ){
                     // schedule notification
                     const start_time = setTimeToCurrentDate(program_info.program_start_time)
                     await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', program_info.program_name, start_time)  
@@ -128,7 +130,7 @@ serve(async (req) => {
               )
             }
 
-            if( program_days.includes( daysOfWeek[day-1] ) ){
+            if( program_days.includes( daysOfWeek[day] ) ){
               if( setting == 'When Program Starts' ){
                 const start_time = setTimeToCurrentDate(program_info.program_start_time)
                 await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
@@ -174,19 +176,17 @@ serve(async (req) => {
                 console.log('program days', event_days)
                 await Promise.all( event_days.map( async ( days : string ) => {
                     const event_day = daysOfWeek.indexOf(days)
-                    console.log('curr day', day - 1)
-                    console.log(event_day - 1 % 7, days )
-                    if( day - 1 == ( event_day - 1 % 7 ) ){
+                    if( day == ( (event_day - 1) % 7 ) ){
                       
                       // schedule notification
                       const start_time = setTimeToCurrentDate(event_info.program_start_time)
-                      await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.program_name} is Starting Now!`, 'When Program Starts', event_info.program_name, start_time)  
+                      await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', event_info.program_name, start_time)  
                     }
                   }) 
                 )
               } 
 
-              if( event_days.includes( daysOfWeek[day-1] ) ){
+              if( event_days.includes( daysOfWeek[day] ) ){
                 if( setting == 'When Program Starts' ){
                   const start_time = setTimeToCurrentDate(event_info.event_start_time)
                   await schedule_notification(event.user_id, user_push_token.push_notification_token,`${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
@@ -219,16 +219,16 @@ serve(async (req) => {
                   const event_day = daysOfWeek.indexOf(days)
                   console.log('curr day', day - 1)
                   console.log(event_day - 1 % 7, days )
-                  if( day - 1 == ( event_day - 1 % 7 ) ){
+                  if( day  == ( (event_day) - 1 % 7 ) ){
                     // schedule notification
                     const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                    await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
+                    await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Tomorrow, Don't Forget!`, 'Day Before', event_info.event_name, start_time)
                   }
                 }) 
               )
             }
 
-            if( event_days.includes( daysOfWeek[day-1] ) ){
+            if( event_days.includes( daysOfWeek[day] ) ){
               if( setting == 'When Program Starts' ){
                   const start_time = setTimeToCurrentDate(event_info.event_start_time)
                   await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)

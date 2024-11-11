@@ -19,7 +19,7 @@ const TAB_BAR_ITEM_PADDING = 10;
 
 const Tabs  = createMaterialTopTabNavigator();
 const FirstRoute = () => (
-  <UpcomingEvents navigationState/>
+  <UpcomingEvents />
 );
 
 const SecondRoute = () => (

@@ -80,6 +80,7 @@ const Index = () => {
     setProfileLastName('');
     setProfileEmail('');
   }
+
   return (
     <ScrollView className='bg-white pt-[18%] h-[100%]'>
       <StatusBar barStyle={'dark-content'}/>
@@ -183,8 +184,9 @@ const Index = () => {
                 </View>
                 </Pressable>
             </Link>
-
-            <Pressable className='w-[100%] bg-gray-50  mt-5 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>
+            <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5 bg-gray-50 rounded-xl px-3 py-2'>
+            <Link href={'/(user)/myPrograms/notifications/NotificationEvents'} asChild disabled={anonStatus}>
+            <Pressable className='w-[100%] bg-gray-50 items-center flex-col' style={{ borderRadius  : 10 }}>
                   <View className='flex-row items-center justify-between px-1 w-[100%]'>
                     <Text className=' text-gray-400'>How To Edit Alerts</Text>
                   </View>
@@ -197,36 +199,38 @@ const Index = () => {
                    </View>
                   </View>
                   <View className='w-[100%] flex-col'>
-                    <Pressable className='p-1 flex-row items-center justify-between pt-1'>
+                    <View className='p-1 flex-row items-center justify-between pt-1'>
                       <Text className=' text-gray-400'>Athan</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>
+                    </View>
 
-                    <Pressable className='p-1 flex-row items-center justify-between'>
+                    <View className='p-1 flex-row items-center justify-between'>
                       <Text className=' text-gray-400'>Iqamah</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>
+                    </View>
 
-                    <Pressable className='p-1 flex-row items-center justify-between pt-1'>
+                    <View className='p-1 flex-row items-center justify-between pt-1'>
                       <Text className=' text-gray-400'>Weekly Programs</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>
+                    </View>
 
-                    <Pressable className='p-1 flex-row items-center justify-between'>
+                    <View className='p-1 flex-row items-center justify-between'>
                       <Text className=' text-gray-400'>Events</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>
+                    </View>
 
-                    <Pressable className='p-1 flex-row items-center justify-between'>
+                    <View className='p-1 flex-row items-center justify-between'>
                       <Text className=' text-gray-400'>Masjid Alerts</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>
+                    </View>
           
                   </View>
               </Pressable>
-
-            <Link href={'/more/Upcoming'} asChild>
-              <Pressable className='w-[100%] bg-gray-50  mt-5 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>
+              </Link>
+             </Pressable>
+            <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5 bg-gray-50 rounded-xl px-3 py-2'>
+            <Link href={'/menu/program'} asChild disabled={anonStatus}>
+              <Pressable className='w-[100%] bg-gray-50 items-center flex-col' style={{ borderRadius  : 10 }}>
                   <View className='flex-row items-center justify-between px-1 w-[100%]'>
                     <Text className=' text-gray-400'>Want To Stay Connected</Text>
                   </View>
@@ -239,28 +243,29 @@ const Index = () => {
                    </View>
                   </View>
                   <View className='w-[100%] flex-col'>
-                    <Pressable className='p-1 flex-row items-center justify-between'>
+                    <View className='p-1 flex-row items-center justify-between'>
                       <Text className=' text-gray-400'>Programs</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>
+                    </View>
 
-                    <Pressable className='p-1 flex-row items-center justify-between'>
+                    <View className='p-1 flex-row items-center justify-between'>
                       <Text className=' text-gray-400'>Events</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>  
+                    </View>  
 
-                     <Pressable className='p-1 flex-row items-center justify-between'>
+                     <View className='p-1 flex-row items-center justify-between'>
                       <Text className=' text-gray-400'>P.A.C.E</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>    
+                    </View>    
 
-                     <Pressable className='p-1 flex-row items-center justify-between'>
+                     <View className='p-1 flex-row items-center justify-between'>
                       <Text className=' text-gray-400'>Kids Programs</Text>
                       <Icon source={'chevron-right'} size={20} color='#BDBDBD' />
-                    </Pressable>                
+                    </View>                
                   </View>
                 </Pressable>
               </Link>
+              </Pressable>
               <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5 bg-gray-50 rounded-xl'>
                 <Link href={'/more/BusinessSponsersScreen'} asChild disabled={anonStatus} className='border'>
                   <Pressable className='w-[100%] bg-gray-50 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>

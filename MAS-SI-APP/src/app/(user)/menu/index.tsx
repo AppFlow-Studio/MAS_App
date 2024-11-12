@@ -28,7 +28,7 @@ export default function homeScreen() {
   const [ profileFirstName , setProfileFirstName ] = useState('')
   const [ profileLastName , setProfileLastName ] = useState('')
   const [ profileEmail, setProfileEmail ] = useState('')
-  const [ confirmProfile, setConfirmProfile ] = useState(false)
+  const [ confirmProfile, setConfirmProfile ] = useState(true)
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = React.useState(false);
   const showModal = () => setVisible(true);
@@ -66,7 +66,7 @@ export default function homeScreen() {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single()
       if( data ){
         if ( !data?.first_name || !data?.last_name || !data?.profile_email ){
-          setVisible(true)
+          setTimeout(() => {setVisible(true)}, 4150)
         }
         setProfile(data)
       }
@@ -157,16 +157,14 @@ export default function homeScreen() {
             </View>
             <View style={[{paddingBottom : tabBarHeight}]}></View>
 
+            { setTimeout(() => {return true}, 4000) && 
             <Portal>
-              <Modal dismissable={false} visible={visible} onDismiss={hideModal} contentContainerStyle={{ height : '70%', width : '95%', borderRadius : 10, backgroundColor : 'white', alignSelf : 'center', alignItems : 'center' }}>
-                <View className='flex-col'>
-                  <View>
-                    <Image source={require('@/assets/images/MASHomeLogo.png')} style={{ width : '80%', height : '20%' }}/>
-                  </View>
-                  <View>
+              <Modal dismissable={false} visible={visible} onDismiss={hideModal} contentContainerStyle={{ height : '70%', width : '95%', borderRadius : 10, backgroundColor : 'white', alignSelf : 'center', alignItems : 'center', justifyContent : 'flex-start' }}>
+                  <View className='h-[40%] w-[100%]'>
+                      <Image source={require('@/assets/images/MASHomeLogo.png')} style={{ width : '80%', height : '60%', alignSelf : 'center', objectFit : 'contain' }}/>
                     <Text className='text-center font-bold text-3xl'>Welcome</Text>
                   </View>
-                  <View className='items-center'>
+                  <View className='items-center flex-col gap-y-3'>
                     <Text>Enter Your First Name</Text>
                     <TextInput
                     mode='outlined'
@@ -201,13 +199,12 @@ export default function homeScreen() {
                     textColor='black'
                     />
                   </View>
-                  <View className='self-center'>
+                  <View className='self-center mt-2'>
                     <Button  disabled={!confirmProfile} mode='contained' buttonColor='#57BA47' textColor='white' className='w-[150]' onPress={onConfirmButton}>Confirm</Button>
-                  </View>
                   </View>
               </Modal>
             </Portal>
-            
+          }
       </Animated.ScrollView>
     )
     

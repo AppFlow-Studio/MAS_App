@@ -129,6 +129,10 @@ const BusinessAds = () => {
   };
   
   return (
+    <KeyboardAvoidingView 
+    className="flex-1 pt-15"
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
         <ScrollView className='flex-1 bg-white' contentContainerStyle={{ paddingBottom : tabBarHeight }}>
         <Stack.Screen options={{ title : 'Business Application', headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',} }}/>
         <View className='w-[100%] bg-[#0D509D] h-[15%] flex-row items-center justify-evenly'>
@@ -315,6 +319,7 @@ const BusinessAds = () => {
             }
         </View>
         </ScrollView>
+        </KeyboardAvoidingView>
   )
 }
 

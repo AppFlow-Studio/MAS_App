@@ -6,7 +6,7 @@ import { Link } from 'expo-router'
 const BusinessAdsApprovalScreen = () => {
   const [ ads, setAds ] = useState<any[]>([])
   const getAds = async () => {
-    const { data, error } = await supabase.from('business_ads_submissions').select('*') .neq('status', 'APPROVED')
+    const { data, error } = await supabase.from('business_ads_submissions').select('*').neq('status', 'APPROVED').neq('status', 'REJECT')
     if ( data ){
       setAds( data )
     }
@@ -14,7 +14,14 @@ const BusinessAdsApprovalScreen = () => {
 
   useEffect(() => {
     getAds()
-    const checkStatus = supabase.channel('Check for Business Status').on('postgres_changes', { event : "*", schema : 'public', table : 'business_ads_submissions' }, getAds)
+    const checkStatus = supabase.channel('Check for Business Status').on(
+      'postgres_changes', 
+      { event : "*",
+        schema : 'public', 
+        table : 'business_ads_submissions' 
+      }, 
+      async (payload) => await getAds()
+    )
     .subscribe()
 
     return () => { supabase.removeChannel( checkStatus ) }

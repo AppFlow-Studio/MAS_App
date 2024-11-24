@@ -96,7 +96,7 @@ export default function userPrograms() {
         table : "added_programs",
         filter : `user_id=eq.${session?.user.id}`
       },
-      (payload) => getUserProgramLibrary()
+      async (payload) => await getUserProgramLibrary()
     )
     .subscribe()
 
@@ -108,7 +108,7 @@ export default function userPrograms() {
         table : "user_playlist",
         filter : `user_id=eq.${session?.user.id}`
       },
-      (payload) => getUserPlaylists()
+      async (payload) => await getUserPlaylists()
     )
     .subscribe()
 
@@ -120,7 +120,7 @@ export default function userPrograms() {
         table : 'added_notifications_programs',
         filter : `user_id=eq.${session?.user.id}`
       },
-      (payload) => getLatestAddedFlier()
+      async (payload) => await getLatestAddedFlier()
     )
     .subscribe()
     return() => { supabase.removeChannel(channel); supabase.removeChannel(channel2); supabase.removeChannel(channel3) }

@@ -35,7 +35,7 @@ const PlaylistIndex = () => {
       schema: 'public',
       table: "user_playlist",
     },
-    (payload) => getUserPlaylists()
+    async (payload) => await getUserPlaylists()
     )
     .subscribe()
 

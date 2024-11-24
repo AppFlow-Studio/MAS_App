@@ -63,6 +63,9 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
                 { submission.status == 'APPROVED' || submission.status == 'POSTED'  ? 
                     <View style={{ backgroundColor  : 'green', borderRadius  : 45, padding : 2 }}>
                         <Icon source={'check'} size={25} color='white'/> 
+                    </View> :submission.status == 'REJECT' ? 
+                    <View style={{ backgroundColor  : 'red', borderRadius  : 45, padding : 2 }}>
+                        <Icon source={'alpha-x'} color='white' size={30}/>
                     </View> : <></> 
                 }
             </View>
@@ -92,8 +95,8 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
         </Animated.View>
         
         <View className='flex-row h-[13%] justify-between items-center w-[80%] '>
-            <View className=' h-[100%] w-[13%] items-center justify-center' style={{ backgroundColor : submission.status == 'SUBMITTED' ? 'gray' : submission.status == 'REVIEW' || submission.status == 'APPROVED'  ? 'green' : 'white' , borderRadius : 50 }}>
-               {submission.status == 'REVIEW' || submission.status == 'APPROVED' || submission.status == 'POSTED' ?  <Icon source={'check'} size={30} color='white'/> :<></>}            
+            <View className=' h-[100%] w-[13%] items-center justify-center' style={{ backgroundColor : submission.status == 'SUBMITTED' ? 'gray' : submission.status == 'REVIEW' || submission.status == 'APPROVED' || submission.status == 'REJECT' ? 'green' : 'white' , borderRadius : 50 }}>
+               {submission.status == 'REVIEW' || submission.status == 'APPROVED' || submission.status == 'POSTED' || submission.status == 'REJECT' ?  <Icon source={'check'} size={30} color='white'/> :<></>}            
             </View>
             <View className='flex-col items-center '>
                 <Animated.Text style={textAnimatedStyle}>Under Review</Animated.Text>
@@ -108,8 +111,8 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
             </Svg>
         </Animated.View> : <View className='h-[40]'/>}
         <View className='flex-row h-[13%] justify-between items-center w-[80%] '>
-        <View className=' h-[100%] w-[13%] items-center justify-center' style={{ backgroundColor : submission.status == 'SUBMITTED' ? 'gray' : submission.status == 'REVIEW' || submission.status == 'APPROVED'  ? 'green' : 'white' , borderRadius : 50 }}>
-            {submission.status == 'REVIEW' || submission.status == 'APPROVED' || submission.status == 'POSTED' ?  <Icon source={'check'} size={30} color='white'/> :<></>}            
+        <View className=' h-[100%] w-[13%] items-center justify-center' style={{ backgroundColor : submission.status == 'SUBMITTED' ? 'gray' : submission.status == 'REVIEW' || submission.status == 'APPROVED'  ? 'green' : submission.status == 'REJECT' ? 'red' : 'white' , borderRadius : 50 }}>
+            {submission.status == 'REVIEW' || submission.status == 'APPROVED'  ?  <Icon source={'check'} size={30} color='white'/> : submission.status == 'REJECT' ? <Icon source={'alpha-x'} color='white' size={30}/>  : <></>}            
         </View>
             <View className='flex-col items-center '>
                 <Animated.Text style={textAnimatedStyle}>Approved</Animated.Text>
@@ -119,7 +122,7 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
             </View>
         </View>
         <View className='h-[35]'/>
-        <View className='w-[70%] h-[13%] rounded-xl items-center justify-center' style={{ backgroundColor : submission.status == 'APPROVED' ? 'green' : 'gray'}}>
+        <View className='w-[70%] h-[13%] rounded-xl items-center justify-center' style={{ backgroundColor : submission.status == 'APPROVED' ? 'green' : submission.status == 'REJECT' ? 'red' : 'gray'}}>
             <Text className='text-white'>Flyer Now Posted</Text>
         </View>
       </Animated.View>

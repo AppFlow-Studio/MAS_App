@@ -158,10 +158,6 @@ const NotificationEvents = () => {
       setAddedPrograms(data)
     }
   }
-
-  const getPaidProgram = async () => {
-    
-  }
     useEffect(() => {
       getAddedEvents()
       getAddedProgram()
@@ -174,7 +170,7 @@ const NotificationEvents = () => {
           filter:`user_id=eq.${session?.user.id}`
 
         },
-        (payload) => getAddedEvents()
+        async (payload) => await getAddedEvents()
       )
       .subscribe()
 
@@ -186,7 +182,7 @@ const NotificationEvents = () => {
           table: "added_notifications_programs",
           filter:`user_id=eq.${session?.user.id}`
         },
-        (payload) => getAddedProgram()
+        async (payload) => await getAddedProgram()
       )
       .subscribe()
       return () => { supabase.removeChannel( listenForAddedEvents ) ; supabase.removeChannel( listenForAddedPrograms )}
@@ -201,7 +197,7 @@ const renderScene = ({ route } : any) => {
       return <ClassesAndLecturesScreen addedPrograms={addedPrograms} layout={layout} />
     case "third" :
       return <NotificationEventsScreen addedEvents={addedEvents} layout={layout} />
-    case "forth" :
+    case "fourth" :
       return <SalahTimesScreen />
   }
 }
@@ -209,7 +205,7 @@ const renderScene = ({ route } : any) => {
     { key: 'first', title: 'Paid' },
     { key: 'second', title: 'Classes & Lectures' },
     { key : 'third', title: 'Events'},
-    { key : 'forth', title: 'Salah Times'}
+    { key : 'fourth', title: 'Salah Times'}
   ]
 
   const renderTabBar = (props : any) => (

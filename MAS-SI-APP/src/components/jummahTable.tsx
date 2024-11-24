@@ -54,7 +54,7 @@ export const JummahTable = forwardRef<Ref,{}>(({}, ref) => {
         schema: "public",
         table : "jummah",
       },
-      (payload) => getJummahData()
+      async (payload) => await getJummahData()
     )
     .subscribe()
   }, [])

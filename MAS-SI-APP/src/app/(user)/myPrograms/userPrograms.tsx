@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Pressable, ScrollView, StatusBar, Image, Dimensions } from 'react-native'
+import { View, Text, FlatList, Pressable, ScrollView, StatusBar, Image, Dimensions, RefreshControl, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import RenderMyLibraryProgram from '@/src/components/UserProgramComponets/renderMyLibraryProgram';
 import { useAuth } from '@/src/providers/AuthProvider';
@@ -30,6 +30,8 @@ export default function userPrograms() {
   const [ anonStatus, setAnonStatus ] = useState(true)
   const [ latestFlierEvent, setLatestFlierEvent ] = useState<EventsType>()
   const [ userNotis, setUserNotis ] = useState()
+  const [ refreshing, setRefreshing ] = useState(false)
+
   const checkIfAnon = async () => {
     if( session?.user.is_anonymous ){
       setAnonStatus(true)
@@ -134,9 +136,14 @@ export default function userPrograms() {
     setLoading(false);
   }  
   const tabBarHeight = useBottomTabBarHeight() + 35
-
+  const onRefresh = async () => {
+    await  getLatestAddedFlier()
+    await getUserProgramLibrary()
+    await getUserPlaylists()
+  }
   return (
-    <ScrollView className='bg-white flex-1 w-[100%]' >
+    <ScrollView className='bg-white flex-1 w-[100%]' refreshControl={  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+   }>
      <StatusBar barStyle={"dark-content"}/>
       { anonStatus &&( 
         <BlurView style={{ height : height, zIndex : 1, position : 'absolute', width : width, justifyContent : 'center', alignItems : 'center' }} intensity={50} className=''>
@@ -196,6 +203,8 @@ export default function userPrograms() {
       <View className='ml-2 mt-[15%]'>
         <Text className='text-3xl font-bold'>My Library</Text>
       </View>
+      <ActivityIndicator animating={refreshing} color='blue' style={{}}/>
+
       <View className='flex-row items-center ml-2 mt-2'>
         <Link href={"/myPrograms/PlaylistIndex"} asChild>
         <Pressable className='flex-row items-center justify-between w-[100%] pr-3'>

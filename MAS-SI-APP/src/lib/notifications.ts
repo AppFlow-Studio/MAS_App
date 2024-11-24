@@ -57,7 +57,7 @@ export async function registerForPushNotificationsAsync() {
       finalStatus = status;
     }
     if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
+      alert('For Push Notifications, Please Allow this app this app to send you notifications');
       return;
     }
     token = (

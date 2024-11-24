@@ -43,8 +43,20 @@ export const JummahTable = forwardRef<Ref,{}>(({}, ref) => {
     }
   }
 
+  
+
   useEffect(() => {
     getJummahData()
+    const channel = supabase.channel("Jummah Data").on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table : "jummah",
+      },
+      (payload) => getJummahData()
+    )
+    .subscribe()
   }, [])
 
   return (

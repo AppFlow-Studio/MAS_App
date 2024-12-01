@@ -154,7 +154,7 @@ const GreetingScreen = () => {
                 access
               </Animated.Text>
             </Animated.View>
-                <Pressable style={{backgroundColor : 'gray', height: '90%', width : 80, alignItems : 'center', borderRadius : 40, justifyContent : 'center' }} className='z-[2]'>
+                <Pressable style={{backgroundColor : 'gray', height: '90%', width : 80, alignItems : 'center', borderRadius : 40, justifyContent : 'center' }} className='z-[2]' onPress={async () => await guestSignIn()}>
                     <Icon source={'arrow-right-top'} size={20}/>
                 </Pressable>
             </View>

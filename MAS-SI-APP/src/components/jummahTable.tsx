@@ -99,6 +99,7 @@ export const JummahTable = forwardRef<Ref,{}>(({}, ref) => {
                   <View className='flex-col items-center justify-center px-3'>
                     <Text>3:40PM</Text>
                     <Text className='font-bold'>Student Jummah</Text>
+                    <Text className='text-gray-500 text-sm'>Only on School days</Text>
                 </View>
               </View>
             </TouchableOpacity>

@@ -141,6 +141,7 @@ export type UserPlaylistType = {
     playlist_id : string,
     playlist_img : string,
     playlist_name : string
+    def_background : string
 }
 
 export type UserPlaylistLectureType = {

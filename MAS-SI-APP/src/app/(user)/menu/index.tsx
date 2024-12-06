@@ -20,6 +20,9 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 import { BlurView } from 'expo-blur';
+import SocialPlatforms from '@/src/components/SocialPlatforms';
+import IconsMarquee from '@/src/components/Marquee';
+
 export default function homeScreen() {
   const { onSetPrayerTimesWeek, prayerTimesWeek } = usePrayer()
   const { session } = useAuth()
@@ -155,6 +158,11 @@ export default function homeScreen() {
                 <JummahTable ref={bottomSheetRef}/>
               </ImageBackground>
             </View>
+
+            <View className='flex-row pl-3 pt-6'>
+              <Text className='text-[#0D509D] font-bold text-2xl' style={{textShadowColor: "#light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 1 }}>Connect With Us</Text>
+            </View>
+            <IconsMarquee />
             <View style={[{paddingBottom : tabBarHeight}]}></View>
 
             { setTimeout(() => {return true}, 4000) && 

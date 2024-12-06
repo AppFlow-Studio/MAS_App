@@ -52,7 +52,9 @@ serve(async (req) => {
                 if( UserPushToken && UserPushToken.push_notification_token ){
                   console.log(prayer.athan_time)
                   const PrayerTime = setTimeToCurrentDate(prayer.athan_time)
-                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name, message : `Time to pray ${prayer.prayer_name == 'zuhr' ? 'Dhuhr' : prayer.prayer_name[0].toUpperCase() + prayer.prayer_name.slice(1)}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
+                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name, 
+                    message : `Time to pray ${prayer.prayer_name == 'zuhr' ? 'Dhuhr' : prayer.prayer_name[0].toUpperCase() + prayer.prayer_name.slice(1)} at ${prayer.athan_time} \n Iqamah Time is at ${prayer.iqamah_time} `, 
+                    push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
                   if( error ){
                     console.log(error)
                   }

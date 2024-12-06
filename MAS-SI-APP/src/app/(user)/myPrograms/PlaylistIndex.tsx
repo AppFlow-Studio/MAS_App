@@ -8,12 +8,14 @@ import { supabase } from '@/src/lib/supabase'
 import { useAuth } from "@/src/providers/AuthProvider"
 import { UserPlaylistType } from '@/src/types'
 import RenderUserPlaylist from '@/src/components/UserProgramComponets/RenderUserPlaylist'
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 const PlaylistIndex = () => {
   const { session } = useAuth()
   const [ userPlayLists, setUserPlaylists ] = useState<UserPlaylistType[]>()
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const layout = useWindowDimensions().width
   const handlePresentModalPress = () => bottomSheetRef.current?.present();
+  const tabBarHeight = useBottomTabBarHeight() 
   const getUserPlaylists = async () => {
     const { data : user_playlist , error } = await supabase.from("user_playlist").select("*").eq("user_id" , session?.user.id)
     if( error ){
@@ -43,7 +45,7 @@ const PlaylistIndex = () => {
   }, [])
 
   return (
-    <ScrollView className=' bg-white flex-1'>
+    <ScrollView contentContainerStyle={{ paddingBottom : tabBarHeight + 100 }} className="bg-white h-full flex-1">
           <Stack.Screen options={{ title : '', headerBackTitleVisible : false, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}}}/>
             <Pressable className='flex-row items-center ml-2' onPress={handlePresentModalPress}>
                 <Icon source={"plus-box-outline"} size={40} color='red'/>

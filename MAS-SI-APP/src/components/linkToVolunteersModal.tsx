@@ -10,8 +10,8 @@ const VolunteerImages = [
 { image: require("@/assets/images/volunteerImages/DSC00937.png")}
 ]
 
-const onPress = () => Linking.canOpenURL("https://chat.whatsapp.com/EJZZgYlIGuR4veJjeBnJrr").then(() => {
-  Linking.openURL("https://chat.whatsapp.com/EJZZgYlIGuR4veJjeBnJrr");
+const onPress = () => Linking.canOpenURL("https://www.mobilize.us/mascenter/").then(() => {
+  Linking.openURL("https://www.mobilize.us/mascenter/");
 });
 
 const LinkToVolunteersModal = () => {

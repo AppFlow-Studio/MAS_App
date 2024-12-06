@@ -1,4 +1,4 @@
-import { View, Text, FlatList } from 'react-native'
+import { View, Text, FlatList, ScrollView, Image, TouchableOpacity } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/src/lib/supabase'
 import { useAuth } from "@/src/providers/AuthProvider"
@@ -7,6 +7,7 @@ import { Searchbar, Divider } from 'react-native-paper'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import ProgramsListProgram from '@/src/components/ProgramsListProgram'
 import Animated from 'react-native-reanimated'
+import { Link } from 'expo-router'
 
 const Kids = () => {
   const { session } = useAuth()
@@ -28,17 +29,42 @@ const Kids = () => {
     getKidsPrograms()
   }, [])
   return (
-    <View className='bg-[#0D509D] flex-1'>
-    <View className='bg-white pt-2 mt-1 flex-1'style={{borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingBottom: tabBarHeight }}>
-    <View className='mb-5'/>
-    <FlatList 
-        data={kidsPrograms}
-        renderItem={({item}) => <ProgramsListProgram program={item}/>}
-        ItemSeparatorComponent={() => <Divider style={{width: "50%", alignSelf: "center", height: 0.5, backgroundColor : 'lightgray'}}/>}
-        contentContainerStyle={{rowGap: 15}}
-      />
-    </View>
-  </View>
+    <View className=' bg-[#0D509D] flex-1'>
+    <ScrollView style={{borderTopLeftRadius: 40, borderTopRightRadius: 40, height : '100%', backgroundColor : 'white'}} contentContainerStyle={{
+       paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}>
+      <View className='mt-5 w-[100%]'>
+        <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Programs</Text>
+          <View className='flex-row flex flex-wrap gap-y-5'>
+          {
+            kidsPrograms?.map((item) => {
+              return(
+                <View style={{ width: "50%"}}>
+                  <Link  href={ `/menu/program/${item.program_id}`}
+                      asChild >
+                      <TouchableOpacity className='items-center'>
+                          <View style={{flexDirection: "column",alignItems: "center", justifyContent: "center"}}>
+                              <View style={{justifyContent: "center", alignItems: "center", backgroundColor: "white", borderRadius: 15}}>
+                                  <Image 
+                                      source={{ uri: item.program_img || require('@/assets/images/MASHomeLogo.png') }}
+                                      style={{width: 150, height: 150, objectFit: "cover", borderRadius: 15}}                                    
+                                  />
+                              </View>
+                              <View>
+                                  <View className='mt-2 items-center justify-center bg-white w-[80%] self-center'>
+                                      <Text style={{textAlign: "center"}} className='text-md' numberOfLines={1}>{item.program_name}</Text>
+                                  </View>
+                              </View>
+                          </View>
+                      </TouchableOpacity>
+                  </Link>
+              </View>
+              )
+            })
+          }
+          </View>
+        </View>
+        </ScrollView>
+        </View>
   )
 }
 

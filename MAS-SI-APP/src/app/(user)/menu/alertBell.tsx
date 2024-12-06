@@ -15,7 +15,7 @@ type salahProp = {
   nextPrayerAthan : string
 }
 
-function setTimeToCurrentDate(timeString : string) {
+function setTimeToTime(timeString : string) {
   const date = new Date(); // Get the current date
   const [time, modifier] = timeString.split(/([APM])/); // Split the time and the AM/PM modifier
   let [hours, minutes] = time.split(':').map(Number);
@@ -94,11 +94,11 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : sal
           const checkForMute = alertArray.filter(setting => setting != 'Mute')
           const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : checkForMute }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
           const currentTime = new Date()
-          const PrayerTime = setTimeToCurrentDate(athan)
+          const PrayerTime = setTimeToTime(athan)
           if( isBefore(currentTime, PrayerTime) ){
             const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
             if( UserPushToken && UserPushToken.push_notification_token ){
-            const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Time to pray ${salah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
+            const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Time to pray ${salah} at ${athan} \n Iqamah Time is at ${iqamah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
             }          
           }
           
@@ -117,7 +117,7 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : sal
         const checkForMute = alertArray.filter(setting => setting != 'Mute')
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : checkForMute }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
         const currentTime = new Date()
-        const PrayerTime = setTimeToCurrentDate(nextPrayerAthan)
+        const PrayerTime = setTimeToTime(nextPrayerAthan)
         console.log(PrayerTime)
         if( isBefore(currentTime, PrayerTime) ){
           const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
@@ -141,11 +141,11 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : sal
         const checkForMute = alertArray.filter(setting => setting != 'Mute')
         const { error } = await supabase.from('prayer_notification_settings').update({ notification_settings : checkForMute }).eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase())
         const currentTime = new Date()
-        const PrayerTime = setTimeToCurrentDate(athan)
+        const PrayerTime = setTimeToTime(iqamah)
         if( isBefore(currentTime, PrayerTime) ){
           const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
           if( UserPushToken && UserPushToken.push_notification_token ){
-          const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Time to pray ${salah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Iqamah time'})
+          const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : salah.toLowerCase(), message : `Iqamah for ${salah} at ${iqamah}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Iqamah time'})
           }          
         }
         showToast(salahOption, salah, iqamah)

@@ -123,6 +123,7 @@ export type EventsType = {
     event_end_date: string
     event_start_time : string
     event_days : string []
+    pace : boolean
 }
 export type EventLectureType = {
     id : number,

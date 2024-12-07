@@ -3,11 +3,11 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
 import LecturesListLecture from '@/src/components/LectureListLecture';
 import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
-import { Divider, Portal, Modal, IconButton, Icon, Button } from 'react-native-paper';
+import { Divider, Portal, Modal, IconButton, Icon, Button, Badge } from 'react-native-paper';
 import { Lectures, SheikDataType, Program } from '@/src/types';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, withSequence, withTiming } from 'react-native-reanimated';
+import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { UserPlaylistType } from '@/src/types';
@@ -170,6 +170,7 @@ async function getUserPlaylists(){
   } 
 
   const NotificationBell = () => {
+  const notifade = useSharedValue(1)
   const addedToNoti = () => {
     const goToProgram = () => {
       navigation.navigate('myPrograms', { screen : 'notifications/ClassesAndLectures/[program_id]', params : { program_id : programId}, initial: false  })
@@ -227,8 +228,19 @@ async function getUserPlaylists(){
       Haptics.NotificationFeedbackType.Success
     )
   }
+    const fadeOutNotification = useAnimatedStyle(() => ({
+      opacity : notifade.value
+    }))
+    useEffect(() => {
+      notifade.value = withTiming(0, {duration : 4000})
+    }, [])
    return(
     <View className='flex-row items-center gap-x-5'>
+      <Animated.View style={fadeOutNotification}>
+        <Badge style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-end font-semibold'>
+          Notifications
+        </Badge>
+      </Animated.View>
       <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
         {programInNotfications ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }
       </Pressable>

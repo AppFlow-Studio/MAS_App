@@ -7,7 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import {Expo} from 'https://esm.sh/expo-server-sdk';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { Format } from 'https://esm.sh/date-fns@4.1.0'
+import {format} from 'https://esm.sh/date-fns@4.1.0/format.mjs'
 console.log("Hello from Functions!")
 
 const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
@@ -55,8 +55,8 @@ serve(async (req) => {
                   console.log(prayer.athan_time)
                   const PrayerTime = setTimeToCurrentDate(prayer.athan_time)
                   const IqaPrayerTime = setTimeToCurrentDate(prayer.iqamah_time)
-                  const FormatAthTime = Format(PrayerTime, 'p')
-                  const FormatIqaTime = Format(IqaPrayerTime, 'P')
+                  const FormatAthTime = format(PrayerTime.setHours(PrayerTime.getHours() - 5), 'p')
+                  const FormatIqaTime = format(IqaPrayerTime.setHours(IqaPrayerTime.getHours() - 5), 'p')
                   const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name, 
                     message : `Time to pray ${prayer.prayer_name == 'zuhr' ? 'Dhuhr' : prayer.prayer_name[0].toUpperCase() + prayer.prayer_name.slice(1)} at ${FormatAthTime} \n Iqamah Time is at ${FormatIqaTime} `, 
                     push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
@@ -85,7 +85,7 @@ serve(async (req) => {
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).single()
               if( UserPushToken &&  UserPushToken.push_notification_token ){
                 const PrayerTime = setTimeToCurrentDate(prayer.iqamah_time)
-                const FormatIqaTime = Format(PrayerTime, 'p')
+                const FormatIqaTime = format(PrayerTime.setHours(PrayerTime.getHours() - 5), 'p')
                 const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name, message : `Iqamah for ${prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name[0].toUpperCase() + prayer.prayer_name.slice(1)} at ${FormatIqaTime}`, push_notification_token : UserPushToken.push_notification_token,  notification_type : 'Alert at Iqamah time'})
                 if( error ){
                   console.log(error)

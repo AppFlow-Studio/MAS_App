@@ -1,4 +1,4 @@
-import { DataTable, Icon, IconButton } from "react-native-paper";
+import { Button, DataTable, Dialog, Icon, IconButton } from "react-native-paper";
 import { gettingPrayerData, prayerTimeData } from "@/src/types";
 import ProgramWidgetSlider from "@/src/components/programWidgetSlider";
 import {
@@ -13,11 +13,14 @@ import {
   Dimensions,
   ScrollView,
   ImageSourcePropType,
+  FlatList,
 } from "react-native";
 import AlertBell from "../app/(user)/menu/alertBell";
 import { usePrayer } from "../providers/prayerTimesProvider";
-import { useNavigation } from "expo-router";
+import { Link, useNavigation } from "expo-router";
 import { useState } from "react";
+import Marquee from "./Marquee";
+import JummahMarquee from "./JummahMarquee";
 
 type prayerDataProp = {
   prayerData: gettingPrayerData;
@@ -50,8 +53,13 @@ const NotificationPrayerTable = ({
       params: { prayerName:prayerName, prayerImage:prayerImage  },
     });
   };
-
-  
+  const goToJummah = (jummahName: string, index: number) => {
+    navigation.navigate("myPrograms", {
+      screen: "notifications/Prayer/Jummah/[jummahDetails]",
+      params: { prayerName : jummahName, index : index  },
+    });
+  };
+  const [ jummahDialog, setJummahDialog ] = useState(false)
   return (
     <View style={{ width: width }} className="items-center">
       <View className="items-center  justify-center w-[95%]">
@@ -60,248 +68,188 @@ const NotificationPrayerTable = ({
             style={{ width: "100%", height: "95%", paddingLeft:'4%'}}
             showsVerticalScrollIndicator={false}
           >
-            <TouchableOpacity 
-            onPress={ () => 
-              goToPrayer(
-                 "Fajr",
-             require('@/assets//images/fajr.png')
-              )
+            {
+              Prayers.map((prayer) => (
+                <TouchableOpacity 
+                onPress={ () => 
+                  goToPrayer(
+                     prayer.PrayerCap,
+                    prayer.img
+                  )
+                }
+                 className="flex-row mt-4"
+                >
+
+                  <View style={{
+                     shadowColor : 'gray',
+                     shadowOffset : { width : 0, height : 8 },
+                     shadowOpacity : 1,
+                     shadowRadius : 8
+                  }}>
+                    <Image
+                      source={
+                        prayer.img
+                      }
+                      style={{
+                        width: 116,
+                        height: 110,
+                        borderRadius: 8,
+                        resizeMode: "stretch",
+                       
+                      }}
+                      className=" rounded-xl "
+                    />
+                  </View>
+
+                  <View className="ml-5">
+                    <Text className="font-bold text-xl  text-gray-800 ">{prayer.PrayerCap}</Text>
+                    <View className="flex-row mt-2">
+                      <Text className="text-left  text-[#6077F5] font-bold ">
+                        Athan :{" "}
+                      </Text>
+                      <Text
+                        className="text-left  text-gray-600 font-bold "
+                        adjustsFontSizeToFit
+                        numberOfLines={1}
+                      >
+                        {prayerData[prayer.athan]}
+                      </Text>
+                    </View>
+                    <View className="flex-row">
+                      <Text className="text-left  text-[#6077F5] font-bold ">
+                        Iqamah :{" "}
+                      </Text>
+                      <Text
+                        className="text-left  text-gray-600 font-bold "
+                        adjustsFontSizeToFit
+                        numberOfLines={1}
+                      >
+                        {prayerData[prayer.iqamah]}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View 
+                    style={{
+                      shadowColor : 'gray',
+                      shadowOffset : { width : 0, height : 8 },
+                      shadowOpacity : 1,
+                      shadowRadius : 8
+                    }}
+                    className="items-end justify-center"
+                  >
+                    <Button className="bg-[#0D509E] h-[21] w-[65] self-center ml-[10%] text-white">
+                        Edit
+                    </Button>
+                  </View>
+
+                </TouchableOpacity>
+              ))
             }
-             className="flex-row mt-4">
-              <Image
-                source={
-                  require('@/assets//images/fajr.png')
-                }
-                style={{
-                  width: width * 0.35,
-                  height: height * 0.15,
-                  borderRadius: 8,
-                  resizeMode: "stretch",
-                }}
-              />
-              <View className="ml-5">
-                <Text className="font-bold text-xl  text-gray-800 ">Fajr</Text>
-                <View className="flex-row mt-2">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Athan :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.athan_fajr}
-                  </Text>
-                </View>
-                <View className="flex-row">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Iqamah :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.iqa_fajr}
-                  </Text>
-                </View>
+            <Text className="font-bold text-lg mt-[15%] mb-1">Jummah Notifications</Text>
+            <View className="flex items-center justify-center flex-1">
+              {/* <JummahMarquee /> */}
+              <View className="flex flex-row w-[100%]">
+                <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap : 8 }}
+                >
+                   {
+                      ['12:15 PM', '1:00 PM', '1:45 PM', '3:45 PM'].map((item, index) => (
+                          <Pressable onPress={() => goToJummah(item, index+1)}>
+                            <ImageBackground className="w-[150] h-[170] items-start justify-end"
+                            source={index == 0 || index == 1 ? require('@/assets/images/Jummah12.png') : require('@/assets/images/Jummah34.png')}
+                            imageStyle={{ height : '100%', width : '100%', borderRadius : 15, objectFit : 'fill' }}
+                            
+                            >
+                              <Text className='text-white ml-3 text-md font-semibold'>Prayer {index + 1}</Text>
+                              <Text className='text-white ml-3 font-bold text-lg'>{item}</Text>
+                            </ImageBackground>
+                          </Pressable>
+                      ))
+                  }
+                </ScrollView>
               </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-             onPress={ () => 
-              goToPrayer(
-                "Dhuhr",
-                require('@/assets/images/dhuhr.png')
-              )
-            }
-             className="flex-row mt-4">
-              <Image
-                source={                
-                  require('@/assets/images/dhuhr.png')
-                }
-                style={{
-                  width: width * 0.35,
-                  height: height * 0.15,
-                  borderRadius: 8,
-                  resizeMode: "stretch",
-                }}
-              />
-              <View className="ml-5">
-                <Text className="font-bold text-xl  text-gray-800 ">Dhuhr</Text>
-                <View className="flex-row mt-2">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Athan :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.athan_zuhr}
-                  </Text>
-                </View>
-                <View className="flex-row">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Iqamah :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.iqa_zuhr}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-            onPress={ () => 
-              goToPrayer(
-                "Asr",
-                require('@/assets/images/asr.png')
-              )
-            }
-             className="flex-row mt-4">
-              <Image
-                source={
-                  require('@/assets/images/asr.png')
-                }
-                style={{
-                  width: width * 0.35,
-                  height: height * 0.15,
-                  borderRadius: 8,
-                  resizeMode: "stretch",
-                }}
-              />
-              <View className="ml-5">
-                <Text className="font-bold text-xl  text-gray-800 ">Asr</Text>
-                <View className="flex-row mt-2">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Athan :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.athan_asr}
-                  </Text>
-                </View>
-                <View className="flex-row">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Iqamah :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.iqa_asr}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={ () => 
-                goToPrayer(
-                  "Maghrib",
-                  require('@/assets/images/maghrib.png')
-                )
-              }
-             className="flex-row mt-4">
-              <Image
-                source={                
-                  require('@/assets/images/maghrib.png')
-                }
-                style={{
-                  width: width * 0.35,
-                  height: height * 0.15,
-                  borderRadius: 8,
-                  resizeMode: "stretch",
-                }}
-              />
-              <View className="ml-5">
-                <Text className="font-bold text-xl  text-gray-800 ">
-                  Maghrib
-                </Text>
-                <View className="flex-row mt-2">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Athan :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.athan_maghrib}
-                  </Text>
-                </View>
-                <View className="flex-row">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Iqamah :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.iqa_maghrib}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-             onPress={ () =>
-              goToPrayer(
-                "Isha",
-                require('@/assets/images/isha.png')
-              )
-            }
-             className="flex-row mt-4">
-              <Image
-                source={
-                  require('@/assets/images/isha.png')
-                }
-                style={{
-                  width: width * 0.35,
-                  height: height * 0.15,
-                  borderRadius: 8,
-                  resizeMode: "stretch",
-                }}
-              />
-              <View className="ml-5">
-                <Text className="font-bold text-xl  text-gray-800 ">Isha</Text>
-                <View className="flex-row mt-2">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Athan :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.athan_isha}
-                  </Text>
-                </View>
-                <View className="flex-row">
-                  <Text className="text-left  text-gray-600 font-bold ">
-                    Iqamah :{" "}
-                  </Text>
-                  <Text
-                    className="text-left  text-gray-600 font-bold "
-                    adjustsFontSizeToFit
-                    numberOfLines={1}
-                  >
-                    {prayerData.iqa_isha}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+            </View>
+            
           </ScrollView>
+          
         </View>
+       
       </View>
     </View>
   );
 };
 
 export default NotificationPrayerTable;
+
+const Prayers = [
+  {
+    PrayerCap : "Fajr", img : require('@/assets//images/fajr.png'), athan : 'athan_fajr', iqamah : 'iqa_fajr'
+  },
+  {
+    PrayerCap : "Dhuhr", img : require('@/assets//images/dhuhr.png'), athan : 'athan_zuhr', iqamah : 'iqa_zuhr'
+  },
+  {
+    PrayerCap : "Asr", img : require('@/assets//images/asr.png'), athan : 'athan_asr', iqamah : 'iqa_asr'
+  },
+  {
+    PrayerCap : "Maghrib", img : require('@/assets//images/maghrib.png'), athan : 'athan_maghrib', iqamah : 'iqa_maghrib'
+  },
+  {
+    PrayerCap : "Isha", img : require('@/assets//images/isha.png'), athan : 'athan_isha', iqamah : 'iqa_isha'
+  },
+]
+
+{
+  /*
+     <TouchableOpacity 
+            onPress={ () => 
+              goToPrayer(
+                 PrayerCap,
+             require(prayer.img)
+              )
+            }
+             className="flex-row mt-4">
+              <Image
+                source={
+                  require(prayer.img)
+                }
+                style={{
+                  width: width * 0.35,
+                  height: height * 0.15,
+                  borderRadius: 8,
+                  resizeMode: "stretch",
+                }}
+              />
+              <View className="ml-5">
+                <Text className="font-bold text-xl  text-gray-800 ">{PrayerCap}</Text>
+                <View className="flex-row mt-2">
+                  <Text className="text-left  text-gray-600 font-bold ">
+                    Athan :{" "}
+                  </Text>
+                  <Text
+                    className="text-left  text-gray-600 font-bold "
+                    adjustsFontSizeToFit
+                    numberOfLines={1}
+                  >
+                    {prayerData[athan]}
+                  </Text>
+                </View>
+                <View className="flex-row">
+                  <Text className="text-left  text-gray-600 font-bold ">
+                    Iqamah :{" "}
+                  </Text>
+                  <Text
+                    className="text-left  text-gray-600 font-bold "
+                    adjustsFontSizeToFit
+                    numberOfLines={1}
+                  >
+                    {prayerData[iqamah]}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+  */
+}

@@ -68,7 +68,7 @@ const prayerDetails = () => {
          <View className='mt-4'>
             <Image
               source={prayerImage}
-              style={{width: width / 1.2, height: 300, borderRadius: 8 } }
+              style={{width: width / 2, height: 200, borderRadius: 8 } }
               resizeMode='stretch'
             />
           </View>

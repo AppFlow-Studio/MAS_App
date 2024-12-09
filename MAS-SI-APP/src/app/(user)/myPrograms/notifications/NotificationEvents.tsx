@@ -9,26 +9,30 @@ import ProgramsListProgram from '@/src/components/ProgramsListProgram'
 import RenderAddedPrograms from '@/src/components/UserProgramComponets/RenderAddedPrograms'
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
-import { Icon, IconButton } from 'react-native-paper'
+import { Dialog, Icon, IconButton } from 'react-native-paper'
 import { usePrayer } from '@/src/providers/prayerTimesProvider'
 import NotificationPrayerTable from '@/src/components/notificationPrayerTimeTable'
 import { useRouter } from 'expo-router'
-const NotificationPaidScreen = () => {
-  return(
-    <ScrollView>
-      <View className='px-7'>
-        <View className='items-center'>
-          <Text className='font-bold text-2xl text-center'>Start adding flyers to make your notifications list</Text>
-          <Icon source={"bell"} color="#007AFF" size={40}/>
+import JummahMarquee from '@/src/components/JummahMarquee'
+{/*
+  const NotificationPaidScreen = () => {
+    return(
+      <ScrollView>
+        <View className='px-7'>
+          <View className='items-center'>
+            <Text className='font-bold text-2xl text-center'>Start adding flyers to make your notifications list</Text>
+            <Icon source={"bell"} color="#007AFF" size={40}/>
+          </View>
+          <View className='pb-[50%]'/>
+          <View>
+            <Text className='font-bold text-xl text-center'>Add programs and events by tapping the <Icon source={"bell"} color="#007AFF" size={20}/> or sliding right on the flyer name</Text>
+          </View>
         </View>
-        <View className='pb-[50%]'/>
-        <View>
-          <Text className='font-bold text-xl text-center'>Add programs and events by tapping the <Icon source={"bell"} color="#007AFF" size={20}/> or sliding right on the flyer name</Text>
-        </View>
-      </View>
-    </ScrollView>
-  )
-}
+      </ScrollView>
+    )
+  }
+
+  */}
 type NotificationEventsScreenProp = {
   addedEvents : EventsType[] | null
   layout: number
@@ -111,8 +115,9 @@ const SalahTimesScreen = () => {
       animated : true
     })  
   }, [tableIndex])
+
   return (
-    <View className='items-center justify-center '>
+    <View className='items-center justify-center bg-white'>
       <FlatList 
         data={prayerTimesWeek}
         renderItem={({item, index}) => <NotificationPrayerTable prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index}/>}
@@ -122,7 +127,7 @@ const SalahTimesScreen = () => {
         pagingEnabled
         scrollEventThrottle={32}
         viewabilityConfig={viewConfig}
-        contentContainerStyle={{flex:1,marginTop:'5%'}}
+        contentContainerStyle={{flex:1}}
         ref={flatlistRef}
         nestedScrollEnabled
       />
@@ -191,30 +196,27 @@ const NotificationEvents = () => {
 
 const renderScene = ({ route } : any) => {
   switch( route.key ){
-    case "first":
-      return <NotificationPaidScreen />
     case "second" :
-      return <ClassesAndLecturesScreen addedPrograms={addedPrograms} layout={layout} />
+         return <SalahTimesScreen />
     case "third" :
-      return <NotificationEventsScreen addedEvents={addedEvents} layout={layout} />
+       return <ClassesAndLecturesScreen addedPrograms={addedPrograms} layout={layout} />   
     case "fourth" :
-      return <SalahTimesScreen />
-  }
+      return <NotificationEventsScreen addedEvents={addedEvents} layout={layout} />  }
 }
   const routes = [
-    { key: 'first', title: 'Paid' },
-    { key: 'second', title: 'Classes & Lectures' },
-    { key : 'third', title: 'Events'},
-    { key : 'fourth', title: 'Salah Times'}
-  ]
+    //{ key: 'first', title: 'Paid' },
+    { key : 'second', title: 'Prayers'},
+    { key: 'third', title: 'Classes & Lectures' },
+    { key : 'fourth', title: 'Events'},
+    ]
 
   const renderTabBar = (props : any) => (
     <TabBar
       {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "22%", borderRadius : 20  }}
+      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "30%", borderRadius : 20  }}
       style={{ backgroundColor: '#0D509D', alignSelf : "center",  height: '9%'}}
       labelStyle={{ color : "white", fontWeight : "bold" }}
-      tabStyle={{ width : layout / 3.5 }}
+      tabStyle={{ width : layout / 3 }}
       scrollEnabled={true}
     />
   );

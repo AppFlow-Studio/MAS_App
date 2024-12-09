@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, StyleSheet, View, Image, Pressable, Text, Linking } from 'react-native';
+import { Button, StyleSheet, View, Image, Pressable, Text, Linking, ImageBackground } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useFrameCallback,
@@ -62,7 +62,7 @@ const ChildrenScroller = ({
 
   useFrameCallback((i) => {
     // prettier-ignore
-    offset.value += (coeff.value * ((i.timeSincePreviousFrame ?? 1) * childrenWidth)) / duration;
+    offset.value += (coeff.value * ((i.timeSincePreviousFrame ?? 1) * childrenWidth )) / duration;
     offset.value = offset.value % childrenWidth;
   }, true);
 
@@ -80,7 +80,7 @@ const ChildrenScroller = ({
   return <Cloner count={count} renderChild={renderChild} />;
 };
 
-export const Marquee = ({ duration = 30000, reverse = false, children, style }) => {
+export const Marquee = ({ duration = 50000, reverse = false, children, style }) => {
   const [parentWidth, setParentWidth] = React.useState(0);
   const [childrenWidth, setChildrenWidth] = React.useState(0);
 
@@ -113,37 +113,24 @@ const marqueeStyles = StyleSheet.create({
   row: { flexDirection: 'row', overflow: 'hidden' },
 });
 
-function IconsMarquee() {
+function JummahMarquee() {
   const [reverse, setReverse] = useState(false);
-  const MasjidPlatforms : { platform : any, link : string, name : string, bg: string }[]= [
-    { platform : <TikTok />, link : '', name : 'TikTok', bg : 'white' },
-    { platform : <YouTube />, link : 'https://www.youtube.com/@massicenter/featured', name : 'YouTube', bg : '#FFF' },
-    { platform : <WhatsApp />, link: 'https://chat.whatsapp.com/EBSOqkjWKeQ4rbJ7x1Vib7', name : 'WhatsApp', bg : '#00E676' },
-    { platform : <Meta />, link : 'https://www.facebook.com/MASSICenter' , name : 'Meta', bg : 'white'},
-    { platform : <X />, link : 'https://x.com/massicenter', name : 'X' , bg : '#000'},
-    { platform : <Instagram />, link : 'https://www.instagram.com/massicenter', name : 'Instagram' , bg : 'black'},
-]
+
   return (
     <View style={styles.container} className='pb-12 mt-4'>
       <View style={styles.safeArea}>
         <Marquee reverse={reverse} style={{  }}>
-          <View className='flex flex-row gap-8'>
+          <View className='flex flex-row gap-2'>
             {
-                MasjidPlatforms.map((item) => {
-                    const onPress = () => Linking.canOpenURL(item.link).then(() => {
-                         Linking.openURL(item.link);
-                    });
-                    return (
-                    <Pressable className='flex-col flex' onPress={onPress}>
-                        <View
-                        className=' w-[60] h-[60] rounded-full items-center  justify-center p-2 bg-gradient-to-br from-[#7D09FF] via-[#FF3E09] to-[#B9244E] '
-                        style={{ backgroundColor : item.bg, shadowColor : 'gray', shadowOffset : { width : 0, height : 5 }, shadowOpacity : 1, shadowRadius : 3 }}
-                        >
-                        {item.platform}
-                        </View>
-                        <Text className='text-gray-400 text-sm text-center mt-1'>{item.name}</Text>
-                    </Pressable>
-                )})
+                ['12:15 PM', '1:00 PM', '1:45 PM', '3:45 PM'].map((item, index) => (
+                    <ImageBackground className="w-[190] h-[170] items-start justify-end"
+                    source={index == 0 || index == 1 ? require('@/assets/images/Jummah12.png') : require('@/assets/images/Jummah34.png')}
+                    imageStyle={{ height : '100%', width : '90%', borderRadius : 15, objectFit : 'fill' }}
+                    >
+                     <Text className='text-white ml-3 text-md font-semibold'>Prayer {index + 1}</Text>
+                     <Text className='text-white ml-3 font-bold text-lg'>{item}</Text>
+                    </ImageBackground>
+                ))
             }
           </View>
         </Marquee>
@@ -183,4 +170,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default IconsMarquee;
+export default JummahMarquee;

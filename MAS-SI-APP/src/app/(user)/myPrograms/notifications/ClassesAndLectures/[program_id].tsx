@@ -16,6 +16,7 @@ const ClassesAndLecturesSettings = () => {
   const { program_id } = useLocalSearchParams()
   const { session } = useAuth()
   const [ program, setProgram ] = useState<Program>() 
+  const [ speakers, setSpeakers ] = useState<string[]>()
   const [ scrollY, setScrollY ] = useState(0)
   const layout = useWindowDimensions().width
   const layoutHeight = useWindowDimensions().height
@@ -26,6 +27,15 @@ const ClassesAndLecturesSettings = () => {
     const { data, error } = await supabase.from('programs').select("*").eq("program_id", program_id ).single()
     if( data ){
       setProgram(data)
+      const Speakers : string[] = []
+      await Promise.all(
+        data.program_speaker.map( async ( speaker : string ) => {
+          const { data : speaker_name } = await supabase.from('speaker_data').select('speaker_name').eq('speaker_id', speaker).single()
+          const name = speaker_name?.speaker_name
+          Speakers.push(name)
+        })
+      )
+      setSpeakers(Speakers)
     }
   }
 
@@ -99,7 +109,7 @@ const ClassesAndLecturesSettings = () => {
           </View>
           <View className='flex-col bg-white w-[100%]'>
             <Text className='font-bold text-2xl text-center'>{program?.program_name}</Text>
-            <Text className='font-bold text-gray-400 text-center'>{program?.program_speaker}</Text>
+            <Text className='font-bold text-gray-400 text-center'>{speakers ? speakers.join('&') : ''}</Text>
 
             <View className='ml-2'>
               <Text>Notification Options</Text>

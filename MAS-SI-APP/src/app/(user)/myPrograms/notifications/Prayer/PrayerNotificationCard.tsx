@@ -22,6 +22,7 @@ type NotificationCardProp = {
   "Alert at Iqamah time",
   "Mute"
 ]
+
 function setTimeToCurrentDate(timeString : string) {
  
    // Split the time string into hours, minutes, and seconds
@@ -222,19 +223,23 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
                 }
     }
   }
-
   useEffect(() => {
     getSettings()
   },[])
-
-  console.log(selectedNotification)
+  const CardInfo = [
+    { header : 'Notify at Prayer Time:' , subText : "Get notified exactly when it's time to pray"},
+    { header : 'Notify at Iqamah Time:' , subText : "Get notified when it's time to gather at the masjid"},
+    { header : '30-Minute Reminder Before Next Prayer:' , subText : "Get reminded 30 minutes before the next prayer time"},
+    { header : 'Mute' , subText : ""}
+  ]
   return (
-        <Animated.View style={[{ height : height, width : width, borderRadius : 20, shadowColor : "black", shadowOpacity : 1, shadowRadius : 1, shadowOffset : {width : 0, height : 0} }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
-            <Pressable onPress={handlePress} style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center"  }]}>
-              {selectedNotification.includes(index) ?    <Icon source={"checkbox-blank-circle"}  size={25}/>  : <Icon source={"checkbox-blank-circle-outline"}  size={25}/>}
+        <Animated.View style={[{ height : height, width : width, borderRadius : 20 }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
+            <Pressable onPress={handlePress} style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center", backgroundColor : 'white'  }]}>
+              {selectedNotification.includes(index) ?    <Icon source={"checkbox-blank-circle"}  size={25} color='#6077F5'/>  : <Icon source={"checkbox-blank-circle-outline"}  size={25} color='#6077F5'/>}
                 <View className='w-[5]'/>
-                <View style={{ backgroundColor : "#e8f4ff", height : height, width : width, borderRadius : 20,  paddingVertical : 10, paddingHorizontal : '4%', justifyContent:'center'}}>
-                <Text>{NotificationArray[index]}</Text>
+                <View style={{ height : height, width : width, borderRadius : 20,  paddingVertical : 10, paddingHorizontal : '4%', justifyContent:'center'}}>
+                <Text className='font-bold text black text-lg' numberOfLines={1} adjustsFontSizeToFit>{CardInfo[index] ? CardInfo[index].header : ''}</Text>
+                <Text className='text-gray-400'>{CardInfo[index] ? CardInfo[index].subText : ''}</Text>
               </View>
             </Pressable>
         </Animated.View>

@@ -16,10 +16,26 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import OtherAmountDonationSheet from '@/src/components/ShopComponets/OtherAmountDonationSheet'
 import { supabase } from '@/src/lib/supabase'
 import { useStripe } from '@stripe/stripe-react-native'
+import Svg, { Path } from 'react-native-svg'
 type DonationGoalType = {
     date : string
     amount : number
     amountGiven : number
+}
+
+{
+  /*
+    header : () => 
+          (
+          <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius : 20, backgroundColor : '#D9D9D9', height : 90, marginBottom : '10%' }} 
+          className='items-end justify-center flex flex-row'>
+            <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
+              <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+            </Svg>
+            <Text>Donation</Text>
+          </View>
+          )
+  */
 }
 const Donation = () => {
   const { retrievePaymentIntent } = useStripe()
@@ -98,7 +114,8 @@ const Donation = () => {
   const perctangeToGoal = ((currTotalAmount / 13000000 ) * 100).toFixed(1)
   return (
     <ScrollView style={{ width : layout, height : layoutHeight, backgroundColor : "white" }} contentContainerStyle={{ paddingBottom : tabBarHeight }}> 
-        <Stack.Screen options={{ headerBackTitleVisible : false,  headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',} }}/>
+        <Stack.Screen options={{ headerBackTitleVisible : false,  headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : { backgroundColor : '#D9D9D9' }, 
+      }}/>
         <View className='items-center flex-row'  style={{ backgroundColor : "#0D509D", width : '90%', alignSelf : 'center', marginTop : 2, borderTopLeftRadius : 20, borderTopRightRadius : 20, paddingHorizontal : 8, paddingVertical : 8}}>
             <Image  source={require('@/assets/images/MASHomeLogo.png')} style={{ backgroundColor : 'white', borderRadius : 50, width : 50, height : 50}}/>
             <Text className='text-white text-2xl font-bold ml-4'>MAS Staten Island</Text>

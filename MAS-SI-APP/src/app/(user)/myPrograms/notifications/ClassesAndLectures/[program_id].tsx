@@ -82,7 +82,7 @@ const ClassesAndLecturesSettings = () => {
       <MenuOptions customStyles={{optionsContainer: {width: 200, borderRadius: 8, marginTop: 20, padding: 8}}}>
         <MenuOption onSelect={removeFromLibrary}>
           <View className='flex-row justify-between items-center'>
-           <Text className='text-red-600 '>Delete From Library</Text> 
+           <Text className='text-red-600 '>Delete From Notifications</Text> 
            <Icon source="delete" color='red' size={15}/>
           </View>
         </MenuOption>

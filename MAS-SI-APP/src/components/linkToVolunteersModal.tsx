@@ -3,12 +3,6 @@ import React from 'react'
 import { Link } from "expo-router"
 import { Button } from 'react-native-paper'
 
-const VolunteerImages = [
-{  image: require("@/assets/images/volunteerImages/DSC06184-7.jpg")},
-{  image: require("@/assets/images/volunteerImages/DSC07561-1.jpg")},
-{ image : require("@/assets/images/volunteerImages/DSC00982.png")},
-{ image: require("@/assets/images/volunteerImages/DSC00937.png")}
-]
 
 const onPress = () => Linking.canOpenURL("https://www.mobilize.us/mascenter/").then(() => {
   Linking.openURL("https://www.mobilize.us/mascenter/");
@@ -27,7 +21,7 @@ const LinkToVolunteersModal = () => {
               </View>
             </View>
             <View style={{width: "40%", height: 120 ,shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, alignItems: "center"}}>
-              <Image source={VolunteerImages[1].image}  style={{width: 115, height: 120, borderRadius: 20, marginLeft: 15}} />
+              <Image source={require("@/assets/images/volunteerImages/DSC07561-1.jpg")}  style={{width: 115, height: 120, borderRadius: 20, marginLeft: 15}} />
             </View>
           </View>
         </Pressable>

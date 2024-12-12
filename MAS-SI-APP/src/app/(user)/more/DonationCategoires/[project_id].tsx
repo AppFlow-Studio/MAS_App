@@ -1,5 +1,5 @@
-import { View, Text, Pressable, Image } from 'react-native'
-import React, { useRef, useState } from 'react'
+import { View, Text, Pressable, Image, Dimensions, useWindowDimensions } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import Svg, { Path } from 'react-native-svg'
 import { ProgressBar } from 'react-native-paper'
@@ -8,19 +8,39 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { initializePaymentSheet, openPaymentSheet } from '@/src/lib/stripe'
 import { supabase } from '@/src/lib/supabase'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Extrapolation, interpolate, useSharedValue, withTiming } from 'react-native-reanimated'
+import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 const ProjectDetails = () => {
   const { project_id, project_name, project_linked_to, project_goal, thumbnail } = useLocalSearchParams()
   const [ projectInfo, setProjectInfo ] = useState<{ project_id : string, }[]>()
+  const [ progressBar, setProgressBar ] = useState(0)
+  const [ progressCircleLeft, setProgressCircle ] = useState(0)
   const [ buttonOn, setButtonOn ] = useState(true)
-  const DonationProgressBar = useSharedValue(0)
+  const [ percentage, setPercentage ] = useState(0)
+  const layoutWidth = useWindowDimensions().width
+  const progressCircle = useAnimatedStyle(() => {
+    return {
+      left : withTiming(progressCircleLeft - 1.5, { duration : 2000 })
+    }
+  })
+
+  const progressBarAnim = useAnimatedStyle(() => {
+    return { 
+      width : withTiming(progressBar, { duration : 2000 })
+    }
+  })
   const getProjectDonations = async ( ) => {
+    if (project_goal == null){
+      return
+    } 
     const { data , error } = await supabase.from('donations').select('*').contains('project_donated_to', [project_id])
     if( data ){
       const totalAmount = data.reduce((sum, donation) => sum + donation.amountGiven, 0);
       const Percentage = (totalAmount / Number(project_goal)) * 100
-      const interpolatedValue = interpolate(totalAmount, [0, 5000000], [0, 1], Extrapolation.CLAMP);
-      DonationProgressBar.value = withTiming(interpolatedValue, { duration : 3000 })
+      const progressCircleInterpolate = interpolate(totalAmount, [0, Number(project_goal)], [0, 320], Extrapolation.CLAMP)
+      const progressBarInterpolate = interpolate(Percentage, [0, 100], [0, layoutWidth * .85], Extrapolation.CLAMP)
+      setProgressCircle(progressCircleInterpolate)
+      setProgressBar(progressBarInterpolate)
+      setPercentage(Percentage)
     }
   }
 
@@ -33,7 +53,7 @@ const ProjectDetails = () => {
     const paymentSuccess = await openPaymentSheet()
     if(paymentSuccess){
       const { data : getLatestTotal , error } = await supabase.from('donations').select('*').order('date', { ascending : false }).limit(1).single()
-      const { error : insertError } = await supabase.from('donations').insert({  amountGiven : amount, projec_donated_to : project_linked_to ?  [project_id, project_linked_to] : [project_id] })
+      const { error : insertError } = await supabase.from('donations').insert({  amountGiven : amount, project_donated_to : project_linked_to ?  [project_id, project_linked_to] : [project_id] })
       const { error : emailError } = await supabase.functions.invoke('donation-confirmation-email',{ body : { donation_amount : amount } })
       if( emailError ){
         console.log(emailError)
@@ -48,6 +68,10 @@ const ProjectDetails = () => {
     }
     setButtonOn(true)
   }
+
+  useEffect(() => {
+    getProjectDonations()
+  }, [])
   return (
     <View className='flex-1 bg-white'>
         <Stack.Screen options={{
@@ -73,17 +97,21 @@ const ProjectDetails = () => {
         }}
         />
       <View className='w-[100%] items-center pt-[110] bg-[#F6F6F6] rounded-br-[15px] rounded-bl-[15px] pb-2'>
-        <Image src={thumbnail} className='w-[95%] h-[273px] rounded-[15px] '/>
+       { thumbnail ? <Image src={thumbnail} className='w-[95%] h-[273px] rounded-[15px]'/> : <Image src={require('@/assets/images/Donations5.png')} className='w-[95%] h-[273px] rounded-[15px]'/> }
         <View className=' flex flex-col w-[100%] items-center mt-2 '>
             <Text className='text-black font-bold text-xl mb-2' numberOfLines={1} adjustsFontSizeToFit>{project_name}</Text>
-            <View className='w-[85%]' >
-                <ProgressBar 
-                className='bg-[#0D509E] w-[100%] rounded-xl self-center h-[16px]' theme={{ colors: { primary: 'green' } }}
-                animatedValue={0.2}
-                />
-                <Text className='text-black text-lg'>Raised:  XX%</Text>
+            { project_goal && 
+            <View className='w-[85%] relative ' >
+                {/* Range 0-320*/}
+                <Animated.View className=' absolute h-[15px] w-[16px] bottom-7.5 z-[2] bg-[#57BA49] rounded-full' 
+                style={[{ shadowColor : 'black', shadowOffset : { width : 0, height : 4}, shadowOpacity : 1, shadowRadius : 4},progressCircle ]}/>
+                <Animated.View style={[progressBarAnim, { height : 16}]} className='bg-[#57BA49] absolute bottom-7.5 rounded-l-xl z-[1]'/>
+                <View className='bg-[#0D509E] rounded-xl self-center h-[16px]' style={{width : layoutWidth * .85}}/>
+                <Text className='text-black text-lg'>Raised:  {percentage}%</Text>
             </View>
-        </View>
+            }
+            </View> 
+            
       </View>
 
       <View className=''>

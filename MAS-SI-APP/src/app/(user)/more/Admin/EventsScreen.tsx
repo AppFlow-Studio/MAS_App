@@ -2,13 +2,14 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View, Image } from 'react
 import React, { useEffect, useState } from 'react'
 import { Link } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
-import { toDate } from 'date-fns'
+import { differenceInDays, format, toDate } from 'date-fns'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 
 const EventsScreen = () => {
   const tabBar = useBottomTabBarHeight()
   const [ events, setevents ] = useState<any[]>([])
-  
+  const TodaysDate = new Date()
+
   const getevents = async () => {
     const { data : Userevents, error  } = await supabase.from('events').select('*')
 
@@ -47,7 +48,9 @@ const EventsScreen = () => {
                   <View className='w-[70%] pl-2'>
                     <Text className='text-lg text-black font-bold ' numberOfLines={1}>{item.event_name}</Text>
                     <Text className='my-2  text-sm text-black font-bold' numberOfLines={1}>{item.event_desc}</Text>
-                    <Text className='my-2  text-sm text-black' numberOfLines={1}>Start Date: {}</Text>
+                    <Text className='my-2  text-sm text-black' numberOfLines={1}>Start Date: {format(item.event_start_date, 'P')}</Text>
+                    <Text className='my-2  text-sm text-black' numberOfLines={1}>Scheduled End Date: {format(item.event_end_date, 'P')}</Text>
+                    { differenceInDays(item.event_end_date, TodaysDate) > 0 ? <Text className='text-gray-700'><Text className='text-black'>{differenceInDays(item.event_end_date, TodaysDate)} Days</Text> until Event ends</Text> : <Text className='text-red-600'>Event Has Ended</Text>}
                   </View>
                 </View>
               </TouchableOpacity>

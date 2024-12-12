@@ -6,6 +6,7 @@ import SendToEveryoneScreen from "./SendToEveryoneScreen";
 import ProgramsScreen from "./ProgramsScreen";
 import EventsScreen from "./EventsScreen";
 import BusinessAdsApprovalScreen from "./BusinessAdsApprovalScreen";
+import AdminAccordionOptions from "./_AdminAccordionOptions";
 const SendToEveryone = () => (
  <SendToEveryoneScreen />
 );
@@ -22,7 +23,9 @@ const BusinessScreen = () => (
   <BusinessAdsApprovalScreen/>
 );
 
-
+const AdminOptions : { title : string, screens : { buttonTitle : string, link : string }[] }[] = [{
+  title : 'Push Notifications', screens : [{ buttonTitle : 'Create A Notification For All Users ', link : '/more/Admin/SendToEveryoneScreen'} ]
+}]
 const AdminScreen = () => {
   const layout = useWindowDimensions().width;
   const [index, setIndex] = useState(0);
@@ -52,26 +55,43 @@ const AdminScreen = () => {
     />
   );
   return (
-    <View className='flex-1 bg-[#ededed]'>
+    <View className='flex-1 bg-white w-[100%] h-[100%]'>
       <Stack.Screen
         options={{
-          title: "Admin",
+          title: "",
           headerBackTitleVisible: false,
-          headerTintColor: "black",
+          headerTintColor: "#1B85FF",
           headerStyle: { backgroundColor: "white" },
         }}
       />
-     <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderScene}
-          onIndexChange={setIndex}
-          initialLayout={{ width: layout }}
-          renderTabBar={renderTabBar}
-          style={{  backgroundColor : "#ededed" }}
-        />
+      {/* Admin Portal Landing */}
+      <View className="w-[90%] h-[20%] bg-[#EFF1F4] rounded-[15px] self-center mt-[5%] items-center justify-center py-2 mb-8">
+        <View className="w-[90%] h-[90%] bg-white rounded-[15px] items-center justify-center">
+          <Text className="text-black font-bold text-xl">Admin Portal</Text>
+        </View> 
+      </View> 
+
+      { /* Admin Options in Accordion */ }
+      
+      {
+        AdminOptions.map((options, index) => (
+          <AdminAccordionOptions options={options} index={index + 1}/>
+        ))
+      }
+
     </View>
   );
 };
 
 export default AdminScreen;
 
+/*
+  <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={{ width: layout }}
+          renderTabBar={renderTabBar}
+          style={{  backgroundColor : "#ededed" }}
+  />
+*/

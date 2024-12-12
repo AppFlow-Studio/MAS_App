@@ -1,9 +1,9 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import React, { useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { BlurView } from "expo-blur";
 import { supabase } from "@/src/lib/supabase";
-import { Link } from "expo-router";
+import { Link, Stack } from "expo-router";
 
 const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -37,13 +37,13 @@ const SendToEveryoneScreen = () => {
   }
 
   return (
-    <View
+    <ScrollView
       style={{
         flex: 1,
-        paddingHorizontal: "4%",
       }}
     >
-      <Text className="text-xl mt-4">Notification Message</Text>
+      <Stack.Screen />
+      <Text className="text-xl mt-4 border">Notification Message</Text>
       <TextInput
         mode="outlined"
         value={notificationMessage}
@@ -159,7 +159,7 @@ const SendToEveryoneScreen = () => {
           </View>
         </Modal>
       </Portal>
-    </View>
+    </ScrollView>
   );
 };
 

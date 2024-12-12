@@ -6,6 +6,7 @@ import { Link } from 'expo-router'
 import { useSharedValue } from 'react-native-reanimated'
 import { Icon } from 'react-native-paper'
 
+
 const Days = ( {Programs , Day, Kids, Pace, Events } : {Programs : Program[], Day : string, Kids : Program[], Pace : EventsType[], Events : EventsType[] }) => {
   const Section = useSharedValue(false);
   const [ rotateChevron , setRotateChevron ] = useState(false)

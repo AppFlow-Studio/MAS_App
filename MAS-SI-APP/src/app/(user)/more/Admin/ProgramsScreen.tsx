@@ -2,12 +2,12 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View, Image } from 'react
 import React, { useEffect, useState } from 'react'
 import { Link } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
-import { toDate } from 'date-fns'
+import { differenceInDays, format, toDate } from 'date-fns'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 const ProgramsScreen = () => {
   const tabBar = useBottomTabBarHeight()
   const [ programs, setPrograms ] = useState<any[]>([])
-  
+  const TodaysDate = new Date()
   const getPrograms = async () => {
     const { data : UserPrograms, error  } = await supabase.from('programs').select('*')
 
@@ -56,7 +56,9 @@ const ProgramsScreen = () => {
                   <View className='w-[70%] pl-2'>
                     <Text className='text-lg text-black font-bold '>{item.program_name}</Text>
                     <Text className='my-2  text-sm text-black font-bold' numberOfLines={1}>{item.program_desc}</Text>
-                    <Text className='my-2  text-sm text-black' numberOfLines={1}>Start Date: {}</Text>
+                    <Text className='my-2  text-sm text-black' numberOfLines={1}>Start Date: {format(item.program_start_date, 'P')}</Text>
+                    <Text className='my-2  text-sm text-black' numberOfLines={1}>Scheduled End Date: {format(item.program_end_date, 'P')} </Text>
+                   { differenceInDays(item.program_end_date, TodaysDate) > 0 ? <Text className='text-gray-700'><Text className='text-green-500'>{differenceInDays(item.program_end_date, TodaysDate)} Days Left</Text> until Program ends</Text> : <Text className='text-red-500'>Program Has Ended</Text>}
                   </View>
                 </View>
               </TouchableOpacity>

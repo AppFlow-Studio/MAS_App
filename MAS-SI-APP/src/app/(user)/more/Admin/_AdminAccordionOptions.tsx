@@ -17,10 +17,9 @@ const AdminAccordionOptions = ({ options, index } : { options : AdminOptions, in
     Section.value = !Section.value
     setRotateChevron(!rotateChevron)
   } 
-
   return (
     <View className='flex-col p-2 w-[100%] gap-1'>
-        <Pressable onPress={onPress} className='w-[90%] justify-between flex-row pl-5 rounded-xl self-center' style={{ backgroundColor : index % 2 == 0 ?  '#6077F5' : '#6077F5'}}>
+        <Pressable onPress={onPress} className='w-[90%] justify-between flex-row pl-5 rounded-xl self-center' style={{ backgroundColor : index % 2 == 1 ?  '#6077F5' : '#5E636B'}}>
             <Text className='font-semibold text-lg text-white'>{options.title}</Text>
             <View style={{ transform : [{ rotate : rotateChevron ?  '90deg' : '0deg' }] }}>
                 <Icon size={30} source={'chevron-right'} color='white'/>
@@ -31,7 +30,7 @@ const AdminAccordionOptions = ({ options, index } : { options : AdminOptions, in
                 options.screens.map((screen) => (
                     <Link href={screen.link} asChild>
                         <Pressable className=' w-[80%] bg-[#BBBEC6] flex flex-row justify-between px-2 rounded-xl p-2 my-1'>
-                            <Text className='text-gray-500 font-medium text-left text-[10px]' numberOfLines={1}>{screen.buttonTitle}</Text>
+                            <Text className='text-gray-500 font-medium text-left text-[13px]' numberOfLines={1}>{screen.buttonTitle}</Text>
                             <Svg width="16" height="11" viewBox="0 0 16 11" fill="none">
                                 <Path d="M11.5 1L15 5.5M15 5.5L11.5 10M15 5.5H1" stroke="#6077F5" stroke-linecap="round"/>
                             </Svg>

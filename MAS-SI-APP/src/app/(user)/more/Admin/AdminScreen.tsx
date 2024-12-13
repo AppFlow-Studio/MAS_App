@@ -23,9 +23,39 @@ const BusinessScreen = () => (
   <BusinessAdsApprovalScreen/>
 );
 
-const AdminOptions : { title : string, screens : { buttonTitle : string, link : string }[] }[] = [{
-  title : 'Push Notifications', screens : [{ buttonTitle : 'Create A Notification For All Users ', link : '/more/Admin/SendToEveryoneScreen'} ]
-}]
+const AdminOptions : { title : string, screens : { buttonTitle : string, link : string }[] }[] = [
+  {
+  title : 'Push Notifications', screens : [
+    { buttonTitle : 'Create A Notification For All Users ', link : '/more/Admin/SendToEveryoneScreen'},
+    { buttonTitle : 'Create A Program Notification', link : '/more/Admin/NotiPrograms'},
+    { buttonTitle : 'Create A Event Notification', link : '/more/Admin/NotiEvents'}
+   ]
+  },{
+    title : 'Programs', screens : [
+      { buttonTitle : 'Create a new Program', link : '/more/Admin/AddNewProgramScreen' },
+      { buttonTitle : 'Edit existing Programs', link : '/more/Admin/ProgramsScreen'},
+      { buttonTitle : 'Delete a Program', link : ''}
+    ]
+  },
+  {
+    title : 'Events', screens : [
+      { buttonTitle : 'Create a new Event', link : '/more/Admin/AddNewEventScreen' },
+      { buttonTitle : 'Edit existing Events', link : '/more/Admin/EventsScreen'},
+      { buttonTitle : 'Delete a Event', link : ''}
+    ]
+  },
+  {
+    title : 'Business Advertisement', screens : [
+      { buttonTitle : 'View and Review Submissions', link : '/more/Admin/BusinessAdsApprovalScreen'}
+    ]
+  },
+  {
+    title : 'Donations', screens : []
+  },
+  {
+    title : 'Jummah', screens : []
+  }
+]
 const AdminScreen = () => {
   const layout = useWindowDimensions().width;
   const [index, setIndex] = useState(0);
@@ -75,7 +105,7 @@ const AdminScreen = () => {
       
       {
         AdminOptions.map((options, index) => (
-          <AdminAccordionOptions options={options} index={index + 1}/>
+          <View key={options.title}><AdminAccordionOptions options={options} index={index + 1}/></View>
         ))
       }
 

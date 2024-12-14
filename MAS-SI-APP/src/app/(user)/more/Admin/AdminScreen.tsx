@@ -41,7 +41,7 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
     title : 'Events', screens : [
       { buttonTitle : 'Create a new Event', link : '/more/Admin/AddNewEventScreen' },
       { buttonTitle : 'Edit existing Events', link : '/more/Admin/EventsScreen'},
-      { buttonTitle : 'Delete a Event', link : ''}
+      { buttonTitle : 'Delete a Event', link : '/more/Admin/DeleteEventScreen'}
     ]
   },
   {
@@ -50,7 +50,12 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
     ]
   },
   {
-    title : 'Donations', screens : []
+    title : 'Donations', screens : [
+      { buttonTitle : 'Create a new Category', link : ''},
+      { buttonTitle : 'Edit an existing Category', link : ''}
+
+
+    ]
   },
   {
     title : 'Jummah', screens : []

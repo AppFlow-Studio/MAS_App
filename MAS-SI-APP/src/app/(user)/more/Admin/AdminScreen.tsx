@@ -34,7 +34,7 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
     title : 'Programs', screens : [
       { buttonTitle : 'Create a new Program', link : '/more/Admin/AddNewProgramScreen' },
       { buttonTitle : 'Edit existing Programs', link : '/more/Admin/ProgramsScreen'},
-      { buttonTitle : 'Delete a Program', link : ''}
+      { buttonTitle : 'Delete a Program', link : '/more/Admin/DeleteProgramScreen'}
     ]
   },
   {

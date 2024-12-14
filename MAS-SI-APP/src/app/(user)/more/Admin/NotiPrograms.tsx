@@ -38,10 +38,10 @@ const NotiPrograms = () => {
             headerTransparent : true,
             header : () => (
               <View className="relative">
-                <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
+                <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#6077F5] items-start justify-end pb-[5%] z-[1]">
                   <Pressable className="flex flex-row items-center justify-between w-[55%]" onPress={() => router.back()}>
                     <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                      <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+                      <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#BBBEC6" stroke-width="2" />
                     </Svg>
                     <Text className=" text-[20px] text-white">Push Notifications</Text>
                   </Pressable>

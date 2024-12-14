@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { BlurView } from "expo-blur";
 import { supabase } from "@/src/lib/supabase";
-import { Link, Stack } from "expo-router";
+import { Link, router, Stack } from "expo-router";
+import Svg, { Path } from "react-native-svg";
 
 const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -40,10 +41,33 @@ const SendToEveryoneScreen = () => {
     <ScrollView
       style={{
         flex: 1,
+        backgroundColor : 'white'
       }}
+      contentContainerStyle={{ paddingHorizontal : 10 }}
     >
-      <Stack.Screen />
-      <Text className="text-xl mt-4 border">Notification Message</Text>
+      <Stack.Screen 
+         options={{
+          headerTransparent : true,
+          header : () => (
+            <View className="relative">
+              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#6077F5] items-start justify-end pb-[5%] z-[1]">
+                <Pressable className="flex flex-row items-center justify-between w-[55%]" onPress={() => router.back()}>
+                  <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
+                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#BBBEC6" stroke-width="2" />
+                  </Svg>
+                  <Text className=" text-[20px] text-white">Push Notifications</Text>
+                </Pressable>
+              </View>
+              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
+               <View className="w-[65%] items-center"> 
+                <Text className=" text-[15px] text-black ">Notification For Everyone</Text>
+              </View>
+              </View>
+            </View>
+          )
+        }}
+      />
+      <Text className="text-lg mt-4 border pt-[170px] text-center">This Notification Will Be Sent Out To Everyone </Text>
       <TextInput
         mode="outlined"
         value={notificationMessage}
@@ -64,26 +88,12 @@ const SendToEveryoneScreen = () => {
       />
       <Text className="text-right text-gray-500 mt-1">{`${notificationMessage.length}/${characterLimit} characters`}</Text>
 
-      <Button
+      <Pressable
         onPress={async () => {setPreviewModal(true); await getUsersInfo()} }
-        className="h-13 items-center mt-6"
-        mode="contained"
-        buttonColor="#57BA47"
-        textColor="white"
+        className="h-13 items-center mt-6 w-[40%] bg-[#57BA47] rounded-[15px] h-[45px] justify-center"
       >
-        Preview
-      </Button>
-      
-      <Link href={'/more/Admin/JummahDataScreen'} asChild>
-        <Button
-          className="h-13 items-center mt-6 self-center w-[80%]"
-          mode="contained"
-          buttonColor="#57BA47"
-          textColor="white"
-          >
-          Update Jummah Data
-        </Button>
-      </Link>
+        <Text className="text-white">Preview</Text>
+      </Pressable>
 
 
       <Portal>

@@ -17,6 +17,7 @@ import { useBottomTabBarHeight  } from "@react-navigation/bottom-tabs";
 import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import * as FileSystem from 'expo-file-system'
+import Svg, { Path } from "react-native-svg";
 function setTimeToCurrentDate(timeString : string ) {
 
   // Split the time string into hours, minutes, and seconds
@@ -34,7 +35,7 @@ function setTimeToCurrentDate(timeString : string ) {
   return timestampISO
 }
 const UpdateProgramScreen = () => {
-  const { program_id } = useLocalSearchParams();
+  const { program_id, program_name } = useLocalSearchParams();
   const router = useRouter();
   const [ originalName, setOriginalName ] = useState('');
   const [programName, setProgramName] = useState<string>("");
@@ -215,21 +216,120 @@ const UpdateProgramScreen = () => {
   }, [])
   return (
     <>
-      <Stack.Screen
+       <Stack.Screen
         options={{
-          headerBackTitleVisible: false,
-          headerStyle: { backgroundColor: "white" },
-          headerTintColor : 'black',
-          title: "Update Program",
+          headerTransparent : true,
+          header : () => (
+            <View className="relative">
+            <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
+              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.replace('/more/Admin/AdminScreen')}>
+                <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
+                  <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+                </Svg>
+                <Text className=" text-[25px] text-white">Programs</Text>
+              </Pressable>
+            </View>
+
+            <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
+              <View className="w-[65%] items-center"> 
+                <Text className=" text-[15px] text-black ">Edit Existing Programs</Text>
+              </View>
+            </View>
+
+            <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
+              <Pressable className="w-[50%] items-center justify-between flex flex-row px-6" onPress={() => router.back()}> 
+                  <Svg  width="16" height="9" viewBox="0 0 16 9" fill="none">
+                    <Path d="M4.5 8.22607L1 4.61303M1 4.61303L4.5 0.999987M1 4.61303H15" stroke="#6077F5" stroke-linecap="round"/>
+                  </Svg>
+                  <Text className=" text-[15px] text-black " numberOfLines={1} adjustsFontSizeToFit>{program_name}</Text>
+              </Pressable>
+            </View>
+          </View>
+          )
         }}
       />
-      <View style={{ padding: 16, backgroundColor : 'white',}}>
+      <View style={{ paddingHorizontal : 10, backgroundColor : 'white', paddingTop : 220}}>
         <ScrollView
-          contentContainerStyle={{ paddingBottom: tabHeight }}
+          contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
           showsVerticalScrollIndicator={false}
         >
-          <Text className="text-base font-bold mb-1 ml-2">
-            Update Program Name
+          <Text className="text-base font-bold mb-1 mt-2 ml-2">Program Details</Text>
+          <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
+          <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
+          <Text className=" text-black text-[11px]">
+             Start Time: { programStartTime ? programStartTime.toLocaleTimeString() : '__'}
+            </Text>
+            {showStartTimePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="time"
+              display="default"
+              onChange={(event, time) => {
+                setShowStartTimePicker(false);
+                if (time) setProgramStartTime(time);
+              }}
+            />
+          )}
+          </Pressable>
+          <Text className="font-bold text-[13px] text-black my-3 ml-2">Date:</Text>
+          <View className="flex flex-row gap-x-2">
+          <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartDatePicker(true)}>
+            <Text className="text-black text-[11px]">
+             Start Date: { programStartDate ? programStartDate.toLocaleDateString() : '__'}
+            </Text>
+            {showStartDatePicker && (
+              <DateTimePicker
+                value={new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  setShowStartDatePicker(false);
+                  if (date) setProgramStartDate(date);
+                }}
+              />
+            )}
+          </Pressable>
+
+          <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowEndDatePicker(true)}>
+          <Text className="text-black text-[11px]">
+             End Date: { programEndDate ? programEndDate.toLocaleDateString() : '__'}
+            </Text>
+            {showEndDatePicker && (
+              <DateTimePicker
+                value={new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  setShowEndDatePicker(false);
+                  if (date) setProgramEndDate(date);
+                }}
+              />
+            )}
+          </Pressable>
+          </View>
+          
+          <Text className="text-base font-bold mb-4 mt-4 ml-2">
+          Select the day(s) this program is held:          
+          </Text>
+         <View className="flex flex-row  gap-5 flex-wrap">
+            {days.map((day, index) => (
+               <Pressable
+               key={index}
+               style={{ flexDirection: "row", alignItems: "center" }}
+               onPress={() => toggleDaySelection(day)}
+               className="w-[25%]"
+             >
+               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
+                 {programDays.includes(day) ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+               </View>
+               <Text className="ml-5">{day}</Text>
+             </Pressable>
+            ))}
+         </View>
+
+
+          <Text className="text-base font-bold mb-1 ml-2 mt-4">
+            Title
           </Text>
           <TextInput
             mode="outlined"
@@ -238,12 +338,12 @@ const UpdateProgramScreen = () => {
             activeOutlineColor="#0D509D"
             value={programName}
             onChangeText={setProgramName}
-            placeholder="Program Name"
+            placeholder="Enter The Program... "
             textColor="black"
           />
 
           <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Update Program Description
+            Description
           </Text>
           <TextInput
             mode="outlined"
@@ -253,39 +353,190 @@ const UpdateProgramScreen = () => {
             activeOutlineColor="#0D509D"
             value={programDescription}
             onChangeText={setProgramDescription}
-            placeholder="Program Description"
+            placeholder="Enter The Description... "
             textColor="black"
           />
-
-          <Text className="text-black font-bold ml-4 mt-4">Program Type: (If unchecked will default to false)</Text>
-          
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginVertical: "4%",
-            }}
-            onPress={() => sethasLectures(!hasLectures)}
-          >
-            <Checkbox
-              status={hasLectures ? "checked" : "unchecked"}
-              onPress={() => sethasLectures(!hasLectures)}
-              color="#57BA47"
-              
-            />
-            <Text className="text-base font-bold">Program Has Lectures? </Text>
-          </Pressable>
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Update Program Speaker
+          <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
+          Who is the Speaker of the Program 
           </Text>
          { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Update Program Image
+          <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
+            Upload Program Flyer
           </Text>
         
           {imgURL ? (
+              <Pressable onPress={pickImage}>
+              <Image
+                source={{ uri: imgURL }}
+                style={{
+                  width: 170,
+                  height:  170,
+                  marginVertical: "1%",
+                  alignSelf : "center",
+                  borderRadius: 15
+                }}
+                resizeMode="cover"
+              />
+              </Pressable>) : programImage ? (
+            <Pressable onPress={pickImage}>
+            <Image
+              source={{ uri: programImage.uri }}
+              style={{
+                width: 150,
+                height:  150,
+                marginVertical: "1%",
+                alignSelf : "center",
+                borderRadius: 15
+              }}
+              resizeMode="cover"
+            />
+            </Pressable>) : (
+            <Button
+            mode="contained"
+            buttonColor="#57BA47"
+            textColor="white"
+            theme={{ roundness: 1 }}
+            onPress={pickImage}
+            >
+              Upload
+            </Button>)
+        }
+
+
+        <Text className="text-black font-bold ml-4 mt-4">Does the Program have recorded Youtube Videos? </Text>
+        <View className="flex flex-row justify-evenly">
+        <Pressable
+               style={{ flexDirection: "row", alignItems: "center" }}
+               className="w-[25%]"
+               onPress={() => sethasLectures(false)}
+             >
+               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full">
+                 {!hasLectures ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+               </View>
+               <Text className="ml-5">No</Text>
+             </Pressable>
+
+             <Pressable
+               style={{ flexDirection: "row", alignItems: "center" }}
+               className="w-[25%]"
+               onPress={() => sethasLectures(true)}
+
+             >
+               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full my-4">
+                 {hasLectures? <Icon  source={'check'} size={15} color="green"/> : <></>}
+               </View>
+               <Text className="ml-5">Yes</Text>
+             </Pressable>
+        </View>
+
+
+        <Text className="text-black font-bold ml-4 mt-4">Program Type: (If unchecked will default to false)</Text>
+
+
+         <View className="flex flex-row flex-wrap gap-3 my-4">
+            <Pressable
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginVertical: "4%",
+              }}
+              onPress={() => setIsPaid(!isPaid)}
+              className="w-[35%] justify-between px-6"
+            >
+              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                 {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+              </View>
+              <Text className="text-base font-bold">Paid</Text>
+            </Pressable>
+            {isPaid && (
+              <View>
+                <Text className="text-base font-bold mb-1 ml-2">
+                  Enter Program Price
+                </Text>
+                <TextInput
+                  mode="outlined"
+                  theme={{ roundness: 10 }}
+                  style={{ width: "50%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                  activeOutlineColor="#0D509D"
+                  value={programPrice}
+                  onChangeText={setProgramPrice}
+                  placeholder="Price"
+                  textColor="black"
+                  keyboardType="number-pad"
+                />
+              </View>
+            )}
+            <Pressable
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "4%",
+              }}
+              onPress={() => setIsForKids(!isForKids)}
+              className="w-[35%] justify-between px-6"
+            >
+              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                 {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+              </View>
+              <Text className="text-base font-bold">Kids</Text>
+            </Pressable>
+  
+            <Pressable
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "4%",
+              }}
+              onPress={() => setIsFor14Plus(!isFor14Plus)}
+              className="w-[35%] justify-between px-6"
+            >
+               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
+                 {isFor14Plus ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+              </View>
+              <Text className="text-base font-bold">14+</Text>
+            </Pressable>
+            <Pressable
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "4%",
+              }}
+              onPress={() => setIsEducational(!isEducational)}
+              className="w-[45%] justify-between px-6"
+
+            >
+               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
+                 {isEducational ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+              </View>
+              <Text className="text-base font-bold border">Education</Text>
+            </Pressable>
+  
+         </View>
+          <Button
+            mode="contained"
+            buttonColor="#57BA47"
+            textColor="white"
+            theme={{ roundness: 1 }}
+            onPress={async() =>  await onUpdate()}
+          >
+            Submit Program
+          </Button>
+
+        </ScrollView>
+      </View>
+    </>
+  );
+};
+
+export default UpdateProgramScreen;
+
+
+
+
+
+/* 
+{imgURL ? (
               <Pressable onPress={pickImage}>
               <Image
                 source={{ uri: imgURL }}
@@ -323,220 +574,4 @@ const UpdateProgramScreen = () => {
             </Button>)
         }
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Update Program Days
-          </Text>
-          {days.map((day, index) => (
-            <Pressable
-              key={index}
-              style={{ flexDirection: "row", alignItems: "center" }}
-              onPress={() => toggleDaySelection(day)}
-            >
-              <Checkbox
-                status={programDays.includes(day) ? "checked" : "unchecked"}
-                onPress={() => toggleDaySelection(day)}
-                color="#57BA47"
-              />
-              <Text>{day}</Text>
-            </Pressable>
-          ))}
-
-          <Text className="text-base font-bold mt-2 ml-2">
-            Update Program Start Date
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowStartDatePicker(true)}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">
-              {programStartDate ? formatDate(programStartDate) : "Select Date"}
-            </Text>
-          </TouchableOpacity>
-          {showStartDatePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, date) => {
-                setShowStartDatePicker(false);
-                if (date) setProgramStartDate(date);
-              }}
-            />
-          )}
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Update Program End Date
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowEndDatePicker(true)}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">
-              {programEndDate ? formatDate(programEndDate) : "Select Date"}
-            </Text>
-          </TouchableOpacity>
-          {showEndDatePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, date) => {
-                setShowEndDatePicker(false);
-                if (date) setProgramEndDate(date);
-              }}
-            />
-          )}
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Update Program Start Time
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowStartTimePicker(true)}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">
-              {programStartTime ? formatTime(programStartTime) : "Select Time"}
-            </Text>
-          </TouchableOpacity>
-          {showStartTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              display="default"
-              onChange={(event, time) => {
-                setShowStartTimePicker(false);
-                if (time) setProgramStartTime(time);
-              }}
-            />
-          )}
-
-        <Text className="text-black font-bold ml-4 mt-4">Program Type: (If unchecked will default to false)</Text>
-
-
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginVertical: "4%",
-            }}
-            onPress={() => setIsPaid(!isPaid)}
-
-          >
-            <Checkbox
-              status={isPaid ? "checked" : "unchecked"}
-              onPress={() => setIsPaid(!isPaid)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Program is Paid</Text>
-          </Pressable>
-          {isPaid && (
-            <View>
-              <Text className="text-base font-bold mb-1 ml-2">
-                Enter Program Price
-              </Text>
-              <TextInput
-                mode="outlined"
-                theme={{ roundness: 10 }}
-                style={{ width: "50%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-                activeOutlineColor="#0D509D"
-                value={programPrice}
-                onChangeText={setProgramPrice}
-                placeholder="Price"
-                textColor="black"
-                keyboardType="number-pad"
-              />
-            </View>
-          )}
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsForKids(!isForKids)}
-          >
-            <Checkbox
-              status={isForKids ? "checked" : "unchecked"}
-              onPress={() => setIsForKids(!isForKids)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Program is For Kids</Text>
-          </Pressable>
-
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsFor14Plus(!isFor14Plus)}
-
-          >
-            <Checkbox
-              status={isFor14Plus ? "checked" : "unchecked"}
-              onPress={() => setIsFor14Plus(!isFor14Plus)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Program is For 14+</Text>
-          </Pressable>
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsEducational(!isEducational)}
-          >
-            <Checkbox
-              status={isEducational ? "checked" : "unchecked"}
-              onPress={() => setIsEducational(!isEducational)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">
-              Program is For Education
-            </Text>
-          </Pressable>
-
-          <Button
-            mode="contained"
-            buttonColor="#57BA47"
-            textColor="white"
-            theme={{ roundness: 1 }}
-            onPress={ async () =>   await onUpdate()}
-          >
-            Update Program
-          </Button>
-        </ScrollView>
-      </View>
-    </>
-  );
-};
-
-export default UpdateProgramScreen;
-
-
-
+*/

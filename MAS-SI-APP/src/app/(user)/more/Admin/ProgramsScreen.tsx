@@ -55,6 +55,7 @@ const ProgramsScreen = () => {
           )
         }}
       />
+      
       <View className='flex-1 grow pt-[170px]'>
         <Text className='ml-4 font-bold text-lg my-6'>Select a Program</Text>
         <FlatList 

@@ -1,9 +1,10 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native'
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, Image, Pressable } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { Link } from 'expo-router'
+import { Link, router, Stack } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import { differenceInDays, format, toDate } from 'date-fns'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
+import Svg, { Path } from 'react-native-svg'
 
 const EventsScreen = () => {
   const tabBar = useBottomTabBarHeight()
@@ -23,20 +24,36 @@ const EventsScreen = () => {
   }, [])
 
   return (
-    <View className='flex-1' style={{ paddingBottom : tabBar + 30 }}>
-      <Text className="font-bold text-2xl p-3 ">Events</Text>
-      <Link  href={'/(user)/more/Admin/AddNewEventScreen'} asChild >
-          <TouchableOpacity className="bg-[#57BA47] w-[35%] px-3 py-2 ml-3 mb-2 rounded-md items-center">
-            <Text className="font-bold text-sm text-white">Add New Event</Text>
-          </TouchableOpacity>
-      </Link>
-      <View className='flex-1 grow'>
+    <View className='flex-1 bg-white grow' style={{ paddingBottom : tabBar + 30 }}>
+      <Stack.Screen 
+        options={{
+          headerTransparent : true,
+          header : () => (
+            <View className="relative">
+              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
+                <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.back()}>
+                  <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
+                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+                  </Svg>
+                  <Text className=" text-[25px] text-white">Events</Text>
+                </Pressable>
+              </View>
+              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
+               <View className="w-[65%] items-center"> 
+                <Text className=" text-[15px] text-black ">Edit Existing Events</Text>
+              </View>
+              </View>
+            </View>
+          )
+        }}
+      />
+      <View className='flex-1 pt-[170px]'>
         <FlatList 
         style={{ flex : 1 }}
         data={events}
         renderItem={({item}) =>(
           <View style={{marginHorizontal: 2}}>
-          <Link  href={{pathname: '/(user)/more/Admin/EventsNotificationScreen', params: {event_id: item.event_id, has_lecture : item.has_lecture}}}
+          <Link  href={{pathname: '/(user)/more/Admin/UpdateEventHomeScreen', params: {event_id: item.event_id, has_lecture : item.has_lecture, event_img : item.event_img, event_name: item.event_name}}}
 
               asChild >
               <TouchableOpacity>

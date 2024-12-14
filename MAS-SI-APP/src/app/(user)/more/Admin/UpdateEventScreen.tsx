@@ -18,6 +18,7 @@ import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import { supabase } from "@/src/lib/supabase";
 import { useRouter } from "expo-router";
+import Svg, { Path } from "react-native-svg";
 function setTimeToCurrentDate(timeString : string ) {
 
   // Split the time string into hours, minutes, and seconds
@@ -233,90 +234,351 @@ const UpdateEventScreen = () => {
   }, [])
   return (
     <>
-      <Stack.Screen
+    <Stack.Screen
         options={{
-          headerBackTitleVisible: false,
-          headerStyle: { backgroundColor: "white" },
-          headerTintColor : 'black',
-          title: "Update Event",
+          headerTransparent : true,
+          header : () => (
+            <View className="relative">
+              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
+                <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.back()}>
+                  <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
+                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+                  </Svg>
+                  <Text className=" text-[25px] text-white">Events</Text>
+                </Pressable>
+              </View>
+              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
+               <View className="w-[65%] items-center"> 
+                <Text className=" text-[15px] text-black ">Create A New Event</Text>
+              </View>
+              </View>
+            </View>
+          )
         }}
-      />
-      <View style={{ padding: 16, backgroundColor : 'white' }}>
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: tabHeight }}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text className="text-base font-bold mb-1 ml-2">
-            Update Event Name
+    />
+    <View style={{ padding: 10, backgroundColor : 'white', paddingTop: 170 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
+        showsVerticalScrollIndicator={false}
+      >
+         <Text className="text-base font-bold mb-1 mt-2 ml-2">Event Details</Text>
+        <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
+        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
+        <Text className=" text-black text-[11px]">
+           Start Time: { eventStartTime ? eventStartTime.toLocaleTimeString() : '__'}
           </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
-            value={eventName}
-            onChangeText={setEventName}
-            placeholder="Event Name"
-            textColor="black"
-          />
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-          Update Event Description
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-            multiline
-            activeOutlineColor="#0D509D"
-            value={eventDescription}
-            onChangeText={setEventDescription}
-            placeholder="Event Description"
-            textColor="black"
-          />
-          
-          <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginVertical: "4%",
+          {showStartTimePicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="time"
+            display="default"
+            onChange={(event, time) => {
+              setShowStartTimePicker(false);
+              if (time) setEventStartTime(time);
             }}
-            onPress={() => sethasLectures(!hasLectures)}
-          >
-            <Checkbox
-              status={hasLectures ? "checked" : "unchecked"}
-              onPress={() => sethasLectures(!hasLectures)}
-              color="#57BA47"
-              
+          />
+        )}
+        </Pressable>
+        <Text className="font-bold text-[13px] text-black my-3 ml-2">Date:</Text>
+        <View className="flex flex-row gap-x-2">
+        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartDatePicker(true)}>
+          <Text className="text-black text-[11px]">
+           Start Date: { eventStartDate ? eventStartDate.toLocaleDateString() : '__'}
+          </Text>
+          {showStartDatePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, date) => {
+                setShowStartDatePicker(false);
+                if (date) setEventStartDate(date);
+              }}
             />
-            <Text className="text-base font-bold">Event Has Lectures? </Text>
-          </Pressable>
+          )}
+        </Pressable>
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-          Update Event Speakers
+        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowEndDatePicker(true)}>
+        <Text className="text-black text-[11px]">
+           End Date: { eventEndDate ? eventEndDate.toLocaleDateString() : '__'}
           </Text>
-         { speakers ? <SpeakersData speakers={speakers} /> : <Text>Update Speakers</Text>}
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, date) => {
+                setShowEndDatePicker(false);
+                if (date) setEventEndDate(date);
+              }}
+            />
+          )}
+        </Pressable>
+        </View>
 
-          <View
-            style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}
-          >
-            {eventSpeakersList.map((speaker, index) => (
-              <Chip
-                key={index}
-                onClose={() => removeSpeaker(speaker)}
-                className="mx-4 mb-4"
-              >
-                {speaker}
-              </Chip>
-            ))}
-          </View>
+        <Text className="text-base font-bold mb-4 mt-4 ml-2">
+        Select the day(s) this event is held:          
+        </Text>
+       <View className="flex flex-row  gap-5 flex-wrap">
+          {days.map((day, index) => (
+             <Pressable
+             key={index}
+             style={{ flexDirection: "row", alignItems: "center" }}
+             onPress={() => toggleDaySelection(day)}
+             className="w-[25%]"
+           >
+             <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
+               {eventDays.includes(day) ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+             </View>
+             <Text className="ml-5">{day}</Text>
+           </Pressable>
+          ))}
+       </View>
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-          Update Event Image
-          </Text>
 
+       <Text className="text-base font-bold mb-1 ml-2 mt-4">
+          Title
+        </Text>
+        <TextInput
+          mode="outlined"
+          theme={{ roundness: 10 }}
+          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+          activeOutlineColor="#0D509D"
+          value={eventName}
+          onChangeText={setEventName}
+          placeholder="Event Name"
+          textColor="black"
+        />
+
+        <Text className="text-base font-bold mb-1 mt-2 ml-2">
+          Description
+        </Text>
+        <TextInput
+          mode="outlined"
+          theme={{ roundness: 10 }}
+          style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
+          multiline
+          activeOutlineColor="#0D509D"
+          value={eventDescription}
+          onChangeText={setEventDescription}
+          placeholder="Event Description"
+          textColor="black"
+        />
+         <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
+        Who is the Speaker of the Program 
+        </Text>
+       { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
          
+       <Text className="text-base font-bold mb-1 mt-2 ml-2">
+          Upload Event Image
+        </Text>
+
+       
+        {eventImage ? (
+          <Pressable onPress={pickImage}>
+          <Image
+            source={{ uri: eventImage.uri }}
+            style={{
+              width: "50%",
+              height: 110,
+              marginVertical: "1%",
+              alignSelf : "center",
+              borderRadius: 15
+            }}
+            resizeMode="contain"
+          /> 
+          </Pressable>
+        ): (
+          <Button
+          mode="contained"
+          buttonColor="#57BA47"
+          textColor="white"
+          theme={{ roundness: 1 }}
+          onPress={pickImage}
+          className="w-[100%]"
+          >
+            Upload
+          </Button>
+          )
+        }
+
+       <Text className="text-black font-bold ml-4 mt-4">Does the Program have recorded Youtube Videos? </Text>
+      <View className="flex flex-row justify-evenly">
+      <Pressable
+             style={{ flexDirection: "row", alignItems: "center" }}
+             className="w-[25%]"
+             onPress={() => sethasLectures(false)}
+           >
+             <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full">
+               {!hasLectures ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+             </View>
+             <Text className="ml-5">No</Text>
+           </Pressable>
+
+           <Pressable
+             style={{ flexDirection: "row", alignItems: "center" }}
+             className="w-[25%]"
+             onPress={() => sethasLectures(true)}
+
+           >
+             <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full my-4">
+               {hasLectures? <Icon  source={'check'} size={15} color="green"/> : <></>}
+             </View>
+             <Text className="ml-5">Yes</Text>
+           </Pressable>
+      </View>
+
+        <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
+
+        <Pressable
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginVertical: "4%",
+          }}
+          onPress={() => setIsPaid(!isPaid)}
+        >
+          <Checkbox
+            status={isPaid ? "checked" : "unchecked"}
+            onPress={() => setIsPaid(!isPaid)}
+            color="#57BA47"
+          />
+          <Text className="text-base font-bold">Event is Paid</Text>
+        </Pressable>
+        {isPaid && (
+          <View>
+            <Text className="text-base font-bold mb-1 ml-2">
+              Enter Event Price
+            </Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              style={{ width: "50%", height: 45, marginBottom: 10 }}
+              activeOutlineColor="#0D509D"
+              value={EventPrice}
+              onChangeText={setEventPrice}
+              placeholder="Price"
+              textColor="black"
+              keyboardType="number-pad"
+            />
+          </View>
+        )}
+        <Pressable
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: "4%",
+          }}
+          onPress={() => setIsForKids(!isForKids)}
+        >
+          <Checkbox
+            status={isForKids ? "checked" : "unchecked"}
+            onPress={() => setIsForKids(!isForKids)}
+            color="#57BA47"
+          />
+          <Text className="text-base font-bold">Event is For Kids</Text>
+        </Pressable>
+
+        <Pressable
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: "4%",
+          }}
+          onPress={() => setIsFor14Plus(!isFor14Plus)}
+        >
+          <Checkbox
+            status={isFor14Plus ? "checked" : "unchecked"}
+            onPress={() => setIsFor14Plus(!isFor14Plus)}
+            color="#57BA47"
+          />
+          <Text className="text-base font-bold">Event is For 14+</Text>
+        </Pressable>
+        <Pressable
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: "4%",
+          }}
+          onPress={() => setIsEducational(!isEducational)}
+        >
+          <Checkbox
+            status={isEducational ? "checked" : "unchecked"}
+            onPress={() => setIsEducational(!isEducational)}
+            color="#57BA47"
+          />
+          <Text className="text-base font-bold">Event is For Education</Text>
+        </Pressable>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: "4%",
+          }}
+        >
+          <Checkbox
+            status={isPace ? "checked" : "unchecked"}
+            onPress={() => setIsPace(!isPace)}
+            color="#57BA47"
+          />
+          <Text className="text-base font-bold">Event is Pace</Text>
+        </View>
+        {isPace ? (
+          <View className="ml-5">
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "4%",
+              }}
+            >
+              <Checkbox
+                status={dancePace ? "checked" : "unchecked"}
+                onPress={() => setDancePace(!dancePace)}
+                color="#57BA47"
+              />
+              <Text className="text-base font-bold">Event is Dance Pace</Text>
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "4%",
+              }}
+            >
+              <Checkbox
+                status={musicPace ? "checked" : "unchecked"}
+                onPress={() => setMusicPace(!musicPace)}
+                color="#57BA47"
+              />
+              <Text className="text-base font-bold">Event is Music Pace</Text>
+            </View>
+          </View>
+        ) : (
+          <></>
+        )}
+
+        <Button
+          mode="contained"
+          buttonColor="#57BA47"
+          textColor="white"
+          theme={{ roundness: 1 }}
+          onPress={async () => await onUpdate()}
+        >
+          Submit Event
+        </Button>
+      </ScrollView>
+    </View>
+  </>
+  );
+};
+
+export default UpdateEventScreen;
+
+
+
+/* 
           {
           imgURL ? (
             (
@@ -366,264 +628,4 @@ const UpdateEventScreen = () => {
             </TouchableOpacity>
             )
           }
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-          Update Event Days
-          </Text>
-
-          {days.map((day, index) => (
-            <Pressable
-              key={index}
-              style={{ flexDirection: "row", alignItems: "center" }}
-              onPress={() => toggleDaySelection(day)}
-            >
-              <Checkbox
-                status={eventDays.includes(day) ? "checked" : "unchecked"}
-                onPress={() => toggleDaySelection(day)}
-                color="#57BA47"
-              />
-              <Text>{day}</Text>
-            </Pressable>
-          ))}
-          <Text className="text-base font-bold mt-2 ml-2">
-          Update Event Start Date
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowStartDatePicker(true)}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">
-              {eventStartDate ? formatDate(eventStartDate) : "Update Date"}
-            </Text>
-          </TouchableOpacity>
-          {showStartDatePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, date) => {
-                setShowStartDatePicker(false);
-                if (date) setEventStartDate(date);
-              }}
-            />
-          )}
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-          Update Event End Date
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowEndDatePicker(true)}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">
-              {eventEndDate ? formatDate(eventEndDate) : "Update Date"}
-            </Text>
-          </TouchableOpacity>
-          {showEndDatePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, date) => {
-                setShowEndDatePicker(false);
-                if (date) setEventEndDate(date);
-              }}
-            />
-          )}
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-          Update Event Start Time
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowStartTimePicker(true)}
-            style={{
-              backgroundColor: "#57BA47",
-              width: "30%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-              marginLeft: "2%",
-              paddingVertical: "1%",
-            }}
-          >
-            <Text className="text-base font-bold text-white">
-              {eventStartTime ? formatTime(eventStartTime) : "Update Time"}
-            </Text>
-          </TouchableOpacity>
-          {showStartTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              display="default"
-              onChange={(event, time) => {
-                setShowStartTimePicker(false);
-                if (time) setEventStartTime(time);
-              }}
-            />
-          )}
-
-          <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
- 
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginVertical: "4%",
-            }}
-            onPress={() => setIsPaid(!isPaid)}
-          >
-            <Checkbox
-              status={isPaid ? "checked" : "unchecked"}
-              onPress={() => setIsPaid(!isPaid)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Event is Paid</Text>
-          </Pressable>
-          {isPaid && (
-            <View>
-              <Text className="text-base font-bold mb-1 ml-2">
-              Update Event Price
-              </Text>
-              <TextInput
-                mode="outlined"
-                theme={{ roundness: 10 }}
-                style={{ width: "50%", height: 45, marginBottom: 10 }}
-                activeOutlineColor="#0D509D"
-                value={EventPrice}
-                onChangeText={setEventPrice}
-                placeholder="Price"
-                textColor="black"
-                keyboardType="number-pad"
-              />
-            </View>
-          )}
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsForKids(!isForKids)}
-          >
-            <Checkbox
-              status={isForKids ? "checked" : "unchecked"}
-              onPress={() => setIsForKids(!isForKids)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Event is For Kids</Text>
-          </Pressable>
-
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsFor14Plus(!isFor14Plus)}
-          >
-            <Checkbox
-              status={isFor14Plus ? "checked" : "unchecked"}
-              onPress={() => setIsFor14Plus(!isFor14Plus)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Event is For 14+</Text>
-          </Pressable>
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsEducational(!isEducational)}
-          >
-            <Checkbox
-              status={isEducational ? "checked" : "unchecked"}
-              onPress={() => setIsEducational(!isEducational)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Event is For Education</Text>
-          </Pressable>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-          >
-            <Checkbox
-              status={isPace ? "checked" : "unchecked"}
-              onPress={() => setIsPace(!isPace)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Event is Pace</Text>
-          </View>
-          {isPace ? (
-            <View className="ml-5">
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: "4%",
-                }}
-              >
-                <Checkbox
-                  status={dancePace ? "checked" : "unchecked"}
-                  onPress={() => setDancePace(!dancePace)}
-                  color="#57BA47"
-                />
-                <Text className="text-base font-bold">Event is Dance Pace</Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: "4%",
-                }}
-              >
-                <Checkbox
-                  status={musicPace ? "checked" : "unchecked"}
-                  onPress={() => setMusicPace(!musicPace)}
-                  color="#57BA47"
-                />
-                <Text className="text-base font-bold">Event is Music Pace</Text>
-              </View>
-            </View>
-          ) : (
-            <></>
-          )}
-
-          <Button
-            mode="contained"
-            buttonColor="#57BA47"
-            textColor="white"
-            theme={{ roundness: 1 }}
-            onPress={ async () =>  await onUpdate() }
-          >
-            Update Event
-          </Button>
-        </ScrollView>
-      </View>
-    </>
-  );
-};
-
-export default UpdateEventScreen;
-
-
+*/

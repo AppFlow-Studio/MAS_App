@@ -1,4 +1,4 @@
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import React, { useState } from "react";
 import { Stack } from "expo-router";
 import { SceneMap, TabBar, TabView } from "react-native-tab-view";
@@ -51,14 +51,20 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
   },
   {
     title : 'Donations', screens : [
-      { buttonTitle : 'Create a new Category', link : ''},
-      { buttonTitle : 'Edit an existing Category', link : ''}
+      { buttonTitle : 'Create a new Category', link : '/more/Admin/CreateNewDonationProject'},
+      { buttonTitle : 'Edit an existing Category', link : '/more/Admin/EditDonationCategory'}
 
 
     ]
   },
   {
-    title : 'Jummah', screens : []
+    title : 'Jummah', screens : [
+      { buttonTitle : 'First Jummah', link : '/more/Admin/JummahDetails/1'},
+      { buttonTitle : 'Second Jummah', link : '/more/Admin/JummahDetails/2'},
+      { buttonTitle : 'Third Jummah', link : '/more/Admin/JummahDetails/3'},
+      { buttonTitle : 'Student Jummah', link : '/more/Admin/JummahDetails/4'},
+
+    ]
   }
 ]
 const AdminScreen = () => {
@@ -108,11 +114,13 @@ const AdminScreen = () => {
 
       { /* Admin Options in Accordion */ }
       
-      {
-        AdminOptions.map((options, index) => (
-          <View key={options.title}><AdminAccordionOptions options={options} index={index + 1}/></View>
-        ))
-      }
+      <ScrollView>
+        {
+          AdminOptions.map((options, index) => (
+            <View key={options.title}><AdminAccordionOptions options={options} index={index + 1}/></View>
+          ))
+        }
+      </ScrollView>
 
     </View>
   );

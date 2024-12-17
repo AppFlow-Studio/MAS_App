@@ -18,6 +18,7 @@ import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import { supabase } from "@/src/lib/supabase";
 import Svg, { Circle, Path } from "react-native-svg";
+import AddSpeakerModal from "@/src/components/AdminComponents/AddSpeakerModal";
 
 const AddNewEventScreen = () => {
   const [eventName, setEventName] = useState<string>("");
@@ -48,6 +49,7 @@ const AddNewEventScreen = () => {
   const [ speakers, setSpeakers ] = useState<any[]>([])
   const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const [ hasLectures, sethasLectures ]  = useState(false)
+  const [ openAddSpeaker, setOpenAddSpeaker ] = useState(false) 
   const tabHeight = useBottomTabBarHeight() + 20
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
@@ -554,6 +556,7 @@ const AddNewEventScreen = () => {
             Submit Event
           </Button>
         </ScrollView>
+        <AddSpeakerModal setIsOpen={setOpenAddSpeaker} isOpen={openAddSpeaker}/>
       </View>
     </>
   );

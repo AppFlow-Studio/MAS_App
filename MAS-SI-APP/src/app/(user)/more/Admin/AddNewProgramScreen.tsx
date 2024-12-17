@@ -18,6 +18,7 @@ import * as FileSystem from 'expo-file-system';
 import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import Svg, { Circle, Path } from "react-native-svg";
+import AddSpeakerModal from "@/src/components/AdminComponents/AddSpeakerModal";
 
 
 const AddNewProgramScreen = () => {
@@ -42,6 +43,7 @@ const AddNewProgramScreen = () => {
   const [isEducational, setIsEducational] = useState<boolean>(false);
   const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const [ hasLectures, sethasLectures ] = useState(false)
+  const [ addSpeaker, setOpenAddSpeaker ] = useState(false) 
   const tabHeight = useBottomTabBarHeight() + 20
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
@@ -173,7 +175,7 @@ const AddNewProgramScreen = () => {
     )
   }
 
-  const onSumbit = async () => {
+  const onSubmit = async () => {
     if ( programName && programDescription && programDays.length > 0 && programEndDate  &&  programStartDate &&  speakerSelected.length>0 && programImage) {
       const base64 = await FileSystem.readAsStringAsync(programImage.uri, { encoding: 'base64' });
       const filePath = `${programName.trim()}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
@@ -480,12 +482,13 @@ const AddNewProgramScreen = () => {
             buttonColor="#57BA47"
             textColor="white"
             theme={{ roundness: 1 }}
-            onPress={async() =>  await onSumbit()}
+            onPress={async() =>  await onSubmit()}
           >
             Submit Program
           </Button>
 
         </ScrollView>
+        <AddSpeakerModal setIsOpen={setOpenAddSpeaker} isOpen={addSpeaker}/>
       </View>
     </>
   );

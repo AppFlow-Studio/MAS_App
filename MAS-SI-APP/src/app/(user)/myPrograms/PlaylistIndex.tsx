@@ -82,7 +82,7 @@ const PlaylistIndex = () => {
                   <Link href={`/myPrograms/playlists/QuranPlaylist`} asChild>
                     <TouchableOpacity>
                     <View className='flex-col item-center px-2'>
-                        <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "30%",}}>
+                        <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "100%",}} className=''>
                               <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} >
                                   <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{height : '70%', width : '70%', objectFit : 'fill'}} />
                               </View>
@@ -98,8 +98,8 @@ const PlaylistIndex = () => {
                 <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}}>
                   <Link href={`/myPrograms/playlists/AthkarPlaylist`} asChild>
                     <TouchableOpacity>
-                    <View className='flex-col item-center px-2'>
-                        <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "30%",}}>
+                    <View className='flex-col item-center px-2 '>
+                        <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "100%",}}>
                               <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} >
                                   <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{height : '70%', width : '70%', objectFit : 'fill'}} />
                               </View>

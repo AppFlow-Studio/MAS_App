@@ -53,7 +53,7 @@ const UpdateProgramScreen = () => {
   const [showStartTimePicker, setShowStartTimePicker] =
     useState<boolean>(false);
   const [isPaid, setIsPaid] = useState<boolean>(false);
-  const [programPrice, setProgramPrice] = useState<string>("");
+  const [programPaidLink, setprogramPaidLink] = useState<string>("");
   const [isForKids, setIsForKids] = useState<boolean>(false);
   const [isFor14Plus, setIsFor14Plus] = useState<boolean>(false);
   const [isEducational, setIsEducational] = useState<boolean>(false);
@@ -166,7 +166,7 @@ const UpdateProgramScreen = () => {
       setProgramStartTime(setTimeToCurrentDate(data.program_start_time));
       setProgramDays(data.program_days);
       setIsPaid(data.program_is_paid);
-      setProgramPrice(data.program_price);
+      setprogramPaidLink(data.paid_link);
       setIsForKids(data.is_kids);
       setIsFor14Plus(data.is_fourteen_plus);
       setIsEducational(data.is_education);
@@ -176,14 +176,14 @@ const UpdateProgramScreen = () => {
   }
 
   const onUpdate =  async () => {
-    if ( programName && (imgURL || programImage) && programDescription && programStartDate && programEndDate && programDays && programPrice && programStartTime && speakerSelected){
+    if ( programName && (imgURL || programImage) && programDescription && programStartDate && programEndDate && programDays  && programStartTime && speakerSelected){
       if( programImage ){
         const base64 = await FileSystem.readAsStringAsync(programImage.uri, { encoding: 'base64' });
         if( programName == originalName ){
           const filePath = `${programName.trim().split(" ").join("")}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
           const contentType = programImage.type === 'image' ? 'image/png' : 'video/mp4';
           const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').update(filePath, decode(base64));
-          const { error } = await supabase.from('programs').update({ program_name : programName, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, program_price : programPrice, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
+          const { error } = await supabase.from('programs').update({ program_name : programName, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
           handleSubmit()
           router.back()
         }
@@ -195,13 +195,13 @@ const UpdateProgramScreen = () => {
           if( image ){
             const { data : program_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
             const time =  format(programStartTime!, 'p').trim()
-            const { error } = await supabase.from('programs').update({ program_name : programName, program_img : program_img_url.publicUrl, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, program_price : programPrice, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
+            const { error } = await supabase.from('programs').update({ program_name : programName, program_img : program_img_url.publicUrl, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
             handleSubmit()
             router.back()
           }
       }
     }else{
-      const { error } = await supabase.from('programs').update({ program_name : programName, program_img : imgURL ? imgURL : programImage, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, program_price : programPrice, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
+      const { error } = await supabase.from('programs').update({ program_name : programName, program_img : imgURL ? imgURL : programImage, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
       handleSubmit()
       router.back()
     }
@@ -452,16 +452,16 @@ const UpdateProgramScreen = () => {
             {isPaid && (
               <View>
                 <Text className="text-base font-bold mb-1 ml-2">
-                  Enter Program Price
+                  Enter Program WebsiteLink
                 </Text>
                 <TextInput
                   mode="outlined"
                   theme={{ roundness: 10 }}
-                  style={{ width: "50%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                  style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
                   activeOutlineColor="#0D509D"
-                  value={programPrice}
-                  onChangeText={setProgramPrice}
-                  placeholder="Price"
+                  value={programPaidLink}
+                  onChangeText={setprogramPaidLink}
+                  placeholder="https://massic.shop/product/..."
                   textColor="black"
                   keyboardType="number-pad"
                 />

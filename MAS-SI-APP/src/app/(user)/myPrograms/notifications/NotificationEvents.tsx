@@ -68,12 +68,12 @@ const NotificationEventsScreen = ( { addedEvents, layout } : NotificationEventsS
     </ScrollView>
   )
 }
-type ClassesAndLecturesScreenProp = {
+type ClassesScreenProp = {
   addedPrograms : Program[] | null
   layout: number
 }
 
-const ClassesAndLecturesScreen = ( { addedPrograms, layout } : ClassesAndLecturesScreenProp) => {
+const ClassesScreen = ( { addedPrograms, layout } : ClassesScreenProp) => {
   return(
     <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap" }}>
         {
@@ -101,6 +101,33 @@ const ClassesAndLecturesScreen = ( { addedPrograms, layout } : ClassesAndLecture
   )
 }
 
+const LecturesScreen = ({ addedPrograms, layout } : ClassesScreenProp) => {
+  return(
+    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap" }}>
+        {
+          addedPrograms && addedPrograms.length > 0 ? addedPrograms.map(( item ) => {
+            return(
+              <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 10 }}>
+                <RenderAddedPrograms program_id={item.program_id}/>
+              </View>
+            )
+          }) : 
+          ( 
+          <View className='px-7'>
+            <View className='items-center'>
+              <Text className='font-bold text-2xl text-center'>Start adding flyers to make your notifications list</Text>
+              <Icon source={"bell"} color="#007AFF" size={40}/>
+            </View>
+            <View className='pb-[50%]'/>
+            <View>
+              <Text className='font-bold text-xl text-center'>Add programs and events by tapping the <Icon source={"bell"} color="#007AFF" size={20}/> or sliding right on the flyer name</Text>
+            </View>
+          </View>
+          )
+        }
+    </ScrollView>
+  )
+}
 const SalahTimesScreen = () => {
   const { prayerTimesWeek } = usePrayer();
   if( prayerTimesWeek.length == 0 ){
@@ -140,6 +167,7 @@ const NotificationEvents = () => {
   const { session } = useAuth()
   const [ addedEvents, setAddedEvents ] = useState<EventsType[] | null>(null)
   const [ addedPrograms, setAddedPrograms ] = useState<Program[] | null>(null)
+  const [ addedLecturePrograms, setAddedProgramLectures ] = useState<Program[] | null>(null)
   const [ index, setIndex ] = useState(0)
   const layout = useWindowDimensions().width
   const tabBarHeight = useBottomTabBarHeight()
@@ -155,7 +183,7 @@ const NotificationEvents = () => {
 
   const getAddedProgram = async () => {
     const currDate = new Date().toISOString()
-    const { data, error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).order("created_at", { ascending : false })
+    const { data, error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq('has_lectures', false).order("created_at", { ascending : false })
     if( error ){
       console.log( error )
     }
@@ -163,9 +191,20 @@ const NotificationEvents = () => {
       setAddedPrograms(data)
     }
   }
+  const getAddedLecturePrograms = async () => {
+    const currDate = new Date().toISOString()
+    const { data, error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq('has_lectures', true).order("created_at", { ascending : false })
+    if( error ){
+      console.log( error )
+    }
+    if( data ){
+      setAddedProgramLectures(data)
+    }
+  }
     useEffect(() => {
       getAddedEvents()
       getAddedProgram()
+      getAddedLecturePrograms()
       const listenForAddedEvents = supabase.channel("added notifications").on(
         "postgres_changes",
         {
@@ -187,7 +226,7 @@ const NotificationEvents = () => {
           table: "added_notifications_programs",
           filter:`user_id=eq.${session?.user.id}`
         },
-        async (payload) => await getAddedProgram()
+        async (payload) => {await getAddedProgram(); await getAddedLecturePrograms()}
       )
       .subscribe()
       return () => { supabase.removeChannel( listenForAddedEvents ) ; supabase.removeChannel( listenForAddedPrograms )}
@@ -199,24 +238,27 @@ const renderScene = ({ route } : any) => {
     case "second" :
          return <SalahTimesScreen />
     case "third" :
-       return <ClassesAndLecturesScreen addedPrograms={addedPrograms} layout={layout} />   
+       return <ClassesScreen addedPrograms={addedPrograms} layout={layout} /> 
     case "fourth" :
+    return <LecturesScreen addedPrograms={addedLecturePrograms} layout={layout} />    
+    case "fifth" :
       return <NotificationEventsScreen addedEvents={addedEvents} layout={layout} />  }
 }
   const routes = [
     //{ key: 'first', title: 'Paid' },
-    { key : 'second', title: 'Prayers'},
-    { key: 'third', title: 'Classes & Lectures' },
-    { key : 'fourth', title: 'Events'},
+    { key : 'second', title: 'Prayer'},
+    { key: 'third', title: 'Classes' },
+    { key: 'fourth', title: 'Lectures' },
+    { key : 'fifth', title: 'Events'},
     ]
 
   const renderTabBar = (props : any) => (
     <TabBar
       {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "30%", borderRadius : 20  }}
+      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "23%", borderRadius : 20  }}
       style={{ backgroundColor: '#0D509D', alignSelf : "center",  height: '9%'}}
       labelStyle={{ color : "white", fontWeight : "bold" }}
-      tabStyle={{ width : layout / 3 }}
+      tabStyle={{ width : layout / 3.5 }}
       scrollEnabled={true}
     />
   );

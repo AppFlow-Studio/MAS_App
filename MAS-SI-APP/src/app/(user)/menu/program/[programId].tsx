@@ -1,4 +1,4 @@
-import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, Easing, Alert, StatusBar, } from 'react-native'
+import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, Easing, Alert, StatusBar, Linking } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
 import LecturesListLecture from '@/src/components/LectureListLecture';
@@ -200,7 +200,7 @@ async function getUserPlaylists(){
       setProgramInNotifications(false)
     }
     else{
-      const { error } = await supabase.from("added_notifications_programs").insert({user_id :session?.user.id, program_id : programId})
+      const { error } = await supabase.from("added_notifications_programs").insert({user_id :session?.user.id, program_id : programId, has_lectures : program?.has_lectures})
       if( error ){
         console.log(error)
       }
@@ -375,9 +375,13 @@ async function getUserPlaylists(){
                     {
                       program?.program_is_paid ? 
                       (
-                        <Link href={`more/ProgramsPage/${program.program_id}`} asChild>
+                        <Pressable onPress={() => {
+                        Linking.canOpenURL(program.paid_link).then(() => {
+                        Linking.openURL(program.paid_link);
+                        });
+                        }}>
                         <Button icon={() => <Icon source={"cart-variant"} size={20} color='white'/>} mode='elevated' style={{ backgroundColor : "#57BA47", marginTop : 10, width: "90%"}}><Text className='text-white'>Sign Up Now</Text></Button>
-                        </Link>
+                        </Pressable>
                       ) : <></>
                     }
                 </View>

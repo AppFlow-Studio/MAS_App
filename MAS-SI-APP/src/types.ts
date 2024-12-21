@@ -29,6 +29,7 @@ export type Program = {
     program_end_date : string
     program_days : string[]
     program_start_time : string
+    paid_link : string
 }
 
 export type salahData = {

@@ -52,44 +52,14 @@ export default function userPrograms() {
     }
   }
 
-  async function getUserPlaylists(){
-    const { data , error } = await supabase.from("user_playlist").select("*").eq("user_id", session?.user.id).range(0,1)
-    if( data ){
-      setUserPlaylists(data)
-    }
-  }
+ 
 
-  async function getLatestAddedFlier(){
-    const { data : checkForProgram , error } = await supabase.from("added_notifications_programs").select("program_id").eq('user_id', session?.user.id).order('created_at', { ascending : false }).limit(1).single()
-    if( error ){
-      setLatestFlier(undefined)
-    }
-    if( checkForProgram ){
-      const { data : programInfo , error } = await supabase.from("programs").select("*").eq("program_id", checkForProgram.program_id).single()
-      if( programInfo ){
-        setLatestFlier(programInfo)
-      }
-    }else{
-      const { data : checkForEvent, error } = await supabase.from("added_notifications").select("event_id").eq('user_id', session?.user.id).order("created_at", { ascending : false }).limit(1).single()
-      if( error ){
-        setLatestFlierEvent(undefined)
-      }
-      if( checkForEvent ){
-        const { data : eventInfo , error } = await supabase.from("events").select("*").eq("event_id", checkForEvent.event_id).single()
-        if( eventInfo ){
-          setLatestFlierEvent(eventInfo)
-        }
-      }
-    }
-  }
   useEffect(() => {
     checkIfAnon()
   }, [ session ])
 
   useEffect(() => {
-    getLatestAddedFlier()
     getUserProgramLibrary()
-    getUserPlaylists()
     const channel = supabase.channel("user_programs").on(
       "postgres_changes",
       {
@@ -102,30 +72,7 @@ export default function userPrograms() {
     )
     .subscribe()
 
-    const channel2 = supabase.channel("user_playlists").on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table : "user_playlist",
-        filter : `user_id=eq.${session?.user.id}`
-      },
-      async (payload) => await getUserPlaylists()
-    )
-    .subscribe()
-
-    const channel3 = supabase.channel('user_notifications').on(
-      "postgres_changes",
-      {
-        event : '*',
-        schema : 'public',
-        table : 'added_notifications_programs',
-        filter : `user_id=eq.${session?.user.id}`
-      },
-      async (payload) => await getLatestAddedFlier()
-    )
-    .subscribe()
-    return() => { supabase.removeChannel(channel); supabase.removeChannel(channel2); supabase.removeChannel(channel3) }
+    return() => { supabase.removeChannel(channel);  }
   }, [])
   async function signInWithEmail() {
     setLoading(true);
@@ -139,9 +86,7 @@ export default function userPrograms() {
   }  
   const tabBarHeight = useBottomTabBarHeight() + 35
   const onRefresh = async () => {
-    await  getLatestAddedFlier()
     await getUserProgramLibrary()
-    await getUserPlaylists()
   }
   async function signUpWithEmail() {
     setLoading(true)
@@ -387,23 +332,7 @@ export default function userPrograms() {
         </Pressable>
         </Link>
       </View>
-      <View className='flex-row'> 
-        {userPlaylists && userPlaylists.length > 0 ? 
-        (
-        <View className='flex-row'> 
-           <View className='mt-2'/>
-              <FlatList 
-              data={userPlaylists}
-              renderItem={( {item} ) => <View className=' px-3'><UserPlaylistFliers playlist={item}/></View>}
-              contentContainerStyle={{ paddingHorizontal : 1, paddingVertical : 2 }}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              />
-        </View>
-        ) :  <></> 
-      }
-      </View> 
-      <Divider style={{marginTop : 2}}/>
+      <Divider className='my-2 w-[90%] self-center '/>
       <View className='flex-row items-center ml-2 mt-2'>
         <Link href={"/myPrograms/notifications/NotificationEvents"} asChild>
         <Pressable className='flex-row items-center justify-between w-[100%] pr-3'>
@@ -421,31 +350,7 @@ export default function userPrograms() {
         </Pressable>
         </Link>
       </View> 
-      <View className='w-[130] h-[130] ml-2 mt-2'>
-        { latestFlier ? (
-          <Link  href={`/myPrograms/notifications/ClassesAndLectures/${latestFlier.program_id}`} asChild>
-              <Pressable style={{justifyContent: "center", alignItems: "center", backgroundColor: "white", borderRadius: 15, shadowColor : "black", shadowOffset : {width : 0, height : 1}, shadowOpacity : 1, shadowRadius :1}} className=''>
-              <Image 
-                  source={{ uri: latestFlier.program_img || defaultProgramImage }}
-                  style={{width: 130, height: 130, objectFit: "fill", borderRadius: 15}}
-                  className=''
-              />
-              </Pressable>
-          </Link>
-        ) : latestFlierEvent ? (
-          <Link  href={`/menu/program/events/${latestFlierEvent.event_id}`} asChild>
-          <Pressable style={{justifyContent: "center", alignItems: "center", backgroundColor: "white", borderRadius: 15, shadowColor : "black", shadowOffset : {width : 0, height : 1}, shadowOpacity : 1, shadowRadius :1}} className=''>
-          <Image 
-              source={{ uri: latestFlierEvent.event_img || defaultProgramImage }}
-              style={{width: 130, height: 130, objectFit: "fill", borderRadius: 15}}
-              className=''
-          />
-          </Pressable>
-      </Link>
-        ) : <></>
-      }
-      </View>
-      <Divider className='mb-3 mt-2'/>
+      <Divider className='my-2 w-[90%] self-center '/>
       <View className='flex-row items-center ml-2 mt-2'>
         <View className='flex-row items-center justify-between w-[100%] pr-3'>
           <View className='flex-row items-center justify-center'>

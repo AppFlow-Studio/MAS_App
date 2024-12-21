@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, useWindowDimensions } from 'react-native'
+import { View, Text, Pressable, ScrollView, useWindowDimensions, TouchableOpacity, Image } from 'react-native'
 import { Link, Stack } from 'expo-router'
 import React, { useEffect, useRef, useState } from 'react'
 import { Icon } from "react-native-paper"
@@ -77,6 +77,41 @@ const PlaylistIndex = () => {
             </View>
 
             <View style={{ flexDirection : "row", flexWrap : "wrap" }}>
+
+               <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}}>
+                  <Link href={`/myPrograms/playlists/QuranPlaylist`} asChild>
+                    <TouchableOpacity>
+                    <View className='flex-col item-center px-2'>
+                        <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "30%",}}>
+                              <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} >
+                                  <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{height : '70%', width : '70%', objectFit : 'fill'}} />
+                              </View>
+                        </View>
+                        <View className='items-center justify-center w-[70%]'>
+                            <Text className='text-xl font-bold' numberOfLines={1} allowFontScaling adjustsFontSizeToFit>Quran</Text>
+                        </View>
+                    </View>
+                    </TouchableOpacity>
+                  </Link>
+               </View>
+
+                <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}}>
+                  <Link href={`/myPrograms/playlists/AthkarPlaylist`} asChild>
+                    <TouchableOpacity>
+                    <View className='flex-col item-center px-2'>
+                        <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "30%",}}>
+                              <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} >
+                                  <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{height : '70%', width : '70%', objectFit : 'fill'}} />
+                              </View>
+                        </View>
+                        <View className='items-center justify-center w-[70%]'>
+                            <Text className='text-xl font-bold' numberOfLines={1} allowFontScaling adjustsFontSizeToFit>Athkar</Text>
+                        </View>
+                    </View>
+                    </TouchableOpacity>
+                  </Link>
+                </View>
+
               { 
               userPlayLists ? userPlayLists.map((item, index) => {
                 return( 

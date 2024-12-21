@@ -1,27 +1,7 @@
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import React, { useState } from "react";
 import { Stack } from "expo-router";
-import { SceneMap, TabBar, TabView } from "react-native-tab-view";
-import SendToEveryoneScreen from "./SendToEveryoneScreen";
-import ProgramsScreen from "./ProgramsScreen";
-import EventsScreen from "./EventsScreen";
-import BusinessAdsApprovalScreen from "./BusinessAdsApprovalScreen";
 import AdminAccordionOptions from "./_AdminAccordionOptions";
-const SendToEveryone = () => (
- <SendToEveryoneScreen />
-);
-
-const Programsscreen = () => (
- <ProgramsScreen/>
-);
-
-const Eventsscreen = () => (
-  <EventsScreen/>
-);
-
-const BusinessScreen = () => (
-  <BusinessAdsApprovalScreen/>
-);
 
 const AdminOptions : { title : string, screens : { buttonTitle : string, link : string }[] }[] = [
   {
@@ -68,33 +48,6 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
   }
 ]
 const AdminScreen = () => {
-  const layout = useWindowDimensions().width;
-  const [index, setIndex] = useState(0);
-
-  const renderScene = SceneMap({
-    first: SendToEveryone,
-    second: Programsscreen,
-    third : Eventsscreen,
-    fourth: BusinessScreen,
-  });
-  
-  const routes = [
-    { key: 'first', title: 'Send to Everyone' },
-    { key: 'second', title: 'Programs' },
-    { key : 'third', title : 'Events' },
-    { key : 'fourth', title : 'Business Ad' }
-  ];
-  
-  const renderTabBar = (props : any) => (
-    <TabBar
-    {...props}
-    indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "90%", width : "25%", left : "1%", borderRadius : 20  }}
-    style={{ backgroundColor: '#0D509D', width : "100%", height:'8%', justifyContent:'center', alignSelf : "center"}}
-    labelStyle={{ color : "white", fontWeight : "bold" }}
-    tabStyle={{ width : layout / 3.5 }}
-    scrollEnabled={true}
-    />
-  );
   return (
     <View className='flex-1 bg-white w-[100%] h-[100%]'>
       <Stack.Screen
@@ -106,6 +59,7 @@ const AdminScreen = () => {
         }}
       />
       {/* Admin Portal Landing */}
+      
       <View className="w-[90%] h-[20%] bg-[#EFF1F4] rounded-[15px] self-center mt-[5%] items-center justify-center py-2 mb-8">
         <View className="w-[90%] h-[90%] bg-white rounded-[15px] items-center justify-center">
           <Text className="text-black font-bold text-xl">Admin Portal</Text>
@@ -113,7 +67,7 @@ const AdminScreen = () => {
       </View> 
 
       { /* Admin Options in Accordion */ }
-      
+  
       <ScrollView>
         {
           AdminOptions.map((options, index) => (
@@ -127,14 +81,3 @@ const AdminScreen = () => {
 };
 
 export default AdminScreen;
-
-/*
-  <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderScene}
-          onIndexChange={setIndex}
-          initialLayout={{ width: layout }}
-          renderTabBar={renderTabBar}
-          style={{  backgroundColor : "#ededed" }}
-  />
-*/

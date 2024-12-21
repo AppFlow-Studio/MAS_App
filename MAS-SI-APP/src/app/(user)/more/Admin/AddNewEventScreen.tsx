@@ -167,7 +167,7 @@ const AddNewEventScreen = () => {
               </Svg>
             </View> 
             { speakerSelected.length == 0 ? 
-            <View className="items-center justify-between flex flex-row w-[35%]">
+            <Pressable className="items-center justify-between flex flex-row w-[35%]" onPress={() => setOpenAddSpeaker(true)}>
               <Text>Add a speaker</Text>
               <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <Circle cx="12" cy="8" r="4" stroke="#222222" stroke-linecap="round"/>
@@ -175,7 +175,7 @@ const AddNewEventScreen = () => {
                 <Path d="M18 14L18 22" stroke="#222222" stroke-linecap="round"/>
                 <Path d="M22 18L14 18" stroke="#222222" stroke-linecap="round"/>
               </Svg>
-            </View>
+            </Pressable>
             : <Text>{speakerSelected.length} Speaker(s) Chosen</Text>}
           </View>
 

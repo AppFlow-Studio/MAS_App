@@ -85,11 +85,12 @@ const CreateNewDonationProject = () => {
       const contentType = thumbnail.type === 'image' ? 'image/png' : 'video/mp4';
       const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
       if( image ){
-        const { data : program_img_url } = await supabase.storage.from('fliers').getPublicUrl(image?.path)
-        const { error } = await supabase.from('projects').insert({ project_name : title, thumbnail : program_img_url.publicUrl, project_goal : Number(amount.replaceAll(',', '')), project_linked_to : projectLinkedTo ? projectLinkedTo.project_id : null })
+        const { data : project_img_url } = await supabase.storage.from('fliers').getPublicUrl(image?.path)
+        const { error } = await supabase.from('projects').insert({ project_name : title, thumbnail : project_img_url.publicUrl, project_goal : Number(amount.replaceAll(',', '')), project_linked_to : projectLinkedTo ? projectLinkedTo.project_id : null })
         if( error ){
           console.log(error)
         }
+        showToast()
         handleSubmit()
       }else{
         Alert.alert(image_upload_error.message)
@@ -99,7 +100,6 @@ const CreateNewDonationProject = () => {
         // Upload Project With Thumbnail, Return project_id to serve as root folder that holds all other gallery images in supabase storage 'fliers' folder
         const base64 = await FileSystem.readAsStringAsync(thumbnail.uri, { encoding: 'base64' });
         const filePath = `${title.trim()}.${thumbnail .type === 'image' ? 'png' : 'mp4'}`;
-        const contentType = thumbnail.type === 'image' ? 'image/png' : 'video/mp4';
         const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
         if( image ){
           const { data : program_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
@@ -120,6 +120,8 @@ const CreateNewDonationProject = () => {
                 )
             }
           }
+          showToast()
+          handleSubmit()
         }
     }
     else{
@@ -144,7 +146,15 @@ const CreateNewDonationProject = () => {
         setProjects(data)
     }
   }
-
+  const removeFromGallery = ( pic : string | ImagePicker.ImagePickerAsset ) => {
+    if( typeof pic == 'string' ){
+      const FilterImageOut = gallery.filter( picurl => typeof picurl == 'string' ?  picurl != pic : picurl )
+      setGallery(FilterImageOut)
+    }else{
+      const FilterImageOut = gallery.filter( picid => typeof picid != 'string' ? picid.uri != pic.uri : picid)
+      setGallery(FilterImageOut)
+    }
+  }
   useEffect(() => {
     getProjects()
   }, [])
@@ -271,7 +281,7 @@ const CreateNewDonationProject = () => {
                             {
                                gallery && gallery?.length > 0 ? 
                                 gallery.map((pic, index) => (
-                                    <Image src={pic.uri} className='w-[154px] h-[138px] rounded-[15px]' key={index}/>
+                                    <Pressable onPress={() => removeFromGallery(pic)}><Image src={pic.uri} className='w-[154px] h-[138px] rounded-[15px]' key={index}/></Pressable>
                                 ))
                                 :
                                 <></>

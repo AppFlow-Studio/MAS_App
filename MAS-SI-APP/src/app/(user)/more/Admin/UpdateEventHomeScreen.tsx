@@ -71,7 +71,7 @@ const UpdateEventHomeScreen = () => {
         </Pressable>
       </Link>
         {
-          has_lecture ? 
+          has_lecture == 'true' ? 
           (
             <View className='mx-8'>
               <Text className='text-[13px] font-bold text-black'>Edit Lecture Content</Text>

@@ -38,9 +38,6 @@ type NotificationEventsScreenProp = {
   layout: number
 }
 
-const SalahSetting = () => {
-  
-}
 const NotificationEventsScreen = ( { addedEvents, layout } : NotificationEventsScreenProp) => {
   return(
     <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap" }}>

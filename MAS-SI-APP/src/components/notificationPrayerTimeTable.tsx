@@ -138,9 +138,9 @@ const NotificationPrayerTable = ({
                     }}
                     className="items-end justify-center"
                   >
-                    <Button className="bg-[#0D509E] h-[21] w-[65] self-center ml-[10%] text-white">
-                        Edit
-                    </Button>
+                    <Pressable className="bg-[#0D509E] h-[21] w-[65] self-center ml-[10%] text-white text-[10px] rounded-xl items-center justify-center">
+                        <Text className="border text-white font-[300]">Edit</Text>
+                    </Pressable>
                   </View>
 
                 </TouchableOpacity>

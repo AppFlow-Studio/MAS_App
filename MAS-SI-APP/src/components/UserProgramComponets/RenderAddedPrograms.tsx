@@ -1,5 +1,4 @@
 import { Text, View, Pressable, Image, Alert, Button, Animated, StyleSheet} from 'react-native'
-import programsData from '@/assets/data/programsData'
 import {Program} from "@/src/types"
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, router } from 'expo-router';
@@ -9,32 +8,22 @@ export const defaultProgramImage = "https://ugc.production.linktr.ee/e3KxJRUJTu2
 import { supabase } from "@/src/lib/supabase";
 import { useAuth } from '@/src/providers/AuthProvider'; 
 import * as Haptics from "expo-haptics"
+import { ActivityIndicator } from 'react-native-paper';
 type ProgramsListProgramProps = {
     program_id: string,
 }
 
 
-export default function RenderAddedPrograms( {program_id} : ProgramsListProgramProps){
-    const { session } = useAuth()
-    const [ program, setProgram ] = useState<Program>()
-    const getProgram = async () => {
-        const { data, error } = await supabase.from("programs").select("*").eq("program_id", program_id).single()
-        if( data ){
-            setProgram(data)
-        }
-    } 
-    useEffect(() => {
-        getProgram()
-    },[])
+export default function RenderAddedPrograms( {programInfo} : {programInfo : Program}){
     return(
         <View style={{ justifyContent: "center", alignItems: "center", marginHorizontal: 8 }} className=''>
-        <Link  href={`/myPrograms/notifications/ClassesAndLectures/${program_id}`}  asChild>
+        <Link  href={`/myPrograms/notifications/ClassesAndLectures/${programInfo?.program_id}`}  asChild>
             <TouchableOpacity>
               <View style={{width: 170, height: 170}}>
-                      <Image source={{uri: program?.program_img || defaultProgramImage }} style={{width : "100%", height: "100%",borderRadius: 8}}/>
+                      <Image source={{uri: programInfo?.program_img || defaultProgramImage }} style={{width : "100%", height: "100%",borderRadius: 8}}/>
               </View>
               <View className='lex-col w-[170] h-[40] flex-shrink'>
-                  <Text className='text-black font-bold' numberOfLines={1}>{program?.program_name}</Text>
+                  <Text className='text-black font-bold' numberOfLines={1}>{programInfo?.program_name}</Text>
               </View>
             </TouchableOpacity>
         </Link>

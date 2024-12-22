@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, useWindowDimensions, Button, FlatList, Pressable } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import { Stack } from 'expo-router'
+import { Redirect, Stack, useNavigation } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import{ useAuth } from "@/src/providers/AuthProvider"
 import { EventsType, Program } from '@/src/types'
@@ -14,6 +14,7 @@ import { usePrayer } from '@/src/providers/prayerTimesProvider'
 import NotificationPrayerTable from '@/src/components/notificationPrayerTimeTable'
 import { useRouter } from 'expo-router'
 import JummahMarquee from '@/src/components/JummahMarquee'
+import { add } from 'date-fns'
 {/*
   const NotificationPaidScreen = () => {
     return(
@@ -45,7 +46,7 @@ const NotificationEventsScreen = ( { addedEvents, layout } : NotificationEventsS
           addedEvents && addedEvents.length > 0? addedEvents.map((item, index) => {
             return (
             <View key={index} style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 10}}>
-              <RenderAddedEvents event_id={item.event_id}/>
+              <RenderAddedEvents eventsInfo={item}/>
             </View>
           )
           }) :  
@@ -66,7 +67,7 @@ const NotificationEventsScreen = ( { addedEvents, layout } : NotificationEventsS
   )
 }
 type ClassesScreenProp = {
-  addedPrograms : Program[] | null
+  addedPrograms : Program[]
   layout: number
 }
 
@@ -77,7 +78,7 @@ const ClassesScreen = ( { addedPrograms, layout } : ClassesScreenProp) => {
           addedPrograms && addedPrograms.length > 0 ? addedPrograms.map(( item ) => {
             return(
               <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 10 }}>
-                <RenderAddedPrograms program_id={item.program_id}/>
+                <RenderAddedPrograms programInfo={item}/>
               </View>
             )
           }) : 
@@ -102,10 +103,10 @@ const LecturesScreen = ({ addedPrograms, layout } : ClassesScreenProp) => {
   return(
     <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap" }}>
         {
-          addedPrograms && addedPrograms.length > 0 ? addedPrograms.map(( item ) => {
+           addedPrograms.length > 0 ? addedPrograms.map(( item ) => {
             return(
               <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 10 }}>
-                <RenderAddedPrograms program_id={item.program_id}/>
+                <RenderAddedPrograms programInfo={item}/>
               </View>
             )
           }) : 
@@ -162,40 +163,61 @@ const SalahTimesScreen = () => {
 
 const NotificationEvents = () => {
   const { session } = useAuth()
-  const [ addedEvents, setAddedEvents ] = useState<EventsType[] | null>(null)
-  const [ addedPrograms, setAddedPrograms ] = useState<Program[] | null>(null)
-  const [ addedLecturePrograms, setAddedProgramLectures ] = useState<Program[] | null>(null)
+  const [ addedEvents, setAddedEvents ] = useState<EventsType[]>([])
+  const [ addedPrograms, setAddedPrograms ] = useState<Program[]>([])
+  const [ addedLecturePrograms, setAddedProgramLectures ] = useState<Program[]>([])
   const [ index, setIndex ] = useState(0)
   const layout = useWindowDimensions().width
   const tabBarHeight = useBottomTabBarHeight()
   const getAddedEvents = async () => {
-    const { data ,error } = await supabase.from("added_notifications_events").select("*").eq("user_id", session?.user.id).order("created_at", { ascending : false })
+    const { data : AddedEvents ,error } = await supabase.from("added_notifications_events").select("*").eq("user_id", session?.user.id).order("created_at", { ascending : false })
     if( error ){
         console.log( error)
     }
-    if( data ){
-        setAddedEvents(data)
+    if( AddedEvents ){
+      const EventInfo = await Promise.all(
+        AddedEvents.map( async ( event ) => {
+          const { data : eventInfo , error } = await supabase.from('events').select('*').eq('event_id', event.event_id)
+          return eventInfo
+        })
+      )
     }
   }
 
   const getAddedProgram = async () => {
     const currDate = new Date().toISOString()
-    const { data, error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq('has_lectures', false).order("created_at", { ascending : false })
+    const { data : AddedProgram, error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq('has_lectures', false).order("created_at", { ascending : false })
     if( error ){
       console.log( error )
     }
-    if( data ){
-      setAddedPrograms(data)
+    if( AddedProgram ){
+      if( AddedProgram ){
+        const ProgramInfo =  await Promise.all(
+          AddedProgram.map( async (Program) => {
+            const { data : ProgramInfo, error } = await supabase.from("programs").select("*").eq("program_id", Program.program_id).single()
+            return ProgramInfo
+          })
+        )
+  
+        setAddedPrograms(ProgramInfo)
+      }
     }
   }
   const getAddedLecturePrograms = async () => {
     const currDate = new Date().toISOString()
-    const { data, error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq('has_lectures', true).order("created_at", { ascending : false })
+    const { data: AddedProgram , error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq('has_lectures', true).order("created_at", { ascending : false })
     if( error ){
       console.log( error )
     }
-    if( data ){
-      setAddedProgramLectures(data)
+    if( AddedProgram ){
+      const ProgramInfo =  await Promise.all(
+        AddedProgram.map( async (Program) => {
+          const { data : ProgramInfo, error } = await supabase.from("programs").select("*").eq("program_id", Program.program_id).single()
+          return ProgramInfo
+        })
+      )
+
+      setAddedProgramLectures(ProgramInfo)
     }
   }
     useEffect(() => {
@@ -229,7 +251,6 @@ const NotificationEvents = () => {
       return () => { supabase.removeChannel( listenForAddedEvents ) ; supabase.removeChannel( listenForAddedPrograms )}
   },[])
 
-
 const renderScene = ({ route } : any) => {
   switch( route.key ){
     case "second" :
@@ -261,9 +282,21 @@ const renderScene = ({ route } : any) => {
   );
  //#0D509D
   const router = useRouter()
+  const navigation = useNavigation()
   return (
     <>
-    <Stack.Screen options={{ title : "Notification Center", headerBackTitleVisible : false, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}, headerLeft : () => ( <Pressable className='items-start mr-2' onPress={() => router.back()}><Icon source={'chevron-left'} color='black' size={30} /></Pressable>)}}/>
+    <Stack.Screen options={{ 
+      title : "Notification Center", 
+      headerBackTitleVisible : false, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white'}, 
+      headerLeft : () => ( 
+      <Pressable className='items-start mr-2' onPress={() => {
+        navigation.getParent()?.getState().index == 0 ? router.replace('/myPrograms')  : router.back() 
+        }}>
+        <Icon source={'chevron-left'} color='black' size={30} />
+      </Pressable>
+    ),
+    
+    }}/>
     <View className='bg-[#ededed]'/>
     <TabView
       navigationState={{ index, routes }}

@@ -204,6 +204,7 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
                 source={ { uri: event_img || defaultProgramImage } }
                 style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
                 resizeMode='stretch'
+                className='mt-[110]'
               />
     
               <View className='bg-white' style={{paddingBottom : Tab * 3}}>

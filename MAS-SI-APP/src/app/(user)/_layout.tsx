@@ -216,8 +216,9 @@ export default function TabLayout() {
             justifyContent: "center",
             alignItems: "center",
           },
-          tabBarItemStyle: { height: 30 }
+          tabBarItemStyle: { height: 30 },
         }}
+                
       >
         <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen name="tabArray" options={{ href: null }} />
@@ -229,8 +230,10 @@ export default function TabLayout() {
             options={{
               title: tab.title,
               headerShown: false,
-              tabBarButton: (props) => <TabButton items={TabArray[i]} props={{ ...props }} />
+              tabBarButton: (props) => <TabButton items={TabArray[i]} props={{ ...props }} />,
+              
             }}
+            
           />
         ))}
       </Tabs>

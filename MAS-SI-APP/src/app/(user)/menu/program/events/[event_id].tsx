@@ -36,9 +36,6 @@ const EventInfo = () => {
   useEffect(() => {
     fetchEventInfo()
   }, [])
-  if( !eventInfoData ){
-    return <ActivityIndicator />
-  }
 
   const NotificationBell = () => {
     const addedToNoti = () => {
@@ -83,10 +80,10 @@ const EventInfo = () => {
   const currDate = new Date().toISOString()
   return (
     <>
-       <Stack.Screen options={{ headerBackTitleVisible : false, title : "", headerStyle : {backgroundColor : "white"}, headerRight : () => <NotificationBell /> }}/>
+       <Stack.Screen options={{ headerBackTitleVisible : false, headerTitle : '', headerStyle : {backgroundColor : "white"}, headerRight : () => <NotificationBell /> }}/>
        <StatusBar barStyle={"dark-content"}/>
         {eventInfoData?.has_lecture ?  <EventsLectureDisplay event_id={eventInfoData?.event_id} event_img={eventInfoData?.event_img} event_name={eventInfoData?.event_name} event_speaker={eventInfoData?.event_speaker}/> 
-      : <EventInfoDisplay event_img={eventInfoData.event_img} event_speaker={eventInfoData.event_speaker} event_name={eventInfoData.event_name} event_desc={eventInfoData.event_desc}/>}
+      : <EventInfoDisplay event_img={eventInfoData?.event_img} event_speaker={eventInfoData?.event_speaker} event_name={eventInfoData?.event_name} event_desc={eventInfoData?.event_desc}/>}
     </>
   )
 }

@@ -13,10 +13,10 @@ import { EventLectureType } from '@/src/types';
 import RenderEventsLectures from './RenderEventLectures';
 import RenderEventLectures from "./RenderEventLectures"
 type EventInfoDisplayProp = {
-    event_img : string
-    event_speaker : string
-    event_name : string
-    event_desc : string
+    event_img : string | undefined
+    event_speaker : string | undefined
+    event_name : string | undefined
+    event_desc : string | undefined
 }
 const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc} : EventInfoDisplayProp) => {
     const [ visible, setVisible ] = useState(false);

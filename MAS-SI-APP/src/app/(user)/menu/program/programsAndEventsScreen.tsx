@@ -134,7 +134,7 @@ const ProgramsAndEventsScreen = () => {
     { key: 'second', title: 'Kids'},
     { key: 'third', title : 'Programs & Tarbiya'},
     { key: 'fourth', title : 'Events'},
-    { key: 'fifth', title : 'Pace Flyers'}
+    { key: 'fifth', title : 'PACE'}
   ]);
   const renderTabBar = (props : any) => (
     <TabBar

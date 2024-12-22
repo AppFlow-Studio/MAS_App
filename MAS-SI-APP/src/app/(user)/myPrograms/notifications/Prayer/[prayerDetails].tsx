@@ -78,6 +78,7 @@ const prayerDetails = () => {
               <Text>Notification Options</Text>
             </View>
           </View>
+          
           <View className='bg-white w-[100%] items-center'>
             {
               notificationArray.map((item , index) => {

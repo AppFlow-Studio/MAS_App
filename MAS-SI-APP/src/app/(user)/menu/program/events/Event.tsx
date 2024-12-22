@@ -45,7 +45,7 @@ const Event = () => {
       paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}>      
          <View className='mt-5 w-[100%]'>
           <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Events</Text>
-          <View className='flex-row flex flex-wrap gap-y-5'>
+          <View className='flex-row flex flex-wrap gap-y-5 mb-[61]'>
             {
               eventsData?.map((item) => (
                 <View style={{ width: "50%"}}>
@@ -74,36 +74,36 @@ const Event = () => {
           <Divider className='h-[0.5] w-[70%] self-center'/>
 
           <Pressable className='w-[100%] justify-between flex flex-row pr-3 mt-2' onPress={() => { specialEventsAccordionValue.value = !specialEventsAccordionValue.value; setSpecialEventsChev(!specialEventsChev)}}>
-            <Text className='font-bold text-black text-lg ml-3 mb-8'>Special Events</Text>
+            <Text className={`font-bold text-black text-lg ml-3 ${!specialEventsChev ? 'mb-[61]' : 'mb-0'}`}>Special Events</Text>
             <View style={{ transform : [{ rotate : specialEventsChev ? '90deg' : '0deg'}]}}>
               <Icon  source={'chevron-right'} size={30} color='gray'/>
             </View>
           </Pressable>
           <AccordionItem isExpanded={specialEventsAccordionValue} style={{}} viewKey={'Past'}>
             <View className='w-[100%] '>
-              <Text className='text-left ml-3'>Outreach Activities: </Text>
+              <Text className='text-left ml-3 mb-[61] mt-[23] font-bold'>Outreach Activities: </Text>
             </View>
             <Divider className='h-[0.5] w-[70%] self-center'/>
-            <View className='w-[100%]'>
-              <Text className='text-left ml-3'>Reverts Event: </Text>
+            <View className='w-[100%] mb-[61] mt-[23]'>
+              <Text className='text-left ml-3 font-bold'>Reverts Event: </Text>
             </View>
             <Divider className='h-[0.5] w-[70%] self-center'/>
-            <View className='w-[100%]'>
-              <Text className='text-left ml-3'>Fundrasing: </Text>
+            <View className='w-[100%] mb-[61] mt-[23]'>
+              <Text className='text-left ml-3 font-bold'>Fundrasing: </Text>
             </View>
           </AccordionItem>
-
+          <Divider className='h-[0.5] w-[70%] self-center'/>
 
 
           <Pressable className='w-[100%] justify-between flex flex-row pr-3 mt-2' >
-            <Text className='font-bold text-black text-lg ml-3 mb-8' onPress={() => {pastEventsAccordionValue.value = !pastEventsAccordionValue.value; setPastChevronValue(!pastChevronValue)} }>Past Recorded Events</Text>
+            <Text className={`font-bold text-black text-lg ml-3 ${!pastChevronValue ? 'mb-[61]' : 'mb-0'}`} onPress={() => {pastEventsAccordionValue.value = !pastEventsAccordionValue.value; setPastChevronValue(!pastChevronValue)} }>Past Recorded Events</Text>
             <View style={{ transform : [{ rotate : pastChevronValue ? '90deg' : '0deg'}]}}>
               <Icon  source={'chevron-right'} size={30} color='gray'/>
             </View>
           </Pressable>
           <AccordionItem isExpanded={pastEventsAccordionValue} style={{}} viewKey={'Past'}>
           
-          <View className='flex-row flex flex-wrap gap-y-5'>
+          <View className='flex-row flex flex-wrap gap-y-5 mt-7'>
             {
               prevEventsData?.map((item) => (
                 <View style={{ width: "50%"}}>

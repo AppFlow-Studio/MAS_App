@@ -97,7 +97,7 @@ export default function ProgramsScreen(){
               })
             }
             </View>
-            <Text className='font-bold text-black text-lg ml-3 mb-8'>Past Recorded Programs</Text>
+            <Text className='font-bold text-black text-lg ml-3 mb-[25] mt-[56]'>Past Recorded Programs</Text>
             <View className='flex-row flex flex-wrap gap-y-5'>
             {
               prevRecordedPrograms?.map((item) => {

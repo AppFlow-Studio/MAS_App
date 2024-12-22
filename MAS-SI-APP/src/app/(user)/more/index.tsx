@@ -144,7 +144,9 @@ const Index = () => {
           </Link>
 
           <Pressable onPress={SignInModalCheck} className=' w-[35%] mt-5 bg-[#CBFED0] rounded-xl px-[0.5] h-[100px]'>
-          <Link href={'/(user)/myPrograms/notifications/NotificationEvents'} asChild disabled={anonStatus}>
+          <Link
+          push 
+          href='/(user)/myPrograms/notifications/NotificationEvents' asChild disabled={anonStatus}>
           <Pressable className='w-[100%] items-center flex-col justify-center' style={{ borderRadius  : 10 }}>
                 <Text className=' text-gray-400 text-[10px] pt-1'>Edit Your Custom </Text>
                <View className='mt-3'>

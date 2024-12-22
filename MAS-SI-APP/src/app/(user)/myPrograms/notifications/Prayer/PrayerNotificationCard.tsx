@@ -233,9 +233,10 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
     { header : 'Mute' , subText : ""}
   ]
   return (
-        <Animated.View style={[{ height : height, width : width, borderRadius : 20 }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
-            <Pressable onPress={handlePress} style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center", backgroundColor : 'white'  }]}>
-              {selectedNotification.includes(index) ?    <Icon source={"checkbox-blank-circle"}  size={25} color='#6077F5'/>  : <Icon source={"checkbox-blank-circle-outline"}  size={25} color='#6077F5'/>}
+        <Animated.View style={[{ height : height, width : width + 30, borderRadius : 20 }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
+            <Pressable onPress={handlePress} style={[{ height : height, width : width + 30, flexDirection : "row", alignItems : "center", justifyContent : "center", backgroundColor : 'white'  }]}
+            >
+              {selectedNotification.includes(index) ?  <Icon source={"checkbox-blank-circle"}  size={25} color='#6077F5'/>  : <Icon source={"checkbox-blank-circle-outline"}  size={25} color='#6077F5'/>}
                 <View className='w-[5]'/>
                 <View style={{ height : height, width : width, borderRadius : 20,  paddingVertical : 10, paddingHorizontal : '4%', justifyContent:'center'}}>
                 <Text className='font-bold text black text-lg' numberOfLines={1} adjustsFontSizeToFit>{CardInfo[index] ? CardInfo[index].header : ''}</Text>

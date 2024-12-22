@@ -226,9 +226,9 @@ const Index = () => {
 
       { /* Business Ads  */ }
           <View className='px-2 w-[100%]'>
-            <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5 bg-gray-50 rounded-xl'>
+            <Pressable onPress={SignInModalCheck} className=' w-[100%] mt-5 bg-[#EAEBED] rounded-xl'>
               <Link href={'/more/BusinessSponsersScreen'} asChild disabled={anonStatus} className=''>
-                <Pressable className='w-[100%] bg-gray-50 items-center flex-col py-2 px-3' style={{ borderRadius  : 10 }}>
+                <Pressable className='w-[100%] items-center flex-col py-2 px-3' style={{ borderRadius  : 10 }}>
                     <View className='flex-row  px-1 w-[100%]'>
                         <Text className=' text-gray-400 text-[12px]'>Showcase Your Business Through </Text>
                     </View>
@@ -253,7 +253,7 @@ const Index = () => {
                 <View className='w-[100%] flex-col px-3'>
                 <Link href={'/more/BusinessAds'} asChild disabled={anonStatus}>
                 <Pressable className='p-1 flex-row items-center justify-between '>
-                    <Text className=' text-gray-400'>Start an Application </Text>
+                    <Text className=' text-black font-[300]'>Start an Application </Text>
                     <Svg width="16" height="11" viewBox="0 0 16 11" fill="none">
                       <Path d="M11.5 1L15 5.5M15 5.5L11.5 10M15 5.5H1" stroke="#6077F5" stroke-linecap="round"/>
                     </Svg>
@@ -261,7 +261,7 @@ const Index = () => {
                 </Link>
                   <Link href={`/more/BusinessSubmissions/${session?.user.id}`} asChild disabled={anonStatus}>
                     <Pressable className='p-1 flex-row items-center justify-between py-2'>
-                      <Text className=' text-gray-400'>Check the Status </Text>
+                      <Text className='text-black font-[300]'>Check the Status </Text>
                       <Svg width="16" height="11" viewBox="0 0 16 11" fill="none">
                         <Path d="M11.5 1L15 5.5M15 5.5L11.5 10M15 5.5H1" stroke="#6077F5" stroke-linecap="round"/>
                       </Svg>

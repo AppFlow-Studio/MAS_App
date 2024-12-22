@@ -2,7 +2,7 @@ import { View, Text, Pressable, Image, Dimensions, useWindowDimensions, FlatList
 import React, { useEffect, useRef, useState } from 'react'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import Svg, { Circle, Path } from 'react-native-svg'
-import { Dialog, Modal, ProgressBar } from 'react-native-paper'
+import { Dialog, Modal, Portal, ProgressBar } from 'react-native-paper'
 import OtherAmountDonationSheet from '@/src/components/ShopComponets/OtherAmountDonationSheet'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { initializePaymentSheet, openPaymentSheet } from '@/src/lib/stripe'
@@ -19,6 +19,7 @@ const ProjectDetails = () => {
   const [ percentage, setPercentage ] = useState(0)
   const [ seeGallery, setSeeGallery ] = useState(false)
   const [ gallery, setGallery ] = useState<string[]>([])
+  const [ currentIndex, setCurrentIndex ] = useState(0)
   const galleryScrollRef = useRef<ScrollView>(null)
   const layoutWidth = useWindowDimensions().width
   const progressCircle = useAnimatedStyle(() => {
@@ -33,13 +34,19 @@ const ProjectDetails = () => {
     }
   })
   const hideModal = () => setSeeGallery(false)
-  const onPressNext = ( index : number ) => {
+  const onPressNext = ( ) => {
     galleryScrollRef.current?.scrollTo({
-      x : layoutWidth * .85 * index
+      x : ((layoutWidth * .85) + 5) * ((currentIndex + 1) % gallery.length) ,
+      animated : true
     })
+   console.log('Current Index', currentIndex)
+   console.log('New Index',  ((currentIndex + 1) % gallery.length))
   }
   const onPressBack = () => {
-
+    galleryScrollRef.current?.scrollTo({
+      x : ((layoutWidth * .85) + 5) * ((currentIndex - 1) % gallery.length) ,
+      animated : true
+    })
   }
   const getProjectDonations = async ( ) => {
     if (project_goal == null){
@@ -101,13 +108,14 @@ const ProjectDetails = () => {
   useEffect(() => {
     getProjectDonations()
   }, [])
+  console.log(gallery.length)
   return (
     <View className='flex-1 bg-white'>
         <Stack.Screen options={{
             headerTransparent : true,
             header : () => 
                 (
-                <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius : 20, backgroundColor : '#CBDCF0', height : 100 }} 
+                <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius : 20, backgroundColor : '#81CB77', height : 100 }} 
                 className='items-end justify-center flex flex-row'>
                   
                   <View className='mb-[1%] flex flex-row items-center w-[100%]'>
@@ -118,7 +126,7 @@ const ProjectDetails = () => {
                       </Svg>
                     </Pressable>
       
-                    <Text className='font-bold text-xl text-center self-center ml-[25%]'>Categories</Text>
+                    <Text className='font-bold text-xl text-center self-center ml-[25%] text-white'>Donation</Text>
                   </View>
                 </View>
                 )
@@ -126,7 +134,7 @@ const ProjectDetails = () => {
         }}
         />
       <View className='w-[100%] items-center pt-[110] bg-[#F6F6F6] rounded-br-[15px] rounded-bl-[15px] pb-2'>
-       { thumbnail as string ? <Image src={thumbnail as string} className='w-[95%] h-[273px] rounded-[15px]'/> : <Image src={require('@/assets/images/Donations5.png')} className='w-[95%] h-[273px] rounded-[15px]'/> }
+       { thumbnail as string ? <Image src={thumbnail as string} className='w-[95%] h-[273px] rounded-[15px]'/> : <Image source={require('@/assets/images/Donations5.png')} className='w-[95%] h-[273px] rounded-[15px]' /> }
         <View className=' flex flex-col w-[100%] items-center mt-2 '>
             <View className='flex flex-row w-[100%] items-center justify-center'>
               {
@@ -185,60 +193,69 @@ const ProjectDetails = () => {
         </View>
       </View>
       <OtherAmountDonationSheet ref={bottomSheetRef} />
-      <Modal  
-      visible={seeGallery} 
-      style={{ height : '100%', width : '100%', }}
-      dismissable
-      
-      >
-            <BlurView className='h-[100%] w-[100%] pt-[110px]'
-            intensity={50}
-            >
-              <View className='rounded-[15px] mb-6 relative' 
-              style={{ width : layoutWidth * .9, height : '75%', alignSelf : 'center', alignItems : 'center', justifyContent : 'center', backgroundColor : 'white' }} 
+      <Portal>
+        <Modal  
+        visible={seeGallery} 
+        contentContainerStyle={{ height : '110%', width : '100%', alignItems : 'center' }}
+        dismissable
+        >
+              <BlurView className='h-[110%] w-[100%] pt-[130px] items-center '
+              intensity={50}
               >
-                <Pressable className=' absolute right-[90%] bottom-[95%] rounded-full bg-white p-2 items-center justify-center' onPress={() => setSeeGallery(false)}>
-                    <Svg  width="34" height="34" viewBox="0 0 34 34" fill="none">
-                      <Circle cx="17" cy="17" r="12.15" stroke="#7E869E" stroke-opacity="0.25" stroke-width="1.2"/>
-                      <Path d="M22.6673 11.3335L11.334 22.6668" stroke="#FF0000" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
-                      <Path d="M11.3327 11.3335L22.666 22.6668" stroke="#FF0000" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
-                    </Svg>
-                </Pressable>
-                  <View className='w-[95%] h-[95%] '>
-                    <ScrollView style={{  
-                    }} 
-                    horizontal 
-                    pagingEnabled
-                    contentContainerStyle={{ 
-                      flexGrow : 1,            
-                      gap : 3,
-                    }}
-                    ref={galleryScrollRef}
-                    >
-                      {
-                        gallery.map((item, index) => (
-                          <View className={`rounded-[15px] overflow-hidden`} style={{ backgroundColor : item, width : layoutWidth * .85 }}>
-                            <Image src={item} className='w-[100%] h-[100%] '/>
-                          </View>
-                        ))
-                      }
-                    </ScrollView>
-                    
-                  </View>
-                  <Pressable className='bg-black h-[32px] w-[32px] rounded-full absolute bottom-[50%] right-[95%] items-center justify-center'>
-                      <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                        <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+                <View className='rounded-[15px] mb-6 relative z-[1]' 
+                style={{ width : layoutWidth * .9, height : '70%', alignSelf : 'center', alignItems : 'center', justifyContent : 'center', backgroundColor : 'white' }} 
+                >
+                  <Pressable className=' absolute right-[90%] bottom-[95%] rounded-full bg-white p-2 items-center justify-center' onPress={() => setSeeGallery(false)}>
+                      <Svg  width="34" height="34" viewBox="0 0 34 34" fill="none">
+                        <Circle cx="17" cy="17" r="12.15" stroke="#7E869E" stroke-opacity="0.25" stroke-width="1.2"/>
+                        <Path d="M22.6673 11.3335L11.334 22.6668" stroke="#FF0000" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
+                        <Path d="M11.3327 11.3335L22.666 22.6668" stroke="#FF0000" stroke-width="1.2" stroke-linecap="square" stroke-linejoin="round"/>
                       </Svg>
-                    </Pressable>
-  
-                  <Pressable className='bg-black h-[32px] w-[32px] rounded-full absolute bottom-[50%] left-[95%] items-center justify-center' onPress={() => onPressNext(2)}>
-                  <Svg  width="29" height="29" viewBox="0 0 29 29" fill="none">
-                    <Path d="M10.875 21.75L18.125 14.5L10.875 7.25" stroke="#1B85FF" stroke-width="2"/>
-                  </Svg>
                   </Pressable>
-              </View>
-            </BlurView>
-      </Modal>
+                    <View className='w-[95%] h-[95%] '>
+                      <ScrollView style={{  
+                      }} 
+                      horizontal 
+                      pagingEnabled
+                      disableIntervalMomentum={ true } 
+                      snapToInterval={ layoutWidth * .85 + 5 }
+                      snapToAlignment='start'
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ 
+                        flexGrow : 1,            
+                        gap: 5
+                      }}
+                      ref={galleryScrollRef}
+                      onScroll={e => {
+                        const indexlayout = e.nativeEvent.contentOffset.x;
+                        setCurrentIndex( Math.floor( indexlayout / (layoutWidth * .84) ) )
+                      }}
+                      >
+                        {
+                          gallery.map((item, index) => (
+                            <View className={`rounded-[15px] overflow-hidden`} style={{ backgroundColor : item, width : layoutWidth * .85 }}>
+                              <Image src={item} className='w-[100%] h-[100%] '/>
+                            </View>
+                          ))
+                        }
+                      </ScrollView>
+                      
+                    </View>
+                    <Pressable className='bg-black h-[32px] w-[32px] rounded-full absolute bottom-[50%] right-[95%] items-center justify-center' onPress={onPressBack}>
+                        <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
+                          <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+                        </Svg>
+                      </Pressable>
+    
+                    <Pressable className='bg-black h-[32px] w-[32px] rounded-full absolute bottom-[50%] left-[95%] items-center justify-center' onPress={onPressNext}>
+                    <Svg  width="29" height="29" viewBox="0 0 29 29" fill="none">
+                      <Path d="M10.875 21.75L18.125 14.5L10.875 7.25" stroke="#1B85FF" stroke-width="2"/>
+                    </Svg>
+                    </Pressable>
+                </View>
+              </BlurView>
+        </Modal>
+      </Portal>
     </View>
   )
 }

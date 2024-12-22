@@ -19,11 +19,12 @@ const EditDonationCategory = () => {
     const [gallery , setGallery ] = useState<ImagePicker.ImagePickerAsset[] | string[]>([]);
     const [ projectEditing, setProjectEditing ] = useState<{ project_id : string, project_name : string }>()
     const [ donation, setDonation ] = useState< number | undefined >()
+    const [ updating, setUpdating ] = useState(false)
     const tabBar = useBottomTabBarHeight()
-    const showToast = () => {
+    const showToast = ( project_name : string ) => {
       Toast.show({
         type: 'success',
-        text1: 'Category Edited!',
+        text1: `${project_name.slice(0, 11)}${project_name.length > 11 && '...'} Sucessfully edited!`,
       });
     }; 
     const pickImage = async () => {
@@ -105,8 +106,18 @@ const EditDonationCategory = () => {
         }
     }
 
+    const resetUpdate = () => {
+      setThumbnail('')
+      setTitle('')
+      setHasBarGraph(false)
+      setProjectEditing(undefined)
+      setGallery([])
+      setAmount('')
+
+    }
     const onUpdate = async () => {
         if( projectEditing ){
+            setUpdating(true)
             if( thumbnail && title && ( amount || gallery.length > 0 ) ){
            
               if( typeof thumbnail != 'string' ){
@@ -123,6 +134,7 @@ const EditDonationCategory = () => {
               const GalleryImageUrls = gallery.filter( pic => typeof pic == 'string' )
               const GalleryImage64 : string[] | ImagePicker.ImagePickerAsset[] = gallery.filter( pic => typeof pic != 'string' )
 
+              // Runs if We have string urls in our array
               if( GalleryImageUrls.length > 0 ){
 
                 const GalleryAsEncode = await Promise.all ( 
@@ -140,7 +152,6 @@ const EditDonationCategory = () => {
                 const filesToRemove = list && list.map((x) => `${projectEditing.project_id}/${x.name}`);
                 if ( filesToRemove ){ const { data, error } = await supabase.storage.from('fliers').remove(filesToRemove) }
 
-                console.log('Enjoined Gallery' ,EnjoinedGallery )
                 await Promise.all( 
                   EnjoinedGallery.map( async (pic,index) => {
                     if( typeof pic == 'string' ){
@@ -167,6 +178,7 @@ const EditDonationCategory = () => {
                 ) 
 
               }
+              // Else We convert the files and send them straight to supabase 
               else if ( gallery.length > 0 ) {
                 const { data:list, error  : listError } = await supabase.storage.from('fliers').list(`${projectEditing.project_id}`);
                 const filesToRemove = list && list.map((x) => `${projectEditing.project_id}/${x.name}`);
@@ -177,9 +189,6 @@ const EditDonationCategory = () => {
                       const filePath = `${projectEditing.project_id}/${index}.${pic.type === 'image' ? 'png' : 'mp4'}`;
                       const contentType = pic.type === 'image' ? 'image/png' : 'video/mp4';
                       const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
-                      if( image_upload_error ){
-                        console.log(image_upload_error)
-                      }
                       if( !image ){
                           Alert.alert(image_upload_error.message)
                           return 
@@ -187,6 +196,10 @@ const EditDonationCategory = () => {
                   })
                 )
               }
+              // Show Toast and Reset After Sucess call 
+              showToast(projectEditing.project_name)
+              resetUpdate()
+              setUpdating(false)
             }
             else Alert.alert('Fill out all forms!')
 
@@ -359,7 +372,9 @@ const EditDonationCategory = () => {
         
               </View>
 
-              <Pressable className='bg-[#57BA49] h-[50px] w-[50%] p-2 items-center justify-center rounded-[15px] my-4 self-center' onPress={ async () => await onUpdate() }>
+              <Pressable 
+              disabled={updating}
+              className='bg-[#57BA49] h-[50px] w-[50%] p-2 items-center justify-center rounded-[15px] my-4 self-center' onPress={ async () => await onUpdate() }>
                 <Text className='text-white font-bold'>Submit</Text>
               </Pressable>
       </ScrollView>

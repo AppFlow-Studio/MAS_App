@@ -51,10 +51,7 @@ const Donation = () => {
   const [ playing, setPlaying ] = useState(false)
   const [ buttonOn, setButtonOn ] = useState(true)
   const [ categories, setCategories ] = useState<{ project_id : string, project_name : string, project_goal : number | null, project_linked_to : string | null, thumbnail : string | null }[]>([]) 
-  const [ newDonationAnimation, setNewDonationAnimation ] = useState(false)
   const [ currentDonations, setCurrentDonations ] = useState<{amountGiven : number, date : string, project_donated_to : string[]}[]>([])
-  const layoutMargin = 40
-  const [ selectedDate, setSelectedDate ] = useState('Total')
   const [ progressBar, setProgressBar ] = useState(0)
   const [ progressCircleLeft, setProgressCircle ] = useState(0)  
   const layoutWidth = useWindowDimensions().width
@@ -107,11 +104,6 @@ const Donation = () => {
     }
     setButtonOn(true)
   }
-  const selectedValue = useSharedValue(0)
-  const DONATIONGOAL : DonationGoalType[] = [
-    {date : "2017-02-01T05:00:00.000Z", amount : 0, amountGiven : 0},
-    {date : "2026-02-01T05:00:00.000Z", amount : 5000000, amountGiven : 0}
-  ]
 
   { /* 1857000, 3714000, 5571000, 7428000, 9285000, 11142000, 13000000 */ }
   const getDonations = async ( ) => {
@@ -169,11 +161,6 @@ const Donation = () => {
 
      return () => { supabase.removeChannel( DonationUpdate ) }
   }, [])
-  const font = useFont(require('@/assets/fonts/SpaceMono-Regular.ttf'), 20)
-  if(!font) {return null}
-  const DonationButtonBoxs = [30, 50, 100, 250]
-  const currTotalAmount =  currentDonations && currentDonations.length > 0 ? currentDonations[currentDonations.length - 1].amount : 0
-  const perctangeToGoal = ((currTotalAmount / 13000000 ) * 100).toFixed(1)
   const copyToClipboard = async ( text : string ) => {
     await Clipboard.setStringAsync(text);
   };
@@ -182,6 +169,7 @@ const Donation = () => {
     <ScrollView style={{ width : layout, height : layoutHeight, backgroundColor : "white" }} contentContainerStyle={{ paddingBottom : tabBarHeight, paddingTop : 100, paddingHorizontal : 10 }}> 
         <Stack.Screen options={{ 
         headerTransparent : true,
+        headerShown : true,
         header : () => 
           (
           <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius : 20, backgroundColor : '#D9D9D9', height : 100 }} 
@@ -221,7 +209,7 @@ const Donation = () => {
                     <Image src={item.thumbnail} className='w-[154px] h-[138px] bg-gray-400 rounded-[15px] object-cover'               
                     />
                     :
-                    <Image src={require('@/assets/images/Donations5.png')} className='w-[154px] h-[138px] bg-gray-400 rounded-[15px]'               
+                    <Image source={require('@/assets/images/Donations5.png')} className='w-[154px] h-[138px] bg-gray-400 rounded-[15px] object-fill'               
                     />
                   }
                 </View>

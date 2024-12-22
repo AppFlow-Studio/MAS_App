@@ -130,9 +130,10 @@ const Donation = () => {
     await copyToClipboard('@massiscenter')
     Toast.show({
        type: 'info',
-        text1: '@massiscenter copied to clipboard'
+        text1: '@massiscenter copied to clipboard',
+        
     })
-    VenmoAnimationProgress.value = withSequence(withTiming(1, { duration : 500 }), withTiming(0.5, { duration : 500 }))
+    VenmoAnimationProgress.value = withSequence(withTiming(1, { duration : 200 }), withTiming(0.5, { duration : 400 }))
   }
 
   const PressZelle = async () => {
@@ -141,7 +142,7 @@ const Donation = () => {
        type: 'info',
         text1: 'massi10304@gmail.com copied to clipboard'
     })
-    ZelleAnimationProgress.value = withSequence(withTiming(1, { duration : 500 }), withTiming(0.5, { duration : 500 }))
+    ZelleAnimationProgress.value = withSequence(withTiming(1, { duration : 200 }), withTiming(0.5, { duration : 400 }))
   }
   useEffect(() => {
     getDonations()
@@ -270,7 +271,13 @@ const Donation = () => {
 
         { /*Donate Call to Action & Other platforms */ }
       <View className='flex flex-row justify-between'>
-          <View className='h-[145px] w-[174px] rounded-[15px] flex flex-col mt-3'>
+
+          <Link
+           href={{
+            pathname : '/more/DonationCategoires/[project_id]',
+            params : { project_id : '1fcda08a-c61d-4d44-af5f-f32ff3af58f9', project_name : 'General Masjid Support' }
+           }}
+           className='h-[145px] w-[174px] rounded-[15px] flex flex-col mt-3'>
               <Image source={require('@/assets/images/Donations5.png')} className='h-[101] w-[174px]' style={{ borderTopLeftRadius : 15, borderTopRightRadius : 15 }} />
   
               <LinearGradient 
@@ -293,7 +300,7 @@ const Donation = () => {
                 </View>
   
               </LinearGradient>
-          </View>
+          </Link>
 
           <View 
             className='h-[145px] w-[184px] flex flex-col bg-[#EAEBED] rounded-[15px] mt-3'

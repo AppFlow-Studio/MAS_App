@@ -115,7 +115,7 @@ const ProjectDetails = () => {
             headerTransparent : true,
             header : () => 
                 (
-                <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius : 20, backgroundColor : '#81CB77', height : 100 }} 
+                <View style={{ borderBottomLeftRadius: 20, borderBottomRightRadius : 20, backgroundColor : project_id != '1fcda08a-c61d-4d44-af5f-f32ff3af58f9' ? '#CBDCF0' : '#81CB77', height : 100 }} 
                 className='items-end justify-center flex flex-row'>
                   
                   <View className='mb-[1%] flex flex-row items-center w-[100%]'>
@@ -126,7 +126,7 @@ const ProjectDetails = () => {
                       </Svg>
                     </Pressable>
       
-                    <Text className='font-bold text-xl text-center self-center ml-[25%] text-white'>Donation</Text>
+                    <Text className={`font-bold text-xl text-center self-center ml-[25%] text-${project_id != '1fcda08a-c61d-4d44-af5f-f32ff3af58f9' ? 'black' : 'white'}`}>{project_id != '1fcda08a-c61d-4d44-af5f-f32ff3af58f9' ? 'Categories' : 'Donation'}</Text>
                   </View>
                 </View>
                 )

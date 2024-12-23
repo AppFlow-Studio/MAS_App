@@ -76,7 +76,7 @@ const EventsNotificationScreen = () => {
               <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
                 <Pressable className="flex flex-row items-center justify-between w-[50%]" onPress={() => router.back()}>
                   <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
+                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#FFFFFF" stroke-width="2"/>
                   </Svg>
                   <Text className=" text-[20px] text-white">Push Notifications</Text>
                 </Pressable>
@@ -111,11 +111,11 @@ const EventsNotificationScreen = () => {
           style={{
             height: 150,
             width: "100%",
-            backgroundColor: "#e8e8e8",
+            backgroundColor: "#F0F0F0",
             marginTop: "2%",
           }}
           activeOutlineColor="#0D509D"
-          placeholder="Enter the notification message"
+          placeholder="Enter Your Message Here"
           textColor="black"
           multiline
         />
@@ -123,9 +123,9 @@ const EventsNotificationScreen = () => {
   
         <Pressable
           onPress={() => setPreviewModal(true)}
-          className="h-13 items-center mt-6 w-[100%] self-center bg-[#57BA47] text-white p-5 rounded-[15px]"          
+          className="h-[37px] items-center mt-6 w-[156px] bg-[#57BA47]  rounded-[15px] justify-center self-start"          
         >
-          <Text className="text-white">Preview</Text>
+          <Text className=" text-white font-[600]">Preview</Text>
         </Pressable>
         
   

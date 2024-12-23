@@ -78,7 +78,15 @@ const PlaylistIndex = () => {
             </View>
             <Text className='ml-3 my-8 font-bold text-[20px]'>Playlist</Text>
             <View style={{ flexDirection : "row", flexWrap : "wrap" }}>
-          
+
+                {
+                  userPlayLists?.length == 0 &&
+                  <Pressable className='border border-dotted border-[#0073EE] h-[140] w-[160] rounded-xl items-center justify-center flex flex-col ml-3' onPress={handlePresentModalPress}>
+                      <Icon source={'playlist-plus'} size={50} color='#0073EE'/>
+                      <Text className='text-center text-black text-[10px] font-[300]'>Add a lecture to your playlist to see your playlist here </Text>
+                  </Pressable>
+                }
+                
                <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}}>
                   <Link href={`/myPrograms/playlists/QuranPlaylist`} asChild>
                     <TouchableOpacity>
@@ -114,17 +122,13 @@ const PlaylistIndex = () => {
                 </View>
 
               { 
-              userPlayLists ? userPlayLists.map((item, index) => {
+              (userPlayLists && userPlayLists.length > 0) && userPlayLists.map((item, index) => {
                 return( 
                   <View key={index} style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}} >
                     <RenderUserPlaylist playlist={item}/>
                   </View>
               )
-              }) : 
-              <Pressable className='border border-dotted border-[#0073EE] h-[150] w-[150] rounded-xl items-center justify-center flex flex-col ml-3' onPress={handlePresentModalPress}>
-                <Icon source={'playlist-plus'} size={70} color='#0073EE'/>
-                <Text className='text-center text-gray-400 text-[10px] font-[300]'>Add a lecture to your playlist to see your playlist here </Text>
-             </Pressable>
+              })
               }
             </View> 
         <CreatePlaylistBottomSheet ref={bottomSheetRef} />

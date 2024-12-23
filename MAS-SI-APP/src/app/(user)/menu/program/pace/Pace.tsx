@@ -78,7 +78,7 @@ const Pace = () => {
             </View>
           </Pressable>
           <AccordionItem isExpanded={socialServicesAccordion} style={{}} viewKey={'Social Service'}>
-            <View className=' mt-7'>
+            <View className=' mt-7 mb-[61]'>
 
             </View>
           </AccordionItem>

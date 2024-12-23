@@ -9,9 +9,9 @@ type RenderUserPlaylistProp = {
 const RenderUserPlaylist = ({ playlist } : RenderUserPlaylistProp) => {
   console.log(playlist)
   return (
-        <Link  href={`/myPrograms/playlists/${playlist.playlist_id}`} asChild className='items-center h-[170] w-[100%]'>
-            <TouchableOpacity>
-                <View className='flex-col item-center px-2'>
+        <Link  href={`/myPrograms/playlists/${playlist.playlist_id}`} asChild className='items-center h-[170] w-[100%] '>
+            <TouchableOpacity className='w-[100%]'>
+                <View className='flex-col items-center px-2 '>
                     <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "30%",}}>
                                { playlist.playlist_img ? <Image 
                                     source={{ uri: playlist.playlist_img || defaultProgramImage }}
@@ -23,8 +23,8 @@ const RenderUserPlaylist = ({ playlist } : RenderUserPlaylistProp) => {
                                     </View>
                             }
                     </View>
-                    <View className='items-center justify-center w-[70%]'>
-                        <Text className='text-xl font-bold' numberOfLines={1} allowFontScaling adjustsFontSizeToFit> {playlist.playlist_name} </Text>
+                    <View className='items-center justify-center w-[100%]'>
+                        <Text className='text-[15px] font-[300] text-black text-center' numberOfLines={1} allowFontScaling adjustsFontSizeToFit> {playlist.playlist_name} </Text>
                     </View>
                 </View>
                 

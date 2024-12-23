@@ -53,12 +53,7 @@ const NotificationPrayerTable = ({
       params: { prayerName:prayerName, prayerImage:prayerImage  },
     });
   };
-  const goToJummah = (jummahName: string, index: number) => {
-    navigation.navigate("myPrograms", {
-      screen: "notifications/Prayer/Jummah/[jummahDetails]",
-      params: { prayerName : jummahName, index : index  },
-    });
-  };
+
   const [ jummahDialog, setJummahDialog ] = useState(false)
   return (
     <View style={{ width: width }} className="items-center">
@@ -70,14 +65,13 @@ const NotificationPrayerTable = ({
           >
             {
               Prayers.map((prayer) => (
-                <TouchableOpacity 
-                onPress={ () => 
-                  goToPrayer(
-                     prayer.PrayerCap,
-                    prayer.img
-                  )
-                }
-                 className="flex-row mt-4"
+                <Link 
+                href={{
+                  pathname : '/myPrograms/notifications/Prayer/[prayerDetails]',
+                  params : {prayerName: prayer.PrayerCap, prayerImage: prayer.img }
+                }}
+                 className="flex-row mt-4 border flex w-[100%]"
+                
                 >
 
                   <View style={{
@@ -85,7 +79,9 @@ const NotificationPrayerTable = ({
                      shadowOffset : { width : 0, height : 8 },
                      shadowOpacity : 1,
                      shadowRadius : 8
-                  }}>
+                  }}
+                  className="mr-3"
+                  >
                     <Image
                       source={
                         prayer.img
@@ -101,7 +97,7 @@ const NotificationPrayerTable = ({
                     />
                   </View>
 
-                  <View className="ml-5">
+                  <View className="mb-5">
                     <Text className="font-bold text-xl  text-gray-800 ">{prayer.PrayerCap}</Text>
                     <View className="flex-row mt-2">
                       <Text className="text-left  text-[#6077F5] font-bold ">
@@ -138,12 +134,12 @@ const NotificationPrayerTable = ({
                     }}
                     className="items-end justify-center"
                   >
-                    <Pressable className="bg-[#0D509E] h-[21] w-[65] self-center ml-[10%] text-white text-[10px] rounded-xl items-center justify-center">
+                    <View className="bg-[#0D509E] h-[21] w-[65] self-center ml-[10%] text-white text-[10px] rounded-xl items-center justify-center mb-7">
                         <Text className="border text-white font-[300]">Edit</Text>
-                    </Pressable>
+                    </View>
                   </View>
 
-                </TouchableOpacity>
+                </Link>
               ))
             }
             <Text className="font-bold text-lg mt-[15%] mb-1">Jummah Notifications</Text>
@@ -157,7 +153,12 @@ const NotificationPrayerTable = ({
                 >
                    {
                       ['12:15 PM', '1:00 PM', '1:45 PM', '3:45 PM'].map((item, index) => (
-                          <Pressable onPress={() => goToJummah(item, index+1)}>
+                          <Link href={{
+                            pathname : `/(user)/myPrograms/notifications/Prayer/Jummah/[jummahDetails]`,
+                            params : { prayerName : item, index : index + 1 }
+                          }}
+                            
+                            >
                             <ImageBackground className="w-[150] h-[170] items-start justify-end"
                             source={index == 0 || index == 1 ? require('@/assets/images/Jummah12.png') : require('@/assets/images/Jummah34.png')}
                             imageStyle={{ height : '100%', width : '100%', borderRadius : 15, objectFit : 'fill' }}
@@ -166,7 +167,7 @@ const NotificationPrayerTable = ({
                               <Text className='text-white ml-3 text-md font-semibold'>Prayer {index + 1}</Text>
                               <Text className='text-white ml-3 font-bold text-lg'>{item}</Text>
                             </ImageBackground>
-                          </Pressable>
+                          </Link>
                       ))
                   }
                 </ScrollView>

@@ -105,7 +105,7 @@ const NotificationCard = ({height , width, index, scrollY, setSelectedNotificati
   const handlePress = () => {
     scale.value = withSequence(withSpring(0.9), withSpring(1))
     
-    Haptics.notificationAsync(
+      Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success
       )
 

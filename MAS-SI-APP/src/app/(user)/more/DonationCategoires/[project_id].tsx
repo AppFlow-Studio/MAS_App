@@ -86,6 +86,7 @@ const ProjectDetails = () => {
   const callForDonationAmount = async (amount : number) => {
     setButtonOn(false)
     const paymentIntent = await initializePaymentSheet(Math.floor(amount * 100))
+    
     const paymentSuccess = await openPaymentSheet()
     if(paymentSuccess){
       const { data : getLatestTotal , error } = await supabase.from('donations').select('*').order('date', { ascending : false }).limit(1).single()

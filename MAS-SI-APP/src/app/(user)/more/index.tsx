@@ -293,7 +293,7 @@ const Index = () => {
               }
         <View className='w-[95%] mt-8 items-center justify-center p-4 flex flex-col gap-y-4' style={{ borderRadius : 10}}>
           <Text adjustsFontSizeToFit allowFontScaling numberOfLines={1}  className='text-black text-xl'>Created By: AppFlowCreations</Text>
-          <Text className='text-[#6077F5]'>appflowcreation@gmail.com </Text>
+          <Text className='text-[#6077F5]'>appflowcreations@gmail.com </Text>
         </View>
       </View>
       </View>

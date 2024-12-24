@@ -25,7 +25,6 @@ export const createOrRetrieveProfile = async (req: Request) => {
     if( profile.stripe_id ){
         return profile.stripe_id
     }
-
     const stripe_customer = await stripe.customers.create({
         email : user.email,
         metadata : { uid : user.id }

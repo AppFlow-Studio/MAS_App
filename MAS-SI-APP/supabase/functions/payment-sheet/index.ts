@@ -4,7 +4,7 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { retrievePaymentIntent, stripe } from "../_utils/stripe.ts";
+import { stripe } from "../_utils/stripe.ts";
 import { createOrRetrieveProfile } from '../_utils/supabase.ts';
 
 
@@ -12,7 +12,6 @@ serve(async (req) => {
   try {
     const { amount } = await req.json();
     const customer = await createOrRetrieveProfile(req)
-
     const ephemeralKey = await stripe.ephemeralKeys.create(
       { customer: customer },
       { apiVersion: "2024-06-20" }
@@ -23,9 +22,10 @@ serve(async (req) => {
       amount: amount,
       currency: 'usd',
       customer: customer,
+      
     });
    
-
+    console.log('PaymentIntent', paymentIntent)
     const res = {
       publishableKey: Deno.env.get('EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY'),
       paymentIntent: paymentIntent.client_secret,

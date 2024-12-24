@@ -177,10 +177,11 @@ const NotificationEvents = () => {
     if( AddedEvents ){
       const EventInfo = await Promise.all(
         AddedEvents.map( async ( event ) => {
-          const { data : eventInfo , error } = await supabase.from('events').select('*').eq('event_id', event.event_id)
+          const { data : eventInfo , error } = await supabase.from('events').select('*').eq('event_id', event.event_id).single()
           return eventInfo
         })
       )
+      setAddedEvents(EventInfo)
     }
   }
 

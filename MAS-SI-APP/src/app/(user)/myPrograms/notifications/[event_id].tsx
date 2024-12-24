@@ -14,6 +14,7 @@ const NotificationEventSettings = () => {
   const { event_id } = useLocalSearchParams()
   const { session } = useAuth()
   const [ event, setEvent ] = useState<EventsType>() 
+  const [ speaker, setSpeakers ] = useState<string[]>([])
   const layout = useWindowDimensions().width
   const layoutHeight = useWindowDimensions().height
   const [ scrollY, setScrollY ] = useState(0)
@@ -26,6 +27,15 @@ const NotificationEventSettings = () => {
     const { data, error } = await supabase.from('events').select("*").eq("event_id", event_id ).single()
     if( data ){
       setEvent(data)
+      const Speakers : string[] = []
+      await Promise.all(
+        data.event_speaker.map( async ( speaker : string ) => {
+          const { data : speaker_name } = await supabase.from('speaker_data').select('speaker_name').eq('speaker_id', speaker).single()
+          const name = speaker_name?.speaker_name
+          Speakers.push(name)
+        })
+      )
+      setSpeakers(Speakers)
     }
   }
   const tabBarHeight = useBottomTabBarHeight() + 30
@@ -78,7 +88,7 @@ const NotificationEventSettings = () => {
           </View>
           <View className='flex-col bg-white w-[100%] h-[80]'>
             <Text className='font-bold text-2xl text-center'>{event?.event_name}</Text>
-            <Text className='font-bold text-gray-400 text-center'>{event?.event_speaker}</Text>
+            <Text className='font-bold text-gray-400 text-center'>{speaker ? speaker.join('&') : ''}</Text>
 
             <View className='ml-2'>
               <Text>Notification Options</Text>

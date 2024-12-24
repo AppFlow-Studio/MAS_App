@@ -12,6 +12,7 @@ import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } f
 import SignInAnonModal from '@/src/components/SignInAnonModal'
 import Toast from 'react-native-toast-message'
 import Svg, { Circle, Path, Rect } from 'react-native-svg'
+import { BlurView } from 'expo-blur'
 
 const Index = () => {
   const [ profile, setProfile ] = useState<Profile>()
@@ -120,8 +121,9 @@ const Index = () => {
       <View className='flex-col items-center pb-10 w-[100%] justify-center' >
         {/*Donations and Notification Center */}
         <View className=' flex flex-row w-[100%] gap-x-1  items-center justify-between px-2 ml-[0.5]'>
-          <Link href={"/more/Donation"} asChild>
-            <Pressable className='w-[60%] bg-[#DAE8F6] mt-5 items-center flex-col px-3 py-2' style={{ borderRadius  : 10 }}>
+          <Link href={"/more/Donation"} asChild disabled>
+            <Pressable className='w-[60%] bg-[#DAE8F6] mt-5 items-center flex-col px-3 py-2 relative' style={{ borderRadius  : 10 }}>
+
               <View className='flex-row px-1 w-[100%]'>
                 <Text className=' text-gray-400 text-[10px]'>Support Your Community by</Text>
               </View>
@@ -139,8 +141,14 @@ const Index = () => {
                     <Path d="M11.5 1L15 5.5M15 5.5L11.5 10M15 5.5H1" stroke="#6077F5" stroke-linecap="round"/>
                 </Svg>
               </View>                  
-            </View>
-              </Pressable>
+              </View>
+
+             <View className='absolute w-[112%] h-[120%] rounded-[10px] top-0 overflow-hidden'>
+                <BlurView className='w-[100%] h-[100%] items-center justify-center left-0' intensity={10}>
+                  <Text className='text-black font-bold'>Coming soon...</Text>
+                </BlurView>
+             </View>
+            </Pressable>
           </Link>
 
           <Pressable onPress={SignInModalCheck} className=' w-[35%] mt-5 bg-[#CBFED0] rounded-xl px-[0.5] h-[100px]'>

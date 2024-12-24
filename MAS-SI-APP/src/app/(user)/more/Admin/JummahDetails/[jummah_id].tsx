@@ -129,8 +129,8 @@ export default function JummahId() {
                 </Pressable>
               </View>
               <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-               <View className="w-[65%] items-center"> 
-                <Text className=" text-[15px] text-black ">{jummah_id == '1' ? 'First' : jummah_id == '2' ? 'Second' : jummah_id == '3' ? 'Third' : 'Student' } Jummah</Text>
+               <View className="w-[56%] items-start"> 
+                <Text className=" text-[15px] text-black ml-[30%]">{jummah_id == '1' ? 'First' : jummah_id == '2' ? 'Second' : jummah_id == '3' ? 'Third' : 'Student' } Jummah</Text>
               </View>
               </View>
             </View>

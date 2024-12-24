@@ -45,7 +45,7 @@ const BusinessAdsApprovalScreen = () => {
                     </Pressable>
                   </View>
                   <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-                  <View className="w-[65%] items-center"> 
+                  <View className="w-[70%] items-center"> 
                     <Text className=" text-[15px] text-black ">Approve or Reject a application</Text>
                   </View>
                   </View>

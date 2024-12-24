@@ -41,7 +41,7 @@ const NotiEvents = () => {
                   </Pressable>
                 </View>
                 <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-                 <View className="w-[65%] items-center"> 
+                 <View className="w-[76%] items-center"> 
                   <Text className=" text-[15px] text-black ">Create A Event Notification</Text>
                 </View>
                 </View>

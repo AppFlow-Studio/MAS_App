@@ -82,12 +82,12 @@ const EventsNotificationScreen = () => {
                 </Pressable>
               </View>
               <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-               <View className="w-[65%] items-center"> 
+               <View className="w-[60%] items-center"> 
                 <Text className=" text-[15px] text-black ">Create A New Program</Text>
               </View>
               </View>
               <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
-               <View className="w-[65%] items-center"> 
+               <View className="w-[100%] self-start border pl-[10%]"> 
                 <Text className=" text-[15px] text-black ">{event_name}</Text>
               </View>
               </View>

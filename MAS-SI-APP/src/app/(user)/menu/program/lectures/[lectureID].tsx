@@ -14,6 +14,8 @@ import { Divider } from 'react-native-paper';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
+
 export default function LecturesData() {
   const { session } = useAuth()
   const [ playing, setPlaying ] = useState(false)
@@ -25,6 +27,8 @@ export default function LecturesData() {
   const KEYNOTECARDHEIGHT = layoutHeight / 4
   const KEYNOTECARDWIDTH = layout * 0.85
   const tabBarHeight = useBottomTabBarHeight() + 60
+
+
   async function getLecture(){
     const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_id", lectureID).single()
     if( error ){
@@ -143,14 +147,16 @@ export default function LecturesData() {
     <View className='flex-1 bg-[#ededed]'>
         <Stack.Screen options={{ title : currentLecture?.lecture_name, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}}} />
         <StatusBar barStyle={'dark-content'} />
-        <YoutubePlayer 
+
+       <YoutubePlayer 
           height={layoutHeight / 4}
           width={layout * 0.98}
           webViewStyle={{ borderRadius : 20, marginLeft : '2%', marginTop : 8, backgroundColor : "#ededed" }}
           play={playing}
           videoId={currentLecture?.lecture_link}
           onChangeState={onStateChange}
-        />
+        /> 
+
         <View className='mt-[5]'/>
         { loading && (
           <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '55%', justifyContent : 'center', top : '36%', backgroundColor : '#ededed', alignItems : 'center' }, playMASAnimation]}>

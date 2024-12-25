@@ -111,11 +111,10 @@ const programLectures = () => {
         )
         setSpeakerData(speakers)
         setSpeakerString(speaker_string.join(''))
-        console.log('speakers', speaker_string)
       }
     }
     async function getProgramLectures() {
-      const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_program", programId)
+      const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_program", programId).order('lecture_date', {ascending : false})
       if( error ) {
         alert(error)
       }
@@ -214,7 +213,7 @@ const programLectures = () => {
                   lectures && lectures?.length > 0  ? lectures.map((item, index) => {
                     return(
                       <View key={index}>
-                        <RenderMyLibraryProgramLectures  lecture={item} index={index} speaker={program?.program_speaker} setPlayAnimation={setPlayAnimation} setLectureInfoAnimation={setLectureInfoAnimation} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist}/>
+                        <RenderMyLibraryProgramLectures  lecture={item} index={index} speaker={program?.program_speaker} setPlayAnimation={setPlayAnimation} setLectureInfoAnimation={setLectureInfoAnimation} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist} length={lectures.length}/>
                         <Divider style={{width: "95%", marginLeft: 8}}/>
                       </View>
                     )

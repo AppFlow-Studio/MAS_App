@@ -2,7 +2,7 @@ import { View, Text, Dimensions, Image, ScrollView, Alert } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import { Stack, router } from "expo-router"
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated';
+import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, withTiming } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
@@ -43,7 +43,8 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
     const bottomSheetRef = useRef<BottomSheetModal>(null);
     const handlePresentModalPress = () => bottomSheetRef.current?.present();
     const Tab = useBottomTabBarHeight()
-  
+    const notifade = useSharedValue(1)
+    
     const { width } = Dimensions.get("window")
     const scrollRef = useAnimatedRef<Animated.ScrollView>()
     const scrollOffset = useScrollViewOffset(scrollRef)
@@ -167,10 +168,12 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
         setAddToPlaylistVisible(false)
       }
     }
+
     useEffect(() => {
         fetchEventLectures()
         getSpeakers()
         getUserPlaylists()
+      
         const listenForUserPlaylistChanges = supabase
         .channel('listen for user playlist event adds')
         .on(
@@ -214,7 +217,7 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
                         eventLectures ? eventLectures.map((item, index) => {
                             return (
                             <Animated.View key={index} entering={FadeInLeft.duration(400).delay(100)}> 
-                              <RenderEventLectures lecture={item} index={index} speaker={item.event_lecture_speaker} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist}/>
+                              <RenderEventLectures lecture={item} index={index} speaker={item.event_lecture_speaker} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist} length={eventLectures.length}/>
                               <Divider style={{width: "95%", marginLeft: 8}}/>
                             </Animated.View>
                             )

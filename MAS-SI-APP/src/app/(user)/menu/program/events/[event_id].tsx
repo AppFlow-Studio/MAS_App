@@ -4,13 +4,14 @@ import { useLocalSearchParams, useNavigation } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import { EventsType } from '@/src/types'
 import EventsLectureDisplay from '@/src/components/EventsComponets/EventsLectureDisplay'
-import { ActivityIndicator, Icon } from 'react-native-paper'
+import { ActivityIndicator, Badge, Icon } from 'react-native-paper'
 import EventInfoDisplay from '@/src/components/EventsComponets/EventInfoDisplay'
 import { Stack } from 'expo-router'
 import Toast from 'react-native-toast-message'
 import { useAuth } from '@/src/providers/AuthProvider'
 import * as Haptics from 'expo-haptics'
 import { isBefore } from 'date-fns'
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 const EventInfo = () => {
   const { session } = useAuth()
   const navigation = useNavigation<any>()
@@ -18,6 +19,7 @@ const EventInfo = () => {
   const [ eventInfoData, setEventInfoData ] = useState<EventsType | null>()
   const [ eventLectures, setEventLectures ] = useState<EventsType>()
   const [ eventInNotification, setEventInNotification ] = useState(false)
+  const notifade = useSharedValue(1)
   const fetchEventInfo = async () => {
     const { data , error } = await supabase.from("events").select("*").eq("event_id", event_id).single()
     const { data : InNotifications, error : InNotificationsError } = await supabase.from('added_notifications_events').select('*').eq('event_id', event_id).eq('user_id', session?.user.id).single()
@@ -31,9 +33,12 @@ const EventInfo = () => {
         setEventInfoData(data)
     }
   }
-  
+  const fadeOutNotification = useAnimatedStyle(() => ({
+    opacity : notifade.value
+  }))
 
   useEffect(() => {
+    notifade.value = withTiming(0, {duration : 4000})
     fetchEventInfo()
   }, [])
 
@@ -70,6 +75,11 @@ const EventInfo = () => {
     }
      return(
       <View className='flex-row items-center gap-x-5'>
+        <Animated.View style={fadeOutNotification}>
+          <Badge style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-end font-semibold'>
+            Notifications
+          </Badge>
+        </Animated.View>
         <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
           {eventInNotification ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }
         </Pressable>

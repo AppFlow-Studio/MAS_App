@@ -18,6 +18,7 @@ import { supabase } from '@/src/lib/supabase';
 import * as Haptics from "expo-haptics"
 import { useAuth } from '@/src/providers/AuthProvider';
 import { Portal, Modal } from 'react-native-paper';
+import { format } from 'date-fns';
 type LecturesListProp = {
   lecture : Lectures
   index : number
@@ -26,11 +27,12 @@ type LecturesListProp = {
   setLectureInfoAnimation : ( lectureInfoAnimation : Lectures ) => void
   setAddToPlaylistVisible : ( addToPlaylistVisible : boolean ) => void
   setLectureToBeAddedToPlaylist : ( lectureToBeAddedToPlaylist : string) => void
+  length : number
 }
 const { width } = Dimensions.get("window")
 
 
-const RenderMyLibraryProgramLectures = ( {lecture, index, speaker, setPlayAnimation, setLectureInfoAnimation, setAddToPlaylistVisible, setLectureToBeAddedToPlaylist} : LecturesListProp ) => {
+const RenderMyLibraryProgramLectures = ( {lecture, index, speaker, setPlayAnimation, setLectureInfoAnimation, setAddToPlaylistVisible, setLectureToBeAddedToPlaylist, length} : LecturesListProp ) => {
   const { session } = useAuth()
   const liked = useSharedValue(0)
 
@@ -143,12 +145,12 @@ const RenderMyLibraryProgramLectures = ( {lecture, index, speaker, setPlayAnimat
         <View className='flex-row items-center' >
           <Link href={`/myPrograms/lectures/${lecture.lecture_id}`}>
             <View className='w-[35] h-[25] items-center justify-center mb-2'>
-              <Text className='text-xl font-bold text-gray-400' >{index + 1}</Text>
+              <Text className='text-xl font-bold text-gray-400' >{length - index}</Text>
             </View>
             <View className='flex-col justify-center' style={{width: width / 1.5}}>
               <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1, }} numberOfLines={1}>{lecture.lecture_name}</Text>
               <View className='flex-row' style={{flexShrink: 1, width: width / 1.5}}>
-                {speaker == "MAS" ? <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture.lecture_speaker} </Text> : <Text className='ml-2 text-gray-500'> {lecture.lecture_date}</Text>}
+                {speaker == "MAS" ? <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture.lecture_speaker} </Text> : <Text className='ml-2 text-gray-500'> {format(lecture.lecture_date, 'PP')}</Text>}
               </View>
             </View>
           </Link>

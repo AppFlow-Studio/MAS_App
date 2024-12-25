@@ -45,6 +45,8 @@ const ProgramLectures = () => {
   const { width } = Dimensions.get("window")
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
   const scrollOffset = useScrollViewOffset(scrollRef)
+  const notifade = useSharedValue(1)
+
   const imageAnimatedStyle = useAnimatedStyle(() => {
     return{
       transform: [
@@ -99,7 +101,7 @@ const ProgramLectures = () => {
   }
  }
  async function getProgramLectures() {
-  const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_program", programId)
+  const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_program", programId).order('lecture_date', { ascending : false })
   if( error ) {
     alert(error)
   }
@@ -116,10 +118,15 @@ async function getUserPlaylists(){
     setUsersPlaylists(data)
   }
 }
+const fadeOutNotification = useAnimatedStyle(() => ({
+  opacity : notifade.value
+}))
   useEffect(() => {
     getProgram()
     getProgramLectures()
     getUserPlaylists()
+    notifade.value = withTiming(0, {duration : 4000})
+
     const listenForUserPlaylistChanges = supabase
     .channel('listen for user playlist adds')
     .on(
@@ -170,7 +177,6 @@ async function getUserPlaylists(){
   } 
 
   const NotificationBell = () => {
-  const notifade = useSharedValue(1)
   const addedToNoti = () => {
     const goToProgram = () => {
       navigation.navigate('myPrograms', { screen : 'notifications/ClassesAndLectures/[program_id]', params : { program_id : programId}, initial: false  })
@@ -228,12 +234,8 @@ async function getUserPlaylists(){
       Haptics.NotificationFeedbackType.Success
     )
   }
-    const fadeOutNotification = useAnimatedStyle(() => ({
-      opacity : notifade.value
-    }))
-    useEffect(() => {
-      notifade.value = withTiming(0, {duration : 4000})
-    }, [])
+ 
+  
    return(
     <View className='flex-row items-center gap-x-5'>
       <Animated.View style={fadeOutNotification}>
@@ -352,7 +354,7 @@ async function getUserPlaylists(){
                   lectures && lectures?.length >= 1 ? lectures.map((item, index) => {
                     return(
                       <Animated.View key={index} entering={FadeInLeft.duration(400).delay(100)}>
-                        <LecturesListLecture  lecture={item} index={index} speaker={program?.program_speaker} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist}/>
+                        <LecturesListLecture  lecture={item} index={index} speaker={program?.program_speaker} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist} length={lectures.length}/>
                         <Divider style={{width: "95%", marginLeft: 8}}/>
                       </Animated.View>
                     )

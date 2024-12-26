@@ -15,7 +15,7 @@ const UploadProgramLectures = () => {
   const [lectureSpeaker, setLectureSpeaker] = useState<string>("");
   const [lectureLink, setLectureLink] = useState<string>("");
   const [lectureAI, setLectureAI] = useState<string>("");
-  const [lectureDate, setLectureDate] = useState<string | undefined>();
+  const [lectureDate, setLectureDate] = useState<Date | null>();
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
@@ -23,6 +23,8 @@ const UploadProgramLectures = () => {
   const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
   const [ keyNoteInput, setKeyNoteInput ] = useState<string>("")
   const programs = ["Program A", "Program B", "Program C"];
+    const [showStartDatePicker, setShowStartDatePicker] =
+      useState<boolean>(false);
   const tabBar = useBottomTabBarHeight()
 
 
@@ -180,18 +182,23 @@ const UploadProgramLectures = () => {
           </Button>
 
         {/* Lecture Date */}
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Date</Text>
-        <TextInput 
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
-            multiline
-            value={lectureDate}
-            onChangeText={setLectureDate}
-            placeholder="Enter Date (Mon day, year)..."
-            textColor="black"
-        />
+        <Text className="text-base font-bold ml-2">Lecture Date</Text>
+        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3 my-2" onPress={() => setShowStartDatePicker(true)}>
+            <Text className="text-black text-[11px]">
+            { lectureDate ? lectureDate.toLocaleDateString() : '__'}
+            </Text>
+            {showStartDatePicker && (
+              <DateTimePicker
+                value={new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  setShowStartDatePicker(false);
+                  if (date) setLectureDate(date);
+                }}
+              />
+            )}
+          </Pressable>
 
         {/* Buttons */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

@@ -23,6 +23,20 @@ const EventsScreen = () => {
   }
   useEffect(() => {
     getevents()
+    const listenForEvents = supabase
+    .channel('listen for Event changes')
+    .on(
+      'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: "events",
+    },
+    async (payload) => await getevents()
+    )
+    .subscribe()
+
+    return () => { supabase.removeChannel( listenForEvents )}
   }, [])
 
   return (

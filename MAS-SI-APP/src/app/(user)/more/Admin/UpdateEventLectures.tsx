@@ -16,18 +16,20 @@ const UpdateEventLectures = () => {
   const [lectureSpeaker, setLectureSpeaker] = useState<string>("");
   const [lectureLink, setLectureLink] = useState<string>("");
   const [lectureAI, setLectureAI] = useState<string>("");
-  const [lectureDate, setLectureDate] = useState<string | undefined>();
+  const [lectureDate, setLectureDate] = useState<Date | null>();
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [ keyNotes, setKeyNotes ] = useState<string[]>([]);
   const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
   const [ keyNoteInput, setKeyNoteInput ] = useState<string>("")
+  const [ eventLectureDatePicker, setEventLectureDatePicker ] = useState(false)
+  
   const tabBar = useBottomTabBarHeight()
   const getLecture = async () => {
     const { data, error } = await supabase.from('events_lectures').select('*').eq('event_lecture_id', lecture).single()
     if( data ){
-      setLectureDate(data.event_lecture_date)
+      setLectureDate(new Date(data.event_lecture_date))
       setLectureName(data.event_lecture_name)
       setLectureSpeaker(data.event_lecture_speaker)
       setLectureLink(data.event_lecture_link)
@@ -41,7 +43,7 @@ const UpdateEventLectures = () => {
   const handleSubmit = () => {
     Toast.show({
       type: "success",
-      text1: "Lecture Uploaded Successfully",
+      text1: "Lecture Updated Successfully",
       position: "top",
       topOffset: 50,
     });
@@ -50,12 +52,14 @@ const UpdateEventLectures = () => {
   const onUpdateLecture = async () => {
     if( lectureName  && lectureDate && lectureSpeaker && lectureLink ){
       const { error } = await supabase.from('event_lectures').update({ event_lecture_name : lectureName, event_lecture_link : lectureLink , event_lecture_date  : lectureDate, event_lecture_speaker : lectureSpeaker, event_lecture_desc : lectureAI, event_lecture_keynotes : keyNotes}).eq('event_lecture_id', lecture)
+      console.log(error)
       handleSubmit()
     }
   }
   useEffect(() => {
     getLecture()
   }, [])
+  console.log(lectureDate)
   return (
     <>
  <Stack.Screen
@@ -172,18 +176,23 @@ const UpdateEventLectures = () => {
           </Button>
 
         {/* Lecture Date */}
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Date</Text>
-        <TextInput 
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
-            multiline
-            value={lectureDate}
-            onChangeText={setLectureDate}
-            placeholder="Enter Date (Mon day, year)..."
-            textColor="black"
-        />
+        <Text className="text-base font-bold ml-2">Lecture Date</Text>
+        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3 my-2" onPress={() => setEventLectureDatePicker(true)}>
+          <Text className=" text-black text-[11px] ">
+            { lectureDate ? lectureDate.toLocaleDateString() : '__'}
+            </Text>
+            {eventLectureDatePicker && (
+            <DateTimePicker
+              value={ lectureDate ? lectureDate : new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, date) => {
+                setEventLectureDatePicker(false)
+                if (date) setLectureDate(date);
+              }}
+            />
+          )}
+        </Pressable>
 
         {/* Buttons */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

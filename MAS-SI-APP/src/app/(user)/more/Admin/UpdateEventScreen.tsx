@@ -62,8 +62,14 @@ const UpdateEventScreen = () => {
   const [isEducational, setIsEducational] = useState<boolean>(false);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [isPace, setIsPace] = useState<boolean>(false);
-  const [musicPace, setMusicPace] = useState<boolean>(false);
-  const [dancePace, setDancePace] = useState<boolean>(false);
+
+  const [ isSocialService, setIsSocialService] = useState<boolean>(false);
+  const [ isFundraiser, setIsFundraiser] = useState<boolean>(false);
+  const [ isReverts, setIsReverts] = useState<boolean>(false);
+  const [ isOutreach, setIsOutreach ] = useState<boolean>(false);
+  const [ isBreakfast, setIsBreakfast ] = useState<boolean>(false);
+  const [ eventPaidLink, setEventPaidLink ] = useState('');
+
   const [ speakers, setSpeakers ] = useState<any[]>([])
   const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const [ hasLectures, sethasLectures ]  = useState(false)
@@ -174,7 +180,7 @@ const UpdateEventScreen = () => {
   const currentSettings = async () => {
     const { data , error } = await supabase.from('events').select('*').eq('event_id', event_id).single()
     if( data ){
-      setOriginalName(data.event_name.split(" ").join(""))
+      setOriginalName(data.event_name)
       setEventName(data.event_name);
       setImgURL(data.event_img);
      setEventDescription(data.event_desc);
@@ -188,7 +194,14 @@ const UpdateEventScreen = () => {
       setIsFor14Plus(data.is_fourteen_plus);
       setIsEducational(data.is_education);
       setSpeakerSelected(data.event_speaker)
-      sethasLectures(data.has_lecture)
+      sethasLectures(data.has_lecture);
+
+      setIsOutreach(data.is_outreach);
+      setIsReverts(data.is_reverts);
+      setIsBreakfast(data.is_breakfast);
+      setIsFundraiser(data.is_fundraiser);
+      setIsSocialService(data.is_social);
+      setEventPaidLink(data.paid_link);
     }
   }
   const onUpdate = async  () => {
@@ -199,7 +212,24 @@ const UpdateEventScreen = () => {
           const filePath = `${eventName.trim().split(" ").join("")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
           const { data : image, error :image_upload_error } = await supabase.storage.from('event_flyers').update(filePath, decode(base64));
           const time =  format(eventStartTime!, 'p').trim()
-          const { error } = await supabase.from('events').update({ event_name : eventName, event_desc : eventDescription, event_speaker : speakerSelected, has_lecture : hasLectures, event_start_date : eventStartDate, event_end_date : eventEndDate, is_paid : isPaid, event_price : Number(EventPrice), is_kids : isForKids, is_fourteen_plus : isFor14Plus, is_education: isEducational, event_start_time :time, event_days : eventDays }).eq('event_id', event_id)
+          const { error } = await supabase.from('events').update({
+          event_name : eventName, 
+          event_desc : eventDescription, 
+          event_speaker : speakerSelected, 
+          has_lecture : hasLectures, 
+          event_start_date : eventStartDate, 
+          event_end_date : eventEndDate, 
+          is_paid : isPaid, 
+          event_price : Number(EventPrice),
+          event_start_time :time, 
+          event_days : eventDays,
+          is_outreach : isOutreach,
+          is_social : isSocialService,
+          is_reverts : isReverts,
+          is_fundraiser : isFundraiser,
+          is_breakfast : isBreakfast,
+          paid_link : eventPaidLink
+          }).eq('event_id', event_id)
           handleSubmit()
           router.back()
         }else {
@@ -210,7 +240,25 @@ const UpdateEventScreen = () => {
           if( image ){
             const { data : event_img_url} = await supabase.storage.from('event_flyers').getPublicUrl(image?.path)
             const time =  format(eventStartTime!, 'p').trim()
-            const { error } = await supabase.from('events').update({ event_name : eventName, event_img : event_img_url.publicUrl, event_desc : eventDescription, event_speaker : speakerSelected, has_lecture : hasLectures, event_start_date : eventStartDate, event_end_date : eventEndDate, is_paid : isPaid, event_price : Number(EventPrice), is_kids : isForKids, is_fourteen_plus : isFor14Plus, is_education: isEducational, event_start_time :time, event_days : eventDays }).eq('event_id', event_id)
+            const { error } = await supabase.from('events').update({ 
+              event_name : eventName, 
+              event_img : event_img_url.publicUrl, 
+              event_desc : eventDescription, 
+              event_speaker : speakerSelected, 
+              has_lecture : hasLectures, 
+              event_start_date : eventStartDate, 
+              event_end_date : eventEndDate, 
+              is_paid : isPaid, 
+              event_price : Number(EventPrice),
+              event_start_time :time, 
+              event_days : eventDays,
+              is_outreach : isOutreach,
+              is_social : isSocialService,
+              is_reverts : isReverts,
+              is_fundraiser : isFundraiser,
+              is_breakfast : isBreakfast,
+              paid_link : eventPaidLink
+             }).eq('event_id', event_id)
             if( error ){
               console.log(error)
             }
@@ -220,7 +268,24 @@ const UpdateEventScreen = () => {
         }
       }else{
         const time =  format(eventStartTime!, 'p').trim()
-        const { error } = await supabase.from('events').update({ event_name : eventName, event_img : imgURL, event_desc : eventDescription, event_speaker : speakerSelected, has_lecture : hasLectures, event_start_date : eventStartDate, event_end_date : eventEndDate, is_paid : isPaid, event_price : Number(EventPrice), is_kids : isForKids, is_fourteen_plus : isFor14Plus, is_education: isEducational, event_start_time :time, event_days : eventDays }).eq('event_id', event_id)
+        const { error } = await supabase.from('events').update({ 
+          event_name : eventName, 
+          event_desc : eventDescription, 
+          event_speaker : speakerSelected, 
+          has_lecture : hasLectures, 
+          event_start_date : eventStartDate, 
+          event_end_date : eventEndDate, 
+          is_paid : isPaid, 
+          event_price : Number(EventPrice),
+          event_start_time :time, 
+          event_days : eventDays,
+          is_outreach : isOutreach,
+          is_social : isSocialService,
+          is_reverts : isReverts,
+          is_fundraiser : isFundraiser,
+          is_breakfast : isBreakfast,
+          paid_link : eventPaidLink
+         }).eq('event_id', event_id)
         handleSubmit()
         router.back()
       }
@@ -265,7 +330,7 @@ const UpdateEventScreen = () => {
           )
         }}
     />
-    <View style={{ padding: 10, backgroundColor : 'white', paddingTop: 170 }}>
+    <View style={{ padding: 10, backgroundColor : 'white', paddingTop: 220 }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
         showsVerticalScrollIndicator={false}
@@ -455,136 +520,139 @@ const UpdateEventScreen = () => {
       </View>
 
         <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
-{/*
-        <Pressable
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: "4%",
-          }}
-          onPress={() => setIsPaid(!isPaid)}
-        >
-          <Checkbox
-            status={isPaid ? "checked" : "unchecked"}
-            onPress={() => setIsPaid(!isPaid)}
-            color="#57BA47"
-          />
-          <Text className="text-base font-bold">Event is Paid</Text>
-        </Pressable>
-        {isPaid && (
-          <View>
-            <Text className="text-base font-bold mb-1 ml-2">
-              Enter Event Price
-            </Text>
-            <TextInput
-              mode="outlined"
-              theme={{ roundness: 10 }}
-              style={{ width: "50%", height: 45, marginBottom: 10 }}
-              activeOutlineColor="#0D509D"
-              value={EventPrice}
-              onChangeText={setEventPrice}
-              placeholder="Price"
-              textColor="black"
-              keyboardType="number-pad"
-            />
-          </View>
-        )}
-        */}
-        <Pressable
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: "4%",
-          }}
-          onPress={() => setIsForKids(!isForKids)}
-        >
-          <Checkbox
-            status={isForKids ? "checked" : "unchecked"}
-            onPress={() => setIsForKids(!isForKids)}
-            color="#57BA47"
-          />
-          <Text className="text-base font-bold">Event is For Kids</Text>
-        </Pressable>
+        
+            <View className="w-[100%] " >
+                     <Text className="text-black font-bold ml-4 mt-4">Further Classification: </Text>
+                     <View className="flex flex-row flex-wrap gap-5 my-4 w-[100%]  self-center ml-[0.5] items-center">
+                    { !isPace ? 
+                      <>
+                        <  Pressable
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginBottom: "4%",
+                            }}
+                            onPress={() => setIsSocialService(!isSocialService)}
+                            className="w-[35%] justify-between px-2 "
+                          >
+                            <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                              {isSocialService ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                            </View>
+                            <Text className="text-[12px] font-[400] text-black">Social Services</Text>
+                          </Pressable>
+          
+                          <Pressable
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginBottom: "4%",
+                            }}
+                            onPress={() => setIsFundraiser(!isFundraiser)}
+                            className="w-[35%] justify-between px-2 "
+                          >
+                            <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                              {isFundraiser ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                            </View>
+                            <Text className="text-[12px] font-[400] text-black">Fundraiser</Text>
+                          </Pressable>
+          
+                          <Pressable
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginBottom: "4%",
+                            }}
+                            onPress={() => setIsReverts(!isReverts)}
+                            className="w-[35%] justify-between px-2 "
+                          >
+                            <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                              {isReverts ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                            </View>
+                            <Text className="text-[12px] font-[400] text-black">Reverts Event</Text>
+                          </Pressable>
+          
+                          <Pressable
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginBottom: "4%",
+                            }}
+                            onPress={() => setIsBreakfast(!isBreakfast)}
+                            className="w-[45%] justify-between px-2 "
+                          >
+                            <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                              {isBreakfast ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                            </View>
+                            <Text className="text-[12px] font-[400] text-black" >Brothers Breakfast</Text>
+                          </Pressable>
+          
+                          <Pressable
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              marginBottom: "4%",
+                            }}
+                            onPress={() => setIsOutreach(!isOutreach)}
+                            className="w-[80%] justify-center  px-2 "
+                          >
+                            <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center mx-5">
+                              {isOutreach ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                            </View>
+                            <Text className="text-[12px] font-[400] text-black">Outreach Activities</Text>
+                          </Pressable>
+                        </>
+                        :
+                          <Pressable
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: "4%",
+                          }}
+                          onPress={() => setIsSocialService(!isSocialService)}
+                          className="w-[35%] justify-between px-2 "
+                        >
+                          <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                            {isSocialService ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                          </View>
+                          <Text className="text-[12px] font-[400] text-black">Social Services</Text>
+                        </Pressable>
+                        }
+        
+                      </View>
+                      <Text className="text-black font-bold ml-5 mt-2">Is this { isPace ? 'Pace Event' : 'Event'} Paid?</Text>
+                        <Pressable
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginVertical: "4%",
+                          }}
+                          onPress={() => setIsPaid(!isPaid)}
+                          className="w-[35%] justify-between px-6 ml-5"
+                        >
+                          <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                              {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                          </View>
+                          <Text className="text-base font-bold">Paid</Text>
+                        </Pressable>
+                        {isPaid && (
+                          <View>
+                            <Text className="text-base font-bold mb-1 ml-2">
+                              Enter Event Website Link
+                            </Text>
+                            <TextInput
+                              mode="outlined"
+                              theme={{ roundness: 10 }}
+                              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                              activeOutlineColor="#0D509D"
+                              value={eventPaidLink}
+                              onChangeText={setEventPaidLink}
+                              placeholder="Enter MAS Shop Link..."
+                              textColor="black"
+                            />
+                          </View>
+                        )}
+                 </View>
 
-        <Pressable
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: "4%",
-          }}
-          onPress={() => setIsFor14Plus(!isFor14Plus)}
-        >
-          <Checkbox
-            status={isFor14Plus ? "checked" : "unchecked"}
-            onPress={() => setIsFor14Plus(!isFor14Plus)}
-            color="#57BA47"
-          />
-          <Text className="text-base font-bold">Event is For 14+</Text>
-        </Pressable>
-        <Pressable
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: "4%",
-          }}
-          onPress={() => setIsEducational(!isEducational)}
-        >
-          <Checkbox
-            status={isEducational ? "checked" : "unchecked"}
-            onPress={() => setIsEducational(!isEducational)}
-            color="#57BA47"
-          />
-          <Text className="text-base font-bold">Event is For Education</Text>
-        </Pressable>
-
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: "4%",
-          }}
-        >
-          <Checkbox
-            status={isPace ? "checked" : "unchecked"}
-            onPress={() => setIsPace(!isPace)}
-            color="#57BA47"
-          />
-          <Text className="text-base font-bold">Event is Pace</Text>
-        </View>
-        {isPace ? (
-          <View className="ml-5">
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-            >
-              <Checkbox
-                status={dancePace ? "checked" : "unchecked"}
-                onPress={() => setDancePace(!dancePace)}
-                color="#57BA47"
-              />
-              <Text className="text-base font-bold">Event is Dance Pace</Text>
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-            >
-              <Checkbox
-                status={musicPace ? "checked" : "unchecked"}
-                onPress={() => setMusicPace(!musicPace)}
-                color="#57BA47"
-              />
-              <Text className="text-base font-bold">Event is Music Pace</Text>
-            </View>
-          </View>
-        ) : (
-          <></>
-        )}
 
         <Button
           mode="contained"

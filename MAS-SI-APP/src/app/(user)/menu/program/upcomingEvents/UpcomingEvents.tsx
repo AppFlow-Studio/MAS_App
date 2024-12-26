@@ -13,7 +13,7 @@ const UpcomingEvents = () => {
   const [ upcoming, setUpcoming ] = useState<Program[]>([])
   const [ upcomingEvents, setUpcomingEvents ] = useState<EventsType[]>([])
   const [refreshing, setRefreshing] = React.useState(false);
-
+  const TodaysDate = new Date().getDay()
   const GetUpcomingEvents = async () => {
     setRefreshing(true)
     const date = new Date()
@@ -43,14 +43,14 @@ const UpcomingEvents = () => {
             headerTintColor : 'black'
         }}/>
         {
-          days.map(( item ) => {
+          days.map(( item, index ) => {
             const program = upcoming.filter(programs => programs.program_days.includes(item))
             const DaysKidsPrograms = program.filter(programs => programs.is_kids == true)
             const event = upcomingEvents.filter(events => events.event_days.includes(item) && events.pace == false)
             const pace = upcomingEvents.filter(events => events.event_days.includes(item) && events.pace == true)
             return(
               <>
-                <Days Programs={program} Day={item}Kids={DaysKidsPrograms} Events={event} Pace={pace}/>
+                <Days Programs={program} Day={item} Kids={DaysKidsPrograms} Events={event} Pace={pace} TodaysDate={TodaysDate} index={index}/>
                 <Divider className='h-[0.5px] w-[70%] self-center'/>
               </>
             )

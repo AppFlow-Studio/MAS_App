@@ -17,6 +17,7 @@ serve(async (req) => {
   const messages = notifications_batch.map(( notification ) => (
     {
       to: notification.push_notification_token,
+      title : notification.title ? notification.title : 'MAS Staten Island',
       sound: 'default',
       body: notification.message,
       data: { withSome: 'data' },

@@ -385,8 +385,8 @@ const UpdateProgramScreen = () => {
             <Image
               source={{ uri: programImage.uri }}
               style={{
-                width: 150,
-                height:  150,
+                width: 170,
+                height:  170,
                 marginVertical: "1%",
                 alignSelf : "center",
                 borderRadius: 15
@@ -437,84 +437,74 @@ const UpdateProgramScreen = () => {
 
 
          <View className="flex flex-row flex-wrap gap-3 my-4">
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginVertical: "4%",
-              }}
-              onPress={() => setIsPaid(!isPaid)}
-              className="w-[35%] justify-between px-6"
-            >
-              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                 {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold">Paid</Text>
-            </Pressable>
-            {isPaid && (
-              <View>
-                <Text className="text-base font-bold mb-1 ml-2">
-                  Enter Program WebsiteLink
-                </Text>
-                <TextInput
-                  mode="outlined"
-                  theme={{ roundness: 10 }}
-                  style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-                  activeOutlineColor="#0D509D"
-                  value={programPaidLink}
-                  onChangeText={setprogramPaidLink}
-                  placeholder="https://massic.shop/product/..."
-                  textColor="black"
-                  keyboardType="number-pad"
-                />
-              </View>
-            )}
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsForKids(!isForKids)}
-              className="w-[35%] justify-between px-6"
-            >
-              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                 {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold">Kids</Text>
-            </Pressable>
-  
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsFor14Plus(!isFor14Plus)}
-              className="w-[35%] justify-between px-6"
-            >
-               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
-                 {isFor14Plus ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold">14+</Text>
-            </Pressable>
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsEducational(!isEducational)}
-              className="w-[45%] justify-between px-6"
+          
+                 <Pressable
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: "4%",
+                          }}
+                          onPress={() => setIsForKids(!isForKids)}
+                          className="w-[40%] justify-between px-6 "
+                        >
+                          <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                             {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                          </View>
+                          <Text className="text-base font-bold">Kids</Text>
+                        </Pressable>
+            
+                        <Pressable
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: "4%",
+                          }}
+                          onPress={() => setIsForKids(!isForKids)}
+                          className="w-[40%] justify-between px-6"
+                        >
+                          <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                             {!isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                          </View>
+                          <Text className="text-base font-bold ml-5">Program</Text>
+            
+                          
+                        </Pressable>
+                    </View>
 
-            >
-               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
-                 {isEducational ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold border">Education</Text>
-            </Pressable>
-  
-         </View>
+            
+                      <Text className="text-black font-bold ml-5 mt-1">Is this { isForKids ? 'Kids Program' : 'Program'} Paid?</Text>
+                      <Pressable
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginVertical: "4%",
+                          }}
+                          onPress={() => setIsPaid(!isPaid)}
+                          className="w-[35%] justify-between px-6 ml-5"
+                        >
+                          <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                             {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                          </View>
+                          <Text className="text-base font-bold">Paid</Text>
+                        </Pressable>
+                        {isPaid && (
+                          <View>
+                            <Text className="text-base font-bold mb-1 ml-2">
+                              Enter Program Website Link
+                            </Text>
+                            <TextInput
+                              mode="outlined"
+                              theme={{ roundness: 10 }}
+                              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                              activeOutlineColor="#0D509D"
+                              value={programPaidLink}
+                              onChangeText={setprogramPaidLink}
+                              placeholder="Enter MAS Shop Link..."
+                              textColor="black"
+                            />
+                          </View>
+                        )}
+
           <Button
             mode="contained"
             buttonColor="#57BA47"

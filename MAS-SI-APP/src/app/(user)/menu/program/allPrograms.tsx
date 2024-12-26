@@ -36,9 +36,7 @@ export default function ProgramsScreen(){
       }
 
       if(CurrentPrograms){
-        
         setShownData(CurrentPrograms)
-        console.log
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -71,7 +69,7 @@ export default function ProgramsScreen(){
    <View className=' bg-[#0D509D] flex-1'>
       <ScrollView style={{borderTopLeftRadius: 40, borderTopRightRadius: 40, height : '100%', backgroundColor : 'white'}} contentContainerStyle={{
          paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}
-         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={ async () => await getPrograms()}/>}
+         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async() => await getPrograms()} />}
          >
         <View className='mt-5 w-[100%]'>
           <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Programs</Text>

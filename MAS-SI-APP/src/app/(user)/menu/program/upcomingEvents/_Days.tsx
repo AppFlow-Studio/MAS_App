@@ -1,5 +1,5 @@
 import { View, Text, Pressable, FlatList, Image } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { EventsType, Program } from '@/src/types'
 import { AccordionItem } from './_Accordion'
 import { Link } from 'expo-router'
@@ -7,13 +7,19 @@ import { useSharedValue } from 'react-native-reanimated'
 import { Icon } from 'react-native-paper'
 
 
-const Days = ( {Programs , Day, Kids, Pace, Events } : {Programs : Program[], Day : string, Kids : Program[], Pace : EventsType[], Events : EventsType[] }) => {
+const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Programs : Program[], Day : string, Kids : Program[], Pace : EventsType[], Events : EventsType[], TodaysDate : number, index : number }) => {
   const Section = useSharedValue(false);
   const [ rotateChevron , setRotateChevron ] = useState(false)
   const onPress = () => {
     Section.value = !Section.value
     setRotateChevron(!rotateChevron)
   } 
+  useEffect(() => {
+    if ( index == TodaysDate  - 1) {
+        Section.value = true
+        setRotateChevron(true)
+    }
+  }, [])
   return (
     <View className='flex-col p-2 w-[100%] gap-1'>
         <Pressable onPress={onPress} className='w-[100%] justify-between flex-row'>

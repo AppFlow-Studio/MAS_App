@@ -8,6 +8,7 @@ import moment from "moment";
 import { supabase } from "@/src/lib/supabase";
 import Svg, { Path } from "react-native-svg";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { format } from "date-fns";
 const UploadEventLectures = () => {
   const { event_id, event_name, event_img } = useLocalSearchParams();
   const [lectureEvent, setLectureEvent] = useState<string | null>(null);
@@ -15,26 +16,18 @@ const UploadEventLectures = () => {
   const [lectureSpeaker, setLectureSpeaker] = useState<string>("");
   const [lectureLink, setLectureLink] = useState<string>("");
   const [lectureAI, setLectureAI] = useState<string>("");
-  const [lectureDate, setLectureDate] = useState<string | undefined>();
+  const [lectureDate, setLectureDate] = useState<Date | null>();
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
   const [menuVisible, setMenuVisible] = useState<boolean>(false);
   const [ keyNotes, setKeyNotes ] = useState<string[]>([]);
   const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
-  const [ keyNoteInput, setKeyNoteInput ] = useState<string>("")
+  const [ keyNoteInput, setKeyNoteInput ] = useState<string>("");
+  const [ eventLectureDatePicker, setEventLectureDatePicker ] = useState(false)
   const events = ["Event A", "Event B", "Event C"];
   const tabBar = useBottomTabBarHeight()
 
   const handleSubmit = () => {
-    if (!lectureEvent || !lectureName || !lectureSpeaker || !lectureLink || !lectureDate) {
-      Toast.show({
-        type: "error",
-        text1: "All fields are required!",
-        position: "top",
-        topOffset: 50,
-      });
-      return;
-    }
 
     Toast.show({
       type: "success",
@@ -55,7 +48,7 @@ const UploadEventLectures = () => {
   };
 
   const onUploadLecture = async () => {
-    if (!lectureName || !lectureSpeaker || !lectureLink || !lectureDate || !lectureTime) {
+    if (!lectureName || !lectureSpeaker || !lectureLink || !lectureDate) {
       Toast.show({
         type: "error",
         text1: "All fields are required!",
@@ -64,7 +57,7 @@ const UploadEventLectures = () => {
       });
       return;
     }else{
-      const { error } = await supabase.from('events_lectures').insert({ lecture_program : event_id, event_lecture_name : lectureName, event_lecture_speaker : lectureSpeaker, event_lecture_link : lectureLink, event_lecture_date : lectureDate,event_lecture_time : lectureTime, event_lecture_keynotes : keyNotes, event_lecture_desc : lectureAI})
+      const { error } = await supabase.from('events_lectures').insert({ event_id : event_id, event_lecture_name : lectureName, event_lecture_speaker : lectureSpeaker, event_lecture_link : lectureLink, event_lecture_date : lectureDate, event_lecture_keynotes : keyNotes, event_lecture_desc : lectureAI})
       handleSubmit()
     }
   }
@@ -185,18 +178,23 @@ const UploadEventLectures = () => {
           </Button>
 
         {/* Lecture Date */}
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Date</Text>
-        <TextInput 
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
-            multiline
-            value={lectureDate}
-            onChangeText={setLectureDate}
-            placeholder="Enter Date (Mon day, year)..."
-            textColor="black"
-        />
+        <Text className="text-base font-bold ml-2">Lecture Date</Text>
+        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3 my-2" onPress={() => setEventLectureDatePicker(true)}>
+          <Text className=" text-black text-[11px] ">
+            { lectureDate ? lectureDate.toLocaleDateString() : '__'}
+            </Text>
+            {eventLectureDatePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="date"
+              display="default"
+              onChange={(event, date) => {
+                setEventLectureDatePicker(false)
+                if (date) setLectureDate(date);
+              }}
+            />
+          )}
+        </Pressable>
 
         {/* Buttons */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -208,7 +206,7 @@ const UploadEventLectures = () => {
             onPress={() => onUploadLecture()}
             style={{ width: "48%" }}
           >
-            Update Lecture
+            Upload Lecture
           </Button>
         </View>
       </ScrollView>

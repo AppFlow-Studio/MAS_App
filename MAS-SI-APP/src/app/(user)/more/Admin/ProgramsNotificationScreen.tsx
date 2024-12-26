@@ -5,6 +5,7 @@ import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { supabase } from "@/src/lib/supabase";
 import Svg, { Path } from "react-native-svg";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { BlurView } from "expo-blur";
 
 const ProgramsEventNotificationScreen = () => {
   const { program_id, has_lecture, program_name,program_img } = useLocalSearchParams();
@@ -38,6 +39,7 @@ const ProgramsEventNotificationScreen = () => {
         const { data : profile, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).not('push_notification_token', 'is', null).single()
         if( profile ){
           profile['message'] = notificationMessage
+          profile['title'] = program_name
           notification_batch.push(profile)
         }
       })
@@ -59,7 +61,7 @@ const ProgramsEventNotificationScreen = () => {
           headerTransparent : true,
           header : () => (
             <View className="relative">
-              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
+              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#6077F5] items-start justify-end pb-[5%] z-[1]">
                 <Pressable className="flex flex-row items-center justify-between w-[50%]" onPress={() => router.back()}>
                   <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
                     <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#FFFFFF" stroke-width="2"/>
@@ -68,8 +70,8 @@ const ProgramsEventNotificationScreen = () => {
                 </Pressable>
               </View>
               <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-               <View className="w-[60%] items-center"> 
-                <Text className=" text-[15px] text-black ">Create A New Program</Text>
+               <View className="w-[70%] items-center"> 
+                <Text className=" text-[15px] text-black ">Create A Program Notification</Text>
               </View>
               </View>
               <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
@@ -142,35 +144,35 @@ const ProgramsEventNotificationScreen = () => {
               paddingHorizontal: "2%",
             }}
           >
-            <View>
+            <View className="">
               <Text className="font-bold text-3xl">Preview Notification </Text>
-              <View
-                style={{
-                  width: 340,
-                  height: "28%",
-                  marginTop: "4%",
-                  borderRadius: 20,
-                  padding: "3%",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor:"#0D509D"
-                }}
-              >
-                <Image
-                  source={{
-                    uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
+              <View className="rounded-[20px] overflow-hidden w-[340px]  h-[28%] mt-4">
+                <BlurView
+                  style={{
+                    width: 340,
+                    height: "100%",
+                    borderRadius: 20,
+                    padding: "3%",
+                    flexDirection: "row",
+                    alignItems: "center",
                   }}
-                  className="h-11 w-11 rounded-xl "
-                />
-                <View className="px-2">
-                  <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
-                    <Text className="text-lg font-bold text-white">MAS</Text>
-                    <Text className="text-gray-400">Yesterday, 10:20PM</Text>
+                >
+                  <Image
+                    source={{
+                      uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
+                    }}
+                    className="h-11 w-11 rounded-xl "
+                  />
+                  <View className="px-2">
+                    <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }} className="">
+                      <Text className="text-md font-bold text-white w-[60%]" numberOfLines={1}>{program_name}</Text>
+                      <Text className="text-gray-400 w-[45%]" adjustsFontSizeToFit numberOfLines={1}>Yesterday, 10:20PM</Text>
+                    </View>
+                    <View style={{width:'90%'}} >
+                    <Text numberOfLines={2} className="text-base text-white">{notificationMessage}</Text>
+                    </View>
                   </View>
-                  <View style={{width:'90%'}} >
-                  <Text numberOfLines={2} className="text-base text-yellow-100">{notificationMessage}</Text>
-                  </View>
-                </View>
+                </BlurView>
               </View>
               <Text className="self-end mt-1 font-bold">
                 Total Users: {users.length}

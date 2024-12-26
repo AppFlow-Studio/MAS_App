@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from 'react-native'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSharedValue } from 'react-native-reanimated';
 import { Icon } from 'react-native-paper';
 import { AccordionItem } from '../../menu/program/upcomingEvents/_Accordion';
@@ -17,6 +17,22 @@ const AdminAccordionOptions = ({ options, index } : { options : AdminOptions, in
     Section.value = !Section.value
     setRotateChevron(!rotateChevron)
   } 
+  useEffect(() => {
+    let TimerId
+    if( rotateChevron ){
+        TimerId = setTimeout(
+            () => {
+                Section.value = false,
+                setRotateChevron(false)
+            }, 
+            7000
+        )
+    }else{
+        clearTimeout(TimerId)
+        Section.value = false,
+        setRotateChevron(false)
+    }
+  }, [ rotateChevron ])
   return (
     <View className='flex-col p-2 w-[100%] gap-1'>
         <Pressable onPress={onPress} className='w-[90%] justify-between flex-row pl-5 rounded-xl self-center' style={{ backgroundColor : index % 2 == 1 ?  '#6077F5' : '#5E636B'}}>

@@ -61,7 +61,21 @@ export default function ProgramsCircularCarousel(  ) {
     useEffect(() => {
       fetchProgramsData()
       checkIfAnon()
-    }, [session])
+      const listenforprograms = supabase
+      .channel('listen for programs change')
+      .on(
+        'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: "programs",
+      },
+      async (payload) => await fetchProgramsData()
+      )
+      .subscribe()
+  
+      return () => { supabase.removeChannel( listenforprograms )}
+    }, [])
     
      useEffect(() => {
       if( programsData && programsData?.length > 0){

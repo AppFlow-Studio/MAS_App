@@ -21,6 +21,20 @@ const ProgramsScreen = () => {
   }
   useEffect(() => {
     getPrograms()
+    const listenforprograms = supabase
+    .channel('listen for programs change')
+    .on(
+      'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: "programs",
+    },
+    async (payload) => await getPrograms()
+    )
+    .subscribe()
+
+    return () => { supabase.removeChannel( listenforprograms )}
   }, [])
 
   return (

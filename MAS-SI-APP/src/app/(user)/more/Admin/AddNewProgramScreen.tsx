@@ -331,8 +331,8 @@ const AddNewProgramScreen = () => {
             <Image
               source={{ uri: programImage.uri }}
               style={{
-                width: "50%",
-                height:  110,
+                width: 170,
+                height:  170,
                 marginVertical: "1%",
                 alignSelf : "center",
                 borderRadius: 15
@@ -380,11 +380,10 @@ const AddNewProgramScreen = () => {
         </View>
 
 
-        <Text className="text-black font-bold ml-4 mt-4">Program Type: (If unchecked will default to false)</Text>
+        <Text className="text-black font-bold ml-4 mt-4">Program Type: (<Text className="text-black text-[10px] font-[300]"> It will go under the checked box section </Text>)</Text>
 
 
-         <View className="flex flex-row flex-wrap gap-3 my-4">
-
+         <View className="flex flex-row flex-wrap gap-3 my-4 w-[100%]  self-center ml-[0.5] items-center">
             
             <Pressable
               style={{
@@ -393,7 +392,7 @@ const AddNewProgramScreen = () => {
                 marginBottom: "4%",
               }}
               onPress={() => setIsForKids(!isForKids)}
-              className="w-[35%] justify-between px-6"
+              className="w-[40%] justify-between px-6 "
             >
               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
                  {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
@@ -408,18 +407,19 @@ const AddNewProgramScreen = () => {
                 marginBottom: "4%",
               }}
               onPress={() => setIsForKids(!isForKids)}
-              className="w-[35%] justify-between px-6"
+              className="w-[40%] justify-between px-6"
             >
               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                 {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                 {!isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
               </View>
-              <Text className="text-base font-bold">Program</Text>
+              <Text className="text-base font-bold ml-5">Program</Text>
 
               
             </Pressable>
+          </View>
 
 
-          { /* 
+          <Text className="text-black font-bold ml-5 mt-2">Is this { isForKids ? 'Kids Program' : 'Program'} Paid?</Text>
           <Pressable
               style={{
                 flexDirection: "row",
@@ -427,7 +427,7 @@ const AddNewProgramScreen = () => {
                 marginVertical: "4%",
               }}
               onPress={() => setIsPaid(!isPaid)}
-              className="w-[35%] justify-between px-6"
+              className="w-[35%] justify-between px-6 ml-5"
             >
               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
                  {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
@@ -442,7 +442,7 @@ const AddNewProgramScreen = () => {
                 <TextInput
                   mode="outlined"
                   theme={{ roundness: 10 }}
-                  style={{ width: "50%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                  style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
                   activeOutlineColor="#0D509D"
                   value={programPaidLink}
                   onChangeText={setProgramPaidLink}
@@ -451,10 +451,8 @@ const AddNewProgramScreen = () => {
                 />
               </View>
             )}
-              
-            */}
+         
   
-         </View>
           <Button
             mode="contained"
             buttonColor="#57BA47"

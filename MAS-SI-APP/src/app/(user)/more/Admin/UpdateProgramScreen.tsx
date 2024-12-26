@@ -27,7 +27,7 @@ function setTimeToCurrentDate(timeString : string ) {
   const timestampWithTimeZone = new Date();
 
   // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
+  timestampWithTimeZone.setHours(hours, minutes, seconds, 0); // No milliseconds
 
   // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
   const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
@@ -44,7 +44,6 @@ const UpdateProgramScreen = () => {
   const [programStartDate, setProgramStartDate] = useState<Date | null>(null);
   const [programEndDate, setProgramEndDate] = useState<Date | null>(null);
   const [programStartTime, setProgramStartTime] = useState<Date | null>(null);
-  const [programEndTime, setProgramEndTime] = useState<Date | null>(null);
   const [programDays, setProgramDays] = useState<string[]>([]);
   const [ speakers, setSpeakers ] = useState<any[]>([])
   const [showStartDatePicker, setShowStartDatePicker] =
@@ -183,7 +182,7 @@ const UpdateProgramScreen = () => {
           const filePath = `${programName.trim().split(" ").join("")}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
           const contentType = programImage.type === 'image' ? 'image/png' : 'video/mp4';
           const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').update(filePath, decode(base64));
-          const { error } = await supabase.from('programs').update({ program_name : programName, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
+          const { error } = await supabase.from('programs').update({ program_name : programName, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : format(programStartTime,'pp'), paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus, has_lectures : hasLectures}).eq('program_id', program_id)
           handleSubmit()
           router.back()
         }
@@ -195,13 +194,16 @@ const UpdateProgramScreen = () => {
           if( image ){
             const { data : program_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
             const time =  format(programStartTime!, 'p').trim()
-            const { error } = await supabase.from('programs').update({ program_name : programName, program_img : program_img_url.publicUrl, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
+            const { error } = await supabase.from('programs').update({ program_name : programName, program_img : program_img_url.publicUrl, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : format(programStartTime,'pp'), paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus, has_lectures : hasLectures}).eq('program_id', program_id)
             handleSubmit()
             router.back()
           }
       }
     }else{
-      const { error } = await supabase.from('programs').update({ program_name : programName, program_img : imgURL ? imgURL : programImage, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : programStartTime, paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus}).eq('program_id', program_id)
+      const { error } = await supabase.from('programs').update({ program_name : programName, program_desc : programDescription, program_start_date : programStartDate, program_end_date : programEndDate, program_days : programDays, program_start_time : format(programStartTime,'pp'), paid_link : programPaidLink, program_speaker : speakerSelected, program_is_paid : isPaid, is_kids : isForKids, is_education : isEducational, is_fourteen_plus : isFor14Plus, has_lectures : hasLectures }).eq('program_id', program_id)
+      if( error ){
+        console.log(error)
+      }
       handleSubmit()
       router.back()
     }
@@ -257,7 +259,7 @@ const UpdateProgramScreen = () => {
           <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
           <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
           <Text className=" text-black text-[11px]">
-             Start Time: { programStartTime ? programStartTime.toLocaleTimeString() : '__'}
+             Start Time: { programStartTime ? format(programStartTime, 'p') : '__'}
             </Text>
             {showStartTimePicker && (
             <DateTimePicker

@@ -6,18 +6,10 @@ import Pace from './pace/Pace';
 import UpcomingEvents from './upcomingEvents/UpcomingEvents';
 import { View, TouchableOpacity, StyleSheet, Text, SafeAreaView, StatusBar, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, interpolate, withSpring } from 'react-native-reanimated';
-import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { TabArrayType } from '@/src/types'
-import { withLayoutContext } from 'expo-router';
-import { NavigationContainer } from '@react-navigation/native';
-import * as Animatable from 'react-native-animatable';
 import { TabBar, TabBarIndicator, TabBarIndicatorProps, TabBarProps } from 'react-native-tab-view';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import Kids from './kids/Kids';
 
-const TAB_BAR_ITEM_PADDING = 10;
-
-const Tabs  = createMaterialTopTabNavigator();
 const FirstRoute = () => (
   <UpcomingEvents />
 );

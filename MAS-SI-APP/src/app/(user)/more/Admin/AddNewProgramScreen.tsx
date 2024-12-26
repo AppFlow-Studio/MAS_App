@@ -28,7 +28,6 @@ const AddNewProgramScreen = () => {
   const [programStartDate, setProgramStartDate] = useState<Date | null>(null);
   const [programEndDate, setProgramEndDate] = useState<Date | null>(null);
   const [programStartTime, setProgramStartTime] = useState<Date | null>(null);
-  const [programEndTime, setProgramEndTime] = useState<Date | null>(null);
   const [programDays, setProgramDays] = useState<string[]>([]);
   const [ speakers, setSpeakers ] = useState<any[]>([])
   const [showStartDatePicker, setShowStartDatePicker] =
@@ -37,13 +36,11 @@ const AddNewProgramScreen = () => {
   const [showStartTimePicker, setShowStartTimePicker] =
     useState<boolean>(false);
   const [isPaid, setIsPaid] = useState<boolean>(false);
-  const [programPrice, setProgramPrice] = useState<string>("");
   const [isForKids, setIsForKids] = useState<boolean>(false);
-  const [isFor14Plus, setIsFor14Plus] = useState<boolean>(false);
-  const [isEducational, setIsEducational] = useState<boolean>(false);
   const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const [ hasLectures, sethasLectures ] = useState(false)
   const [ addSpeaker, setOpenAddSpeaker ] = useState(false) 
+  const [ programPaidLink, setProgramPaidLink ] = useState<string>('')
   const tabHeight = useBottomTabBarHeight() + 20
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
@@ -87,14 +84,6 @@ const AddNewProgramScreen = () => {
     }
   };
 
-  const formatDate = (date: Date | null) => {
-    return date ? moment(date).format("MM/DD/YYYY") : "";
-  };
-
-  const formatTime = (time: Date | null) => {
-    return time ? moment(time).format("hh:mm A") : "";
-  };
-
   const handleSubmit = () => {
     // Reset all the fields
     setProgramName("");
@@ -103,15 +92,12 @@ const AddNewProgramScreen = () => {
     setProgramStartDate(null);
     setProgramEndDate(null);
     setProgramStartTime(null);
-    setProgramEndTime(null);
     setProgramDays([]);
     setIsPaid(false);
-    setProgramPrice("");
     setIsForKids(false);
-    setIsFor14Plus(false);
-    setIsEducational(false);
     setSpeakerSelected([])
     sethasLectures(false)
+    setProgramPaidLink('')
     Toast.show({
       type: "success",
       text1: "Program Successfully Added",
@@ -178,13 +164,13 @@ const AddNewProgramScreen = () => {
   const onSubmit = async () => {
     if ( programName && programDescription && programDays.length > 0 && programEndDate  &&  programStartDate &&  speakerSelected.length>0 && programImage) {
       const base64 = await FileSystem.readAsStringAsync(programImage.uri, { encoding: 'base64' });
-      const filePath = `${programName.trim()}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
+      const filePath = `${programName.trim().split(" ").join("")}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = programImage.type === 'image' ? 'image/png' : 'video/mp4';
       const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
       if( image ){
         const { data : program_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
         const time =  format(programStartTime!, 'p').trim()
-        const { error } = await supabase.from('programs').insert({ program_name : programName, program_img : program_img_url.publicUrl, program_desc : programDescription, program_speaker : speakerSelected, has_lectures : hasLectures, program_start_date : programStartDate, program_end_date : programEndDate, is_paid : isPaid, program_price : Number(programPrice), is_kids : isForKids, is_fourteen_plus : isFor14Plus, is_education: isEducational, program_start_time :time, program_days : programDays })
+        const { error } = await supabase.from('programs').insert({ program_name : programName, program_img : program_img_url.publicUrl, program_desc : programDescription, program_speaker : speakerSelected, has_lectures : hasLectures, program_start_date : programStartDate, program_end_date : programEndDate, program_is_paid : isPaid, is_kids : isForKids, program_start_time :time, program_days : programDays, paid_link : programPaidLink })
         if( error ){
           console.log(error)
         }
@@ -233,15 +219,14 @@ const AddNewProgramScreen = () => {
           <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
           <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
           <Text className=" text-black text-[11px]">
-             Start Time: { programStartTime ? programStartTime.toLocaleTimeString() : '__'}
+             Start Time: { programStartTime ? format(programStartTime,'p') : '__'}
             </Text>
             {showStartTimePicker && (
             <DateTimePicker
-              value={new Date()}
+              value={new Date(programStartTime!)}
               mode="time"
               display="default"
               onChange={(event, time) => {
-                setShowStartTimePicker(false);
                 if (time) setProgramStartTime(time);
               }}
             />
@@ -255,7 +240,7 @@ const AddNewProgramScreen = () => {
             </Text>
             {showStartDatePicker && (
               <DateTimePicker
-                value={new Date()}
+                value={ programStartDate ? programStartDate :new Date()}
                 mode="date"
                 display="default"
                 onChange={(event, date) => {
@@ -272,7 +257,7 @@ const AddNewProgramScreen = () => {
             </Text>
             {showEndDatePicker && (
               <DateTimePicker
-                value={new Date()}
+                value={ programEndDate ? programEndDate :new Date()}
                 mode="date"
                 display="default"
                 onChange={(event, date) => {
@@ -399,7 +384,43 @@ const AddNewProgramScreen = () => {
 
 
          <View className="flex flex-row flex-wrap gap-3 my-4">
+
+            
             <Pressable
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "4%",
+              }}
+              onPress={() => setIsForKids(!isForKids)}
+              className="w-[35%] justify-between px-6"
+            >
+              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                 {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+              </View>
+              <Text className="text-base font-bold">Kids</Text>
+            </Pressable>
+
+            <Pressable
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: "4%",
+              }}
+              onPress={() => setIsForKids(!isForKids)}
+              className="w-[35%] justify-between px-6"
+            >
+              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                 {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+              </View>
+              <Text className="text-base font-bold">Program</Text>
+
+              
+            </Pressable>
+
+
+          { /* 
+          <Pressable
               style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -416,65 +437,22 @@ const AddNewProgramScreen = () => {
             {isPaid && (
               <View>
                 <Text className="text-base font-bold mb-1 ml-2">
-                  Enter Program Price
+                  Enter Program Website Link
                 </Text>
                 <TextInput
                   mode="outlined"
                   theme={{ roundness: 10 }}
                   style={{ width: "50%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
                   activeOutlineColor="#0D509D"
-                  value={programPrice}
-                  onChangeText={setProgramPrice}
-                  placeholder="Price"
+                  value={programPaidLink}
+                  onChangeText={setProgramPaidLink}
+                  placeholder="Enter MAS Shop Link..."
                   textColor="black"
-                  keyboardType="number-pad"
                 />
               </View>
             )}
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsForKids(!isForKids)}
-              className="w-[35%] justify-between px-6"
-            >
-              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                 {isForKids ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold">Kids</Text>
-            </Pressable>
-  
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsFor14Plus(!isFor14Plus)}
-              className="w-[35%] justify-between px-6"
-            >
-               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
-                 {isFor14Plus ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold">14+</Text>
-            </Pressable>
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsEducational(!isEducational)}
-              className="w-[45%] justify-between px-6"
-
-            >
-               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
-                 {isEducational ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold border">Education</Text>
-            </Pressable>
+              
+            */}
   
          </View>
           <Button

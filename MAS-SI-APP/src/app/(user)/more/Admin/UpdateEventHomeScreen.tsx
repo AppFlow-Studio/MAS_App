@@ -30,17 +30,17 @@ const UpdateEventHomeScreen = () => {
         header : () => (
           <View className="relative">
             <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.replace('/more/Admin/AdminScreen')}>
+              <Pressable className="flex flex-row items-center justify-between w-[31%]" onPress={() => router.replace('/more/Admin/AdminScreen')}>
                 <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
                   <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
                 </Svg>
-                <Text className=" text-[25px] text-white">Programs</Text>
+                <Text className=" text-[25px] text-white">Events</Text>
               </Pressable>
             </View>
 
             <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-              <View className="w-[66%] items-center"> 
-                <Text className=" text-[15px] text-black ">Edit Existing Programs</Text>
+              <View className="w-[60%] items-center"> 
+                <Text className=" text-[15px] text-black ">Edit Existing Events</Text>
               </View>
             </View>
 

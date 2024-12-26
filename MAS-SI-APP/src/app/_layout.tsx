@@ -37,7 +37,7 @@ export default function RootLayout() {
       <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
         <AuthProvider>
           <PrayerTimesProvider>
-            <NotificationProvider>
+            <>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <BottomSheetModalProvider>
                   <MenuProvider>
@@ -51,7 +51,7 @@ export default function RootLayout() {
                   </MenuProvider>
                 </BottomSheetModalProvider>
               </ThemeProvider>
-            </NotificationProvider>
+            </>
           </PrayerTimesProvider>
         </AuthProvider>
       </StripeProvider>

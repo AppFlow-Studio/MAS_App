@@ -27,17 +27,6 @@ const UploadProgramLectures = () => {
 
 
   const handleSubmit = () => {
-    if (!lectureProgram || !lectureName || !lectureSpeaker || !lectureLink || !lectureDate) {
-      Toast.show({
-        type: "error",
-        text1: "All fields are required!",
-        position: "top",
-        topOffset: 50,
-      });
-      return;
-    }
-
-
     Toast.show({
       type: "success",
       text1: "Lecture Uploaded Successfully",
@@ -68,7 +57,10 @@ const UploadProgramLectures = () => {
       });
       return;
     }else{
-      const { error } = await supabase.from('program_lectures').insert({ lecture_program : program_id, lecture_name : lectureName, lecture_speaker : lectureSpeaker, lecture_link : lectureLink, lectureDate : lectureDate, lecture_ai : lectureAI, lecture_key_notes : keyNotes})
+      const { error } = await supabase.from('program_lectures').insert({ lecture_program : program_id, lecture_name : lectureName, lecture_speaker : lectureSpeaker, lecture_link : lectureLink, lecture_date : lectureDate, lecture_ai : lectureAI, lecture_key_notes : keyNotes})
+      if ( error ){
+        console.log(error)
+      }
       handleSubmit()
     }
   }

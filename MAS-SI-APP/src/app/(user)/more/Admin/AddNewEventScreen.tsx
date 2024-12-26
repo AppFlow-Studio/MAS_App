@@ -252,15 +252,14 @@ const AddNewEventScreen = () => {
           <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
           <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
           <Text className=" text-black text-[11px]">
-             Start Time: { eventStartTime ? eventStartTime.toLocaleTimeString() : '__'}
+             Start Time: { eventStartTime ? format(eventStartTime, 'p') : '__'}
             </Text>
             {showStartTimePicker && (
             <DateTimePicker
-              value={new Date()}
+              value={new Date(eventStartTime!)}
               mode="time"
               display="default"
               onChange={(event, time) => {
-                setShowStartTimePicker(false);
                 if (time) setEventStartTime(time);
               }}
             />
@@ -274,7 +273,7 @@ const AddNewEventScreen = () => {
             </Text>
             {showStartDatePicker && (
               <DateTimePicker
-                value={new Date()}
+                value={eventStartDate ? eventStartDate : new Date()}
                 mode="date"
                 display="default"
                 onChange={(event, date) => {
@@ -291,7 +290,7 @@ const AddNewEventScreen = () => {
             </Text>
             {showEndDatePicker && (
               <DateTimePicker
-                value={new Date()}
+                value={ eventEndDate ?  eventEndDate : new Date()}
                 mode="date"
                 display="default"
                 onChange={(event, date) => {
@@ -417,7 +416,7 @@ const AddNewEventScreen = () => {
 
           <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
  
-          <Pressable
+          {/* <Pressable
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -435,7 +434,7 @@ const AddNewEventScreen = () => {
           {isPaid && (
             <View>
               <Text className="text-base font-bold mb-1 ml-2">
-                Enter Event Price
+                Enter Event Website Link
               </Text>
               <TextInput
                 mode="outlined"
@@ -449,7 +448,8 @@ const AddNewEventScreen = () => {
                 keyboardType="number-pad"
               />
             </View>
-          )}
+          )} */}
+
           <Pressable
             style={{
               flexDirection: "row",
@@ -465,38 +465,6 @@ const AddNewEventScreen = () => {
             />
             <Text className="text-base font-bold">Event is For Kids</Text>
           </Pressable>
-
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsFor14Plus(!isFor14Plus)}
-          >
-            <Checkbox
-              status={isFor14Plus ? "checked" : "unchecked"}
-              onPress={() => setIsFor14Plus(!isFor14Plus)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Event is For 14+</Text>
-          </Pressable>
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: "4%",
-            }}
-            onPress={() => setIsEducational(!isEducational)}
-          >
-            <Checkbox
-              status={isEducational ? "checked" : "unchecked"}
-              onPress={() => setIsEducational(!isEducational)}
-              color="#57BA47"
-            />
-            <Text className="text-base font-bold">Event is For Education</Text>
-          </Pressable>
-
           <View
             style={{
               flexDirection: "row",

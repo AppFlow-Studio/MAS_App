@@ -1,4 +1,4 @@
-import { View, Text, FlatList, ScrollView, Image, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, ScrollView, Image, TouchableOpacity, RefreshControl } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/src/lib/supabase'
 import { useAuth } from "@/src/providers/AuthProvider"
@@ -13,7 +13,10 @@ const Kids = () => {
   const { session } = useAuth()
   const [ kidsPrograms, setKidsPrograms ] = useState<Program[]>()
   const [ searchBarInput, setSearchBarInput ] = useState("")
+  const [refreshing, setRefreshing] = React.useState(false);
+  
   const getKidsPrograms = async () => {
+    setRefreshing(true)
     const currDate = new Date().toISOString()
     const { data, error } = await supabase.from("programs").select("*").eq("is_kids", true).gte("program_end_date", currDate)
     if( error ){
@@ -22,6 +25,7 @@ const Kids = () => {
     if( data ){
         setKidsPrograms(data)
     }
+    setRefreshing(false)
   }
 
   const tabBarHeight = useBottomTabBarHeight()
@@ -31,8 +35,11 @@ const Kids = () => {
   return (
     <View className=' bg-[#0D509D] flex-1'>
     <ScrollView style={{borderTopLeftRadius: 40, borderTopRightRadius: 40, height : '100%', backgroundColor : 'white'}} contentContainerStyle={{
-       paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}>
-      <View className='mt-5 w-[100%]'>
+       paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}
+       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => await getKidsPrograms() }/>}
+       >
+      <View className='mt-5 w-[100%]'
+      >
         <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Programs</Text>
           <View className='flex-row flex flex-wrap gap-y-5'>
           {

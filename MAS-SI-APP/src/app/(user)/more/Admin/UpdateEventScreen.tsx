@@ -28,7 +28,7 @@ function setTimeToCurrentDate(timeString : string ) {
   const timestampWithTimeZone = new Date();
 
   // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
+  timestampWithTimeZone.setHours(hours, minutes, seconds, 0); // No milliseconds
 
   // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
   const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
@@ -36,7 +36,7 @@ function setTimeToCurrentDate(timeString : string ) {
   return timestampISO
 }
 const UpdateEventScreen = () => {
-  const { event_id } = useLocalSearchParams()
+  const { event_id, event_name } = useLocalSearchParams()
   const router = useRouter()
   const [ originalName, setOriginalName ] = useState('')
   const [eventName, setEventName] = useState<string>("");
@@ -249,9 +249,18 @@ const UpdateEventScreen = () => {
               </View>
               <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
                <View className="w-[65%] items-center"> 
-                <Text className=" text-[15px] text-black ">Create A New Event</Text>
+                <Text className=" text-[15px] text-black ">Edit Existing Events</Text>
               </View>
               </View>
+
+              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
+                            <Pressable className="w-[50%] items-center justify-between flex flex-row px-6" onPress={() => router.back()}> 
+                                <Svg  width="16" height="9" viewBox="0 0 16 9" fill="none">
+                                  <Path d="M4.5 8.22607L1 4.61303M1 4.61303L4.5 0.999987M1 4.61303H15" stroke="#6077F5" stroke-linecap="round"/>
+                                </Svg>
+                                <Text className=" text-[15px] text-black " numberOfLines={1} adjustsFontSizeToFit>{event_name}</Text>
+                            </Pressable>
+                          </View>
             </View>
           )
         }}
@@ -374,18 +383,35 @@ const UpdateEventScreen = () => {
         </Text>
 
        
-        {eventImage ? (
+        {
+        imgURL ? 
+        (
+          <Pressable onPress={pickImage}>
+            <Image
+              source={{ uri: imgURL }}
+              style={{
+                width: 170,
+                height:  170,
+                marginVertical: "1%",
+                alignSelf : "center",
+                borderRadius: 15
+              }}
+              resizeMode="cover"
+            />
+          </Pressable>
+        ) :
+        eventImage ? (
           <Pressable onPress={pickImage}>
           <Image
             source={{ uri: eventImage.uri }}
             style={{
-              width: "50%",
-              height: 110,
-              marginVertical: "1%",
-              alignSelf : "center",
-              borderRadius: 15
+              width: 170,
+                height:  170,
+                marginVertical: "1%",
+                alignSelf : "center",
+                borderRadius: 15
             }}
-            resizeMode="contain"
+            resizeMode="cover"
           /> 
           </Pressable>
         ): (
@@ -429,7 +455,7 @@ const UpdateEventScreen = () => {
       </View>
 
         <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
-
+{/*
         <Pressable
           style={{
             flexDirection: "row",
@@ -463,6 +489,7 @@ const UpdateEventScreen = () => {
             />
           </View>
         )}
+        */}
         <Pressable
           style={{
             flexDirection: "row",

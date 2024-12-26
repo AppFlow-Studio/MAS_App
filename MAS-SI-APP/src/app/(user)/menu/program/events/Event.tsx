@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Pressable } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, Image, Pressable, RefreshControl } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/src/providers/AuthProvider'
 import { supabase } from '@/src/lib/supabase'
@@ -19,7 +19,9 @@ const Event = () => {
   const [ pastChevronValue, setPastChevronValue ] = useState(false)
   const specialEventsAccordionValue = useSharedValue(false)
   const [ specialEventsChev, setSpecialEventsChev ] = useState(false)
+  const [refreshing, setRefreshing] = React.useState(false);
   const  fetchEventsData =  async () => {
+    setRefreshing(true)
     const date = new Date()
     const isoString = date.toISOString()
     const { data : CurrentEvents , error } = await supabase.from("events").select("*").eq('pace', false).gte('event_end_date', isoString)
@@ -33,6 +35,7 @@ const Event = () => {
     if( PastRecordedEvents ){
       setPrevEventsData(PastRecordedEvents)
     }
+    setRefreshing(false)
   }
 
 
@@ -42,7 +45,9 @@ const Event = () => {
   return (
     <View className='bg-[#0D509D] flex-1 '>
       <ScrollView style={{borderTopLeftRadius: 40, borderTopRightRadius: 40, height : '100%', backgroundColor : 'white'}} contentContainerStyle={{
-      paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}>      
+      paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={ async () =>  await fetchEventsData()}/>}
+      >      
          <View className='mt-5 w-[100%]'>
           <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Events</Text>
           <View className='flex-row flex flex-wrap gap-y-5 mb-[61]'>
@@ -95,8 +100,8 @@ const Event = () => {
           <Divider className='h-[0.5] w-[70%] self-center'/>
 
 
-          <Pressable className='w-[100%] justify-between flex flex-row pr-3 mt-2' >
-            <Text className={`font-bold text-black text-lg ml-3 ${!pastChevronValue ? 'mb-[61]' : 'mb-0'}`} onPress={() => {pastEventsAccordionValue.value = !pastEventsAccordionValue.value; setPastChevronValue(!pastChevronValue)} }>Past Recorded Events</Text>
+          <Pressable className='w-[100%] justify-between flex flex-row pr-3 mt-2' onPress={() => {pastEventsAccordionValue.value = !pastEventsAccordionValue.value; setPastChevronValue(!pastChevronValue)} }>
+            <Text className={`font-bold text-black text-lg ml-3 ${!pastChevronValue ? 'mb-[61]' : 'mb-0'}`}>Past Recorded Events</Text>
             <View style={{ transform : [{ rotate : pastChevronValue ? '90deg' : '0deg'}]}}>
               <Icon  source={'chevron-right'} size={30} color='gray'/>
             </View>

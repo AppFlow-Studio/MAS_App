@@ -87,7 +87,7 @@ const EventsNotificationScreen = () => {
               </View>
               </View>
               <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
-               <View className="w-[100%] self-start border pl-[10%]"> 
+               <View className="w-[100%] self-start pl-[10%]"> 
                 <Text className=" text-[15px] text-black ">{event_name}</Text>
               </View>
               </View>

@@ -1,4 +1,4 @@
-import { StyleSheet, View, FlatList, Button, Text, ScrollView, TouchableOpacity, Image} from 'react-native';
+import { StyleSheet, View, FlatList, Button, Text, ScrollView, TouchableOpacity, Image, RefreshControl} from 'react-native';
 import { Link, Stack } from "expo-router";
 import ProgramsListProgram from "../../../../components/ProgramsListProgram"
 import { Divider, Searchbar } from 'react-native-paper';
@@ -14,9 +14,12 @@ export default function ProgramsScreen(){
   const [ shownData, setShownData ] = useState<Program[]>()
   const [ prevRecordedPrograms, setPrevRecordedPrograms ] = useState<Program[]>()
   const [ searchBarInput, setSearchBarInput ] = useState('')
+  const [refreshing, setRefreshing] = useState(false);
+  
   async function getPrograms(){
     try{
       setLoading(true)
+      setRefreshing(true)
       if (!session?.user) throw new Error('No user on the session!')
       const date = new Date()
       const isoString = date.toISOString()
@@ -44,6 +47,7 @@ export default function ProgramsScreen(){
   }
   finally{
     setLoading(false)
+    setRefreshing(false)
   }
   }
   useEffect(() => {
@@ -66,7 +70,9 @@ export default function ProgramsScreen(){
   return (
    <View className=' bg-[#0D509D] flex-1'>
       <ScrollView style={{borderTopLeftRadius: 40, borderTopRightRadius: 40, height : '100%', backgroundColor : 'white'}} contentContainerStyle={{
-         paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}>
+         paddingTop : 2, backgroundColor : 'white',  paddingBottom : tabBarHeight + 30}}
+         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={ async () => await getPrograms()}/>}
+         >
         <View className='mt-5 w-[100%]'>
           <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Programs</Text>
             <View className='flex-row flex flex-wrap gap-y-5'>

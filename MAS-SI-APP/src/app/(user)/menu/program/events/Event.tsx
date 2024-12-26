@@ -74,6 +74,20 @@ const Event = () => {
 
   useEffect(() => {
     fetchEventsData()
+    const listenForEvents = supabase
+    .channel('listen for Event changes')
+    .on(
+      'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: "events",
+    },
+    async (payload) => await fetchEventsData()
+    )
+    .subscribe()
+
+    return () => { supabase.removeChannel( listenForEvents )}
   }, [])
   return (
     <View className='bg-[#0D509D] flex-1 '>
@@ -120,7 +134,7 @@ const Event = () => {
           <AccordionItem isExpanded={specialEventsAccordionValue} style={{}} viewKey={'Past'}>
           <View className='w-[100%] mb-[61] mt-[23]'>
               <Text className='text-left ml-3 font-bold'>Brothers Breakfast: </Text>
-              <View className='flex-row flex flex-wrap gap-y-5 mb-[61]'>
+              <View className='flex-row flex flex-wrap gap-y-5 mb-[42px] mt-[11]'>
               {
               breakfast?.map((item) => (
                 <View style={{ width: "50%"}}>
@@ -152,7 +166,7 @@ const Event = () => {
 
             <View className='w-[100%] mb-[54]'>
               <Text className='text-left ml-3  mt-[23] font-bold mb-[23]'>Outreach Activities: </Text>
-              <View className='flex-row flex flex-wrap gap-y-5 mb-[61] mt-1'>
+              <View className='flex-row flex flex-wrap gap-y-5 mb-[42px] mt-[11]'>
               {
               outreach?.map((item) => (
                 <View style={{ width: "50%"}}>
@@ -182,7 +196,7 @@ const Event = () => {
             <Divider className='h-[0.5] w-[70%] self-center'/>
             <View className='w-[100%] mt-[23]'>
               <Text className='text-left ml-3 font-bold'>Reverts Event: </Text>
-              <View className='flex-row flex flex-wrap gap-y-5 mb-[61] mt-1'>
+              <View className='flex-row flex flex-wrap gap-y-5 mb-[42px] mt-[11]'>
               {
               reverts?.map((item) => (
                 <View style={{ width: "50%"}}>
@@ -212,7 +226,7 @@ const Event = () => {
             <Divider className='h-[0.5] w-[70%] self-center'/>
             <View className='w-[100%] mt-[23]'>
               <Text className='text-left ml-3 font-bold'>Fundrasing: </Text>
-              <View className='flex-row flex flex-wrap gap-y-5 mb-[61] mt-1'>
+              <View className='flex-row flex flex-wrap gap-y-5 mb-[42px] mt-[11]'>
               {
               fundraiser?.map((item) => (
                 <View style={{ width: "50%"}}>

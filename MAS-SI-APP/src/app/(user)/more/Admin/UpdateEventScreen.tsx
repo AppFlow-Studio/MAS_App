@@ -195,7 +195,7 @@ const UpdateEventScreen = () => {
       setIsEducational(data.is_education);
       setSpeakerSelected(data.event_speaker)
       sethasLectures(data.has_lecture);
-
+      setIsPace(data.pace)
       setIsOutreach(data.is_outreach);
       setIsReverts(data.is_reverts);
       setIsBreakfast(data.is_breakfast);
@@ -228,7 +228,9 @@ const UpdateEventScreen = () => {
           is_reverts : isReverts,
           is_fundraiser : isFundraiser,
           is_breakfast : isBreakfast,
-          paid_link : eventPaidLink
+          paid_link : eventPaidLink,
+          pace : isPace
+
           }).eq('event_id', event_id)
           handleSubmit()
           router.back()
@@ -257,7 +259,9 @@ const UpdateEventScreen = () => {
               is_reverts : isReverts,
               is_fundraiser : isFundraiser,
               is_breakfast : isBreakfast,
-              paid_link : eventPaidLink
+              paid_link : eventPaidLink,
+              pace : isPace
+
              }).eq('event_id', event_id)
             if( error ){
               console.log(error)
@@ -284,7 +288,8 @@ const UpdateEventScreen = () => {
           is_reverts : isReverts,
           is_fundraiser : isFundraiser,
           is_breakfast : isBreakfast,
-          paid_link : eventPaidLink
+          paid_link : eventPaidLink,
+          pace : isPace
          }).eq('event_id', event_id)
         handleSubmit()
         router.back()
@@ -519,8 +524,38 @@ const UpdateEventScreen = () => {
            </Pressable>
       </View>
 
-        <Text className="text-black font-bold ml-4 mt-4">Event Type: (If unchecked will default to false)</Text>
-        
+      <Text className="text-black font-bold ml-4 mt-4">Event Type: (<Text className="text-black text-[10px] font-[300]"> It will go under the checked box section </Text>)</Text>
+             <View className="flex flex-row flex-wrap gap-3 my-4 w-[100%]  self-center ml-[0.5] items-center">
+                       <Pressable
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: "4%",
+                          }}
+                          onPress={() => setIsPace(true)}
+                          className="w-[40%] justify-between px-6 "
+                        >
+                          <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                            {isPace ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                          </View>
+                          <Text className="text-base font-bold">PACE</Text>
+                        </Pressable>
+              
+                        <Pressable
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: "4%",
+                          }}
+                          onPress={() => setIsPace(false)}
+                          className="w-[40%] justify-between px-6 "
+                        >
+                          <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                            {!isPace ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                          </View>
+                          <Text className="text-base font-bold">Event</Text>
+                        </Pressable>
+                     </View>
             <View className="w-[100%] " >
                      <Text className="text-black font-bold ml-4 mt-4">Further Classification: </Text>
                      <View className="flex flex-row flex-wrap gap-5 my-4 w-[100%]  self-center ml-[0.5] items-center">

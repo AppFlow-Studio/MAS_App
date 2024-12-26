@@ -84,7 +84,6 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
       )
       setSpeakerData(speakers)
       setSpeakerString(speaker_string.join(''))
-      console.log('speakers', speaker_string)
     }
     const GetSheikData =  () => {
       return( 

@@ -232,7 +232,8 @@ const AddNewEventScreen = () => {
           is_reverts : isReverts,
           is_fundraiser : isFundraiser,
           is_breakfast : isBreakfast,
-          paid_link : eventPaidLink
+          paid_link : eventPaidLink,
+          pace : isPace
         })
         if( error ){
           console.log(error)
@@ -395,13 +396,13 @@ const AddNewEventScreen = () => {
             <Image
               source={{ uri: eventImage.uri }}
               style={{
-                width: "50%",
-                height: 110,
+                width: 170,
+                height:  170,
                 marginVertical: "1%",
                 alignSelf : "center",
                 borderRadius: 15
               }}
-              resizeMode="contain"
+              resizeMode="cover"
             /> 
             </Pressable>
           ): (

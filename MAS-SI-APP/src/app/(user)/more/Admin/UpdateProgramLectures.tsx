@@ -15,7 +15,7 @@ const UpdateProgramLectures = () => {
   const [lectureSpeaker, setLectureSpeaker] = useState<string>("");
   const [lectureLink, setLectureLink] = useState<string>("");
   const [lectureAI, setLectureAI] = useState<string>("");
-  const [lectureDate, setLectureDate] = useState<string>('');
+  const [lectureDate, setLectureDate] = useState<Date>();
   const [lectureTime, setLectureTime] = useState<string>('');
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
@@ -23,6 +23,8 @@ const UpdateProgramLectures = () => {
   const [ keyNotes, setKeyNotes ] = useState<string[]>([]);
   const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
   const [ keyNoteInput, setKeyNoteInput ] = useState<string>("");
+      const [showStartDatePicker, setShowStartDatePicker] =
+        useState<boolean>(false);
   const programs = ["Program A", "Program B", "Program C"];
 
   const tabBar = useBottomTabBarHeight()
@@ -38,7 +40,7 @@ const UpdateProgramLectures = () => {
   const getLecture = async () => {
     const { data, error } = await supabase.from('program_lectures').select('*').eq('lecture_id', lecture).single()
     if( data ){
-      setLectureDate(data.lecture_date)
+      setLectureDate(new Date( data.lecture_date) )
       setLectureName(data.lecture_name)
       setLectureSpeaker(data.lecture_speaker)
       setLectureLink(data.lecture_link)
@@ -172,18 +174,23 @@ const UpdateProgramLectures = () => {
           </Button>
 
         {/* Lecture Date */}
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Date</Text>
-        <TextInput 
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
-            multiline
-            value={lectureDate}
-            onChangeText={setLectureDate}
-            placeholder="Enter Date (Mon day, year)..."
-            textColor="black"
-        />
+        <Text className="text-base font-bold ml-2">Lecture Date</Text>
+        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3 my-2" onPress={() => setShowStartDatePicker(true)}>
+            <Text className="text-black text-[11px]">
+            { lectureDate ? lectureDate.toLocaleDateString() : '__'}
+            </Text>
+            {showStartDatePicker && (
+              <DateTimePicker
+                value={lectureDate ? lectureDate : new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  setShowStartDatePicker(false);
+                  if (date) setLectureDate(date);
+                }}
+              />
+            )}
+          </Pressable>
 
         {/* Buttons */}
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>

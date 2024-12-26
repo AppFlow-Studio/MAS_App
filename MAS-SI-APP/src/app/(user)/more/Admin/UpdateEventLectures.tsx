@@ -51,7 +51,7 @@ const UpdateEventLectures = () => {
 
   const onUpdateLecture = async () => {
     if( lectureName  && lectureDate && lectureSpeaker && lectureLink ){
-      const { error } = await supabase.from('event_lectures').update({ event_lecture_name : lectureName, event_lecture_link : lectureLink , event_lecture_date  : lectureDate, event_lecture_speaker : lectureSpeaker, event_lecture_desc : lectureAI, event_lecture_keynotes : keyNotes}).eq('event_lecture_id', lecture)
+      const { error } = await supabase.from('events_lectures').update({ event_lecture_name : lectureName, event_lecture_link : lectureLink , event_lecture_date  : lectureDate, event_lecture_speaker : lectureSpeaker, event_lecture_desc : lectureAI, event_lecture_keynotes : keyNotes}).eq('event_lecture_id', lecture)
       console.log(error)
       handleSubmit()
     }

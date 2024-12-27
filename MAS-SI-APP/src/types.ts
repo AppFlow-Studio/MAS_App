@@ -91,7 +91,7 @@ export type salahDisplayWidget = {
 export type JummahBottomSheetProp = {
     topic : string,
     desc : string,
-    speaker : string,
+    speaker : { speaker_name : string, speaker_creds : string[], speaker_img : string },
     jummah_time : string
 }
 

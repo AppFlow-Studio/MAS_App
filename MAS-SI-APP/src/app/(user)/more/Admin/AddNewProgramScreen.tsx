@@ -185,6 +185,20 @@ const AddNewProgramScreen = () => {
   }
   useEffect(() => {
     getSpeakers()
+    const listenforspeakers = supabase
+    .channel('listen for speakers change')
+    .on(
+      'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: "speaker_data",
+    },
+    async (payload) => await getSpeakers()
+    )
+    .subscribe()
+
+    return () => { supabase.removeChannel( listenforspeakers )}
   }, [])
   return (
     <>

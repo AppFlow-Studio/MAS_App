@@ -215,6 +215,7 @@ const UpdateProgramScreen = () => {
   useEffect(() => {
     currentSettings()
     getSpeakers()
+    
   }, [])
   return (
     <>

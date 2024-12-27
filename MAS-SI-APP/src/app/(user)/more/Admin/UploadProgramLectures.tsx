@@ -84,7 +84,7 @@ const UploadProgramLectures = () => {
 
             <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
               <View className="w-[65%] items-center"> 
-                <Text className=" text-[15px] text-black ">Upoad New Youtube Lecture</Text>
+                <Text className=" text-[15px] text-black ">Upload New Youtube Lecture</Text>
               </View>
             </View>
 
@@ -125,7 +125,7 @@ const UploadProgramLectures = () => {
           textColor="black"
         />
 
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Title</Text>
+        <Text className="text-base font-bold mb-1 ml-2">Lecture Title</Text>
         <TextInput
           mode="outlined"
           theme={{ roundness: 10 }}
@@ -137,7 +137,7 @@ const UploadProgramLectures = () => {
           textColor="black"
         />
 
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Speaker</Text>
+        <Text className="text-base font-bold mb-1 ml-2">Lecture Speaker</Text>
         <TextInput
           mode="outlined"
           theme={{ roundness: 10 }}
@@ -149,7 +149,7 @@ const UploadProgramLectures = () => {
           textColor="black"
         />
 
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Summary</Text>
+        <Text className="text-base font-bold mb-1 ml-2">Lecture Summary</Text>
         <TextInput
           mode="outlined"
           theme={{ roundness: 10 }}

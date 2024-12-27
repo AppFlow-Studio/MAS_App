@@ -21,6 +21,21 @@ const UpdateProgramHomeScreen = () => {
 
   useEffect(() => {
     getLectures()
+    const listenforlectures = supabase
+    .channel('listen for lecture change')
+    .on(
+      'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: "program_lectures",
+      filter: `lecture_program=eq.${program_id}`
+    },
+    async (payload) => await getLectures()
+    )
+    .subscribe()
+
+    return () => { supabase.removeChannel( listenforlectures )}
   }, [])
   return (
     <View className='flex-1 grow bg-white pt-[220px] w-[100%]' style={{ paddingBottom : tabBar + 30 }}>
@@ -62,7 +77,9 @@ const UpdateProgramHomeScreen = () => {
           )
         }}
       />
-      <ScrollView style={{ }}>
+      <ScrollView style={{ }}
+
+      >
         <Image 
           src={program_img}
           className='w-[200px] h-[200px] self-center rounded-[15px] my-4'

@@ -74,7 +74,13 @@ const ProgramsScreen = () => {
           }) 
           return (
           <View style={{marginHorizontal: 2,  marginVertical : 6}}>
-          <Link  href={{pathname: '/(user)/more/Admin/UpdateProgramHomeScreen', params: {program_id: item.program_id, has_lectures : item.has_lectures, program_img : item.program_img, program_name : item.program_name }}}
+          <Link  href={{pathname: '/(user)/more/Admin/UpdateProgramHomeScreen', 
+          params: {
+            program_id: item.program_id, 
+            has_lectures : item.has_lectures, 
+            program_img : item.program_img, 
+            program_name : item.program_name
+           }}}
 
               asChild >
               <TouchableOpacity>

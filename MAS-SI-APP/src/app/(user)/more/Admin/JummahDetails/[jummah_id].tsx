@@ -83,9 +83,7 @@ export default function JummahId() {
   }
 
   const onSubmit = () =>{
-    setTopic('')
-    setDesc('')
-    setSpeaker(null)
+
     
     Toast.show({
         type: "success",
@@ -100,6 +98,7 @@ export default function JummahId() {
     if( topic && desc && chosenSpeaker ){
     const { data, error } = await supabase.from('jummah').update({ topic : topic, desc : desc, speaker : chosenSpeaker }).eq('id', jummah_id).select()
     onSubmit()
+    router.back()
     }
     else{
         Alert.alert('Fill out all forms')
@@ -110,7 +109,20 @@ export default function JummahId() {
   useEffect(() => {
     getJummahId()
     getSpeakers()
+    const listenforspeakers = supabase
+    .channel('listen for speakers change')
+    .on(
+      'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: "speaker_data",
+    },
+    async (payload) => await getSpeakers()
+    )
+    .subscribe()
 
+    return () => { supabase.removeChannel( listenforspeakers )}
   }, [])
 
   return (

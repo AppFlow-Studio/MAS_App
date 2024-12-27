@@ -55,7 +55,7 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
         const { data : image, error :image_upload_error } = await supabase.storage.from('sheikh_img').upload(filePath, decode(base64));
         if( image ){
           const { data : speaker_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
-          const { error } = await supabase.from('speaker_data').insert({ speaker_name : speakerName, speakerImg : speaker_img_url.publicUrl, speaker_creds : creds })
+          const { error } = await supabase.from('speaker_data').insert({ speaker_name : speakerName, speaker_img : speaker_img_url.publicUrl, speaker_creds : creds })
           if( error ){
             console.log(error)
           }
@@ -73,10 +73,10 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
         <Dialog.Content className='h-[100%]'>
             <View>
                 <Text className='font-bold text-black text-lg my-1'>Upload Speaker Image </Text>
-                <Pressable className='max-h-[17%] w-[90%] border-2 border-dotted border-[#6077F5] items-center justify-center self-center rounded-[15px]' onPress={pickImage}>
+                <Pressable className={`max-h-[20%] w-[90%] ${!speakerImg ? 'border-2 border-dotted border-[#6077F5]' : ' my-3' } items-center justify-center self-center rounded-[15px]`} onPress={pickImage}>
                     {
                     speakerImg ? 
-                        <Image src={speakerImg.uri} className='w-[100px] h-[100%] rounded-full'/>
+                        <Image src={speakerImg.uri} style={{width: 110, height: 110, borderRadius: 50}}/>
                     :
                     <Svg width="55" height="55" viewBox="0 0 55 55" fill="none">
                         <Path d="M27.5 18.3333L27.5 36.6666" stroke="#6077F5" stroke-linejoin="round"/>
@@ -85,7 +85,7 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
                     }
                 </Pressable>
 
-                <Text className='font-bold text-black text-lg my-1'>Title & Full Name</Text>
+                <Text className='font-bold text-black text-md my-1'>Title & Full Name</Text>
                 <TextInput
                 mode="outlined"
                 theme={{ roundness: 10 }}
@@ -97,8 +97,8 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
                 textColor="black"
                 />
 
-                <Text className='font-bold text-black text-lg my-1'>Credentials</Text>
-               <View className='max-h-[35%]'>
+                <Text className='font-bold text-black text-md my-1'>Credentials</Text>
+               <View className='max-h-[35%] border border-gray-400 border-solid rounded-[15px] p-4'>
                     <ScrollView contentContainerStyle={{  }}>
                         {
                             creds.map((item, index) => (
@@ -108,8 +108,8 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
                                 } }
                                 key={index}
                                 >
-                                    <Text>{item}</Text>
-                                    <View className='h-[1] bg-black w-[70%] self-center my-2 '/>
+                                    <Text numberOfLines={3}>* {item}</Text>
+                                    <View className='h-[0.5] bg-black w-[70%] self-center my-2 '/>
                                 </Pressable>
                             ))
                         }

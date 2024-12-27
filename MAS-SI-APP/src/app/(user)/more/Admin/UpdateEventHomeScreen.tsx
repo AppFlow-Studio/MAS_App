@@ -21,6 +21,21 @@ const UpdateEventHomeScreen = () => {
 
   useEffect(() => {
     getLectures()
+    const listenforlectures = supabase
+    .channel('listen for lecture change')
+    .on(
+      'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: "events_lectures",
+      filter: `event_id=eq.${event_id}`
+    },
+    async (payload) => await getLectures()
+    )
+    .subscribe()
+
+    return () => { supabase.removeChannel( listenforlectures )}
   }, [])
   return (
     <View className='flex-1 grow bg-white pt-[220px] w-[100%]' style={{ paddingBottom : tabBar + 30 }}>

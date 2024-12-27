@@ -11,7 +11,7 @@ const JummahDetails = () => {
   const NOTICARDHEIGHT  = layoutHeight / 12
   const NOTICARDWIDTH  = layout * 0.8
   const { width } = Dimensions.get("window");
-
+  const SupabaseJummahName = index == '1' ? 'first' : index == '2' ? 'second' : index == '3' ? 'third': index == '4' ? 'fourth' : ''
   return (
     <View className='flex-1 bg-white items-center'>
       <Stack.Screen options={{ headerTitle : 'Jummah Settings', headerBackTitle : '', headerBackTitleVisible : false , headerStyle : {backgroundColor : "white"}, headerTintColor : '#1B85FF'}}/>
@@ -34,7 +34,7 @@ const JummahDetails = () => {
 
         {
             [1,2,3].map((item, index) => (
-                <JummahCards height={NOTICARDHEIGHT} width={NOTICARDWIDTH} item={item} index={item} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} />
+                <JummahCards jummah={jummahName} height={NOTICARDHEIGHT} width={NOTICARDWIDTH} item={item} index={item} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} SupabaseJummahName={SupabaseJummahName}/>
             ))
         }
                

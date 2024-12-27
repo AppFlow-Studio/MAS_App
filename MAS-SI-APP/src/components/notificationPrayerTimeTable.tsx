@@ -155,7 +155,7 @@ const NotificationPrayerTable = ({
                       ['12:15 PM', '1:00 PM', '1:45 PM', '3:45 PM'].map((item, index) => (
                           <Link href={{
                             pathname : `/(user)/myPrograms/notifications/Prayer/Jummah/[jummahDetails]`,
-                            params : { prayerName : item, index : index + 1 }
+                            params : { jummahName : item, index : index + 1 }
                           }}
                             
                             >

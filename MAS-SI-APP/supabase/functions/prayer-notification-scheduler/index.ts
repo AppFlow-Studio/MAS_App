@@ -37,7 +37,7 @@ serve(async (req) => {
   const scheduler = async () => {
 
     const todaysDate = new Date()
-    if( todaysDate.getDay() == 4 ){
+    if( todaysDate.getDay() == 5 ){
       //Get the 2 Diff Settings at Athan Time & 30 Mins Before
       const { data : JummahAthanNotifications, error } = await supabase.from('jummah_notifications').select('*').contains('notification_settings', ['Alert at Athan Time'])
       const { data : Jummah30MinsNotifications, error: Jummah30MinsNotificationsError } = await supabase.from('jummah_notifications').select('*').contains('notification_settings', ['Alert 30 Mins Before'])
@@ -52,10 +52,12 @@ serve(async (req) => {
           // schedule the notification at the jummah time assigned to the proper user
           const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
             user_id : JummahDetails.user_id, 
-            prayer : `${JummahDetails.jummah} jummah`, notification_time : JummahNotificationTime, 
+            prayer : `${JummahDetails.jummah} jummah`, 
+            notification_time : JummahNotificationTime, 
             message : `${JummahDetails.jummah[0].toUpperCase() + JummahDetails.jummah.slice(1)} Jummah Prayer ${ JummahDetails.jummah == 'first' ? '12:15 PM' : JummahDetails.jummah == 'second' ? '1:00 PM' : JummahDetails.jummah == 'third' ? '1:45 PM' : '3:45 PM'}`,
             push_notification_token : PushToken,
-            notification_type : 'Alert at Athan Time'
+            notification_type : 'Alert at Athan Time',
+            title : JummahDetails.jummah == 'first' ? '12:15 PM Jummah' : JummahDetails.jummah == 'second' ? '1:00 PM Jummah' : JummahDetails.jummah == 'third' ? '1:45 PM Jummah' : '3:45 PM Jummah'
           })
         })
       )
@@ -69,17 +71,18 @@ serve(async (req) => {
            const PushToken = push_token.push_notification_token
            const JummahNotificationTime = setTimeToCurrentDate(JummahTime)
            // schedule the notification at the jummah time assigned to the proper user
-           const JummahNotificationTime30Before = JummahNotificationTime.setMinutes(JummahNotificationTime.getMinutes() - 30)
+           JummahNotificationTime.setMinutes(JummahNotificationTime.getMinutes() - 30)
            const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
             user_id : JummahDetails.user_id, 
-            prayer : `${JummahDetails.jummah} jummah`, notification_time : JummahNotificationTime30Before, 
+            prayer : `${JummahDetails.jummah} jummah`, 
+            notification_time : JummahNotificationTime, 
             message : `${JummahDetails.jummah[0].toUpperCase() + JummahDetails.jummah.slice(1)} Jummah Prayer will begin in 30 minutes`,
             push_notification_token : PushToken,
-            notification_type : 'Alert 30 Mins Before'
+            notification_type : 'Alert 30 Mins Before',
+            title : JummahDetails.jummah == 'first' ? '12:15 PM Jummah' : JummahDetails.jummah == 'second' ? '1:00 PM Jummah' : JummahDetails.jummah == 'third' ? '1:45 PM Jummah' : '3:45 PM Jummah'
           })
         })
       )
-
 
     }
 

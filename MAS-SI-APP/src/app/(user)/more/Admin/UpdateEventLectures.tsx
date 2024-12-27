@@ -59,7 +59,6 @@ const UpdateEventLectures = () => {
   useEffect(() => {
     getLecture()
   }, [])
-  console.log(lectureDate)
   return (
     <>
  <Stack.Screen

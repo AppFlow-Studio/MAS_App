@@ -38,7 +38,7 @@ const EventInfo = () => {
   }))
 
   useEffect(() => {
-    notifade.value = withTiming(0, {duration : 4000})
+    notifade.value = withTiming(0, {duration : 6000})
     fetchEventInfo()
   }, [])
 
@@ -98,5 +98,6 @@ const EventInfo = () => {
     </>
   )
 }
+
 
 export default EventInfo

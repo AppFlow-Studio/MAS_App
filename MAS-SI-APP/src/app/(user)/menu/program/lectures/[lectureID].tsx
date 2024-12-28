@@ -59,7 +59,7 @@ export default function LecturesData() {
     const [ active, setActive ] = useState(0)
     const handleScroll = (event : any) =>{
       const scrollPositon = event.nativeEvent.contentOffset.y;
-      const index = scrollPositon / KEYNOTECARDHEIGHT + 20;
+      const index = Math.ceil(scrollPositon / (KEYNOTECARDHEIGHT + 20));
       setActive(index)
     }
     const array = currentLecture?.lecture_key_notes
@@ -71,6 +71,7 @@ export default function LecturesData() {
           decelerationRate={0.6}
           snapToInterval={KEYNOTECARDHEIGHT + (20 * 0.2)}
           showsVerticalScrollIndicator={false}
+          
           >
             <View className='flex-col items-center mt-3'>
               <Text className='font-bold text-black text-2xl text-center'>{currentLecture?.lecture_name}</Text>
@@ -79,7 +80,7 @@ export default function LecturesData() {
             {array ? array.map((item,index) => {
               return (
                 <>
-                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} keynote={item}/>
+                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} keynote={item} active={active}/>
                 <View style={{ height : 20 }}/> 
                 </>             
               )

@@ -116,7 +116,7 @@ const marqueeStyles = StyleSheet.create({
 function IconsMarquee() {
   const [reverse, setReverse] = useState(false);
   const MasjidPlatforms : { platform : any, link : string, name : string, bg: string }[]= [
-    { platform : <TikTok />, link : '', name : 'TikTok', bg : 'white' },
+    { platform : <TikTok />, link : 'https://www.tiktok.com/@masnewyork', name : 'TikTok', bg : 'white' },
     { platform : <YouTube />, link : 'https://www.youtube.com/@massicenter/featured', name : 'YouTube', bg : '#FFF' },
     { platform : <WhatsApp />, link: 'https://chat.whatsapp.com/EBSOqkjWKeQ4rbJ7x1Vib7', name : 'WhatsApp', bg : '#00E676' },
     { platform : <Meta />, link : 'https://www.facebook.com/MASSICenter' , name : 'Meta', bg : 'white'},

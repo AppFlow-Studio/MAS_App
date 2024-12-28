@@ -125,7 +125,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
     getProgram()
     getProgramLectures()
     getUserPlaylists()
-    notifade.value = withTiming(0, {duration : 4000})
+    notifade.value = withTiming(0, {duration : 6000})
 
     const listenForUserPlaylistChanges = supabase
     .channel('listen for user playlist adds')
@@ -154,12 +154,12 @@ const fadeOutNotification = useAnimatedStyle(() => ({
         
         { 
           speakerData?.map((speakerData) => (
-          <>
+          <View className='border-2 border-gray-400 border-solid rounded-[15px] p-2 my-1'>
             <Animated.View className=' flex-row'>
                 <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
-            <View className='flex-col px-5'>
+            <View className='flex-col px-1'>
               <Text className='text-xl font-bold'>Name: </Text>
-              <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
+              <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
             </View>
           </Animated.View>
     
@@ -169,7 +169,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
               return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
             })}
           </View>
-          </>
+          </View>
           ))
         }
       </View>
@@ -351,15 +351,14 @@ const fadeOutNotification = useAnimatedStyle(() => ({
             <Text className='text-center mt-2  text-[#0D509D] w-[60%] self-center' onPress={showModal} numberOfLines={1}>{speakerString}</Text>
               <View>
                 {
-                  lectures && lectures?.length >= 1 ? lectures.map((item, index) => {
+                  program?.has_lectures  || ( lectures && lectures?.length >= 1) ? lectures?.map((item, index) => {
                     return(
                       <Animated.View key={index} entering={FadeInLeft.duration(400).delay(100)}>
                         <LecturesListLecture  lecture={item} index={index} speaker={program?.program_speaker} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist} length={lectures.length}/>
                         <Divider style={{width: "95%", marginLeft: 8}}/>
                       </Animated.View>
                     )
-                  }) : (
-
+                  }) : program?.has_lectures == false ? (
                     <View className=''> 
                       <View>
                         <Text className='text-left text-2xl font-bold text-black ml-4'>Description: </Text>
@@ -371,7 +370,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
                         </View>
                       </View>
                     </View>
-                  )
+                  ) : <></>
                 }
                 <View className='items-center justify-center'>
                     {
@@ -391,8 +390,11 @@ const fadeOutNotification = useAnimatedStyle(() => ({
           </View>
           
           <Portal>
-            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "55%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
-              <ScrollView className='flex-1'>
+            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "70%", width: "95%", borderRadius: 35, alignSelf: "center"}} >
+              <ScrollView className='flex-1'
+              showsVerticalScrollIndicator={true}
+              
+              >
                 <GetSheikData />
               </ScrollView>
             </Modal>

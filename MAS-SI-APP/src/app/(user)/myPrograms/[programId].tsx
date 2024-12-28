@@ -173,12 +173,12 @@ const programLectures = () => {
         
         { 
           speakerData?.map((speakerData) => (
-          <>
+          <View className='border-2 border-gray-400 border-solid rounded-[15px] p-2 my-1'>
             <Animated.View className=' flex-row'>
                 <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
-            <View className='flex-col px-5'>
+            <View className='flex-col px-1'>
               <Text className='text-xl font-bold'>Name: </Text>
-              <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
+              <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
             </View>
           </Animated.View>
     
@@ -188,7 +188,7 @@ const programLectures = () => {
               return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
             })}
           </View>
-          </>
+          </View>
           ))
         }
       </View>
@@ -207,7 +207,7 @@ const programLectures = () => {
           />
           <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
             <Text className='text-center mt-2 text-xl text-black font-bold'>{program?.program_name}</Text>
-            <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{speakerString}</Text>
+            <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal} numberOfLines={1}>{speakerString}</Text>
               <View className='ml-3'>
                 {
                   lectures && lectures?.length > 0  ? lectures.map((item, index) => {
@@ -234,8 +234,10 @@ const programLectures = () => {
               </View>
           </View>
           <Portal>
-            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "55%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
-              <ScrollView className='flex-1'>
+       <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "70%", width: "95%", borderRadius: 35, alignSelf: "center"}} >
+              <ScrollView className='flex-1'
+              showsVerticalScrollIndicator={true}
+              >
                 <GetSheikData />
               </ScrollView>
             </Modal>

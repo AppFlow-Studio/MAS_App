@@ -54,7 +54,7 @@ const EventsLectureID = () => {
       const [ active, setActive ] = useState(0)
       const handleScroll = (event : any) =>{
         const scrollPositon = event.nativeEvent.contentOffset.y;
-        const index = scrollPositon / KEYNOTECARDHEIGHT + 20;
+        const index = scrollPositon / ( KEYNOTECARDHEIGHT + 20 );
         setActive(index)
       }
       const array = currentLecture?.event_lecture_keynotes
@@ -76,7 +76,7 @@ const EventsLectureID = () => {
             {array ? array.map((item,index) => {
               return (
                 <>
-                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} keynote={item}/>
+                <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY} keynote={item} active={active}/>
                 <View style={{ height : 20 }}/> 
                 </>             
               )

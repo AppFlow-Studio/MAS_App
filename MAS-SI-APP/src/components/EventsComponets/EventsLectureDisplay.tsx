@@ -91,23 +91,23 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
         
         { 
           speakerData?.map((speakerData) => (
-          <>
-            <Animated.View className=' flex-row'>
-                <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='contain'/>
-            <View className='flex-col px-5'>
-              <Text className='text-xl font-bold'>Name: </Text>
-              <Text className='pt-2 font-semibold'> {speakerData?.speaker_name} </Text>
+            <View className='border-2 border-gray-400 border-solid rounded-[15px] p-2 my-1'>
+              <Animated.View className=' flex-row'>
+                  <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+              <View className='flex-col px-1'>
+                <Text className='text-xl font-bold'>Name: </Text>
+                <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
+              </View>
+            </Animated.View>
+      
+            <View className='flex-col py-3'>
+              { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
+              { speakerData?.speaker_creds.map( (cred, i) => {
+                return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
+              })}
             </View>
-          </Animated.View>
-    
-          <View className='flex-col py-3'>
-            { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
-            { speakerData?.speaker_creds.map( (cred, i) => {
-              return <Text key={i}> <Icon source="cards-diamond-outline"  size={15}/> {cred} {'\n'}</Text>
-            })}
-          </View>
-          </>
-          ))
+            </View>
+            ))
         }
       </View>
       )
@@ -225,8 +225,10 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
               </View>
     
               <Portal>
-                <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "55%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
-                  <ScrollView className='flex-1'>
+                <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "70%", width: "95%", borderRadius: 35, alignSelf: "center"}} >
+                  <ScrollView className='flex-1'
+                  showsVerticalScrollIndicator={true}
+                  >
                     <GetSheikData />
                   </ScrollView>
                 </Modal>

@@ -105,6 +105,7 @@ export type SheikDataType = {
     speaker_name: string,
     speaker_creds : string[],
     speaker_img : string
+    speaker_id : string
 }
 
 export type EventsType = {

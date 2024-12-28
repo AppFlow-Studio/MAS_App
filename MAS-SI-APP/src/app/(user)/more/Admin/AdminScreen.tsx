@@ -43,7 +43,13 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
       { buttonTitle : 'Second Jummah', link : '/more/Admin/JummahDetails/2'},
       { buttonTitle : 'Third Jummah', link : '/more/Admin/JummahDetails/3'},
       { buttonTitle : 'Student Jummah', link : '/more/Admin/JummahDetails/4'},
-
+    ]
+  },
+  {
+    title : 'Speaker & Sheik Info', screens : [
+      { buttonTitle : 'Add New Speaker or Sheik Info', link : '/more/Admin/AddNewSpeaker'},
+      { buttonTitle : 'Edit Speaker or Sheik Info', link : '/more/Admin/SpeakersScreen'},
+      { buttonTitle : 'Delete a Speaker or Sheik', link : '/more/Admin/DeleteSpeakers'},
     ]
   }
 ]

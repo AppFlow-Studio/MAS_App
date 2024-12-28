@@ -45,7 +45,7 @@ const UpdateProgramLectures = () => {
       setLectureSpeaker(data.lecture_speaker)
       setLectureLink(data.lecture_link)
       setLectureTime(data.lecture_time)
-      setKeyNotes(data.lecture_key_notes)
+      setKeyNotes(data.lecture_key_notes ? data.lecture_key_notes : [])
       setLectureAI(data.lecture_ai)
     }
    }
@@ -66,7 +66,7 @@ const UpdateProgramLectures = () => {
         header : () => (
           <View className="relative">
             <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.replace('/more/Admin/AdminScreen')}>
+              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => { router.dismiss(3) }}>
                 <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
                   <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
                 </Svg>
@@ -81,12 +81,18 @@ const UpdateProgramLectures = () => {
             </View>
 
             <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
-              <Pressable className="w-[50%] items-center justify-between flex flex-row px-2" onPress={() => router.back()}> 
-                  <Svg  width="16" height="9" viewBox="0 0 16 9" fill="none">
-                    <Path d="M4.5 8.22607L1 4.61303M1 4.61303L4.5 0.999987M1 4.61303H15" stroke="#6077F5" stroke-linecap="round"/>
-                  </Svg>
-                  <Text className=" text-[12px] text-black " numberOfLines={1} adjustsFontSizeToFit>{program_name}</Text>
-              </Pressable>
+              <View className='w-[100%]'>
+                <Pressable className="w-[50%] items-center justify-between flex flex-row px-2" onPress={() => router.back()}> 
+                    <View className='w-[23%] '>
+                      <Svg  width="16" height="9" viewBox="0 0 16 9" fill="none">
+                        <Path d="M4.5 8.22607L1 4.61303M1 4.61303L4.5 0.999987M1 4.61303H15" stroke="#6077F5" stroke-linecap="round"/>
+                      </Svg>
+                    </View>
+                    <View className='w-[80%] items-start'>
+                      <Text className=" text-[15px] text-black " numberOfLines={1} adjustsFontSizeToFit>{program_name}</Text>
+                    </View>                
+                    </Pressable>
+              </View>
             </View>
           </View>
           )
@@ -228,7 +234,7 @@ const UpdateProgramLectures = () => {
                     textColor="white"
                     theme={{ roundness: 1 }}
                     onPress={ () => {
-                      if( keyNotes.length < 1 && keyNoteInput){
+                      if( keyNotes.length < 1 && keyNoteInput ){
                         setKeyNotes([keyNoteInput])
                       }else if(keyNoteInput ){
                         setKeyNotes([...keyNotes, keyNoteInput])
@@ -236,6 +242,7 @@ const UpdateProgramLectures = () => {
 
                       setKeyNoteInput("")
                       setKeyNoteModal(false)
+
                     } }
                     style={{ width: "48%", alignSelf : 'center'}}
                 >

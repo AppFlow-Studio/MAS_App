@@ -1,5 +1,5 @@
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { BlurView } from "expo-blur";
 import { supabase } from "@/src/lib/supabase";
@@ -8,14 +8,16 @@ import Svg, { Path } from "react-native-svg";
 
 const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
+  const [ notificationTitle, setNotificationTitle ] = useState("");
   const [previewModal, setPreviewModal] = useState(false);
-  const [ total_users, setTotalUsers ] = useState(0)
+  const [ totalUsers, setTotalUsers ] = useState(0)
   const [ userInfo, setUserInfo ] = useState([])
   const getUsersInfo = async () => {
     const { data : profile, error } = await supabase.from('profiles').select('push_notification_token').not('push_notification_token', 'is', null)
     if( profile ){
       profile.map((item) => {
         item['message'] = notificationMessage
+        item['title'] = notificationTitle
       })
       setUserInfo(profile)
     }else{
@@ -28,15 +30,24 @@ const SendToEveryoneScreen = () => {
       await supabase.functions.invoke('send-prayer-notification', {body :{ notifications_batch : userInfo }})
     }
   }
-  const characterLimit = 255;
-  const totalUsers = 1000;
+  const characterLimit = 150;
+  const titleLimit = 30;
   const hideModal = () => setPreviewModal(false);
   const sendNotification = async () =>{
     setPreviewModal(!previewModal),
     await onSend()
     setNotificationMessage('')
+    setNotificationTitle('')
   }
-
+  const getUsers = async () => {
+    const { data , error } = await supabase.from('profiles').select('id')
+    if( data ){
+      setTotalUsers(data.length)
+    }
+  }
+  useEffect(() => {
+   getUsers()
+  }, [])
   return (
     <ScrollView
       style={{
@@ -68,6 +79,27 @@ const SendToEveryoneScreen = () => {
         }}
       />
       <Text className="text-lg mt-4 border pt-[170px] text-center">This Notification Will Be Sent Out To Everyone </Text>
+      <Text className="ml-1 text-md font-bold  mt-1">Title of Notification</Text>
+      <TextInput
+        mode="outlined"
+        value={notificationTitle}
+        onChangeText={(text) => {
+          if (text.length <= titleLimit) setNotificationTitle(text);
+        }}
+        theme={{ roundness: 5 }}
+        style={{
+          height: 60,
+          width: "100%",
+          backgroundColor: "#F0F0F0",
+          marginTop: "2%",
+        }}
+        activeOutlineColor="#0D509D"
+        placeholder="MAS Staten Island"
+        textColor="black"
+        multiline
+      />
+      <Text className="text-right text-gray-500 mt-1">{`${notificationTitle.length}/${titleLimit} characters`}</Text>
+
       <TextInput
         mode="outlined"
         value={notificationMessage}
@@ -117,7 +149,6 @@ const SendToEveryoneScreen = () => {
             <View
               style={{
                 width: 340,
-                height: "28%",
                 marginTop: "4%",
                 borderRadius: 20,
                 
@@ -126,7 +157,6 @@ const SendToEveryoneScreen = () => {
               <BlurView
                 style={{
                   width: 340,
-                  height: "100%",
                   borderRadius: 20,
                   padding : '2%',
                   flexDirection: "row",
@@ -134,24 +164,27 @@ const SendToEveryoneScreen = () => {
                   backgroundColor:"#959595",
                   overflow : 'hidden'
                 }}
+                intensity={50}
               >
+
                 <Image
-                  source={{
-                    uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
-                  }}
+                  source={
+                    require('@/assets/images/MASsplash.png')
+                  }
                   className="h-11 w-11 rounded-xl "
                 />
                 <View className="px-2">
-                  <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
-                    <Text className="text-lg font-bold text-white">MAS</Text>
-                    <Text className="text-gray-400">Yesterday, 10:20PM</Text>
+                  <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }} className="mb-2 pt-1">
+                    <Text className="text-md font-bold text-white">{notificationTitle ? notificationTitle : 'MAS Staten Island'}</Text>
+                    <Text className="text-gray-400">Now</Text>
                   </View>
-                  <View style={{width:'90%'}} >
-                  <Text numberOfLines={2} className="text-base text-white">{notificationMessage}</Text>
+                  <View style={{width:'90%'}} className="pb-1">
+                  <Text numberOfLines={4} className="text-base text-white">{notificationMessage}</Text>
                   </View>
                 </View>
               </BlurView>
             </View>
+
             <Text className="self-end mt-1 font-bold">
               Total Users: {totalUsers}
             </Text>

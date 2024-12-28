@@ -146,27 +146,28 @@ const ProgramsEventNotificationScreen = () => {
           >
             <View className="">
               <Text className="font-bold text-3xl">Preview Notification </Text>
-              <View className="rounded-[20px] overflow-hidden w-[340px]  h-[28%] mt-4">
+              <View className="rounded-[20px] overflow-hidden w-[340px] mt-4">
                 <BlurView
                   style={{
                     width: 340,
-                    height: "100%",
                     borderRadius: 20,
                     padding: "3%",
                     flexDirection: "row",
                     alignItems: "center",
+                    backgroundColor:"#959595",
                   }}
+                  intensity={50}
                 >
                   <Image
-                    source={{
-                      uri: "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0",
-                    }}
+                    source={
+                      require('@/assets/images/MASsplash.png')
+                    }
                     className="h-11 w-11 rounded-xl "
                   />
                   <View className="px-2">
                     <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }} className="">
                       <Text className="text-md font-bold text-white w-[60%]" numberOfLines={1}>{program_name}</Text>
-                      <Text className="text-gray-400 w-[45%]" adjustsFontSizeToFit numberOfLines={1}>Yesterday, 10:20PM</Text>
+                      <Text className="text-gray-400 w-[45%]" adjustsFontSizeToFit numberOfLines={1}>Now</Text>
                     </View>
                     <View style={{width:'90%'}} >
                     <Text numberOfLines={2} className="text-base text-white">{notificationMessage}</Text>

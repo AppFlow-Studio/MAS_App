@@ -18,6 +18,7 @@ import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import * as FileSystem from 'expo-file-system'
 import Svg, { Path } from "react-native-svg";
+import { useNavigation } from "expo-router";
 function setTimeToCurrentDate(timeString : string ) {
 
   // Split the time string into hours, minutes, and seconds
@@ -37,6 +38,7 @@ function setTimeToCurrentDate(timeString : string ) {
 const UpdateProgramScreen = () => {
   const { program_id, program_name } = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation();
   const [ originalName, setOriginalName ] = useState('');
   const [programName, setProgramName] = useState<string>("");
   const [programImage, setProgramImage] = useState<ImagePicker.ImagePickerAsset>();
@@ -225,7 +227,7 @@ const UpdateProgramScreen = () => {
           header : () => (
             <View className="relative">
             <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.replace('/more/Admin/AdminScreen')}>
+              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => { router.dismiss(3) }}>
                 <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
                   <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
                 </Svg>
@@ -240,11 +242,15 @@ const UpdateProgramScreen = () => {
             </View>
 
             <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
-              <Pressable className="w-[50%] items-center justify-between flex flex-row px-6" onPress={() => router.back()}> 
+              <Pressable className="w-[50%] items-center justify-between flex flex-row px-2" onPress={() => router.back()}> 
+                  <View className='w-[23%]'>
                   <Svg  width="16" height="9" viewBox="0 0 16 9" fill="none">
                     <Path d="M4.5 8.22607L1 4.61303M1 4.61303L4.5 0.999987M1 4.61303H15" stroke="#6077F5" stroke-linecap="round"/>
                   </Svg>
+                </View>
+                <View className='w-[80%] items-start'>
                   <Text className=" text-[15px] text-black " numberOfLines={1} adjustsFontSizeToFit>{program_name}</Text>
+                </View>                
               </Pressable>
             </View>
           </View>

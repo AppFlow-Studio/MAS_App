@@ -5,11 +5,12 @@ import { supabase } from '@/src/lib/supabase'
 import { differenceInDays, format, toDate } from 'date-fns'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import Svg, { Path } from 'react-native-svg'
-
+import { useNavigation } from 'expo-router'
 const UpdateProgramHomeScreen = () => {
   const { program_id, program_img, has_lectures, program_name } = useLocalSearchParams()
   const [ lectures, setLectures ] = useState<any[]>()
   const tabBar = useBottomTabBarHeight()
+  const navigation = useNavigation()
   const getLectures = async () => {
     if( has_lectures ){
       const { data, error } = await supabase.from('program_lectures').select('*').eq('lecture_program', program_id).order('created_at', {ascending : false})
@@ -45,7 +46,7 @@ const UpdateProgramHomeScreen = () => {
         header : () => (
           <View className="relative">
             <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.replace('/more/Admin/AdminScreen')}>
+              <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => { router.dismiss(2) }}>
                 <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
                   <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
                 </Svg>

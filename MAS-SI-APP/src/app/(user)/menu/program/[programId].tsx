@@ -90,7 +90,6 @@ const ProgramLectures = () => {
     )
     setSpeakerData(speakers)
     setSpeakerString(speaker_string.join(''))
-    console.log('speakers', speaker_string)
     if( checkIfExists ){
       setProgramInNotifications(true)
     }
@@ -154,7 +153,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
         
         { 
           speakerData?.map((speakerData) => (
-          <View className='border-2 border-gray-400 border-solid rounded-[15px] p-2 my-1'>
+          <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
             <Animated.View className=' flex-row'>
                 <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
             <View className='flex-col px-1'>
@@ -390,7 +389,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
           </View>
           
           <Portal>
-            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "70%", width: "95%", borderRadius: 35, alignSelf: "center"}} >
+            <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, minHeight : 400, maxHeight: "70%", width: "95%", borderRadius: 35, alignSelf: "center"}} >
               <ScrollView className='flex-1'
               showsVerticalScrollIndicator={true}
               

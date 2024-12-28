@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Text, View, ScrollView, TouchableOpacity, Pressable, Image } from "react-native";
-import { TextInput, Button, Menu, IconButton, Modal } from "react-native-paper";
+import { TextInput, Button, IconButton, Modal, Icon } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -8,6 +8,12 @@ import moment from "moment";
 import { supabase } from "@/src/lib/supabase";
 import Svg, { Path } from "react-native-svg";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from 'react-native-popup-menu';
 const UpdateProgramLectures = () => {
   const { lecture, program_name, program_img, program_ } = useLocalSearchParams();
   const [lectureProgram, setLectureProgram] = useState<string | null>(null);
@@ -23,6 +29,9 @@ const UpdateProgramLectures = () => {
   const [ keyNotes, setKeyNotes ] = useState<string[]>([]);
   const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
   const [ keyNoteInput, setKeyNoteInput ] = useState<string>("");
+  const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
+  const [ speakers, setSpeakers ] = useState<any[]>([])
+  
       const [showStartDatePicker, setShowStartDatePicker] =
         useState<boolean>(false);
   const programs = ["Program A", "Program B", "Program C"];
@@ -42,21 +51,59 @@ const UpdateProgramLectures = () => {
     if( data ){
       setLectureDate(new Date( data.lecture_date) )
       setLectureName(data.lecture_name)
-      setLectureSpeaker(data.lecture_speaker)
+      setSpeakerSelected(data.lecture_speaker)
       setLectureLink(data.lecture_link)
       setLectureTime(data.lecture_time)
       setKeyNotes(data.lecture_key_notes ? data.lecture_key_notes : [])
       setLectureAI(data.lecture_ai)
     }
    }
+   const handleSpeakerPress = (speaker_id : string) => {
+    if( speakerSelected && speakerSelected.includes(speaker_id)  ){
+      const removeSpeaker = speakerSelected.filter(id => id != speaker_id)
+      setSpeakerSelected(removeSpeaker)
+    }
+    else if( speakerSelected == null || speakerSelected.length == 0  ){
+      setSpeakerSelected([speaker_id])
+    } else if( speakerSelected.length > 0 ){
+      setSpeakerSelected([...speakerSelected, speaker_id])
+    }
+  }
+    const getSpeakers = async () => {
+      const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
+      if( data ){
+        setSpeakers(data)
+      }
+    }
+  const SpeakersData = (speakers  : any ) => {
+    return(
+      <Menu>
+        <MenuTrigger style={{ marginLeft  : 10 }}>
+          { !speakerSelected || speakerSelected.length == 0 ? <Text className="text-blue-600">Update Speakers</Text> : <Text>{speakerSelected.length} Speaker(s) Chosen</Text>}
+        </MenuTrigger>
+        <MenuOptions optionsContainerStyle={{  borderRadius  : 10, paddingHorizontal : 4, paddingVertical : 4}}>
+          {
+            speakers.speakers && speakers.speakers.length > 0 ? speakers.speakers.map(( speaker:any ) =>{
+              return(
+                <MenuOption onSelect={() => handleSpeakerPress(speaker.speaker_id)}>
+                  <Text className="text-black ">{speaker.speaker_name} { speakerSelected && speakerSelected.includes(speaker.speaker_id) ? <Icon source={'check'} color="green" size={15}/> : <></>}</Text>
+                </MenuOption>
+              )
+            }) : <></>
+          }
+        </MenuOptions>
+      </Menu>
+    )
+  }
   const onUploadLecture = async () => {
-    if( lectureName &&  lectureDate && lectureSpeaker && lectureLink ){
-      const { error } = await supabase.from('program_lectures').update({ lecture_time : lectureTime, lecture_name : lectureName, lecture_link : lectureLink ,lecture_date  : lectureDate, lecture_speaker : lectureSpeaker, lecture_ai : lectureAI, lecture_key_notes : keyNotes}).eq('lecture_id', lecture)
+    if( lectureName &&  lectureDate && speakerSelected && speakerSelected.length > 0 && lectureLink ){
+      const { error } = await supabase.from('program_lectures').update({ lecture_time : lectureTime, lecture_name : lectureName, lecture_link : lectureLink ,lecture_date  : lectureDate, lecture_speaker : speakerSelected, lecture_ai : lectureAI, lecture_key_notes : keyNotes}).eq('lecture_id', lecture)
       handleSubmit()
     }
   }
   useEffect(() => {
     getLecture()
+    getSpeakers()
   }, [])
   return (
     <>
@@ -136,16 +183,8 @@ const UpdateProgramLectures = () => {
         />
 
         <Text className="text-base font-bold mb-1 ml-2">Update Lecture Speaker</Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-          activeOutlineColor="#0D509D"
-          value={lectureSpeaker}
-          onChangeText={setLectureSpeaker}
-          placeholder="Enter Speaker Name"
-          textColor="black"
-        />
+
+       { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
 
         <Text className="text-base font-bold mb-1 ml-2">Update Lecture Summary</Text>
         <TextInput

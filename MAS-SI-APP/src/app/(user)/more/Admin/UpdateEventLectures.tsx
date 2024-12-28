@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Text, View, ScrollView, TouchableOpacity, Pressable, Image } from "react-native";
-import { TextInput, Button, Menu, IconButton, Modal } from "react-native-paper";
+import { Text, View, ScrollView, TouchableOpacity, Pressable, Image, Alert } from "react-native";
+import { TextInput, Button, Icon, IconButton, Modal } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -8,7 +8,12 @@ import moment from "moment";
 import { supabase } from "@/src/lib/supabase";
 import Svg, { Path } from "react-native-svg";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from 'react-native-popup-menu';
 const UpdateEventLectures = () => {
   const { lecture, event_name, event_img } = useLocalSearchParams();
   const [lectureEvent, setLectureEvent] = useState<string | null>(null);
@@ -24,14 +29,15 @@ const UpdateEventLectures = () => {
   const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
   const [ keyNoteInput, setKeyNoteInput ] = useState<string>("")
   const [ eventLectureDatePicker, setEventLectureDatePicker ] = useState(false)
-  
+  const [ speakers, setSpeakers ] = useState<any[]>([])
+  const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const tabBar = useBottomTabBarHeight()
   const getLecture = async () => {
     const { data, error } = await supabase.from('events_lectures').select('*').eq('event_lecture_id', lecture).single()
     if( data ){
       setLectureDate(new Date(data.event_lecture_date))
       setLectureName(data.event_lecture_name)
-      setLectureSpeaker(data.event_lecture_speaker)
+      setSpeakerSelected(data.event_lecture_speaker)
       setLectureLink(data.event_lecture_link)
       setLectureAI(data.event_lecture_desc)
       setKeyNotes(data.event_lecture_keynotes)
@@ -48,16 +54,54 @@ const UpdateEventLectures = () => {
       topOffset: 50,
     });
   };
-
-  const onUpdateLecture = async () => {
-    if( lectureName  && lectureDate && lectureSpeaker && lectureLink ){
-      const { error } = await supabase.from('events_lectures').update({ event_lecture_name : lectureName, event_lecture_link : lectureLink , event_lecture_date  : lectureDate, event_lecture_speaker : lectureSpeaker, event_lecture_desc : lectureAI, event_lecture_keynotes : keyNotes}).eq('event_lecture_id', lecture)
-      console.log(error)
-      handleSubmit()
+  const getSpeakers = async () => {
+    const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
+    if( data ){
+      setSpeakers(data)
     }
+  }
+ const handleSpeakerPress = (speaker_id : string) => {
+    if( speakerSelected && speakerSelected.includes(speaker_id)  ){
+      const removeSpeaker = speakerSelected.filter(id => id != speaker_id)
+      setSpeakerSelected(removeSpeaker)
+    }
+    else if( speakerSelected == null || speakerSelected.length == 0  ){
+      setSpeakerSelected([speaker_id])
+    } else if( speakerSelected.length > 0 ){
+      setSpeakerSelected([...speakerSelected, speaker_id])
+    }
+  }
+const SpeakersData = (speakers  : any ) => {
+  return(
+     <Menu>
+      <MenuTrigger style={{ marginLeft  : 10 }}>
+        { !speakerSelected || speakerSelected.length == 0 ? <Text className="text-blue-600">Update Speakers</Text> : <Text>{speakerSelected.length} Speaker(s) Chosen</Text>}
+      </MenuTrigger>
+      <MenuOptions optionsContainerStyle={{  borderRadius  : 10, paddingHorizontal : 4, paddingVertical : 4}}>
+        {
+          speakers.speakers && speakers.speakers.length > 0 ? speakers.speakers.map(( speaker:any ) =>{
+            return(
+              <MenuOption onSelect={() => handleSpeakerPress(speaker.speaker_id)}>
+                <Text className="text-black ">{speaker.speaker_name} { speakerSelected && speakerSelected.includes(speaker.speaker_id) ? <Icon source={'check'} color="green" size={15}/> : <></>}</Text>
+              </MenuOption>
+            )
+          }) : <></>
+        }
+      </MenuOptions>
+    </Menu>
+  )
+}
+  const onUpdateLecture = async () => {
+    if( lectureName  && lectureDate && speakerSelected && lectureLink ){
+      const { error } = await supabase.from('events_lectures').update({ event_lecture_name : lectureName, event_lecture_link : lectureLink , event_lecture_date  : lectureDate, event_lecture_speaker : speakerSelected, event_lecture_desc : lectureAI, event_lecture_keynotes : keyNotes}).eq('event_lecture_id', lecture)
+      handleSubmit()
+      return
+    }
+    Alert.alert("Fill in all fields")
   }
   useEffect(() => {
     getLecture()
+    getSpeakers()
   }, [])
   return (
     <>
@@ -134,17 +178,8 @@ const UpdateEventLectures = () => {
           textColor="black"
         />
 
-        <Text className="text-base font-bold mb-1 ml-2">Update Lecture Speaker</Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-          activeOutlineColor="#0D509D"
-          value={lectureSpeaker}
-          onChangeText={setLectureSpeaker}
-          placeholder="Enter Speaker Name"
-          textColor="black"
-        />
+       <Text className="text-base font-bold mb-1 ml-2">Update Lecture Speaker</Text>
+       { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
 
         <Text className="text-base font-bold mb-1 ml-2">Update Lecture Summary</Text>
         <TextInput
@@ -204,7 +239,7 @@ const UpdateEventLectures = () => {
             buttonColor="#57BA47"
             textColor="white"
             theme={{ roundness: 1 }}
-            onPress={() => onUpdateLecture()}
+            onPress={async () => await onUpdateLecture()}
             style={{ width: "48%" }}
           >
             Update Lecture

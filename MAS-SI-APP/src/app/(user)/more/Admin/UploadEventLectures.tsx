@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Text, View, ScrollView, TouchableOpacity, Pressable, Image } from "react-native";
-import { TextInput, Button, Menu, IconButton, Modal } from "react-native-paper";
+import { TextInput, Button, IconButton, Modal, Icon } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { router, Stack, useLocalSearchParams } from "expo-router";
@@ -9,6 +9,12 @@ import { supabase } from "@/src/lib/supabase";
 import Svg, { Path } from "react-native-svg";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { format } from "date-fns";
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from 'react-native-popup-menu';
 const UploadEventLectures = () => {
   const { event_id, event_name, event_img } = useLocalSearchParams();
   const [lectureEvent, setLectureEvent] = useState<string | null>(null);
@@ -24,6 +30,8 @@ const UploadEventLectures = () => {
   const [ keyNoteModal, setKeyNoteModal ] = useState<boolean>(false);
   const [ keyNoteInput, setKeyNoteInput ] = useState<string>("");
   const [ eventLectureDatePicker, setEventLectureDatePicker ] = useState(false)
+  const [ speakers, setSpeakers ] = useState<any[]>([])
+  const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const events = ["Event A", "Event B", "Event C"];
   const tabBar = useBottomTabBarHeight()
 
@@ -42,13 +50,50 @@ const UploadEventLectures = () => {
     setLectureSpeaker("");
     setLectureLink("");
     setLectureAI("");
-    setLectureDate('');
+    setLectureDate(null);
     setKeyNotes([])
     setKeyNoteInput("")
   };
-
+  
+    const getSpeakers = async () => {
+      const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
+      if( data ){
+        setSpeakers(data)
+      }
+    }
+  const handleSpeakerPress = (speaker_id : string) => {
+    if( speakerSelected.includes(speaker_id)){
+      const removeSpeaker = speakerSelected.filter(id => id != speaker_id)
+      setSpeakerSelected(removeSpeaker)
+    }
+    else if( speakerSelected.length == 0 ){
+      setSpeakerSelected([speaker_id])
+    } else if( speakerSelected.length > 0 ){
+      setSpeakerSelected([...speakerSelected, speaker_id])
+    }
+  }
+  const SpeakersData = (speakers  : any ) => {
+    return(
+      <Menu>
+        <MenuTrigger style={{ marginLeft  : 10 }}>
+          { speakerSelected.length == 0 ? <Text className="text-blue-600">Update Speakers</Text> : <Text>{speakerSelected.length} Speaker(s) Chosen</Text>}
+        </MenuTrigger>
+        <MenuOptions optionsContainerStyle={{  borderRadius  : 10, paddingHorizontal : 4, paddingVertical : 4}}>
+          {
+            speakers.speakers && speakers.speakers.length > 0 ? speakers.speakers.map(( speaker:any ) =>{
+              return(
+                <MenuOption onSelect={() => handleSpeakerPress(speaker.speaker_id)}>
+                  <Text className="text-black ">{speaker.speaker_name} { speakerSelected.includes(speaker.speaker_id) ? <Icon source={'check'} color="green" size={15}/> : <></>}</Text>
+                </MenuOption>
+              )
+            }) : <></>
+          }
+        </MenuOptions>
+      </Menu>
+    )
+  }
   const onUploadLecture = async () => {
-    if (!lectureName || !lectureSpeaker || !lectureLink || !lectureDate) {
+    if (!lectureName || !speakerSelected || !lectureLink || !lectureDate) {
       Toast.show({
         type: "error",
         text1: "All fields are required!",
@@ -57,11 +102,13 @@ const UploadEventLectures = () => {
       });
       return;
     }else{
-      const { error } = await supabase.from('events_lectures').insert({ event_id : event_id, event_lecture_name : lectureName, event_lecture_speaker : lectureSpeaker, event_lecture_link : lectureLink, event_lecture_date : lectureDate, event_lecture_keynotes : keyNotes, event_lecture_desc : lectureAI})
+      const { error } = await supabase.from('events_lectures').insert({ event_id : event_id, event_lecture_name : lectureName, event_lecture_speaker : speakerSelected, event_lecture_link : lectureLink, event_lecture_date : lectureDate, event_lecture_keynotes : keyNotes, event_lecture_desc : lectureAI})
       handleSubmit()
     }
   }
-  
+  useEffect(() => {
+    getSpeakers()
+  }, [])
   return (
     <>
       <Stack.Screen
@@ -138,16 +185,7 @@ const UploadEventLectures = () => {
         />
 
         <Text className="text-base font-bold mb-1 ml-2">Lecture Speaker</Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-          activeOutlineColor="#0D509D"
-          value={lectureSpeaker}
-          onChangeText={setLectureSpeaker}
-          placeholder="Enter Speaker Name"
-          textColor="black"
-        />
+        { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
 
         <Text className="text-base font-bold mb-1 ml-2">Lecture Summary</Text>
         <TextInput

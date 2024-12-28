@@ -58,7 +58,7 @@ const EditSpeakerInfo = () => {
         return
         }
         const filePath = `${speakerName.trim().split(" ").join("_")}.${uploadedImg.type === 'image' ? 'png' : 'mp4'}`;
-        const { error : remove} = await supabase.storage.from('fliers').remove([`${speaker_name.trim().split("_").join("")}.png`]);
+        const { error : remove} = await supabase.storage.from('fliers').remove([`${speaker_name.trim().split(" ").join("_")}.png`]);
         const { data : image, error :image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
         if( image ){
             const { data : speakerimage} = await supabase.storage.from('fliers').getPublicUrl(image?.path)

@@ -123,6 +123,8 @@ const UpdateEventHomeScreen = () => {
                       <View className='flex-col justify-center' style={{width: '100%'}}>
                         <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1, }} numberOfLines={1}>{item.event_lecture_name}</Text>
                         <Text className='text-md  ml-2 text-gray-400'>{format(item.event_lecture_date, 'PP')}</Text>
+                        <Text className='text-blue-500 text-[12px] ml-2'>Edit...</Text>
+                        
                       </View>
                     </Pressable>
                  </Link>

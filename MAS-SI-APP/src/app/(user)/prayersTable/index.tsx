@@ -15,6 +15,7 @@ export default function Index() {
   if( prayerTimesWeek.length == 0 ){
     return
   }
+  const [isRendered, setIsRendered ] = useState(false)
   const { height } = Dimensions.get('window')
   const tableWidth = Dimensions.get('screen').width * .95
   const [ tableIndex, setTableIndex ] = useState(0)
@@ -37,8 +38,8 @@ export default function Index() {
       <View className='items-center justify-center '>
       <ImageBackground
         source={require('@/assets/images/PrayerTimesHeader.jpg')}
-        style={{ height : height / 1.7 , justifyContent : 'flex-end' }}
-        imageStyle={{ height : height / 3.5, opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10}}
+        style={{ height : isRendered ? height / 1.85 : height / 1.7 , justifyContent : 'flex-end' }}
+        imageStyle={{ height : isRendered ? height / 4.5 : height / 3.5 , opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10}}
         className=''
       >
         <View className=' h-[300] items-center justify-center '>
@@ -56,7 +57,7 @@ export default function Index() {
           />
         </View>
         </ImageBackground>
-        <ApprovedAds />
+        <ApprovedAds setIsRendered={setIsRendered}/>
       </View>
     </View>
   )

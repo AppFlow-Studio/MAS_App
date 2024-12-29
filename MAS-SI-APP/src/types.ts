@@ -152,6 +152,7 @@ export type UserPlaylistLectureType = {
     playlist_id : string
     program_lecture_id : string | null
     event_lecture_id : string | null
+    id : number
 }
 
 export type ProgramFormType = {
@@ -186,4 +187,5 @@ export type BusinessSubmissionsProp = {
     user_id : string
     status : string 
     created_at : string
+    submission_id : string
 }

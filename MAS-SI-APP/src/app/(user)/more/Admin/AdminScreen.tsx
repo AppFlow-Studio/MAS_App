@@ -26,15 +26,14 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
   },
   {
     title : 'Business Advertisement', screens : [
-      { buttonTitle : 'View and Review Submissions', link : '/more/Admin/BusinessAdsApprovalScreen'}
+      { buttonTitle : 'View and Review Submissions', link : '/more/Admin/BusinessAdsApprovalScreen'},
+      { buttonTitle : 'Edit Approved Fliers', link : '/more/Admin/ApprovedAdsScreen'},
     ]
   },
   {
     title : 'Donations', screens : [
       { buttonTitle : 'Create a new Category', link : '/more/Admin/CreateNewDonationProject'},
       { buttonTitle : 'Edit an existing Category', link : '/more/Admin/EditDonationCategory'}
-
-
     ]
   },
   {

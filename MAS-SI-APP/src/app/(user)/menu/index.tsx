@@ -26,7 +26,7 @@ import IconsMarquee from '@/src/components/Marquee';
 export default function homeScreen() {
   const { onSetPrayerTimesWeek, prayerTimesWeek } = usePrayer()
   const { session } = useAuth()
-  const [ ads, setAds ] = useState(false)
+  const [isRendered, setIsRendered ] = useState(false)
   const [ profile, setProfile ] = useState<Profile>()
   const [ profileFirstName , setProfileFirstName ] = useState('')
   const [ profileLastName , setProfileLastName ] = useState('')
@@ -137,7 +137,7 @@ export default function homeScreen() {
               <View className='pt-3' style={{height: 250}}>
                 <ProgramsCircularCarousel />
               </View>
-              <ApprovedAds />
+              <View style={{marginTop : isRendered ? 2 : 0 }}><ApprovedAds setIsRendered={setIsRendered}/></View>
               <View className='pl-3 flex-row pt-4'>
                   <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
               </View>

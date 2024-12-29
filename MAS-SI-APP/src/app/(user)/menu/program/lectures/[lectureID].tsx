@@ -122,7 +122,7 @@ export default function LecturesData() {
           >
             <View className='flex-col items-center mt-3'>
               <Text className='font-bold text-black text-2xl text-center'>{currentLecture?.lecture_name}</Text>
-              <Text className='font-bold text-blue-500' onPress={showModal}>{speakerString ? speakerString.join(' & ') : ''}</Text>
+              <Text className='font-bold text-[#0D509D]' onPress={showModal}>{speakerString ? speakerString.join(' & ') : ''}</Text>
             </View>
             {array ? array.map((item,index) => {
               return (

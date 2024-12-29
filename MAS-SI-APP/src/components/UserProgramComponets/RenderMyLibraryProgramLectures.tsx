@@ -1,7 +1,6 @@
 import { View, Text, Pressable, FlatList, Dimensions, ScrollView } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useLocalSearchParams, Stack } from 'expo-router';
-import programsData from '@/assets/data/programsData';
 import { Lectures, Program } from '@/src/types';
 import { Link } from "expo-router";
 import { defaultProgramImage } from '../ProgramsListProgram';
@@ -122,12 +121,6 @@ const RenderMyLibraryProgramLectures = ( {lecture, index, speaker, setPlayAnimat
               <View className='flex-row justify-between items-center'>
                <Text>Add To Playlist</Text> 
                <Icon source="playlist-plus" color='black' size={15}/>
-              </View>
-            </MenuOption>
-            <MenuOption>
-              <View className='flex-row justify-between items-center'>
-                <Text>Add To Library</Text>
-                <Icon source="library" color='black' size={15}/>
               </View>
             </MenuOption>
           </MenuOptions>

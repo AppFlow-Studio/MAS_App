@@ -28,6 +28,7 @@ const UserPlayListLectures = () => {
     }
   }
   const getUserPlaylistLectures = async () => {
+    setPlaylistLectures([])
     const { data, error } = await supabase.from("user_playlist_lectures").select("*").eq("playlist_id", playlist_id)
     if( error ) {
         console.log( error )
@@ -126,14 +127,14 @@ const UserPlayListLectures = () => {
                     if(lecture.program_lecture_id){
                       return (
                       <>
-                        <RenderAddedProgramLectures program_lecture_id={lecture.program_lecture_id}/>
+                        <RenderAddedProgramLectures program_lecture_id={lecture.program_lecture_id} playlist={playlist_id as string} id={lecture.id}/>
                         <Divider />
                       </>
                     )
                     }else if(lecture.event_lecture_id){
                       return(
                       <>                      
-                      <RenderAddedEventLectures event_lecture_id={lecture.event_lecture_id} />
+                      <RenderAddedEventLectures event_lecture_id={lecture.event_lecture_id} playlist={playlist_id as string} id={lecture.id}/>
                       <Divider />
                       </>
                     )

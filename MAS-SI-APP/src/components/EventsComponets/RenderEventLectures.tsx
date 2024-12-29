@@ -117,12 +117,6 @@ const fillStyle = useAnimatedStyle(() => {
              <Icon source="playlist-plus" color='black' size={15}/>
             </View>
           </MenuOption>
-          <MenuOption>
-            <View className='flex-row justify-between items-center'>
-              <Text>Add To Library</Text>
-              <Icon source="library" color='black' size={15}/>
-            </View>
-          </MenuOption>
         </MenuOptions>
       </Menu>           
     )

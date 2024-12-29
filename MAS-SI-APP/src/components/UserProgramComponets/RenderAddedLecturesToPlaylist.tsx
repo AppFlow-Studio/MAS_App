@@ -1,7 +1,6 @@
 import { View, Text, Pressable, FlatList, Dimensions, Image } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useLocalSearchParams, Stack } from 'expo-router';
-import programsData from '@/assets/data/programsData';
 import { EventLectureType, Lectures, Program } from '@/src/types';
 import { Link } from "expo-router";
 import { defaultProgramImage } from '../ProgramsListProgram';
@@ -14,10 +13,13 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 type RenderAddedProgramLecturesProp = {
     program_lecture_id : string
+    playlist : string
+    id : number
 }
-const RenderAddedProgramLectures = ( {program_lecture_id} : RenderAddedProgramLecturesProp) => {
+const RenderAddedProgramLectures = ( {program_lecture_id, playlist, id} : RenderAddedProgramLecturesProp) => {
   const { session } = useAuth()
   const [ lecture, setLecture ] = useState<Lectures>()
+  const [ lectureSpeaker, setLectureSpeaker ] = useState<string[]>([])
   const liked = useSharedValue(0)
 
   const getLectureInfo = async () => {
@@ -27,6 +29,16 @@ const RenderAddedProgramLectures = ( {program_lecture_id} : RenderAddedProgramLe
     }
     if( data ){
         setLecture(data)
+        if( data.lecture_speaker ){
+          const speakerNames = await Promise.all (
+            data.lecture_speaker.map( async ( id ) => {
+              const { data , error } = await supabase.from("speaker_data").select("speaker_name").eq("speaker_id", id).single()
+              return data?.speaker_name
+            })  
+          )
+          setLectureSpeaker(speakerNames)
+        }
+
     }
   }
   const [ program_img , setProgram_img ] = useState<string>()
@@ -127,16 +139,10 @@ const RenderAddedProgramLectures = ( {program_lecture_id} : RenderAddedProgramLe
             <Icon source={"dots-horizontal"} color='black' size={25}/>
           </MenuTrigger>
           <MenuOptions customStyles={{optionsContainer: {width: 150, borderRadius: 8, marginTop: 20, padding: 8}}}>
-            <MenuOption>
-              <View className='flex-row justify-between items-center'>
-               <Text>Add To Playlist</Text> 
-               <Icon source="playlist-plus" color='black' size={15}/>
-              </View>
-            </MenuOption>
-            <MenuOption>
-              <View className='flex-row justify-between items-center'>
-                <Text>Add To Library</Text>
-                <Icon source="library" color='black' size={15}/>
+            <MenuOption  onSelect={ async () => {const { error } = await supabase.from('user_playlist_lectures').delete().eq('playlist_id', playlist).eq('program_lecture_id', program_lecture_id).eq('id', id) }}>
+              <View className='flex-row justify-between items-center' >
+                <Text className='text-center'>Remove From Playlist</Text>
+                <Icon source="trash-can-outline" color='red' size={15}/>
               </View>
             </MenuOption>
           </MenuOptions>
@@ -161,7 +167,7 @@ const RenderAddedProgramLectures = ( {program_lecture_id} : RenderAddedProgramLe
         <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
           <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture?.lecture_name}</Text>
           <View className='flex-row' style={{flexShrink: 1, width: width / 1.5}}>
-             <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture?.lecture_speaker} </Text> 
+             <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lectureSpeaker ? lectureSpeaker.join('&') : ''} </Text> 
           </View>
         </View>
         </Link>
@@ -179,11 +185,14 @@ const RenderAddedProgramLectures = ( {program_lecture_id} : RenderAddedProgramLe
 
 type RenderAddedEventLecturesProp = {
   event_lecture_id : string
+  playlist : string
+  id : number
 }
-export const RenderAddedEventLectures = ( {event_lecture_id} : RenderAddedEventLecturesProp) => {
+export const RenderAddedEventLectures = ( {event_lecture_id, playlist , id} : RenderAddedEventLecturesProp) => {
   const { session } = useAuth()
   const [ lecture, setLecture ] = useState<EventLectureType>()
   const liked = useSharedValue(0)
+  const [ lectureSpeaker, setLectureSpeaker ] = useState<string[]>([])
 
   const getLectureInfo = async () => {
     const { data , error } = await supabase.from("events_lectures").select("*").eq("event_lecture_id", event_lecture_id).single()
@@ -192,6 +201,15 @@ export const RenderAddedEventLectures = ( {event_lecture_id} : RenderAddedEventL
     }
     if( data ){
         setLecture(data)
+        if( data.event_lecture_speaker ){
+          const speakerNames = await Promise.all (
+            data.event_lecture_speaker.map( async ( id ) => {
+              const { data , error } = await supabase.from("speaker_data").select("speaker_name").eq("speaker_id", id).single()
+              return data?.speaker_name
+            })  
+          )
+          setLectureSpeaker(speakerNames)
+        }
     }
   }
   const [ program_img , setProgram_img ] = useState<string>()
@@ -292,17 +310,16 @@ export const RenderAddedEventLectures = ( {event_lecture_id} : RenderAddedEventL
             <Icon source={"dots-horizontal"} color='black' size={25}/>
           </MenuTrigger>
           <MenuOptions customStyles={{optionsContainer: {width: 150, borderRadius: 8, marginTop: 20, padding: 8}}}>
-            <MenuOption>
-              <View className='flex-row justify-between items-center'>
-               <Text>Add To Playlist</Text> 
-               <Icon source="playlist-plus" color='black' size={15}/>
-              </View>
-            </MenuOption>
-            <MenuOption>
-              <View className='flex-row justify-between items-center'>
-                <Text>Add To Library</Text>
-                <Icon source="library" color='black' size={15}/>
-              </View>
+            <MenuOption onSelect={ async () => {
+              const { error } = await supabase.from('user_playlist_lecture').delete().eq('playlist_id', playlist).eq('event_lecture_id', event_lecture_id).eq('id',id)
+              if( error ){
+                console.log(error)
+              }
+              } }>
+            <Pressable className='flex-row justify-between items-center' >
+                <Text>Remove From Playlist</Text>
+                <Icon source="trash-can-outline" color='red' size={15}/>
+              </Pressable>
             </MenuOption>
           </MenuOptions>
         </Menu>           
@@ -326,7 +343,7 @@ export const RenderAddedEventLectures = ( {event_lecture_id} : RenderAddedEventL
         <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
           <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture?.event_lecture_name}</Text>
           <View className='flex-row' style={{flexShrink: 1, width: width / 1.5}}>
-             <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture?.event_lecture_speaker} </Text> 
+          <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lectureSpeaker ? lectureSpeaker.join('&') : ''} </Text> 
           </View>
         </View>
         </Link>

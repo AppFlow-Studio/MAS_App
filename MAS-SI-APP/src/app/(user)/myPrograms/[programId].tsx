@@ -1,6 +1,6 @@
-import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, ScrollView} from 'react-native'
+import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, ScrollView, Alert} from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import { useLocalSearchParams, Stack, router, useRouter } from 'expo-router';
+import { useLocalSearchParams, Stack, router, useRouter, useNavigation } from 'expo-router';
 import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
 import { Divider, Portal, Modal, IconButton, Icon, Button } from 'react-native-paper';
 import { Lectures, SheikDataType, Program, UserPlaylistType } from '@/src/types';
@@ -15,6 +15,7 @@ import { Link } from 'expo-router';
 import RenderAddToUserPlaylistsListProgram from '@/src/components/RenderAddToUserPlaylistsList';
 import CreatePlaylistBottomSheet from '@/src/components/UserProgramComponets/CreatePlaylistBottomSheet';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import Toast from 'react-native-toast-message';
 const programLectures = () => {
   const { session } = useAuth()
   const { programId } = useLocalSearchParams();
@@ -29,6 +30,7 @@ const programLectures = () => {
   const [ playAnimation , setPlayAnimation ] = useState( false )
   const [ lectureInfoAnimation, setLectureInfoAnimation ] = useState<Lectures>()
   const [ usersPlaylists, setUsersPlaylists ] = useState<UserPlaylistType[]>()
+  const navigation = useNavigation()
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const handlePresentModalPress = () => bottomSheetRef.current?.present();
   const showModal = () => setVisible(true);
@@ -56,36 +58,6 @@ const programLectures = () => {
       ]
     }
   })
-
-
-  const animationOpactiy = useSharedValue(0)
-  const animationHeight = useSharedValue(windowHeight)
-
-  const resetAnimation = () => {
-    animationOpactiy.value = withTiming(0, { duration : 2000 })
-    animationHeight.value = scrollOffset.value
-  }
-
-  const playAnimationFunc = () => {
-    if( playAnimation ){
-      animationOpactiy.value = withTiming(1, {}, (finished, current) => { if( finished ){ current = 0 }})
-      animationHeight.value = withSpring( ( scrollOffset.value - windowHeight ) / 3.5  , {})
-      }
-  }
-  const animatedStyle = useAnimatedStyle(() => {
-    if( playAnimation ){
-      animationOpactiy.value = withTiming(1, {duration : 3000}, (finished) => { if( finished ){ withTiming(0, {duration : 3000}); runOnJS(setPlayAnimation)(false) }})
-      animationHeight.value = withSpring( scrollOffset.value - (windowHeight / 1.5) , {})
-      }
-      
-      return{
-      opacity : animationOpactiy.value,
-      transform : [{ translateY : animationHeight.value }]
-    }
-  })
-  
-
-
     async function getProgram(){
       const { data, error } = await supabase.from("programs").select("*").eq("program_id", programId).single()
       if( error ) {
@@ -136,7 +108,9 @@ const programLectures = () => {
     getProgramLectures()
     getUserPlaylists()
   }, [])
-
+  useEffect(() => {
+    setPlaylistAddingTo([])
+  }, [!addToPlaylistVisible])
   const HeaderRight = () => {
     const router = useRouter()
     const removeFromLibrary = async () => {
@@ -194,7 +168,47 @@ const programLectures = () => {
       </View>
     )
   } 
-
+  const onDonePress = async () => {
+    if( playlistAddingTo && playlistAddingTo.length > 0 ){
+      playlistAddingTo.map( async (item) => {
+          const { data : checkDupe , error : checkDupeError } = await supabase.from("user_playlist_lectures").select("*").eq("user_id ", session?.user.id).eq( "playlist_id" ,item).eq( "program_lecture_id", lectureToBeAddedToPlaylist).single()  
+            if( checkDupe ){
+              const { data : dupePlaylistName, error  } = await supabase.from("user_playlist").select("playlist_name").eq("playlist_id", checkDupe.playlist_id).single()
+              Alert.alert(`Lecture already found in ${dupePlaylistName?.playlist_name}`, "", [
+                {
+                  text: "Cancel",
+                  onPress : () => setAddToPlaylistVisible(false)
+                },
+                {
+                  text : "Continue",
+                  onPress : async () => await supabase.from("user_playlist_lectures").insert({user_id : session?.user.id, playlist_id : item, program_lecture_id : lectureToBeAddedToPlaylist })
+                }
+              ]
+            )
+            }
+            else{
+              const { error } = await supabase.from("user_playlist_lectures").insert({user_id : session?.user.id, playlist_id : item, program_lecture_id : lectureToBeAddedToPlaylist })
+              const getPlaylistAddedTo = usersPlaylists?.filter(playlist => playlist.playlist_id == playlistAddingTo[0])
+              const goToPlaylist = () => { navigation.navigate('myPrograms', { screen : 'playlists/[playlist_id]', params: { playlist_id : playlistAddingTo }}) }
+              if( getPlaylistAddedTo && getPlaylistAddedTo[0] ){
+                Toast.show({
+                  type : 'LectureAddedToPlaylist',
+                  props: { props : getPlaylistAddedTo[0], onPress : goToPlaylist},
+                  position : 'bottom',
+                  bottomOffset : Tab * 2
+                })
+              }
+          }})
+        setAddToPlaylistVisible(false)
+      }
+    else{
+      setAddToPlaylistVisible(false)
+    }
+  }
+  useEffect(() => {
+    onDonePress()
+    setAddToPlaylistVisible(false)
+  }, [playlistAddingTo.length > 0])
   return (
     <View className='flex-1 bg-white' style={{flexGrow: 1}}>
       <Stack.Screen options={{ title : "", headerBackTitleVisible: false, headerRight :() => <HeaderRight />, headerStyle : {backgroundColor : "white"}}} />
@@ -207,7 +221,7 @@ const programLectures = () => {
           />
           <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
             <Text className='text-center mt-2 text-xl text-black font-bold'>{program?.program_name}</Text>
-            <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal} numberOfLines={1}>{speakerString}</Text>
+            <Text className='text-center mt-2  w-[60%] text-[#0D509D] self-center' onPress={showModal} numberOfLines={1}>{speakerString}</Text>
               <View className='ml-3'>
                 {
                   lectures && lectures?.length > 0  ? lectures.map((item, index) => {
@@ -242,23 +256,6 @@ const programLectures = () => {
               </ScrollView>
             </Modal>
           </Portal>
-         { playAnimation ? 
-         ( <Animated.View style={[animatedStyle, {flexDirection : "row", backgroundColor: "white",justifyContent: "center", alignItems : 'center', width: "85%", shadowColor: "black", shadowOffset: { width: 0, height: 0}, shadowOpacity: 1, shadowRadius: 1, borderRadius : 15 }]}>
-            <Link href={"/myPrograms/likedLectures/AllLikedLectures"} asChild>
-              <Pressable className='items-center'>
-                      <View className='w-[15%]'>
-                        <Image source={{ uri : program?.program_img || defaultProgramImage}} style={{objectFit : "contain", height: 50, width: 60, borderRadius: 8}}/> 
-                      </View>
-                      <View className='flex-col border w-[70%] justify-center items-center'> 
-                      <Text className='text-[#b4b4b4] font-bold'>1 Lecture Added</Text>
-                      <Text>{lectureInfoAnimation?.lecture_name}</Text>
-                      </View>
-                      </Pressable>
-                </Link>
-          </Animated.View> )
-            : 
-            <></>
-          }
           <Portal>
             <Modal visible={addToPlaylistVisible} onDismiss={hideAddToPlaylist} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "50%", width: "90%", borderRadius: 35, alignSelf: "center"}} >
             <View className=' h-[100%]'>

@@ -8,22 +8,32 @@ import * as AppleAuthentication from 'expo-apple-authentication'
 const SignUp = () => {
   const [ email, setEmail ] = useState('')
   const [ password, setPassword] = useState("")
+  const [ name, setName ] = useState('')
   const [ loading, setLoading ] = useState(false)
   const { width } = Dimensions.get("window")
 
   async function signUpWithEmail() {
     setLoading(true)
+    if( email && password && name ){
     const {
       data: { session },
       error,
     } = await supabase.auth.signUp({
       email: email,
       password: password,
+      options: {
+        data: {
+          first_name: name,
+          profile_email: email,
+        },
+      },
     })
 
-    if (error) alert(error.message)
-    if (!session) alert('Please check your inbox for email verification!')
-    setLoading(false)
+    if (error) {alert(error.message); return}
+    setLoading(false)}
+    else{
+      alert('Fill in the fields to complete sign up')
+    }
   }
 
   return (
@@ -42,7 +52,20 @@ const SignUp = () => {
         </Link>
           </View>
       <View className=' justify-center items-center bg-white pt-[12%] flex-col flex-2'>
-        <View className='w-[95%]' style={{ shadowColor : 'black', shadowOffset : { width : 0, height : 2 }, shadowOpacity : 0.5, shadowRadius : 1 }}>
+      <View className='w-[95%]' style={{ shadowColor : 'black', shadowOffset : { width : 0, height : 2 }, shadowOpacity : 0.5, shadowRadius : 1 }}>
+          <TextInput
+            mode='outlined' 
+            value={name}
+            onChangeText={setName}
+            style={{ backgroundColor : 'white', borderBottomWidth : 0, borderWidth : 0 }}
+            theme={{ roundness : 50 }}
+            placeholder={'name'}
+            outlineColor='white'
+            activeOutlineColor='black'
+            textColor='black'
+          />
+        </View>
+        <View className='w-[95%] mt-2' style={{ shadowColor : 'black', shadowOffset : { width : 0, height : 2 }, shadowOpacity : 0.5, shadowRadius : 1 }}>
           <TextInput
             mode='outlined' 
             value={email}
@@ -51,7 +74,7 @@ const SignUp = () => {
             theme={{ roundness : 50 }}
             placeholder={'email'}
             outlineColor='white'
-            activeOutlineColor='white'
+            activeOutlineColor='black'
             textColor='black'
           />
         </View>
@@ -64,7 +87,7 @@ const SignUp = () => {
             theme={{ roundness : 50 }}
             placeholder={'password'}
             outlineColor='white'
-            activeOutlineColor='white'
+            activeOutlineColor='black'
             secureTextEntry
             textColor='black'
           />

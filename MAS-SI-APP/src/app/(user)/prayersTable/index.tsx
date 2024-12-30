@@ -57,7 +57,7 @@ export default function Index() {
           />
         </View>
         </ImageBackground>
-        <ApprovedAds setIsRendered={setIsRendered}/>
+        <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
       </View>
     </View>
   )

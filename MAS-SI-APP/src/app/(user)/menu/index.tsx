@@ -97,7 +97,7 @@ export default function homeScreen() {
     useEffect( () => {
       getProfile();
       getPrayer();
-    }, [])
+    }, [session])
     useEffect(() => {
       if( profileFirstName && profileLastName && profileEmail ){
         setConfirmProfile(true)
@@ -137,7 +137,7 @@ export default function homeScreen() {
               <View className='pt-3' style={{height: 250}}>
                 <ProgramsCircularCarousel />
               </View>
-              <View style={{marginTop : isRendered ? 2 : 0 }}><ApprovedAds setIsRendered={setIsRendered}/></View>
+              <View style={{marginTop : isRendered ? 2 : 0 }}><ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/></View>
               <View className='pl-3 flex-row pt-4'>
                   <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
               </View>
@@ -164,55 +164,6 @@ export default function homeScreen() {
             </View>
             <IconsMarquee />
             <View style={[{paddingBottom : tabBarHeight}]}></View>
-
-            { setTimeout(() => {return true}, 4000) && 
-            <Portal>
-              <Modal dismissable={false} visible={visible} onDismiss={hideModal} contentContainerStyle={{ height : '70%', width : '95%', borderRadius : 10, backgroundColor : 'white', alignSelf : 'center', alignItems : 'center', justifyContent : 'flex-start' }}>
-                  <View className='h-[40%] w-[100%]'>
-                      <Image source={require('@/assets/images/MASHomeLogo.png')} style={{ width : '80%', height : '60%', alignSelf : 'center', objectFit : 'contain' }}/>
-                    <Text className='text-center font-bold text-3xl'>Welcome</Text>
-                  </View>
-                  <View className='items-center flex-col gap-y-3'>
-                    <Text>Enter Your First Name</Text>
-                    <TextInput
-                    mode='outlined'
-                    theme={{ roundness : 50 }}
-                    style={{ width: 300, backgroundColor: "#e8e8e8", height: 45 }}
-                    activeOutlineColor='#0D509D'
-                    value={profileFirstName}
-                    onChangeText={setProfileFirstName}
-                    placeholder="First Name"
-                    textColor='black'
-                    />
-                    <Text>Enter Your Last Name</Text>
-                  <TextInput
-                    mode='outlined'
-                    theme={{ roundness : 50 }}
-                    style={{ width: 300, backgroundColor: "#e8e8e8", height: 45 }}
-                    activeOutlineColor='#0D509D'
-                    value={profileLastName}
-                    onChangeText={setProfileLastName}
-                    placeholder="Last Name"
-                    textColor='black'
-                    />
-                  <Text>Enter Your Email</Text>
-                  <TextInput
-                    mode='outlined'
-                    theme={{ roundness : 50 }}
-                    style={{ width: 300, backgroundColor: "#e8e8e8", height: 45 }}
-                    activeOutlineColor='#0D509D'
-                    value={profileEmail}
-                    onChangeText={setProfileEmail}
-                    placeholder="Email"
-                    textColor='black'
-                    />
-                  </View>
-                  <View className='self-center mt-2'>
-                    <Button  disabled={!confirmProfile} mode='contained' buttonColor='#57BA47' textColor='white' className='w-[150]' onPress={onConfirmButton}>Confirm</Button>
-                  </View>
-              </Modal>
-            </Portal>
-          }
       </Animated.ScrollView>
     )
     

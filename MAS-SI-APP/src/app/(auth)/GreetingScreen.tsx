@@ -171,7 +171,7 @@ const GreetingScreen = () => {
                 </Link>
                 <View className='justify-center h-[30%]'>
                   <View>
-                      <Text className='text-center text-gray-400'>created by App Flow Creations</Text>
+                      <Text className='text-center text-gray-400'>created by AppFlowCreations</Text>
                   </View>
                 </View>
             </View>

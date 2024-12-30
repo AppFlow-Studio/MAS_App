@@ -5,20 +5,22 @@ import { Link } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { BlurView } from 'expo-blur';
 import * as AppleAuthentication from 'expo-apple-authentication'
+import { useAuth } from '../providers/AuthProvider';
 
 type SignInAnonModalProps = {
     visible : boolean
-    setVisible : ( visible : boolean ) => void 
+    setVisible : () => void 
 }
 const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
   const { height } = Dimensions.get('window')
   const [ signIn, setSignIn ] = useState(true)
-  const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
+  const { session } = useAuth()
+  const hideModal = () => setVisible();
   const containerStyle = {padding: 20};  
   const [ email, setEmail ] = useState('')
   const [ password, setPassword] = useState("")
   const [ loading, setLoading ] = useState(false)
+  const [ name, setName ] = useState('')
   async function signInWithEmail() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
@@ -26,23 +28,34 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
       password: password,
     });
   
-    if (error) alert(error.message);
-    setVisible(false)
+    if (error) {alert(error.message);setLoading(false);return};
+    setVisible()
     setLoading(false);
   }  
   async function signUpWithEmail() {
     setLoading(true)
+    if( email && password && name ){
     const {
       data: { session },
       error,
     } = await supabase.auth.signUp({
       email: email,
       password: password,
+      options: {
+        data: {
+          first_name: name,
+          profile_email: email,
+        },
+      },
     })
 
-    if (error) alert(error.message)
-    if (!session) alert('Please check your inbox for email verification!')
+    if (error) { alert(error.message); setLoading(false); return }
     setLoading(false)
+    setVisible()
+    }
+    else {
+      alert("Enter Name")
+    }
   }
   return (
     <Portal>
@@ -56,7 +69,7 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                     <Icon source={'alpha-x'} size={40} color='black'/>
                 </Pressable>
                 <Text className='font-bold text-[#0D509D] text-3xl mt-[2%] mb-[4%]'>Login</Text>
-
+  
                 <View className='mt-2 items-center w-[100%]'>
                 <TextInput
                     mode='outlined'
@@ -107,7 +120,6 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                 ],
               })
               // Sign in via Supabase Auth.
-              console.log(credential)
               if (credential.identityToken) {
                 const {
                   error,
@@ -123,6 +135,8 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                     error,
                     data
                   } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
+                  setLoading(false)
+                  setVisible()
                 }
               } else {
                 throw new Error('No identityToken.')
@@ -160,6 +174,19 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                       <Text className='font-bold text-[#0D509D] text-3xl mt-[2%] mb-[4%]'>Sign Up</Text>
 
                     <View className='w-[95%] items-center' style={{ shadowColor : 'black', shadowOffset : { width : 0, height : 2 }, shadowOpacity : 0.5, shadowRadius : 1 }}>
+                        <TextInput
+                          mode='outlined'
+                          theme={{ roundness : 50 }}
+                          style={{ width: 250, backgroundColor: "#e8e8e8", height: 45 }}
+                          activeOutlineColor='#0D509D'
+                          value={name}
+                          onChangeText={setName}
+                          left={<TextInput.Icon icon="account" color="#b7b7b7"/>}
+                          placeholder="Name"
+                          textColor='black'
+                        />
+                        
+                        <View className='h-[20]'/>
 
                         <TextInput
                         mode='outlined'
@@ -228,6 +255,8 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                                 error,
                                 data
                             } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
+                            setLoading(false)
+                            setVisible()
                             }
                         } else {
                             throw new Error('No identityToken.')

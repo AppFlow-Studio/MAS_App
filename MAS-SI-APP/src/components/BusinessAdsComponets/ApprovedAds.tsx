@@ -11,19 +11,23 @@ function formatPhoneNumber( phoneNumberString : number ) {
   }
   return null;
 }
-const ApprovedAds = ({setIsRendered} :{ setIsRendered : ( rendered : boolean ) => {} }) => {
+const ApprovedAds = ( {setRenderedFalse, setRenderedTrue} : { setRendredFalse : ( ) => void, setRendredTrue : ( ) => void } ) => {
   const [ ads, setAds ] = useState<any[]>([])
   const [ index, setIndex ] = useState(0)
   const [ active, setActive ] = useState(0)
   const flatListRef = useRef<FlatList>(null)
   const listItemWidth = Dimensions.get('screen').width
   const getAds = async () => {
+    setAds([])
     const { data , error } = await supabase.from('approved_business_ads').select('*')
     if( error ){
         console.log(error)
-        setIsRendered(false)
+        setRenderedFalse()
     }
-    if( data ){
+    else if ( data && data.length < 1 ){
+      setRenderedFalse()
+    }
+    else if( data ){
         const adsFlyer : any[] = []
         await Promise.all(
             data.map(async ( ad ) =>{
@@ -34,10 +38,7 @@ const ApprovedAds = ({setIsRendered} :{ setIsRendered : ( rendered : boolean ) =
             })
         )
         setAds(adsFlyer)
-        setIsRendered(true)
-    }
-    else{
-      setIsRendered(false)
+       setRenderedTrue()
     }
   }
   const getItemLayout = (data : any,index : any) => ({
@@ -92,7 +93,7 @@ const handleScroll = (event : any) =>{
 }
 });
   if ( ads.length < 1 ){
-    return <></>
+    return
   } 
   return (
       <View className='h-[300] bg-gray-300 p-1 self-center mt-3 relative' style={{ borderRadius : 20,  width : listItemWidth * .95 }}>

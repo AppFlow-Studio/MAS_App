@@ -75,7 +75,7 @@ export default function ProgramsCircularCarousel(  ) {
       .subscribe()
   
       return () => { supabase.removeChannel( listenforprograms )}
-    }, [])
+    }, [session])
     
      useEffect(() => {
       if( programsData && programsData?.length > 0){
@@ -144,7 +144,7 @@ export default function ProgramsCircularCarousel(  ) {
         />
        </Pressable>
     </Animated.View>
-    <SignInAnonModal visible={visible} setVisible={setVisible} />
+    <SignInAnonModal visible={visible} setVisible={() => setVisible(false)} />
     </View>
 
   )

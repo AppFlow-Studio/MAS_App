@@ -9,8 +9,7 @@ console.log("Hello from Functions!")
 const RESEND_API_KEY = Deno.env.get('RESEND_KEY')
 
 Deno.serve(async (req) => {
-  const { donation_amount } = await req.json()
-
+  const { message } = await req.json()
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -20,7 +19,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       from: 'onboarding@resend.dev',
       to: 'temurbeksayfutdinov@gmail.com',
-      subject: 'Thank you for your Donation',
+      subject: 'MAS App Feedback',
       html: `
           <head>
     <meta charset="UTF-8">
@@ -94,22 +93,15 @@ Deno.serve(async (req) => {
     <div class="email-container">
         <div class="header">
             <img src="https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0" alt="MAS Staten Island">
-            <h1>Thank You for Your Donation!</h1>
+            <h1>New App Feedback!</h1>
         </div>
         <div class="content">
-            <p>We are incredibly thankful for your generous support! Your donation helps us continue serving the Staten Island community and making a lasting impact.</p>
-            
             <div class="donation-details">
-                <p><strong>Donation Amount:</strong> $${donation_amount}</p>
+                <p><strong>Message:</strong> ${message}</p>
             </div>
-
-            <p>Your contribution directly supports our programs and initiatives. If you have any questions or need further assistance, feel free to reach out to us anytime.</p>
-            <p>Once again, thank you for your support!</p>
-            <p><strong>The MAS Staten Island Team</strong></p>
         </div>
         <div class="footer">
-            <p>Follow us on <a href="https://massic.org/" target="_blank">MAS Staten Island</a> | <a href="https://www.instagram.com/massicenter/" target="_blank">Instagram</a>
-            </p> 
+       
             <p>&copy; 2024 MAS Staten Island. All Rights Reserved.</p>
         </div>
     </div>

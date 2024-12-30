@@ -83,6 +83,8 @@ export default function userPrograms() {
   
     if (error) alert(error.message);
     setLoading(false);
+    await getUserProgramLibrary()
+    checkIfAnon()
   }  
   const tabBarHeight = useBottomTabBarHeight() + 35
   const onRefresh = async () => {
@@ -99,8 +101,9 @@ export default function userPrograms() {
     })
 
     if (error) alert(error.message)
-    if (!session) alert('Please check your inbox for email verification!')
     setLoading(false)
+    await getUserProgramLibrary()
+    checkIfAnon()
   }
   return (
     <ScrollView className='bg-white flex-1 w-[100%]' refreshControl={  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

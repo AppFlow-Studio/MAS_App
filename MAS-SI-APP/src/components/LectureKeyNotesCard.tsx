@@ -32,7 +32,7 @@ const LectureKeyNotesCard = ({height, width, index, scrollY, keynote, active} : 
     }
   }) 
   useEffect(() => {
-    if( active == index ){
+    if( active == index && index != 0 ){
       Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Success
       )

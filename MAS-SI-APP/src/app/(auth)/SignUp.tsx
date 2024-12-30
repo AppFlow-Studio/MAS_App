@@ -4,6 +4,7 @@ import { Button, Divider, Icon, TextInput } from 'react-native-paper'
 import { Link, Stack } from "expo-router"
 import { supabase } from '@/src/lib/supabase'
 import * as AppleAuthentication from 'expo-apple-authentication'
+import { useAuth } from '@/src/providers/AuthProvider'
 
 const SignUp = () => {
   const [ email, setEmail ] = useState('')
@@ -11,7 +12,8 @@ const SignUp = () => {
   const [ name, setName ] = useState('')
   const [ loading, setLoading ] = useState(false)
   const { width } = Dimensions.get("window")
-
+  const { session } = useAuth()
+  
   async function signUpWithEmail() {
     setLoading(true)
     if( email && password && name ){

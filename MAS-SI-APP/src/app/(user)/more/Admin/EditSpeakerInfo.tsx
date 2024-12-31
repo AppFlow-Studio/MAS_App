@@ -88,7 +88,7 @@ const EditSpeakerInfo = () => {
                 header : () => (
                 <View className="relative">
                     <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-                    <Pressable className="flex flex-row items-center justify-between w-[65%]" onPress={() => router.back()}>
+                    <Pressable className="flex flex-row items-center justify-between w-[65%]" onPress={() => router.dismiss(2)}>
                         <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
                         <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
                         </Svg>

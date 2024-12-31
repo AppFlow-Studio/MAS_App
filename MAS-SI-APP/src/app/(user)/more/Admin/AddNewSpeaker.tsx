@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, Pressable, FlatList, Alert, ScrollView } from 'react-native'
+import { View, Text, TouchableOpacity, Image, Pressable, FlatList, Alert, ScrollView, KeyboardAvoidingView, useWindowDimensions } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { supabase } from '@/src/lib/supabase'
@@ -17,6 +17,8 @@ const AddNewSpeaker = () => {
     const [ creds , setCreds ] = useState<string[]>([])
     const [ newCred, setNewCred ] = useState<string>('')
     const [ pressAddCred, setPressAddCred ] = useState(false) 
+    const layoutHeight = useWindowDimensions().height
+    
     const pickImage = async () => {
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -140,30 +142,36 @@ const AddNewSpeaker = () => {
                </View>
                 {
                     pressAddCred && (
-                        <View>
-                            <TextInput
-                            mode="outlined"
-                            theme={{ roundness: 10 }}
-                            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-                            activeOutlineColor="#0D509D"
-                            value={newCred}
-                            onChangeText={setNewCred}
-                            placeholder="Enter New Credential..."
-                            textColor="black"
-                            />
-
-                            <View className='flex flex-row items-center justify-between w-[100%]'>
-                                <Pressable className='bg-gray-400 w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => { setPressAddCred(false); setNewCred('')}}>
-                                    <Text className='text-white font-bold'>Cancel</Text>
-                                </Pressable>
-                                <Pressable className='bg-[#57BA49] w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => {setPressAddCred(false); setCreds(prev => [...prev, newCred]); setNewCred('')}}>
-                                    <Text className='font-bold text-white '>Confirm</Text>
-                                </Pressable>
+                        <KeyboardAvoidingView behavior='position' keyboardVerticalOffset={layoutHeight * .25} className='bg-white'>
+                            <View className='bg-white h-[100]'>
+                              <TextInput
+                              mode="outlined"
+                              theme={{ roundness: 10 }}
+                              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
+                              activeOutlineColor="#0D509D"
+                              value={newCred}
+                              onChangeText={setNewCred}
+                              placeholder="Enter New Credential..."
+                              textColor="black"
+                              />
+  
+                              <View className='flex flex-row items-center justify-between w-[100%]'>
+                                  <Pressable className='bg-gray-400 w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => { setPressAddCred(false); setNewCred('')}}>
+                                      <Text className='text-white font-bold'>Cancel</Text>
+                                  </Pressable>
+                                  <Pressable className='bg-[#57BA49] w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => {setPressAddCred(false); setCreds(prev => [...prev, newCred]); setNewCred('')}}>
+                                      <Text className='font-bold text-white '>Confirm</Text>
+                                  </Pressable>
+                              </View>
                             </View>
-                        </View>
+                        </KeyboardAvoidingView>
                     )
                 }
-                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>Add Credentials</Text>
+                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>
+                  {
+                    pressAddCred ? '' : 'Add Credentials'
+                  }
+                </Text>
 
 
                { 

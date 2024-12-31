@@ -10,7 +10,7 @@ import { Stack } from 'expo-router'
 import Toast from 'react-native-toast-message'
 import { useAuth } from '@/src/providers/AuthProvider'
 import * as Haptics from 'expo-haptics'
-import { isBefore } from 'date-fns'
+import { isAfter, isBefore } from 'date-fns'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 const EventInfo = () => {
   const { session } = useAuth()
@@ -20,6 +20,7 @@ const EventInfo = () => {
   const [ eventLectures, setEventLectures ] = useState<EventsType>()
   const [ eventInNotification, setEventInNotification ] = useState(false)
   const notifade = useSharedValue(1)
+  const today = new Date()
   const fetchEventInfo = async () => {
     const { data , error } = await supabase.from("events").select("*").eq("event_id", event_id).single()
     const { data : InNotifications, error : InNotificationsError } = await supabase.from('added_notifications_events').select('*').eq('event_id', event_id).eq('user_id', session?.user.id).single()
@@ -90,7 +91,7 @@ const EventInfo = () => {
   const currDate = new Date().toISOString()
   return (
     <>
-       <Stack.Screen options={{ headerBackTitleVisible : false, headerTitle : '', headerStyle : {backgroundColor : "white"}, headerRight : () => <NotificationBell /> }}/>
+       <Stack.Screen options={{ headerBackTitleVisible : false, headerTitle : '', headerStyle : {backgroundColor : "white"}, headerRight : () => { if( isBefore(today, eventInfoData?.event_end_date) ) return <NotificationBell />; else return <></> } }}/>
        <StatusBar barStyle={"dark-content"}/>
         {eventInfoData?.has_lecture ?  
         <EventsLectureDisplay event_id={eventInfoData?.event_id} event_img={eventInfoData?.event_img} event_name={eventInfoData?.event_name} event_speaker={eventInfoData?.event_speaker}/> 

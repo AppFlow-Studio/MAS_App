@@ -21,7 +21,7 @@ const NotificationEventSettings = () => {
   const [ active, setActive ] = useState(0)
   const [ selectedNotification, setSelectedNotification ] = useState<number[]>([])
   const NOTICARDHEIGHT  = layoutHeight / 12
-  const NOTICARDWIDTH  = layout * 0.8
+  const NOTICARDWIDTH  = layout * 0.95
 
   const getEvent = async( ) => {
     const { data, error } = await supabase.from('events').select("*").eq("event_id", event_id ).single()

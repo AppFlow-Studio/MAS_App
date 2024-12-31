@@ -73,7 +73,9 @@ const AdminScreen = () => {
 
       { /* Admin Options in Accordion */ }
   
-      <ScrollView>
+      <ScrollView
+      contentContainerStyle={{ flexGrow : 1 }}
+      >
         {
           AdminOptions.map((options, index) => (
             <View key={options.title}><AdminAccordionOptions options={options} index={index + 1}/></View>

@@ -92,7 +92,9 @@ const PlaylistIndex = () => {
                     <TouchableOpacity>
                     <View className='flex-col items-center px-2'>
                         <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "100%",}} className=''>
-                              <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} >
+                              <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} 
+                              className='border-2 border-gray-400 mb-1'
+                              >
                                   <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{height : '70%', width : '70%', objectFit : 'fill'}} />
                               </View>
                         </View>
@@ -104,12 +106,14 @@ const PlaylistIndex = () => {
                   </Link>
                </View>
 
-                <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}}>
+                <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}} >
                   <Link href={`/myPrograms/playlists/AthkarPlaylist`} asChild>
                     <TouchableOpacity>
                     <View className='flex-col items-center px-2 '>
                         <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "100%",}}>
-                              <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} >
+                              <View style={{ height : 140, width : 160, borderRadius : 20, alignItems : 'center', justifyContent : 'center', backgroundColor : 'white'}} 
+                              className='border-2 border-gray-400 mb-1'
+                              >
                                   <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{height : '70%', width : '70%', objectFit : 'fill'}} />
                               </View>
                         </View>

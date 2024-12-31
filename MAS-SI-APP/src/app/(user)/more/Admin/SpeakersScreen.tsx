@@ -69,7 +69,7 @@ const SpeakersScreen = () => {
               <Link  
               href={{
                 pathname: '/(user)/more/Admin/EditSpeakerInfo', 
-                params : { speaker_id : item.speaker_id, speaker_name : item.speaker_name, speaker_img : item.speaker_img, speaker_creds : item.speaker_creds }
+                params : { speaker_id : item.speaker_id, speaker_name : item.speaker_name, speaker_img : item.speaker_img, speaker_creds : item.speaker_creds}
               }}
     
                   asChild >

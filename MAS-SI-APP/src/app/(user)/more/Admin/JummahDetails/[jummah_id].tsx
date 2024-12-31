@@ -1,5 +1,5 @@
 import { View, Text, Alert, Pressable } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import { Button, Icon, TextInput } from 'react-native-paper'
@@ -19,6 +19,7 @@ export default function JummahId() {
   const [ desc, setDesc ] = useState('')
   const [ speakers, setSpeakers] = useState<any[]>([])
   const [ openAddSpeaker, setOpenAddSpeaker ] = useState(false)
+  const descriptionRef = useRef()
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -149,38 +150,50 @@ export default function JummahId() {
           )
         }}
       />
-          <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4 pt-[170px]">
-          Select Who Will be the Khateeb
-          </Text>
-         { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
-          <Text className="text-base font-bold mb-1 ml-2 ">
-            Jummah Title
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-            activeOutlineColor="#0D509D"
-            value={topic}
-            onChangeText={setTopic}
-            placeholder="Topic Name"
-            textColor="black"
-          />
+          <View className='mb-3'>
+            <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4 pt-[170px]">
+            Select Who Will be the Khateeb
+            </Text>
+           { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
+          </View>
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Jummah Description
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor  : 'white' }}
-            multiline
-            activeOutlineColor="#0D509D"
-            value={desc}
-            onChangeText={setDesc}
-            placeholder="Description"
-            textColor="black"
-          />
+          <View>
+            <Text className="text-base font-bold mb-1 ml-2 ">
+              Jummah Title
+            </Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
+              activeOutlineColor="#0D509D"
+              value={topic}
+              onChangeText={setTopic}
+              placeholder="Topic Name"
+              textColor="black"
+            />
+          </View>
+
+         <View>
+            <Text className="text-base font-bold mb-1 mt-2 ml-2">
+              Jummah Description
+            </Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              ref={descriptionRef}
+              style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor  : 'white' }}
+              multiline
+              activeOutlineColor="#0D509D"
+              value={desc}
+              onChangeText={setDesc}
+              placeholder="Description"
+              textColor="black"
+              returnKeyType="done"
+              onKeyPress={(e) => {
+                if (e.nativeEvent.key == 'Enter' ){ e.preventDefault(); descriptionRef.current?.blur()  }
+              }}
+            />
+         </View>
 
          <Button
             mode="contained"

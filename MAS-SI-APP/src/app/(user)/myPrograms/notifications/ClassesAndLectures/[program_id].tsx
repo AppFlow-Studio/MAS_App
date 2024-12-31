@@ -22,7 +22,7 @@ const ClassesAndLecturesSettings = () => {
   const layoutHeight = useWindowDimensions().height
   const [ selectedNotification, setSelectedNotification ] = useState<number[]>([])
   const NOTICARDHEIGHT  = layoutHeight / 12
-  const NOTICARDWIDTH  = layout * 0.8
+  const NOTICARDWIDTH  = layout * 0.95
   const getProgram = async( ) => {
     const { data, error } = await supabase.from('programs').select("*").eq("program_id", program_id ).single()
     if( data ){
@@ -115,11 +115,11 @@ const ClassesAndLecturesSettings = () => {
               <Text>Notification Options</Text>
             </View>
           </View>
-          <View className='bg-white w-[100%] items-center'>
+          <View className='bg-white w-[100%] items-center '>
             {
               array.map((item , index) => {
                 return(
-                  <View className='flex-col' key={index}>
+                  <View className='flex-col w-[100%]' key={index}>
                     <View className='flex-row items-center justify-center'>
                       <NotificationCard height={NOTICARDHEIGHT} width={NOTICARDWIDTH} index={index} scrollY={scrollY} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} program_id={program_id} programInfo={program}/>
                     </View>

@@ -16,6 +16,7 @@ const PaceFlyerDetails = () => {
   const { session } = useAuth()
   const { paceId } = useLocalSearchParams()
   const { width } = Dimensions.get("window");
+  const today = new Date()
   const [ eventInfoData, setEventInfoData ] = useState<EventsType | null>()
   const [ eventLectures, setEventLectures ] = useState<EventsType>()
   const [ eventInNotification, setEventInNotification ] = useState(false)
@@ -89,7 +90,7 @@ const PaceFlyerDetails = () => {
 
   return (
     <>
-       <Stack.Screen options={{ headerBackTitleVisible : false, title : "", headerStyle : {backgroundColor : "white"},  headerRight : () => <NotificationBell /> }}/>
+       <Stack.Screen options={{ headerBackTitleVisible : false, title : "", headerStyle : {backgroundColor : "white"},  headerRight : () => {if( isBefore(today, eventInfoData?.event_end_date) ) return <NotificationBell />; else return <></>} }}/>
        <StatusBar barStyle={"dark-content"}/>
         {eventInfoData?.has_lecture ?  
         <EventsLectureDisplay event_id={eventInfoData?.event_id} event_img={eventInfoData?.event_img} event_name={eventInfoData?.event_name} event_speaker={eventInfoData?.event_speaker}/> 

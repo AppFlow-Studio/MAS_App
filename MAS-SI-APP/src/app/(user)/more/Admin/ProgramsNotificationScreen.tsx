@@ -1,5 +1,5 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import React, { useState, useEffect } from "react";
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, router, Stack, useLocalSearchParams } from "expo-router";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { supabase } from "@/src/lib/supabase";
@@ -13,10 +13,11 @@ const ProgramsEventNotificationScreen = () => {
   const [ users, setUsers ] = useState<any>([])
   const [previewModal, setPreviewModal] = useState(false);
   const [ hasLectures, sethasLectures ] = useState(has_lecture == 'true')
+  const [ keyboardOffset, setKeyboardOffset ] = useState(200)
   const characterLimit = 255;
   const totalUsers = 100;
   const tabBar = useBottomTabBarHeight()
-
+  const scrollViewRef = useRef<ScrollView>()
   const getUsers = async () => {
     const { data : users, error } = await supabase.from('added_notifications_programs').select('*').eq('program_id', program_id)
     if( users ){
@@ -92,7 +93,11 @@ const ProgramsEventNotificationScreen = () => {
       }}
     >
 
-     <ScrollView contentContainerStyle={{ paddingBottom : tabBar + 30 }} className="h-[100%] ">
+     <ScrollView contentContainerStyle={{ paddingBottom : tabBar + 30 }} className="h-[100%] " ref={scrollViewRef}
+     onScroll={(e) => {
+      setKeyboardOffset(200 - e.nativeEvent.contentOffset.y)
+     }}
+     >
         <Image 
           src={program_img}
           className="h-[250] w-[250] rounded-[15px] self-center my-4"
@@ -100,26 +105,28 @@ const ProgramsEventNotificationScreen = () => {
   
         <Text className="text-center text-gray-600">Only Users With This Program Added to their Notification Center Will Get The Notification</Text>
         <Text className="text-xl mt-4">Notification Message</Text>
-        <TextInput
-          mode="outlined"
-          value={notificationMessage}
-          onChangeText={(text) => {
-            if (text.length <= characterLimit) setNotificationMessage(text);
-          }}
-          theme={{ roundness: 5 }}
-          style={{
-            height: 150,
-            width: "100%",
-            backgroundColor: "#F0F0F0",
-            marginTop: "2%",
-          }}
-          activeOutlineColor="#0D509D"
-          placeholder="Enter Your Message Here"
-          textColor="black"
-          multiline
-        />
-        <Text className="text-right text-gray-500 mt-1">{`${notificationMessage.length}/${characterLimit} characters`}</Text>
-        
+        <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={keyboardOffset} className="w-[100%] h-[200]">
+          <TextInput
+            mode="outlined"
+            value={notificationMessage}
+            onChangeText={(text) => {
+              if (text.length <= characterLimit) setNotificationMessage(text);
+            }}
+            theme={{ roundness: 5 }}
+            style={{
+              height: 150,
+              width: "100%",
+              backgroundColor: "#F0F0F0",
+              marginTop: "2%",
+            }}
+            activeOutlineColor="#0D509D"
+            placeholder="Enter Your Message Here"
+            textColor="black"
+            multiline
+          />
+          <Text className="text-right text-gray-500 mt-1 bg-white rounded-[15px]">{`${notificationMessage.length}/${characterLimit} characters`}</Text>
+          
+        </KeyboardAvoidingView>
   
         <Pressable
           onPress={() => setPreviewModal(true)}

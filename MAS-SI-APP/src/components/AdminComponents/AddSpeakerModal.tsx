@@ -1,4 +1,4 @@
-import { View, Text, Pressable, FlatList, ScrollView, Image, Alert } from 'react-native'
+import { View, Text, Pressable, FlatList, ScrollView, Image, Alert, KeyboardAvoidingView, useWindowDimensions } from 'react-native'
 import React, { useState } from 'react'
 import { Dialog, TextInput } from 'react-native-paper';
 import Svg, { Circle, Path } from 'react-native-svg'
@@ -15,6 +15,8 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
   const [ creds , setCreds ] = useState<string[]>([])
   const [ newCred, setNewCred ] = useState<string>('')
   const [ pressAddCred, setPressAddCred ] = useState(false) 
+  const layoutHeight = useWindowDimensions().height
+  
   const pickImage = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -73,7 +75,7 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
         <Dialog.Content className='h-[100%]'>
             <View>
                 <Text className='font-bold text-black text-lg my-1'>Upload Speaker Image </Text>
-                <Pressable className={`max-h-[20%] w-[90%] ${!speakerImg ? 'border-2 border-dotted border-[#6077F5]' : ' my-3' } items-center justify-center self-center rounded-[15px]`} onPress={pickImage}>
+                <Pressable className={`max-h-[20%] w-[90%] ${!speakerImg ? 'border-2 border-dotted border-[#6077F5]' : ' my-2' } items-center justify-center self-center rounded-[15px]`} onPress={pickImage}>
                     {
                     speakerImg ? 
                         <Image src={speakerImg.uri} style={{width: 110, height: 110, borderRadius: 50}}/>
@@ -117,7 +119,8 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
                </View>
                 {
                     pressAddCred && (
-                        <View>
+                        <KeyboardAvoidingView behavior='position' keyboardVerticalOffset={layoutHeight * .25} className='bg-white'>
+                          <View className='bg-white h-[100]'>
                             <TextInput
                             mode="outlined"
                             theme={{ roundness: 10 }}
@@ -137,10 +140,15 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
                                     <Text className='font-bold text-white '>Confirm</Text>
                                 </Pressable>
                             </View>
-                        </View>
+                          </View>
+                        </KeyboardAvoidingView>
                     )
                 }
-                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>Add Credentials</Text>
+                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>
+                  {
+                    pressAddCred ? '' : 'Add Credentials'
+                  }
+                </Text>
 
 
                { 

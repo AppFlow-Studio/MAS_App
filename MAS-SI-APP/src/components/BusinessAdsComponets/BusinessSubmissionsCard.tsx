@@ -115,9 +115,9 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
             {submission.status == 'REVIEW' || submission.status == 'APPROVED'  ?  <Icon source={'check'} size={30} color='white'/> : submission.status == 'REJECT' ? <Icon source={'alpha-x'} color='white' size={30}/>  : <></>}            
         </View>
             <View className='flex-col items-center '>
-                <Animated.Text style={textAnimatedStyle}>Approved</Animated.Text>
+                <Animated.Text style={textAnimatedStyle}>{submission.status == 'REJECT' ? 'Rejected' : 'Approved' }</Animated.Text>
                 <View className=''>
-                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been approved!!</Animated.Text>
+                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been {submission.status == 'REJECT' ? 'Rejected' : 'Approved'}</Animated.Text>
                 </View>
             </View>
         </View>

@@ -13,9 +13,9 @@ import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-m
 import { Divider, Icon } from 'react-native-paper'
 const QuranPlaylist = () => {
   const [ videos, setVideos ] = useState<{youtube_id : string, reciter : string , surah : string, id : string }[]>([])
-  const [ reciters, setReciters ] = useState<{ speaker_id : string, speaker_name : string }[]>([])
+  const [ reciters, setReciters ] = useState<{ speaker_id : string, speaker_name : string, speaker_creds : string[], speaker_img : string }[]>([])
   const getVideos = async () => {
-    const { data , error } = await supabase.from('quran_playlist').select('*')
+    const { data , error } = await supabase.from('quran_playlist').select('*').eq('video_type','Quran')
     const { data : Reciters , error : RecitersError } = await supabase.from('speaker_data').select('*')
      if( data  && Reciters ){
         setVideos(data)
@@ -55,15 +55,15 @@ const QuranPlaylist = () => {
       <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%" }} >
           
           <Animated.Image 
-            source={ { uri: defaultProgramImage }}
+            source={require('@/assets/images/MASHomeLogo.png')}
             style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
             resizeMode='stretch'
           />
 
-          <View className='bg-white border w-[100%]' style={{paddingBottom : Tab * 3}}>
+          <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
 
-            <Text className='text-center mt-2 text-xl text-black font-bold'>Quran</Text>
-              <View className=' px-2 border w-[100%]'>
+            <Text className='text-center mt-2 text-xl text-black font-bold mb-4' >Quran</Text>
+              <View className=' px-2  w-[100%]'>
                   {
                     videos.map(( vid, index ) =>{
                         const speaker = reciters.filter(id => id.speaker_id == vid.reciter )
@@ -72,7 +72,11 @@ const QuranPlaylist = () => {
                         <View className='flex-row items-center' >
                           <Link href={{ 
                             pathname : '/myPrograms/quran/QuranVideo',
-                            params : { youtube_id : vid.youtube_id, quran_id : vid.id, surah : vid.surah }
+                            params : { youtube_id : vid.youtube_id, quran_id : vid.id, surah : vid.surah, 
+                              speaker_name : speaker[0]?.speaker_name, 
+                              speaker_img : speaker[0]?.speaker_img, 
+                              speaker_id : speaker[0]?.speaker_id 
+                            }
                           }} className='items-center justify-center'>
                           
                             <View className='w-[35] h-[25] items-center justify-center mb-2'>

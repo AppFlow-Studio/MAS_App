@@ -20,7 +20,7 @@ type NotificationCardProp = {
 }
 
 const schedule_notification = async ( user_id, push_notification_token, message, notification_type, program_event_name, notification_time ) => {
-  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, message : message, notification_type : notification_type, program_event_name : program_event_name, notification_time : notification_time})
+  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, message : message, notification_type : notification_type, program_event_name : program_event_name, notification_time : notification_time, title : program_event_name})
   if( error ){
     console.log(error)
   }
@@ -149,16 +149,29 @@ const NotificationEventCard = ({height , width, index, scrollY, setSelectedNotif
         transform: [{ scale : scale.value }]
     }
   })
-  const CardOptions = ['Day Before', '30 Mins Before', 'When Program Starts']
+  const CardOptions = ['When Program Starts', '30 Mins Before', 'Day Before']
+  const CardInfo = [
+    { header : 'Notify at Start:' , subText : "Get notified exactly when the program starts"},
+    { header : 'Notify 30 minutes before Start:' , subText : "Get reminded 30 min before the program starts"},
+    { header : 'Notify 1 day before Start:' , subText : "Get reminded 1 day before the program starts"}
+  ]
   return (
-        <Animated.View style={[{ height : height, width : width, borderRadius : 20, shadowColor : "black", shadowOpacity : 1, shadowRadius : 1, shadowOffset : {width : 0, height : 0} }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
-            <Pressable onPress={handlePress} style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center"  }]}>
-              {checked ?    <Icon source={"checkbox-blank-circle"}  size={25}/>  : <Icon source={"checkbox-blank-circle-outline"}  size={25}/>}
-                <View className='w-[5]'/>
-                <View style={{ backgroundColor : "white", height : height, width : width, borderRadius : 20,  paddingVertical : 10, paddingHorizontal : 10, alignItems : 'center', justifyContent : 'center'}}>
-                <Text className='text-bold text-black text-2xl'>{CardOptions[index]}</Text>
-              </View>
-            </Pressable>
+      <Animated.View style={[{ height : height, width : width, borderRadius : 20 }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
+            <Pressable 
+              onPress={handlePress} 
+              style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center", backgroundColor : 'white'  }]}
+              className=''
+              >
+              <View className='w-[10%]'>
+                  {selectedNotification.includes(index) ?  <Icon source={"checkbox-blank-circle"}  size={25} color='#6077F5'/>  : <Icon source={"checkbox-blank-circle-outline"}  size={25} color='#6077F5'/>}
+              </View>            
+              <View style={{ height : height, borderRadius : 20,  paddingVertical : 10, paddingHorizontal : '4%', justifyContent:'center'}}
+              className='w-[85%]'
+              >
+                  <Text className='font-bold text black text-lg border' numberOfLines={1} adjustsFontSizeToFit>{CardInfo[index] ? CardInfo[index].header : ''}</Text>
+                  <Text className='text-gray-400'>{CardInfo[index] ? CardInfo[index].subText : ''}</Text>
+                </View>
+              </Pressable>
         </Animated.View>
   )
 }

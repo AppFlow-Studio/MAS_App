@@ -17,6 +17,7 @@ import { useForm, SubmitHandler, Controller } from "react-hook-form"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SubmissionFormSchema, submissionFormSchema, businessInfoSubmissions, BusinessInfoSchema } from '@/src/components/forms/Personal-Info'
 import Animated, { Easing, FadeIn, FadeInLeft, FadeInRight, FadeOut, FadeOutLeft, FadeOutRight, useAnimatedStyle } from 'react-native-reanimated'
+import Toast from 'react-native-toast-message'
 const BusinessAdsDurationInfoTooltip = () => {
     return(
         <Menu>
@@ -121,6 +122,18 @@ const BusinessAds = () => {
                 router.back()
             }
         }
+        Toast.show(
+            {
+                type : 'success',
+                text1 : 'Submission Received!',
+                position: "top",
+                topOffset: 50,
+                visibilityTime: 2000,
+            }
+        )
+    }
+    else{
+        Alert.alert("Submit Business Flyer")
     }
 
 }
@@ -129,11 +142,10 @@ const BusinessAds = () => {
   };
   
   return (
-    <KeyboardAvoidingView 
-    className="flex-1 pt-15"
-    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-        <ScrollView className='flex-1 bg-white' contentContainerStyle={{ paddingBottom : tabBarHeight }}>
+        <ScrollView className='flex-1 bg-white' contentContainerStyle={{ paddingBottom : tabBarHeight }}
+        automaticallyAdjustKeyboardInsets
+        contentInsetAdjustmentBehavior='scrollableAxes'
+        >
         <Stack.Screen options={{ title : 'Business Application', headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',} }}/>
         <View className='w-[100%] bg-[#0D509D] h-[15%] flex-row items-center justify-evenly'>
             { stageInfo.map((item, index) => {
@@ -306,7 +318,7 @@ const BusinessAds = () => {
                                 </View>
                             )}
                         </Pressable>
-                        <View className='flex-row items-center w-[100%] justify-between  px-5 mt-3' > 
+                        <View className='flex-row items-center w-[100%] justify-between  px-5 mt-[20%]' > 
                             <Button className=' bg-gray-500 ' mode='contained' theme={{ roundness : 1 }} onPress={onGoBack} textColor='white'>
                                 <Text>Back</Text>
                             </Button>
@@ -319,7 +331,6 @@ const BusinessAds = () => {
             }
         </View>
         </ScrollView>
-        </KeyboardAvoidingView>
   )
 }
 

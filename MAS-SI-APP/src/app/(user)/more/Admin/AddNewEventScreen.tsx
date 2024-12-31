@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView } from "react-native";
 import { router, Stack } from "expo-router";
 import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
@@ -57,6 +57,9 @@ const AddNewEventScreen = () => {
   const [ hasLectures, sethasLectures ]  = useState(false)
   const [ openAddSpeaker, setOpenAddSpeaker ] = useState(false) 
   const tabHeight = useBottomTabBarHeight() + 20
+  const scrollViewRef = useRef<ScrollView>(null)
+  const descriptionRef = useRef<View>(null)
+  const titleRef = useRef<View>(null)
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -207,9 +210,9 @@ const AddNewEventScreen = () => {
     )
   }
   const onSumbit = async () => {
-    if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && eventImage) {
+    if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && eventImage && eventStartTime ) {
       const base64 = await FileSystem.readAsStringAsync(eventImage.uri, { encoding: 'base64' });
-      const filePath = `${eventName.trim()}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
+      const filePath = `${eventName.trim().split(" ").join("_")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = eventImage.type === 'image' ? 'image/png' : 'video/mp4';
       const { data : image, error :image_upload_error } = await supabase.storage.from('event_flyers').upload(filePath, decode(base64));
       if( image ){
@@ -289,218 +292,321 @@ const AddNewEventScreen = () => {
           }}
       />
       <View style={{ padding: 10, backgroundColor : 'white', paddingTop: 170 }}>
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
-          showsVerticalScrollIndicator={false}
-        >
-           <Text className="text-base font-bold mb-1 mt-2 ml-2">Event Details</Text>
-          <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
-          <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
-          <Text className=" text-black text-[11px]">
-             Start Time: { eventStartTime ? format(eventStartTime, 'p') : '__'}
-            </Text>
-            {showStartTimePicker && (
-            <DateTimePicker
-              value={new Date(eventStartTime!)}
-              mode="time"
-              display="default"
-              onChange={(event, time) => {
-                if (time) setEventStartTime(time);
-              }}
-            />
-          )}
-          </Pressable>
-          <Text className="font-bold text-[13px] text-black my-3 ml-2">Date:</Text>
-          <View className="flex flex-row gap-x-2">
-          <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartDatePicker(true)}>
-            <Text className="text-black text-[11px]">
-             Start Date: { eventStartDate ? eventStartDate.toLocaleDateString() : '__'}
-            </Text>
-            {showStartDatePicker && (
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
+            showsVerticalScrollIndicator={false}
+            automaticallyAdjustKeyboardInsets
+            ref={scrollViewRef}
+          >
+             <Text className="text-base font-bold mb-1 mt-2 ml-2">Event Details</Text>
+            <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
+            <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
+            <Text className=" text-black text-[11px]">
+               Start Time: { eventStartTime ? format(eventStartTime, 'p') : '__'}
+              </Text>
+              {showStartTimePicker && (
               <DateTimePicker
-                value={eventStartDate ? eventStartDate : new Date()}
-                mode="date"
+                value={new Date(eventStartTime!)}
+                mode="time"
                 display="default"
-                onChange={(event, date) => {
-                  setShowStartDatePicker(false);
-                  if (date) setEventStartDate(date);
+                onChange={(event, time) => {
+                  if (time) setEventStartTime(time);
                 }}
               />
             )}
-          </Pressable>
-
-          <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowEndDatePicker(true)}>
-          <Text className="text-black text-[11px]">
-             End Date: { eventEndDate ? eventEndDate.toLocaleDateString() : '__'}
-            </Text>
-            {showEndDatePicker && (
-              <DateTimePicker
-                value={ eventEndDate ?  eventEndDate : new Date()}
-                mode="date"
-                display="default"
-                onChange={(event, date) => {
-                  setShowEndDatePicker(false);
-                  if (date) setEventEndDate(date);
-                }}
-              />
-            )}
-          </Pressable>
-          </View>
-
-          <Text className="text-base font-bold mb-4 mt-4 ml-2">
-          Select the day(s) this event is held:          
-          </Text>
-         <View className="flex flex-row  gap-5 flex-wrap">
-            {days.map((day, index) => (
-               <Pressable
-               key={index}
-               style={{ flexDirection: "row", alignItems: "center" }}
-               onPress={() => toggleDaySelection(day)}
-               className="w-[25%]"
-             >
-               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
-                 {eventDays.includes(day) ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-               </View>
-               <Text className="ml-5">{day}</Text>
-             </Pressable>
-            ))}
-         </View>
-
-
-         <Text className="text-base font-bold mb-1 ml-2 mt-4">
-            Title
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
-            value={eventName}
-            onChangeText={setEventName}
-            placeholder="Event Name"
-            textColor="black"
-          />
-
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Description
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-            multiline
-            activeOutlineColor="#0D509D"
-            value={eventDescription}
-            onChangeText={setEventDescription}
-            placeholder="Event Description"
-            textColor="black"
-          />
-           <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
-          Who is the Speaker of the Program 
-          </Text>
-         { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
-           
-         <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Upload Event Image
-          </Text>
-
-         
-          {eventImage ? (
-            <Pressable onPress={pickImage}>
-            <Image
-              source={{ uri: eventImage.uri }}
-              style={{
-                width: 170,
-                height:  170,
-                marginVertical: "1%",
-                alignSelf : "center",
-                borderRadius: 15
-              }}
-              resizeMode="cover"
-            /> 
             </Pressable>
-          ): (
-            <Button
-            mode="contained"
-            buttonColor="#57BA47"
-            textColor="white"
-            theme={{ roundness: 1 }}
-            onPress={pickImage}
-            className="w-[100%]"
-            >
-              Upload
-            </Button>
-            )
-          }
-
-         <Text className="text-black font-bold ml-4 mt-4">Does the Program have recorded Youtube Videos? </Text>
-        <View className="flex flex-row justify-evenly">
-        <Pressable
-               style={{ flexDirection: "row", alignItems: "center" }}
-               className="w-[25%]"
-               onPress={() => sethasLectures(false)}
-             >
-               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full">
-                 {!hasLectures ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-               </View>
-               <Text className="ml-5">No</Text>
-             </Pressable>
-
-             <Pressable
-               style={{ flexDirection: "row", alignItems: "center" }}
-               className="w-[25%]"
-               onPress={() => sethasLectures(true)}
-
-             >
-               <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full my-4">
-                 {hasLectures? <Icon  source={'check'} size={15} color="green"/> : <></>}
-               </View>
-               <Text className="ml-5">Yes</Text>
-             </Pressable>
-        </View>
-
-        <Text className="text-black font-bold ml-4 mt-4">Event Type: (<Text className="text-black text-[10px] font-[300]"> It will go under the checked box section </Text>)</Text>
- 
-
-         <View className="flex flex-row flex-wrap gap-3 my-4 w-[100%]  self-center ml-[0.5] items-center">
-
-           <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsPace(true)}
-              className="w-[40%] justify-between px-6 "
-            >
-              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                {isPace ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold">PACE</Text>
+            <Text className="font-bold text-[13px] text-black my-3 ml-2">Date:</Text>
+            <View className="flex flex-row gap-x-2">
+            <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartDatePicker(true)}>
+              <Text className="text-black text-[11px]">
+               Start Date: { eventStartDate ? eventStartDate.toLocaleDateString() : '__'}
+              </Text>
+              {showStartDatePicker && (
+                <DateTimePicker
+                  value={eventStartDate ? eventStartDate : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(event, date) => {
+                    setShowStartDatePicker(false);
+                    if (date) setEventStartDate(date);
+                  }}
+                />
+              )}
             </Pressable>
   
-            <Pressable
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: "4%",
-              }}
-              onPress={() => setIsPace(false)}
-              className="w-[40%] justify-between px-6 "
-            >
-              <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                {!isPace ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-              </View>
-              <Text className="text-base font-bold">Event</Text>
+            <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowEndDatePicker(true)}>
+            <Text className="text-black text-[11px]">
+               End Date: { eventEndDate ? eventEndDate.toLocaleDateString() : '__'}
+              </Text>
+              {showEndDatePicker && (
+                <DateTimePicker
+                  value={ eventEndDate ?  eventEndDate : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(event, date) => {
+                    setShowEndDatePicker(false);
+                    if (date) setEventEndDate(date);
+                  }}
+                />
+              )}
             </Pressable>
-         </View>
-
-         <View className="w-[100%] " >
-             <Text className="text-black font-bold ml-4 mt-4">Further Classification: </Text>
-             <View className="flex flex-row flex-wrap gap-5 my-4 w-[100%]  self-center ml-[0.5] items-center">
-            { !isPace ? 
-              <>
-                <  Pressable
+            </View>
+  
+            <Text className="text-base font-bold mb-4 mt-4 ml-2">
+            Select the day(s) this event is held:          
+            </Text>
+           <View className="flex flex-row  gap-5 flex-wrap">
+              {days.map((day, index) => (
+                 <Pressable
+                 key={index}
+                 style={{ flexDirection: "row", alignItems: "center" }}
+                 onPress={() => toggleDaySelection(day)}
+                 className="w-[25%]"
+               >
+                 <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center">
+                   {eventDays.includes(day) ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                 </View>
+                 <Text className="ml-5">{day}</Text>
+               </Pressable>
+              ))}
+           </View>
+  
+  
+           <View ref={titleRef}>
+             <Text className="text-base font-bold mb-1 ml-2 mt-4">
+                Title
+              </Text>
+              <TextInput
+                mode="outlined"
+                theme={{ roundness: 10 }}
+                style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                activeOutlineColor="#0D509D"
+                value={eventName}
+                onChangeText={setEventName}
+                placeholder="Event Name"
+                textColor="black"
+                onFocus={() => {
+                  titleRef.current?.measure(
+                    (x, y, width, height, pageX, pageY) => {
+                    scrollViewRef.current?.scrollTo(
+                      {
+                        y: y,
+                        animated : true
+                      }
+                    )
+                  })
+                }}
+              />
+           </View>
+            <View ref={descriptionRef}>
+              <Text className="text-base font-bold mb-1 mt-2 ml-2">
+                Description
+              </Text>
+              <TextInput
+                mode="outlined"
+                theme={{ roundness: 10 }}
+                style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
+                multiline
+                activeOutlineColor="#0D509D"
+                value={eventDescription}
+                onChangeText={setEventDescription}
+                placeholder="Event Description"
+                textColor="black"
+                onFocus={() => {
+                    descriptionRef.current?.measure(
+                      (x, y, width, height, pageX, pageY) => {
+                      scrollViewRef.current?.scrollTo(
+                        {
+                          y: y,
+                          animated : true
+                        }
+                      )
+                    })
+                }}
+              />
+            </View>
+             <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
+            Who is the Speaker of the Program 
+            </Text>
+           { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
+             
+           <Text className="text-base font-bold mb-1 mt-2 ml-2">
+              Upload Event Image
+            </Text>
+  
+           
+            {eventImage ? (
+              <Pressable onPress={pickImage}>
+              <Image
+                source={{ uri: eventImage.uri }}
+                style={{
+                  width: 170,
+                  height:  170,
+                  marginVertical: "1%",
+                  alignSelf : "center",
+                  borderRadius: 15
+                }}
+                resizeMode="cover"
+              /> 
+              </Pressable>
+            ): (
+              <Button
+              mode="contained"
+              buttonColor="#57BA47"
+              textColor="white"
+              theme={{ roundness: 1 }}
+              onPress={pickImage}
+              className="w-[100%]"
+              >
+                Upload
+              </Button>
+              )
+            }
+  
+           <Text className="text-black font-bold ml-4 mt-4">Does the Program have recorded Youtube Videos? </Text>
+          <View className="flex flex-row justify-evenly">
+          <Pressable
+                 style={{ flexDirection: "row", alignItems: "center" }}
+                 className="w-[25%]"
+                 onPress={() => sethasLectures(false)}
+               >
+                 <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full">
+                   {!hasLectures ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                 </View>
+                 <Text className="ml-5">No</Text>
+               </Pressable>
+  
+               <Pressable
+                 style={{ flexDirection: "row", alignItems: "center" }}
+                 className="w-[25%]"
+                 onPress={() => sethasLectures(true)}
+  
+               >
+                 <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center rounded-full my-4">
+                   {hasLectures? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                 </View>
+                 <Text className="ml-5">Yes</Text>
+               </Pressable>
+          </View>
+  
+          <Text className="text-black font-bold ml-4 mt-4">Event Type: (<Text className="text-black text-[10px] font-[300]"> It will go under the checked box section </Text>)</Text>
+   
+  
+           <View className="flex flex-row flex-wrap gap-3 my-4 w-[100%]  self-center ml-[0.5] items-center">
+  
+             <Pressable
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: "4%",
+                }}
+                onPress={() => setIsPace(true)}
+                className="w-[40%] justify-between px-6 "
+              >
+                <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                  {isPace ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                </View>
+                <Text className="text-base font-bold">PACE</Text>
+              </Pressable>
+    
+              <Pressable
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: "4%",
+                }}
+                onPress={() => setIsPace(false)}
+                className="w-[40%] justify-between px-6 "
+              >
+                <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                  {!isPace ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                </View>
+                <Text className="text-base font-bold">Event</Text>
+              </Pressable>
+           </View>
+  
+           <View className="w-[100%] " >
+               <Text className="text-black font-bold ml-4 mt-4">Further Classification: </Text>
+               <View className="flex flex-row flex-wrap gap-5 my-4 w-[100%]  self-center ml-[0.5] items-center">
+              { !isPace ? 
+                <>
+                  <  Pressable
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: "4%",
+                      }}
+                      onPress={() => setIsSocialService(!isSocialService)}
+                      className="w-[35%] justify-between px-2 "
+                    >
+                      <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                        {isSocialService ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                      </View>
+                      <Text className="text-[12px] font-[400] text-black">Social Services</Text>
+                    </Pressable>
+    
+                    <Pressable
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: "4%",
+                      }}
+                      onPress={() => setIsFundraiser(!isFundraiser)}
+                      className="w-[35%] justify-between px-2 "
+                    >
+                      <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                        {isFundraiser ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                      </View>
+                      <Text className="text-[12px] font-[400] text-black">Fundraiser</Text>
+                    </Pressable>
+    
+                    <Pressable
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: "4%",
+                      }}
+                      onPress={() => setIsReverts(!isReverts)}
+                      className="w-[35%] justify-between px-2 "
+                    >
+                      <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                        {isReverts ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                      </View>
+                      <Text className="text-[12px] font-[400] text-black">Reverts Event</Text>
+                    </Pressable>
+    
+                    <Pressable
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: "4%",
+                      }}
+                      onPress={() => setIsBreakfast(!isBreakfast)}
+                      className="w-[45%] justify-between px-2 "
+                    >
+                      <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
+                        {isBreakfast ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                      </View>
+                      <Text className="text-[12px] font-[400] text-black" >Brothers Breakfast</Text>
+                    </Pressable>
+    
+                    <Pressable
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginBottom: "4%",
+                      }}
+                      onPress={() => setIsOutreach(!isOutreach)}
+                      className="w-[80%] justify-center  px-2 "
+                    >
+                      <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center mx-5">
+                        {isOutreach ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                      </View>
+                      <Text className="text-[12px] font-[400] text-black">Outreach Activities</Text>
+                    </Pressable>
+                  </>
+                  :
+                    <Pressable
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
@@ -514,130 +620,55 @@ const AddNewEventScreen = () => {
                     </View>
                     <Text className="text-[12px] font-[400] text-black">Social Services</Text>
                   </Pressable>
+                  }
   
+                </View>
+                <Text className="text-black font-bold ml-5 mt-2">Is this { isPace ? 'Pace Event' : 'Event'} Paid?</Text>
                   <Pressable
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      marginBottom: "4%",
+                      marginVertical: "4%",
                     }}
-                    onPress={() => setIsFundraiser(!isFundraiser)}
-                    className="w-[35%] justify-between px-2 "
+                    onPress={() => setIsPaid(!isPaid)}
+                    className="w-[35%] justify-between px-6 ml-5"
                   >
                     <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                      {isFundraiser ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                        {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
                     </View>
-                    <Text className="text-[12px] font-[400] text-black">Fundraiser</Text>
+                    <Text className="text-base font-bold">Paid</Text>
                   </Pressable>
+                  {isPaid && (
+                    <View>
+                      <Text className="text-base font-bold mb-1 ml-2">
+                        Enter Event Website Link
+                      </Text>
+                      <TextInput
+                        mode="outlined"
+                        theme={{ roundness: 10 }}
+                        style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                        activeOutlineColor="#0D509D"
+                        value={eventPaidLink}
+                        onChangeText={setEventPaidLink}
+                        placeholder="Enter MAS Shop Link..."
+                        textColor="black"
+                      />
+                    </View>
+                  )}
+           </View>
+            
   
-                  <Pressable
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: "4%",
-                    }}
-                    onPress={() => setIsReverts(!isReverts)}
-                    className="w-[35%] justify-between px-2 "
-                  >
-                    <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                      {isReverts ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-                    </View>
-                    <Text className="text-[12px] font-[400] text-black">Reverts Event</Text>
-                  </Pressable>
-  
-                  <Pressable
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: "4%",
-                    }}
-                    onPress={() => setIsBreakfast(!isBreakfast)}
-                    className="w-[45%] justify-between px-2 "
-                  >
-                    <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                      {isBreakfast ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-                    </View>
-                    <Text className="text-[12px] font-[400] text-black" >Brothers Breakfast</Text>
-                  </Pressable>
-  
-                  <Pressable
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: "4%",
-                    }}
-                    onPress={() => setIsOutreach(!isOutreach)}
-                    className="w-[80%] justify-center  px-2 "
-                  >
-                    <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center mx-5">
-                      {isOutreach ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-                    </View>
-                    <Text className="text-[12px] font-[400] text-black">Outreach Activities</Text>
-                  </Pressable>
-                </>
-                :
-                  <Pressable
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: "4%",
-                  }}
-                  onPress={() => setIsSocialService(!isSocialService)}
-                  className="w-[35%] justify-between px-2 "
-                >
-                  <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                    {isSocialService ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-                  </View>
-                  <Text className="text-[12px] font-[400] text-black">Social Services</Text>
-                </Pressable>
-                }
-
-              </View>
-              <Text className="text-black font-bold ml-5 mt-2">Is this { isPace ? 'Pace Event' : 'Event'} Paid?</Text>
-                <Pressable
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginVertical: "4%",
-                  }}
-                  onPress={() => setIsPaid(!isPaid)}
-                  className="w-[35%] justify-between px-6 ml-5"
-                >
-                  <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                      {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-                  </View>
-                  <Text className="text-base font-bold">Paid</Text>
-                </Pressable>
-                {isPaid && (
-                  <View>
-                    <Text className="text-base font-bold mb-1 ml-2">
-                      Enter Event Website Link
-                    </Text>
-                    <TextInput
-                      mode="outlined"
-                      theme={{ roundness: 10 }}
-                      style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-                      activeOutlineColor="#0D509D"
-                      value={eventPaidLink}
-                      onChangeText={setEventPaidLink}
-                      placeholder="Enter MAS Shop Link..."
-                      textColor="black"
-                    />
-                  </View>
-                )}
-         </View>
+            <Button
+              mode="contained"
+              buttonColor="#57BA47"
+              textColor="white"
+              theme={{ roundness: 1 }}
+              onPress={async () => await onSumbit()}
+            >
+              Submit Event
+            </Button>
+          </ScrollView>
           
-
-          <Button
-            mode="contained"
-            buttonColor="#57BA47"
-            textColor="white"
-            theme={{ roundness: 1 }}
-            onPress={async () => await onSumbit()}
-          >
-            Submit Event
-          </Button>
-        </ScrollView>
         <AddSpeakerModal setIsOpen={setOpenAddSpeaker} isOpen={openAddSpeaker}/>
       </View>
     </>

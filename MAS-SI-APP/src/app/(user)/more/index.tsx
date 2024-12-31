@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, useWindowDimensions, Image, Pressable, StatusBar, Linking  } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { View, Text, ScrollView, useWindowDimensions, Image, Pressable, StatusBar, Linking, Alert, KeyboardAvoidingView  } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
 import LottieView from 'lottie-react-native'
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
@@ -31,21 +31,24 @@ const Index = () => {
   const [ feedbackMessage, setFeedBackMessage ] = useState('')
   const FeedBackRight = useSharedValue(0)
   const FeedBackInputWidth = useSharedValue(0)
+  const feedbackRef = useRef()
+  const appflowRef = useRef<View>()
+  const scrollViewRef = useRef<ScrollView>()
   const FeedBackInput = useAnimatedStyle(() => {
     return{
-      width : feedbackOpen ? withTiming(width * .75, { duration : 2000 }) : withTiming(0, { duration : 2000 } ),
-      opacity : feedbackOpen ? withTiming(1, { duration : 2000 }) : withTiming(0, { duration : 2000 } )
+      width : feedbackOpen ? withTiming(width * .75, { duration : 1500 }) : withTiming(0, { duration : 1500 } ),
+      opacity : feedbackOpen ? withTiming(1, { duration : 1500 }) : withTiming(0, { duration : 1500 } )
     }
   })
   const FeedBackButton = useAnimatedStyle(() => {
     return {
-      right : feedbackOpen ? withTiming(width * .05, { duration : 2000 }) : withTiming(0, { duration : 2000 } ),
-      width : feedbackOpen ? withTiming(width * .75 / 5, { duration : 1000 }) : withTiming(150, { duration : 2000})
+      right : feedbackOpen ? withTiming(width * .05, { duration : 1500 }) : withTiming(0, { duration : 1500 } ),
+      width : feedbackOpen ? withTiming(width * .75 / 5, { duration : 500 }) : withTiming(150, { duration : 1500})
     }
   })
   const FeedBackArrowOpacity = useAnimatedStyle(() => {
     return{
-      opacity : feedbackOpen ? withTiming(0, { duration : 1000 }) : withTiming(1, { duration : 5000 } )
+      opacity : feedbackOpen ? withTiming(0, { duration : 500 }) : withTiming(1, { duration : 3000 } )
     }
   })
   const flip = useAnimatedStyle(() => {
@@ -94,12 +97,13 @@ const Index = () => {
       timerId = setTimeout(() => 
       {
         setFeedBackOpen(false);
+
       }
     ,5000) 
     }
     else if ( feedbackMessage ) {
       clearTimeout(timerId);
-      setFeedBackOpen(true)
+      setFeedBackOpen(true);
     }
   }, [ feedbackOpen, feedbackMessage ])
   const hideModal = () => setEditProfileVisible(false);
@@ -121,7 +125,11 @@ const Index = () => {
     Linking.openURL("https://massic.shop/");
   });
   return (
-    <ScrollView className='bg-white pt-[18%] h-[100%]'>
+    <ScrollView className='bg-white pt-[18%] h-[100%]' 
+    ref={scrollViewRef}
+    keyboardDismissMode='on-drag'
+    automaticallyAdjustKeyboardInsets
+    >
       <StatusBar barStyle={'dark-content'}/>
       <View className='w-[100%] items-center justify-start' style={{ height : anonStatus ? height / 6 : height / 3.5  }}>
         <Pressable className='w-[100%] px-10' onPress={async () =>  {
@@ -339,10 +347,10 @@ const Index = () => {
         </Link>
       }
 
-      <View className='w-[100%] flex flex-row justify-end items-center mt-5'>
-        <Animated.View className='bg-[#6A6A6A] h-[40px] items-center justify-center rounded-[15px] self-end relative' style={FeedBackButton}>
+      <View className='w-[100%] flex flex-row justify-end items-center mt-5 mb-2'>
+        <Animated.View className='h-[40px] items-center justify-center rounded-[15px] self-end relative' style={[FeedBackButton, { backgroundColor : feedbackOpen ? '#12BD30' : '#6A6A6A'}]}>
           <Pressable onPress={async () => {
-            if( feedbackOpen && feedbackMessage ){
+            if( feedbackOpen && feedbackMessage.trim() ){
               const { error } =  await supabase.functions.invoke('donation-confirmation-email',{body : { message : feedbackMessage }})
               if (error) return
               Toast.show({
@@ -356,11 +364,12 @@ const Index = () => {
               setFeedBackOpen(false)
             }
             else{
-            setFeedBackOpen(!feedbackOpen) 
+            if (feedbackOpen) Alert.alert('Input FeedBack To Send') 
+            setFeedBackOpen(!feedbackOpen)
             }
           }} 
           className='items-center justify-between flex flex-row w-[100%] h-[100%] py-2 px-2 rounded-[15px]'>
-            <Text className='text-white font-bold '>{feedbackOpen ? 'Send' : 'Feature Request'}</Text>
+            <Text className='text-white font-bold'>{feedbackOpen ? 'Send' : 'Feature Request'}</Text>
             {
             feedbackOpen ? <></> : 
             <Animated.View style={FeedBackArrowOpacity} >
@@ -372,30 +381,35 @@ const Index = () => {
             </Pressable>
         </Animated.View>
 
-        <Animated.View style={FeedBackInput} className='relative self-end mr-3 '>
-          <View className='w-[100%] '>
-            <TextInput
-              mode='outlined'
-              style={{ width: "100%", height: 45, backgroundColor : 'white'}}
-              value={feedbackMessage}
-              onChangeText={setFeedBackMessage}
-              placeholder="Enter Feedback Message..."
-              className=''
-              textColor="black"
-              activeOutlineColor="#0D509D"
-            />
-          </View>
-        </Animated.View>
-  
+          <Animated.View style={FeedBackInput} className='relative self-end mr-3'>
+              <TextInput
+                mode='outlined'
+                ref={feedbackRef}
+                style={{ width: "100%", height: 45, backgroundColor : 'white' }}
+                value={feedbackMessage}
+                onChangeText={setFeedBackMessage}
+                placeholder="Enter Feedback Message..."
+                className=''
+                textColor="black"
+                activeOutlineColor="#0D509D"
+                enterKeyHint='done'
+                contentStyle={{ }}
+                
+              />
+          </Animated.View>
+
        
       </View>
-        <View className='w-[95%] mt-8 items-center justify-center p-4 flex flex-col gap-y-4' style={{ borderRadius : 10}}>
+      
+        <View className='w-[95%] mt-8 items-center justify-center p-4 flex flex-col gap-y-4' style={{ borderRadius : 10}}
+          ref={appflowRef}
+        >
           <Text adjustsFontSizeToFit allowFontScaling numberOfLines={1}  className='text-black text-xl'>Created By: AppFlowCreations</Text>
           <Text className='text-[#6077F5]'>appflowcreations@gmail.com </Text>
         </View>
       </View>
       </View>
-      <SignInAnonModal visible={visible} setVisible={setVisible}/>
+      <SignInAnonModal visible={visible} setVisible={() => setVisible(false)}/>
       <View style={[{paddingBottom : tabBarHeight}]}></View>
       <Portal>
       <Modal  visible={editProfileVisible} onDismiss={hideModal} contentContainerStyle={{

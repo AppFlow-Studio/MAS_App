@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
@@ -76,6 +76,10 @@ const UpdateEventScreen = () => {
   const [ imgURL, setImgURL ] = useState('')
   const tabHeight = useBottomTabBarHeight() + 20
 
+  const scrollViewRef = useRef<ScrollView>(null)
+  const descriptionRef = useRef<View>(null)
+  const titleRef = useRef<View>(null)
+  
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -205,11 +209,11 @@ const UpdateEventScreen = () => {
     }
   }
   const onUpdate = async  () => {
-    if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && (eventImage || imgURL)) {
+    if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && (eventImage || imgURL) && eventStartTime) {
       if ( eventImage ){
         const base64 = await FileSystem.readAsStringAsync(eventImage.uri, { encoding: 'base64' });
         if ( eventName == originalName ){
-          const filePath = `${eventName.trim().split(" ").join("")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
+          const filePath = `${eventName.trim().split(" ").join("_")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
           const { data : image, error :image_upload_error } = await supabase.storage.from('event_flyers').update(filePath, decode(base64));
           const time =  format(eventStartTime!, 'p').trim()
           const { error } = await supabase.from('events').update({
@@ -344,7 +348,8 @@ const UpdateEventScreen = () => {
       <ScrollView
         contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
         showsVerticalScrollIndicator={false}
-      >
+        ref={scrollViewRef}
+        >
          <Text className="text-base font-bold mb-1 mt-2 ml-2">Event Details</Text>
         <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
         <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
@@ -420,34 +425,60 @@ const UpdateEventScreen = () => {
        </View>
 
 
-       <Text className="text-base font-bold mb-1 ml-2 mt-4">
-          Title
-        </Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-          activeOutlineColor="#0D509D"
-          value={eventName}
-          onChangeText={setEventName}
-          placeholder="Event Name"
-          textColor="black"
-        />
+       <View ref={titleRef}>
+         <Text className="text-base font-bold mb-1 ml-2 mt-4">
+            Title
+          </Text>
+          <TextInput
+            mode="outlined"
+            theme={{ roundness: 10 }}
+            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+            activeOutlineColor="#0D509D"
+            value={eventName}
+            onChangeText={setEventName}
+            placeholder="Event Name"
+            textColor="black"
+            onFocus={() => {
+              titleRef.current?.measure(
+                (x, y, width, height, pageX, pageY) => {
+                scrollViewRef.current?.scrollTo(
+                  {
+                    y: y,
+                    animated : true
+                  }
+                )
+              })
+            }}
+          />
+       </View>
 
-        <Text className="text-base font-bold mb-1 mt-2 ml-2">
-          Description
-        </Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-          multiline
-          activeOutlineColor="#0D509D"
-          value={eventDescription}
-          onChangeText={setEventDescription}
-          placeholder="Event Description"
-          textColor="black"
-        />
+        <View ref={descriptionRef}>
+          <Text className="text-base font-bold mb-1 mt-2 ml-2">
+            Description
+          </Text>
+          <TextInput
+            mode="outlined"
+            theme={{ roundness: 10 }}
+            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
+            multiline
+            activeOutlineColor="#0D509D"
+            value={eventDescription}
+            onChangeText={setEventDescription}
+            placeholder="Event Description"
+            textColor="black"
+            onFocus={() => {
+              descriptionRef.current?.measure(
+                (x, y, width, height, pageX, pageY) => {
+                scrollViewRef.current?.scrollTo(
+                  {
+                    y: y,
+                    animated : true
+                  }
+                )
+              })
+            }}
+          />
+        </View>
          <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
         Who is the Speaker of the Program 
         </Text>

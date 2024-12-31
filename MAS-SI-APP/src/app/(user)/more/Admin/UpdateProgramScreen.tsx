@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { TextInput, Checkbox, Button, Icon } from "react-native-paper";
@@ -62,6 +62,9 @@ const UpdateProgramScreen = () => {
   const [ hasLectures, sethasLectures ] = useState(false)
   const [ imgURL, setImgURL ] = useState('')
   const tabHeight = useBottomTabBarHeight() + 20
+  const scrollViewRef = useRef<ScrollView>(null)
+  const descriptionRef = useRef<View>(null)
+  const titleRef = useRef<View>(null)
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -261,6 +264,7 @@ const UpdateProgramScreen = () => {
         <ScrollView
           contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
           showsVerticalScrollIndicator={false}
+          ref={scrollViewRef}
         >
           <Text className="text-base font-bold mb-1 mt-2 ml-2">Program Details</Text>
           <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
@@ -337,34 +341,61 @@ const UpdateProgramScreen = () => {
          </View>
 
 
-          <Text className="text-base font-bold mb-1 ml-2 mt-4">
-            Title
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-            activeOutlineColor="#0D509D"
-            value={programName}
-            onChangeText={setProgramName}
-            placeholder="Enter The Program... "
-            textColor="black"
-          />
+          <View ref={titleRef}>
+            <Text className="text-base font-bold mb-1 ml-2 mt-4">
+              Title
+            </Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
+              activeOutlineColor="#0D509D"
+              value={programName}
+              onChangeText={setProgramName}
+              placeholder="Enter The Program... "
+              textColor="black"
+              onFocus={() => {
+                titleRef.current?.measure(
+                  (x, y, width, height, pageX, pageY) => {
+                  scrollViewRef.current?.scrollTo(
+                    {
+                      y: y,
+                      animated : true
+                    }
+                  )
+                })
+              }}
+            />
+          </View>
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Description
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor  : 'white' }}
-            multiline
-            activeOutlineColor="#0D509D"
-            value={programDescription}
-            onChangeText={setProgramDescription}
-            placeholder="Enter The Description... "
-            textColor="black"
-          />
+          <View ref={descriptionRef}>
+            <Text className="text-base font-bold mb-1 mt-2 ml-2">
+              Description
+            </Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor  : 'white' }}
+              multiline
+              activeOutlineColor="#0D509D"
+              value={programDescription}
+              onChangeText={setProgramDescription}
+              placeholder="Enter The Description... "
+              textColor="black"
+              onFocus={() => {
+                descriptionRef.current?.measure(
+                  (x, y, width, height, pageX, pageY) => {
+                  scrollViewRef.current?.scrollTo(
+                    {
+                      y: y,
+                      animated : true
+                    }
+                  )
+                })
+              }}
+            />
+
+          </View>
           <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
           Who is the Speaker of the Program 
           </Text>

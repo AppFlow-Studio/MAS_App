@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, FlatList } from "react-native";
 import { router, Stack } from "expo-router";
 import { TextInput, Checkbox, Button, Icon } from "react-native-paper";
@@ -42,6 +42,10 @@ const AddNewProgramScreen = () => {
   const [ addSpeaker, setOpenAddSpeaker ] = useState(false) 
   const [ programPaidLink, setProgramPaidLink ] = useState<string>('')
   const tabHeight = useBottomTabBarHeight() + 20
+  const scrollViewRef = useRef<ScrollView>(null)
+  const descriptionRef = useRef<View>(null)
+  const titleRef = useRef<View>(null)
+
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -162,7 +166,7 @@ const AddNewProgramScreen = () => {
   }
 
   const onSubmit = async () => {
-    if ( programName && programDescription && programDays.length > 0 && programEndDate  &&  programStartDate &&  speakerSelected.length>0 && programImage) {
+    if ( programName && programDescription && programDays.length > 0 && programEndDate  &&  programStartDate &&  speakerSelected.length>0 && programImage && programStartTime) {
       const base64 = await FileSystem.readAsStringAsync(programImage.uri, { encoding: 'base64' });
       const filePath = `${programName.trim().split(" ").join("")}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = programImage.type === 'image' ? 'image/png' : 'video/mp4';
@@ -228,6 +232,7 @@ const AddNewProgramScreen = () => {
         <ScrollView
           contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
           showsVerticalScrollIndicator={false}
+          ref={scrollViewRef}
         >
           <Text className="text-base font-bold mb-1 mt-2 ml-2">Program Details</Text>
           <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
@@ -303,34 +308,60 @@ const AddNewProgramScreen = () => {
          </View>
 
 
-          <Text className="text-base font-bold mb-1 ml-2 mt-4">
-            Title
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-            activeOutlineColor="#0D509D"
-            value={programName}
-            onChangeText={setProgramName}
-            placeholder="Enter The Program... "
-            textColor="black"
-          />
+          <View ref={titleRef}>
+            <Text className="text-base font-bold mb-1 ml-2 mt-4">
+              Title
+            </Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
+              activeOutlineColor="#0D509D"
+              value={programName}
+              onChangeText={setProgramName}
+              placeholder="Enter The Program... "
+              textColor="black"
+              onFocus={() => {
+                titleRef.current?.measure(
+                  (x, y, width, height, pageX, pageY) => {
+                  scrollViewRef.current?.scrollTo(
+                    {
+                      y: y,
+                      animated : true
+                    }
+                  )
+                })
+              }}
+            />
+          </View>
 
-          <Text className="text-base font-bold mb-1 mt-2 ml-2">
-            Description
-          </Text>
-          <TextInput
-            mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor  : 'white' }}
-            multiline
-            activeOutlineColor="#0D509D"
-            value={programDescription}
-            onChangeText={setProgramDescription}
-            placeholder="Enter The Description... "
-            textColor="black"
-          />
+          <View ref={descriptionRef}>
+            <Text className="text-base font-bold mb-1 mt-2 ml-2">
+              Description
+            </Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 10 }}
+              style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor  : 'white' }}
+              multiline
+              activeOutlineColor="#0D509D"
+              value={programDescription}
+              onChangeText={setProgramDescription}
+              placeholder="Enter The Description... "
+              textColor="black"
+              onFocus={() => {
+                descriptionRef.current?.measure(
+                  (x, y, width, height, pageX, pageY) => {
+                  scrollViewRef.current?.scrollTo(
+                    {
+                      y: y,
+                      animated : true
+                    }
+                  )
+                })
+              }}
+            />
+          </View>
           <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4">
           Who is the Speaker of the Program 
           </Text>

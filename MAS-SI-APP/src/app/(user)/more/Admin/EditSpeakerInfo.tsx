@@ -1,5 +1,5 @@
-import { View, Text, Pressable, Image, ScrollView } from 'react-native'
-import React, { useState } from 'react'
+import { View, Text, Pressable, Image, ScrollView, KeyboardAvoidingView, useWindowDimensions } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
@@ -19,15 +19,21 @@ const handleSubmit = () => {
     });
 };
 const EditSpeakerInfo = () => {
-  const { speaker_id, speaker_name, speaker_img, speaker_creds  } = useLocalSearchParams()
+  const { speaker_id, speaker_name, speaker_img, speaker_creds  } = useLocalSearchParams<{ speaker_id : string, speaker_name : string, speaker_img : string, speaker_creds : string[]}>()
   const [ speakerName, setSpeakerName ] = useState<string>(speaker_name as string)
-  const [ speakerCreds, setSpeakerCreds ] = useState<string[]>(speaker_creds ? speaker_creds.split('.,') : [])
+  const [ speakerCreds, setSpeakerCreds ] = useState<string[]>()
   const [ speakerImg, setSpeakerImg ] = useState<string>(speaker_img as string)
   const [ uploadedImg, setUploadedImg ] = useState<ImagePicker.ImagePickerAsset>()
   const [ newCred, setNewCred ] = useState<string>('')
   const [ pressAddCred, setPressAddCred ] = useState(false) 
   const tabHeight = useBottomTabBarHeight() + 30
-  
+  const layoutHeight = useWindowDimensions().height
+  const getCreds = async ( ) => {
+    const { data , error } = await supabase.from('speaker_data').select('speaker_creds').eq('speaker_id', speaker_id).single()
+    if( data?.speaker_creds ){
+        setSpeakerCreds(data.speaker_creds)
+    }
+  }
   const pickImage = async () => {
         const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -71,7 +77,9 @@ const EditSpeakerInfo = () => {
     }
     return
   }
-
+  useEffect(() => {
+    getCreds()
+  }, []);
   return (
          <View className='flex-1 grow bg-white pt-[220px]' style={{ paddingBottom : tabHeight }}>
             <Stack.Screen 
@@ -139,7 +147,7 @@ const EditSpeakerInfo = () => {
                <View className='max-h-[32%] border border-gray-400 border-solid rounded-[15px] p-4'>
                     <ScrollView contentContainerStyle={{  }}>
                         {
-                            speakerCreds ? speakerCreds.map((item, index) => (
+                            speakerCreds ? speakerCreds?.map((item, index) => (
                                 <Pressable onPress={ () => {
                                     const removeFromCred = speakerCreds.filter(cred => cred != item)
                                     setSpeakerCreds(removeFromCred)
@@ -155,7 +163,8 @@ const EditSpeakerInfo = () => {
                </View>
                 {
                     pressAddCred && (
-                        <View>
+                        <KeyboardAvoidingView behavior='position' keyboardVerticalOffset={layoutHeight * .25} className='bg-white'>
+                         <View className='bg-white h-[100]'>
                             <TextInput
                             mode="outlined"
                             theme={{ roundness: 10 }}
@@ -175,10 +184,15 @@ const EditSpeakerInfo = () => {
                                     <Text className='font-bold text-white '>Confirm</Text>
                                 </Pressable>
                             </View>
-                        </View>
+                         </View>
+                        </KeyboardAvoidingView>
                     )
                 }
-                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>Add Credentials</Text>
+                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>
+                {
+                    pressAddCred ? '' : 'Add Credentials'
+                }
+                </Text>
 
 
                { 

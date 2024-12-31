@@ -5,6 +5,7 @@ import { supabase } from '@/src/lib/supabase'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { Button } from 'react-native-paper'
 import Toast from 'react-native-toast-message'
+import { format } from 'date-fns'
 const ApproveBusinessScreen = () => {
     const { submission } = useLocalSearchParams()
     const tabHeight = useBottomTabBarHeight()
@@ -32,8 +33,7 @@ const ApproveBusinessScreen = () => {
         const { data, error } = await supabase.from('business_ads_submissions').select('*').eq('submission_id', submission).single()
         if( data ){
             setSubmissionInfo(data)
-            const localDate = data.created_at
-            setDate(localDate.toLocaleString('en-GB', { timeZone: 'EST' }))
+            setDate(data.created_at)
         }
     }
     if( !setSubmissionInfo ){
@@ -42,6 +42,7 @@ const ApproveBusinessScreen = () => {
 
     const onApprove = async () => {
         const { error } = await supabase.from('business_ads_submissions').update({ status : 'APPROVED' }).eq('submission_id', submission)
+        console.log(error)
         handleSubmit()
         router.back()
     }
@@ -100,8 +101,8 @@ const ApproveBusinessScreen = () => {
 
         <Text className="text-base font-bold mb-1 mt-2 ml-2">Submission Information</Text>
 
-        <Text className="text-black ml-4">Created At: {date}</Text>
-        <Text className="text-black ml-4">Submission ID: {submissionInfo?.submission_id}</Text>
+        <Text className="text-black ml-4 my-1">Created At: {date ? format(date, 'PPPP') : ''}</Text>
+        <Text className="text-black ml-4 my-1">Submission ID: {submissionInfo?.submission_id}</Text>
 
         <Text className="text-base font-bold mt-2 ml-2">Approve or Reject</Text>
         <View className='flex-row gap-x-2 justify-center'>

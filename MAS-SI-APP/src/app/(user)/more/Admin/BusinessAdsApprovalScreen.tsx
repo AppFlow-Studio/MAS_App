@@ -7,6 +7,7 @@ import Svg, { Path } from 'react-native-svg'
 const BusinessAdsApprovalScreen = () => {
   const [ ads, setAds ] = useState<any[]>([])
   const getAds = async () => {
+    setAds([])
     const { data, error } = await supabase.from('business_ads_submissions').select('*').neq('status', 'APPROVED').neq('status', 'REJECT')
     if ( data ){
       setAds( data )

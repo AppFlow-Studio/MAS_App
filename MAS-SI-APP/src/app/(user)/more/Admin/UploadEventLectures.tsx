@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Text, View, ScrollView, TouchableOpacity, Pressable, Image } from "react-native";
 import { TextInput, Button, IconButton, Modal, Icon } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -34,7 +34,11 @@ const UploadEventLectures = () => {
   const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const events = ["Event A", "Event B", "Event C"];
   const tabBar = useBottomTabBarHeight()
-
+  const scrollViewRef = useRef<ScrollView>()
+  const youtubeRef = useRef<View>()
+  const titleRef = useRef<View>()
+  const descriptionRef = useRef<View>()
+  const keynoteRef = useRef()
   const handleSubmit = () => {
 
     Toast.show({
@@ -151,6 +155,7 @@ const UploadEventLectures = () => {
       <ScrollView
         contentContainerStyle={{  }}
         showsVerticalScrollIndicator={false}
+        ref={scrollViewRef}
       >
         
         <Image 
@@ -159,46 +164,84 @@ const UploadEventLectures = () => {
         />
         <Text className="self-center font-bold text-lg my-2">{event_name}</Text>
 
-        <Text className="text-base font-bold mb-1 ml-2">Add A New YouTube Link: </Text>
-        <Text className="ml-2 text-[12px] my-1">Example: https://www.youtube.com/watch?v=<Text className="bg-[#FFD465] font-bold rounded-[2px]">qdbPaFQxSUI</Text></Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10 , backgroundColor : 'white'}}
-          activeOutlineColor="#0D509D"
-          value={lectureLink}
-          onChangeText={setLectureLink}
-          placeholder="Enter Link ID ONLY..."
-          textColor="black"
-        />
+        <View ref={youtubeRef}>
+          <Text className="text-base font-bold mb-1 ml-2">Add A New YouTube Link: </Text>
+          <Text className="ml-2 text-[12px] my-1">Example: https://www.youtube.com/watch?v=<Text className="bg-[#FFD465] font-bold rounded-[2px]">qdbPaFQxSUI</Text></Text>
+          <TextInput
+            mode="outlined"
+            theme={{ roundness: 10 }}
+            style={{ width: "100%", height: 45, marginBottom: 10 , backgroundColor : 'white'}}
+            activeOutlineColor="#0D509D"
+            value={lectureLink}
+            onChangeText={setLectureLink}
+            placeholder="Enter Link ID ONLY..."
+            textColor="black"
+            onFocus={() => {
+              youtubeRef.current?.measure(
+                (x, y, width, height, pageX, pageY) => {
+                scrollViewRef.current?.scrollTo(
+                  {
+                    y: y,
+                    animated : true
+                  }
+                )
+              })
+            }}
+          />
+        </View>
 
-        <Text className="text-base font-bold mb-1 ml-2">Lecture Title</Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-          activeOutlineColor="#0D509D"
-          value={lectureName}
-          onChangeText={setLectureName}
-          placeholder="Enter Lecture Title"
-          textColor="black"
-        />
-
+        <View ref={titleRef}>
+          <Text className="text-base font-bold mb-1 ml-2">Lecture Title</Text>
+          <TextInput
+            mode="outlined"
+            theme={{ roundness: 10 }}
+            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+            activeOutlineColor="#0D509D"
+            value={lectureName}
+            onChangeText={setLectureName}
+            placeholder="Enter Lecture Title"
+            textColor="black"
+            onFocus={() => {
+              titleRef.current?.measure(
+                (x, y, width, height, pageX, pageY) => {
+                scrollViewRef.current?.scrollTo(
+                  {
+                    y: y,
+                    animated : true
+                  }
+                )
+              })
+            }}
+          />
+        </View>
         <Text className="text-base font-bold mb-1 ml-2">Lecture Speaker</Text>
         { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
 
-        <Text className="text-base font-bold mb-1 ml-2">Lecture Summary</Text>
-        <TextInput
-          mode="outlined"
-          theme={{ roundness: 10 }}
-          style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-          activeOutlineColor="#0D509D"
-          multiline
-          value={lectureAI}
-          onChangeText={setLectureAI}
-          placeholder="Enter Summary..."
-          textColor="black"
-        />
+        <View ref={descriptionRef}>
+          <Text className="text-base font-bold mb-1 ml-2">Lecture Summary</Text>
+          <TextInput
+            mode="outlined"
+            theme={{ roundness: 10 }}
+            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
+            activeOutlineColor="#0D509D"
+            multiline
+            value={lectureAI}
+            onChangeText={setLectureAI}
+            placeholder="Enter Summary..."
+            textColor="black"
+            onFocus={() => {
+              descriptionRef.current?.measure(
+                (x, y, width, height, pageX, pageY) => {
+                scrollViewRef.current?.scrollTo(
+                  {
+                    y: y,
+                    animated : true
+                  }
+                )
+              })
+            }}
+          />
+        </View>
 
 
       <Text className="text-base font-bold mb-1 ml-2 flex-wrap">Lecture KeyNotes</Text>
@@ -257,6 +300,7 @@ const UploadEventLectures = () => {
             <View className="w-[100%] self-center p-5 flex-1">
               <TextInput
               mode="outlined"
+              ref={keynoteRef}
               theme={{ roundness: 10 }}
               style={{ width: "100%", height: 200, marginBottom: 10, backgroundColor : 'white' }}
               activeOutlineColor="#0D509D"
@@ -265,6 +309,10 @@ const UploadEventLectures = () => {
               onChangeText={setKeyNoteInput}
               placeholder="Enter Key Note"
               textColor="black"
+              returnKeyType="done"
+              onKeyPress={(e) => {
+                if (e.nativeEvent.key == 'Enter' ){ e.preventDefault(); keynoteRef.current?.blur()  }
+              }}
               />
             </View>
             <View className="flex-1 justify-end pb-8">

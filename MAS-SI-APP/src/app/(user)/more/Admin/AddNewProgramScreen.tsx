@@ -46,6 +46,9 @@ const AddNewProgramScreen = () => {
   const descriptionRef = useRef<View>(null)
   const titleRef = useRef<View>(null)
 
+  const [ submitDisabled, setSubmitDisabled ] = useState(true)
+
+
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -167,6 +170,7 @@ const AddNewProgramScreen = () => {
 
   const onSubmit = async () => {
     if ( programName && programDescription && programDays.length > 0 && programEndDate  &&  programStartDate &&  speakerSelected.length>0 && programImage && programStartTime) {
+      setSubmitDisabled(false)
       const base64 = await FileSystem.readAsStringAsync(programImage.uri, { encoding: 'base64' });
       const filePath = `${programName.trim().split(" ").join("")}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = programImage.type === 'image' ? 'image/png' : 'video/mp4';
@@ -179,6 +183,7 @@ const AddNewProgramScreen = () => {
           console.log(error)
         }
         handleSubmit()
+        setSubmitDisabled(true)
       }else{
         Alert.alert(image_upload_error.message)
         return
@@ -504,6 +509,7 @@ const AddNewProgramScreen = () => {
             textColor="white"
             theme={{ roundness: 1 }}
             onPress={async() =>  await onSubmit()}
+            disabled={!submitDisabled}
           >
             Submit Program
           </Button>

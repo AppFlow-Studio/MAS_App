@@ -60,6 +60,8 @@ const AddNewEventScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null)
   const descriptionRef = useRef<View>(null)
   const titleRef = useRef<View>(null)
+
+  const [ submitDisabled, setSubmitDisabled ] = useState(true)
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -211,6 +213,7 @@ const AddNewEventScreen = () => {
   }
   const onSumbit = async () => {
     if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && eventImage && eventStartTime ) {
+      setSubmitDisabled(false)
       const base64 = await FileSystem.readAsStringAsync(eventImage.uri, { encoding: 'base64' });
       const filePath = `${eventName.trim().split(" ").join("_")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = eventImage.type === 'image' ? 'image/png' : 'video/mp4';
@@ -242,6 +245,7 @@ const AddNewEventScreen = () => {
           console.log(error)
         }
         handleSubmit()
+        setSubmitDisabled(true)
       }else{
         Alert.alert(image_upload_error.message)
         return
@@ -664,6 +668,7 @@ const AddNewEventScreen = () => {
               textColor="white"
               theme={{ roundness: 1 }}
               onPress={async () => await onSumbit()}
+              disabled={!submitDisabled}
             >
               Submit Event
             </Button>

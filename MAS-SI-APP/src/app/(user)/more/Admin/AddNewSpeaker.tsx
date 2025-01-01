@@ -18,7 +18,7 @@ const AddNewSpeaker = () => {
     const [ newCred, setNewCred ] = useState<string>('')
     const [ pressAddCred, setPressAddCred ] = useState(false) 
     const layoutHeight = useWindowDimensions().height
-    
+    const [ submitDisabled, setSubmitDisabled ] = useState(true)
     const pickImage = async () => {
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -52,6 +52,7 @@ const AddNewSpeaker = () => {
     }
     const UploadNewSpeaker = async () => {
       if ( speakerName && speakerImg ) {
+          setSubmitDisabled(false)
           const base64 = await FileSystem.readAsStringAsync(speakerImg.uri, { encoding: 'base64' });
           const filePath = `${speakerName.trim().split(" ").join("_")}.${speakerImg.type === 'image' ? 'png' : 'mp4'}`;
           const contentType = speakerImg.type === 'image' ? 'image/png' : 'video/mp4';
@@ -63,6 +64,7 @@ const AddNewSpeaker = () => {
               console.log(error)
             }
             handleSubmit()
+            setSubmitDisabled(true)
             router.back()
           }else{
             Alert.alert(image_upload_error.message)
@@ -176,7 +178,9 @@ const AddNewSpeaker = () => {
 
                { 
                !pressAddCred &&
-                <Pressable className='bg-[#57BA49] w-[60%] h-[35px] p-1 items-center justify-center rounded-[15px] self-end my-10' onPress={async () => await UploadNewSpeaker() }>
+                <Pressable className='bg-[#57BA49] w-[60%] h-[35px] p-1 items-center justify-center rounded-[15px] self-end my-10' 
+                disabled={!submitDisabled}
+                onPress={async () => await UploadNewSpeaker() }>
                     <Text className='font-bold text-white '>Confirm New Speaker</Text>
                 </Pressable>
                 }

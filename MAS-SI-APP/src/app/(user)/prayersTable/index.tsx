@@ -8,6 +8,8 @@ import { Divider } from 'react-native-paper';
 import { Link } from 'expo-router';
 import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 import { BlurView } from 'expo-blur';
+import { supabase } from '@/src/lib/supabase';
+import { useAuth } from '@/src/providers/AuthProvider';
 
 
 export default function Index() {
@@ -15,10 +17,12 @@ export default function Index() {
   if( prayerTimesWeek.length == 0 ){
     return
   }
+  const { session } = useAuth()
   const [isRendered, setIsRendered ] = useState(false)
   const { height } = Dimensions.get('window')
   const tableWidth = Dimensions.get('screen').width * .95
   const [ tableIndex, setTableIndex ] = useState(0)
+  const  [ UserSettings, setUserSettings ] = useState<{ prayer : string, notification_settings : string[] }[]>()
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold : 50}).current;
   const handleScroll = (event : any) => {
     const scrollPositon = event.nativeEvent.contentOffset.x;
@@ -32,6 +36,31 @@ export default function Index() {
       animated : true
     })  
   }, [tableIndex])
+    
+  const getUserSetting = async () => {
+      const { data , error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id)
+      if( data ){
+        setUserSettings(data)
+      }
+    if( error ){
+      console.log(error)
+    }
+  }
+  useEffect(() => {
+    getUserSetting()
+    const listenForSettings = supabase.channel('Listen for user settings change').on(
+      'postgres_changes',
+      {
+        event : '*',
+        schema : 'public',
+        table : 'prayer_notification_settings',
+        filter : `user_id=eq.${session?.user.id}`
+      },
+      async (payload) => await getUserSetting()
+    ).subscribe()
+
+    return () => { supabase.removeChannel(listenForSettings) }
+  }, [])
   return (
     <View className='h-[100%]  bg-white'>
       <StatusBar barStyle={"dark-content"} />
@@ -45,7 +74,7 @@ export default function Index() {
         <View className=' h-[300] items-center justify-center '>
           <FlatList 
             data={prayerTimesWeek}
-            renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index}/>}
+            renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings}/>}
             horizontal
             bounces={false}
             showsHorizontalScrollIndicator={false}

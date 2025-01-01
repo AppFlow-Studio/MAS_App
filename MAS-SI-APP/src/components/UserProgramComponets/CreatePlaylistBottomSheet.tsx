@@ -58,6 +58,7 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
     
     const uploadImage = async () => {
         if( playlistImg ){
+            setIsReady(false)
             const base64 = await FileSystem.readAsStringAsync(playlistImg.uri, { encoding: 'base64' });
             const filePath = `${session?.user.id}/${new Date().getTime()}.${playlistImg.type === 'image' ? 'png' : 'mp4'}`;
             const contentType = playlistImg.type === 'image' ? 'image/png' : 'video/mp4';
@@ -72,6 +73,7 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
             handleClose()
         }
         else{
+            setIsReady(false)
             const { error } = await supabase.from("user_playlist").insert({ user_id : session?.user.id, playlist_name : playlistName, def_background : selectedColor})
             handleClose()
         }

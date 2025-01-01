@@ -38,10 +38,10 @@ type NotificationEventsScreenProp = {
   addedEvents : EventsType[] | null
   layout: number
 }
-
 const NotificationEventsScreen = ( { addedEvents, layout } : NotificationEventsScreenProp) => {
+  const tabBarHeight = useBottomTabBarHeight() + 30
   return(
-    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap" }}>
+    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap", paddingBottom : tabBarHeight }}>
         {
           addedEvents && addedEvents.length > 0? addedEvents.map((item, index) => {
             return (
@@ -72,8 +72,10 @@ type ClassesScreenProp = {
 }
 
 const ClassesScreen = ( { addedPrograms, layout } : ClassesScreenProp) => {
+  const tabBarHeight = useBottomTabBarHeight() + 30
+
   return(
-    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap" }}>
+    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap", paddingBottom : tabBarHeight }}>
         {
           addedPrograms && addedPrograms.length > 0 ? addedPrograms.map(( item ) => {
             return(
@@ -100,8 +102,10 @@ const ClassesScreen = ( { addedPrograms, layout } : ClassesScreenProp) => {
 }
 
 const LecturesScreen = ({ addedPrograms, layout } : ClassesScreenProp) => {
+  const tabBarHeight = useBottomTabBarHeight() + 30
+
   return(
-    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap" }}>
+    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection : "row", flexWrap : "wrap", paddingBottom : tabBarHeight }}>
         {
            addedPrograms.length > 0 ? addedPrograms.map(( item ) => {
             return(

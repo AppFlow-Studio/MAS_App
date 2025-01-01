@@ -43,6 +43,7 @@ export default function userPrograms() {
     }
   }
   async function getUserProgramLibrary(){
+    setUserPrograms([])
     const {data, error} = await supabase.from("added_programs").select("program_id").eq("user_id", session?.user.id)
     if(error){
       console.log(error)

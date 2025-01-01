@@ -13,6 +13,7 @@ type salahProp = {
   iqamah : string,
   athan : string
   nextPrayerAthan : string
+  salahSettings : { prayer : string, notification_settings : string[] } | undefined
 }
 
 function setTimeToTime(timeString : string) {
@@ -32,45 +33,10 @@ function setTimeToTime(timeString : string) {
   return date
 }
 
-export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : salahProp ) {
+export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan, salahSettings} : salahProp ) {
   const [bellClick, setBellClick] = useState(false);
-  const [ alertAthan, setAlertAthan ] = useState(false)
-  const [ alert30Before, setAlert30Before ] = useState(false)
-  const [ alertArray, setAlertArray ] = useState([])
-  const [ alertIqamah, setAlertIqamah ] = useState(false)
-  const [ mute, setMute ] = useState(false)
   const { session } = useAuth()
-  const getUserSetting = async () => {
-      const { data , error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).single()
-      if( data ){
-        setAlertArray(data.notification_settings)
-        setMute(false)
-        if( data.notification_settings.includes('Alert at Athan time') ){
-          setAlertAthan(true)
-        }else{
-          setAlertAthan(false)
-        }
-        if( data.notification_settings.includes('Alert 30 mins before next prayer') ){
-          setAlert30Before(true)
-        }else{
-          setAlert30Before(false)
-        }
-        if( data.notification_settings.includes('Alert at Iqamah time') ){
-          setAlertIqamah(true)
-        }else{
-          setAlertIqamah(false)
-        }
-        if( data.notification_settings.includes('Mute')){
-          setMute(true)
-        }else{
-          setMute(false)
-        }
-    }
-    if( error ){
-      console.log(error)
-    }
-  }
-
+  
   const onPressOption = async (salahOption : string) => {
     const { data , error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).single()
     const alertArray = data.notification_settings
@@ -104,7 +70,7 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : sal
           
           showToast(salahOption, salah, athan)
         }
-    }else if( salahOption == 'Alert 30mins before next prayer' ){
+    }else if( salahOption == 'Alert 30 mins before next prayer' ){
       console.log( athan, iqamah )
       const { data : checkForSchedule, error : scheduleError } = await supabase.from('prayer_notification_schedule').select('*').eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption).single()
       if( alertArray.includes(salahOption) || checkForSchedule){
@@ -151,8 +117,8 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : sal
         showToast(salahOption, salah, iqamah)
       }
     }
-    getUserSetting()
   }
+
   const showToast = (message: string, prayer : string, time : string) => {
     Toast.show({
       type: 'ConfirmNotificationOption',
@@ -161,26 +127,12 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : sal
       topOffset : 60
     });
   };
-  useEffect(() => {
-    getUserSetting()
-    const listenForSettings = supabase.channel('Listen for user settings change').on(
-      'postgres_changes',
-      {
-        event : '*',
-        schema : 'public',
-        table : 'prayer_notification_settings',
-        filter : `user_id=eq.${session?.user.id}`
-      },
-      (payload) => getUserSetting()
-    ).subscribe()
-
-    return () => { supabase.removeChannel(listenForSettings) }
-  }, [])
+  console.log(salah, salahSettings)
   return (
     <TouchableOpacity className='flex-row items-center justify-center' onPress={() => setBellClick(true)}>
       <Menu>
         <MenuTrigger style={{ flexDirection : 'row', alignItems : 'center', justifyContent : 'center'}}>
-            <Icon
+          <Icon
           source="bell" 
           color="grey"
           size={11.5}
@@ -189,19 +141,19 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan} : sal
         </MenuTrigger>
         <MenuOptions optionsContainerStyle={{ borderRadius : 10, width : 250, paddingVertical : 3 }}>
          <MenuOption onSelect={async () => await onPressOption('Alert at Athan time')} style={{ flexDirection : 'row' }}>
-          {alertAthan ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
+          {salahSettings?.notification_settings.includes('Alert at Athan time') ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
           <Text className='ml-[20%]'>Alert at Athan time</Text>
          </MenuOption>
-         <MenuOption onSelect={async () => await onPressOption('Alert 30mins before next prayer')} style={{ flexDirection : 'row' }}>
-            {alert30Before? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
-            <Text className='ml-3' numberOfLines={1} adjustsFontSizeToFit>Alert 30mins before next prayer</Text>
+         <MenuOption onSelect={async () => await onPressOption('Alert 30 mins before next prayer')} style={{ flexDirection : 'row' }}>
+            {salahSettings?.notification_settings.includes('Alert 30 mins before next prayer')? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
+            <Text className='ml-3' numberOfLines={1} adjustsFontSizeToFit>Alert 30 mins before next prayer</Text>
          </MenuOption>
          <MenuOption onSelect={async() => await onPressOption('Alert at Iqamah time')} style={{ flexDirection : 'row' }}>
-            {alertIqamah ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
+            {salahSettings?.notification_settings.includes('Alert at Iqamah time') ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
             <Text className='ml-3' numberOfLines={1} adjustsFontSizeToFit>Alert at Iqamah time</Text>
          </MenuOption>
          <MenuOption onSelect={async () => await onPressOption('Mute')}  style={{ flexDirection : 'row' }}>
-            {mute ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
+            {salahSettings?.notification_settings.includes('Mute') ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
             <Text className='text-red-800 ml-[35%]'>Mute</Text>
          </MenuOption>
         </MenuOptions>

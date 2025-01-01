@@ -38,7 +38,7 @@ const RenderAddToUserPlaylistsListProgram = ( { playlist, lectureToBeAdded, setA
   return (
     <TouchableOpacity className='flex-row items-center' onPress={onButtonToggle}>
         <View className=' ml-2'>
-           <Image source={{ uri : playlist.playlist_img || defaultProgramImage}} style={{width : 60, height : 60, objectFit: "fill", borderRadius: 10}}/>
+        { playlist.playlist_img ? <Image source={{ uri : playlist.playlist_img }} style={{width : 60, height : 60, objectFit: "fill", borderRadius: 10}}/> : <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{width : 60, height : 60, objectFit: "fill", borderRadius: 10, backgroundColor  : playlist.def_background }}/>}
         </View>
         <Text className='text-xl font-bold'> {playlist.playlist_name} </Text>
     </TouchableOpacity>
@@ -68,8 +68,8 @@ export const RenderAddToUserPlaylistsListEvent = ( { playlist, lectureToBeAdded,
   };
   return (
     <TouchableOpacity className='flex-row items-center' onPress={onButtonToggle}>
-        <View className=' ml-2'>
-           <Image source={{ uri : playlist.playlist_img || defaultProgramImage}} style={{width : 60, height : 60, objectFit: "fill", borderRadius: 10}}/>
+        <View className=' ml-2 rounded-[10px] ' style={{ backgroundColor  : playlist.def_background }}>
+           { playlist.playlist_img ? <Image source={{ uri : playlist.playlist_img }} style={{width : 60, height : 60, objectFit: "fill", borderRadius: 10}}/> : <Image source={require('@/assets/images/MasPlaylistDef.png')} style={{width : 60, height : 60, objectFit: "fill", borderRadius: 10, backgroundColor  : playlist.def_background }}/>}
         </View>
         <Text className='text-xl font-bold'> {playlist.playlist_name} </Text>
     </TouchableOpacity>

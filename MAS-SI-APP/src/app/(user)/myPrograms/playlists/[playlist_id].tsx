@@ -1,6 +1,6 @@
-import { View, Text, Dimensions, StatusBar } from 'react-native'
+import { View, Text, Dimensions, StatusBar,Image } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
 import { UserPlaylistLectureType, UserPlaylistType } from '@/src/types'
 import { Stack } from "expo-router"
@@ -69,6 +69,7 @@ const UserPlayListLectures = () => {
         Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success
         )
+        router.back()
       }
     }
     return(
@@ -114,16 +115,26 @@ const UserPlayListLectures = () => {
 
       <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%" }} >
           
-          <Animated.Image 
+          {
+            userPlayListInfo?.playlist_img ? 
+            <Animated.Image 
             source={ { uri: userPlayListInfo?.playlist_img || defaultProgramImage }}
             style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
             resizeMode='stretch'
           />
-          <View className='bg-white' style={{paddingBottom : Tab * 3}}>
+          :
+          <Animated.View  style={[{width: width / 1.2, height: 300, borderRadius: 8, backgroundColor : userPlayListInfo?.def_background, alignItems : 'center', justifyContent : 'center' }, imageAnimatedStyle]}>
+            <Image source={require('@/assets/images/MasPlaylistDef.png')} 
+            resizeMode='stretch'
+            style={{ width : '90%', height : '90%'}}
+            />
+          </Animated.View>
+          }
+          <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
             <Text className='text-center mt-2 text-xl text-black font-bold'>{userPlayListInfo?.playlist_name}</Text>
               <View className='ml-3'>
                 {
-                  userPlaylistLectures ? userPlaylistLectures.map((lecture, index) => {
+                  userPlaylistLectures && userPlaylistLectures.length > 0 ? userPlaylistLectures.map((lecture, index) => {
                     if(lecture.program_lecture_id){
                       return (
                       <>
@@ -140,8 +151,8 @@ const UserPlayListLectures = () => {
                     )
                     }
                   }) :
-                  <View>
-                    <Text>No Lectures Added Yet</Text>  
+                  <View className='my-[15%] self-center'>
+                    <Text className='font-bold text-xl text-gray-400 mr-3'>No Lectures Added Yet</Text>  
                    </View>
                 }
               </View>

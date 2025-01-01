@@ -15,7 +15,7 @@ import {
   ImageSourcePropType,
   FlatList,
 } from "react-native";
-import AlertBell from "../app/(user)/menu/alertBell";
+import AlertBell from "../app/(user)/prayersTable/alertBell";
 import { usePrayer } from "../providers/prayerTimesProvider";
 import { Link, useNavigation } from "expo-router";
 import { useState } from "react";

@@ -209,8 +209,8 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
                 className='mt-[110]'
               />
     
-              <View className='bg-white' style={{paddingBottom : Tab * 3}}>
-                <Text className='text-center mt-2 text-xl text-black font-bold'>{event_name}</Text>
+              <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
+                <Text className='text-center mt-2 text-xl text-black font-bold w-[95%] self-center' numberOfLines={2}>{event_name}</Text>
                 <Text className='text-center mt-2  text-[#0D509D]' onPress={showModal}>{speakerString}</Text>
                     {
                         eventLectures ? eventLectures.map((item, index) => {

@@ -11,7 +11,7 @@ function formatPhoneNumber( phoneNumberString : number ) {
   }
   return null;
 }
-const ApprovedAds = ( {setRenderedFalse, setRenderedTrue} : { setRendredFalse : ( ) => void, setRendredTrue : ( ) => void } ) => {
+const ApprovedAds = ( {setRenderedFalse, setRenderedTrue} : { setRenderedFalse : ( ) => void, setRenderedTrue : ( ) => void } ) => {
   const [ ads, setAds ] = useState<any[]>([])
   const [ index, setIndex ] = useState(0)
   const [ active, setActive ] = useState(0)

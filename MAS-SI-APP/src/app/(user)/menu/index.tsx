@@ -137,7 +137,9 @@ export default function homeScreen() {
               <View className='pt-3' style={{height: 250}}>
                 <ProgramsCircularCarousel />
               </View>
-              <View style={{marginTop : isRendered ? 2 : 0 }}><ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/></View>
+
+              <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
+                
               <View className='pl-3 flex-row pt-4'>
                   <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
               </View>

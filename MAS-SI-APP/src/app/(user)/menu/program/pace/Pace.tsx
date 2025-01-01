@@ -68,7 +68,7 @@ const Pace = () => {
       >      
          <View className='mt-5 w-[100%]'>
           <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Pace Events</Text>
-          <View className='flex-row flex flex-wrap gap-y-5 mb-[61]'>
+          <View className='flex-row flex flex-wrap gap-y-5 my-2'>
             {
               pace?.map((item) => (
                 <View style={{ width: "50%"}}>
@@ -94,15 +94,17 @@ const Pace = () => {
               ))
             }
           </View>
-         <Divider className='h-[0.5] w-[70%] self-center'/>
-          <Pressable className='w-[100%] justify-between flex flex-row pr-3 mt-2  ' onPress={() => { socialServicesAccordion.value = !socialServicesAccordion.value; setSocialServicesChev(!socialServicesChev)}}>
-            <Text className={`font-bold text-black text-lg ml-3 ${!socialServicesChev ? 'mb-[61]' : 'mb-0'}`}>Social Services</Text>
-            <View style={{ transform : [{ rotate : socialServicesChev ? '90deg' : '0deg'}]}}>
+                    <Divider className='h-[0.5] w-[70%] self-center'/>
+
+          <Pressable className='w-[100%] justify-between flex flex-row pr-3 mt-2 mb-8' onPress={() => { socialServicesAccordion.value = !socialServicesAccordion.value; setSocialServicesChev(!socialServicesChev)}}>
+            <Text className={`font-bold text-black text-lg ml-3`}>Social Services</Text>
+            <View style={{ transform : [{ rotate : socialServicesChev ? '90deg' : '0deg'}]}} className=' '>
               <Icon  source={'chevron-right'} size={30} color='gray'/>
             </View>
           </Pressable>
+
           <AccordionItem isExpanded={socialServicesAccordion} style={{}} viewKey={'Social Service'}>
-          <View className='flex-row flex flex-wrap gap-y-5 mt-2 mb-5'>
+          <View className='flex-row flex flex-wrap gap-y-5 my-2 mb-5'>
               {
                 socialPace?.map((item) => (
                   <View style={{ width: "50%"}}>
@@ -134,10 +136,11 @@ const Pace = () => {
 
           <Pressable className='w-[100%] justify-between flex flex-row pr-3 mt-2 ' onPress={() => { prevPaceAccodordion.value = !prevPaceAccodordion.value; setPastChevronValue(!pastChevronValue)}}>
             <Text className={`font-bold text-black text-lg ml-3  ${!pastChevronValue ? 'mb-[61]' : 'mb-0'}`}>Past Recorded Pace Events</Text>
-            <View style={{ transform : [{ rotate : pastChevronValue ? '90deg' : '0deg'}]}}>
+            <View style={{ transform : [{ rotate : pastChevronValue ? '90deg' : '0deg'}]}} className=''>
               <Icon  source={'chevron-right'} size={30} color='gray'/>
             </View>
           </Pressable>
+
           <AccordionItem isExpanded={prevPaceAccodordion} style={{}} viewKey={'Past'}>
             <View className='flex-row flex flex-wrap gap-y-5 mt-7'>
               {

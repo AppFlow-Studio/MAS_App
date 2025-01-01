@@ -34,6 +34,7 @@ const Index = () => {
   const feedbackRef = useRef()
   const appflowRef = useRef<View>()
   const scrollViewRef = useRef<ScrollView>()
+  const [ sendAble, setSendAble ] = useState(true)
   const FeedBackInput = useAnimatedStyle(() => {
     return{
       width : feedbackOpen ? withTiming(width * .75, { duration : 1500 }) : withTiming(0, { duration : 1500 } ),
@@ -99,7 +100,7 @@ const Index = () => {
         setFeedBackOpen(false);
 
       }
-    ,5000) 
+    ,8000) 
     }
     else if ( feedbackMessage ) {
       clearTimeout(timerId);
@@ -120,6 +121,7 @@ const Index = () => {
     setProfileFirstName('');
     setProfileLastName('');
     setProfileEmail('');
+    await getProfile();
   }
   const MASHOPLINK = () => Linking.canOpenURL("https://massic.shop/").then(() => {
     Linking.openURL("https://massic.shop/");
@@ -349,8 +351,11 @@ const Index = () => {
 
       <View className='w-[100%] flex flex-row justify-end items-center mt-5 mb-2'>
         <Animated.View className='h-[40px] items-center justify-center rounded-[15px] self-end relative' style={[FeedBackButton, { backgroundColor : feedbackOpen ? '#12BD30' : '#6A6A6A'}]}>
-          <Pressable onPress={async () => {
+          <Pressable 
+          disabled={!sendAble}
+          onPress={async () => {
             if( feedbackOpen && feedbackMessage.trim() ){
+              setSendAble(false)
               const { error } =  await supabase.functions.invoke('donation-confirmation-email',{body : { message : feedbackMessage }})
               if (error) return
               Toast.show({
@@ -362,6 +367,7 @@ const Index = () => {
               });
               setFeedBackMessage('')
               setFeedBackOpen(false)
+              setSendAble(true)
             }
             else{
             if (feedbackOpen) Alert.alert('Input FeedBack To Send') 

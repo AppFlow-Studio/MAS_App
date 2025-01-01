@@ -5,7 +5,7 @@ import * as Haptics from "expo-haptics"
 import { Icon } from 'react-native-paper'
 import { supabase } from '@/src/lib/supabase'
 import { useAuth } from '@/src/providers/AuthProvider'
-import { isBefore } from 'date-fns'
+import { format, isBefore } from 'date-fns'
 type NotificationCardProp = {
     height : number
     width : number
@@ -18,8 +18,8 @@ type NotificationCardProp = {
 } 
  const NotificationArray = [
   "Alert at Athan time",
-  "Alert 30 mins before next prayer",
   "Alert at Iqamah time",
+  "Alert 30 mins before next prayer",
   "Mute"
 ]
 
@@ -59,6 +59,7 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
     }
     if(currentSettings){
       const settings = currentSettings.notification_settings
+      // Disable setting if it exists 
       if( settings.includes(NotificationArray[index]) ){
         if( settings.includes(NotificationArray[3]) ){
           const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : ['Alert at Athan time']}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id )
@@ -66,30 +67,47 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
         }
         const filter = settings.filter((e : any) => e !== NotificationArray[index])
         const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : filter}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id )
-        const { error : Delete } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', prayerName.toLowerCase()).eq('notification_type', NotificationArray[index])
+        const { error : Delete } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', prayerName.toLowerCase()).eq('notification_type', index != 2 ? NotificationArray[index] : 'Alert 30mins before next prayer')
         console.log(Delete)
       }
       else{
+        // Set To Mute and delete schduled notifications for this prayer for this user 
         if( index == 3 ){
           const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : ['Mute']}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id, )
+          const { error : scheduleError} = await supabase.from('prayer_notification_schedule').delete().eq('user_id' , session?.user.id).eq('prayer' , prayerName.toLowerCase()).eq('notification_type', NotificationArray[index])
           return
         }
+        //Check for Mute and filter it out before adding new settings
         let filtersettings = settings.filter(e => e != 'Mute')
         filtersettings.push(NotificationArray[index])
         const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : filtersettings}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id, )
+        //If select Alert at Athan Time
+
         if( index == 0 ){
-          const { data : getPrayerTime, error } = await supabase.from('todays_prayers').select('athan_time').eq('prayer_name', prayerName.toLowerCase() == 'dhuhr' ? 'zuhr' : prayerName.toLowerCase()).single()
+          const { data : getPrayerTime, error } = await supabase.from('todays_prayers').select('athan_time, iqamah_time').eq('prayer_name', prayerName.toLowerCase() == 'dhuhr' ? 'zuhr' : prayerName.toLowerCase()).single()
           if( getPrayerTime ){
             const PrayerTime = setTimeToCurrentDate(getPrayerTime.athan_time)
+            const IqaTime = setTimeToCurrentDate(getPrayerTime.iqamah_time)
             const currTime = new Date()
             if( isBefore(currTime, PrayerTime) ){
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
-              if( UserPushToken && UserPushToken.push_notification_token ){
-              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `Time to pray ${prayerName}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
+              const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).eq('notification_type', 'Alert at Athan time').single()
+              if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists ){
+              const FormatAthTime = format(PrayerTime, 'p')
+              const FormatIqaTime = format(IqaTime, 'p')
+              const { error } = await supabase.from('prayer_notification_schedule').insert({ 
+                user_id : session?.user.id, 
+                notification_time : PrayerTime, 
+                prayer : prayerName.toLowerCase(), 
+                message : `Time to pray ${prayerName} ${FormatAthTime} \n Iqamah Time ${FormatIqaTime} `,               
+                push_notification_token : UserPushToken.push_notification_token, 
+                notification_type : 'Alert at Athan time'})
               }
             }
           }
-        } else if( index == 1 ){
+        } 
+        //If select Alert at 30 mins before next prayer Time
+        else if( index == 2){
 
           const { data : getPrayerTime, error } = await supabase.from('todays_prayers').select('prayer_name,iqamah_time')
 
@@ -101,8 +119,10 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
             const currentTime = new Date()
             if( isBefore(currentTime, PrayerTime )){
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
-              if( UserPushToken && UserPushToken.push_notification_token ){
-              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `Time to pray ${prayerName}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 mins before next prayer'})
+              const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).eq('notification_type', 'Alert 30mins before next prayer').single()
+
+              if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists){
+              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `30 mins before Dhuhr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
               }
           }
           }
@@ -115,8 +135,10 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
             const currentTime = new Date()
             if( isBefore(currentTime, PrayerTime )){
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
-              if( UserPushToken && UserPushToken.push_notification_token ){
-              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `Time to pray ${prayerName}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 mins before next prayer'})
+              const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).eq('notification_type', 'Alert 30mins before next prayer').single()
+
+              if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists ){
+              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `30 mins before Asr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
               }
           }
           }
@@ -129,8 +151,10 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
             const currentTime = new Date()
             if( isBefore(currentTime, PrayerTime )){
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
-              if( UserPushToken && UserPushToken.push_notification_token ){
-              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `Time to pray ${prayerName}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 mins before next prayer'})
+              const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).eq('notification_type', 'Alert 30mins before next prayer').single()
+
+              if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists){
+              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `30 mins before Maghrib!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
               }
           }
           }
@@ -143,29 +167,36 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
             const currentTime = new Date()
             if( isBefore(currentTime, PrayerTime )){
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
-              if( UserPushToken && UserPushToken.push_notification_token ){
-              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `Time to pray ${prayerName}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 mins before next prayer'})
+              const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).eq('notification_type', 'Alert 30mins before next prayer').single()
+
+              if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists){
+              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `30 mins before Isha!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
               }
           }
         }
 
         }
-        else if( index == 2 ){
+        // If Select Alert at Iqamah Time
+        else if( index == 1 ){
           const { data : getPrayerTime, error } = await supabase.from('todays_prayers').select('iqamah_time').eq('prayer_name', prayerName.toLowerCase() == 'dhuhr' ? 'zuhr' : prayerName.toLowerCase()).single()
           if( getPrayerTime ){
             const PrayerTime = setTimeToCurrentDate(getPrayerTime.iqamah_time)
             const currTime = new Date()
             if( isBefore(currTime, PrayerTime) ){
               const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
-              if( UserPushToken && UserPushToken.push_notification_token ){
-              const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `Time to pray ${prayerName}`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Iqamah time'})
+              const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).eq('notification_type', 'Alert at Iqamah time').single()
+              if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists ){
+              const FormatIqaTime = format(PrayerTime, 'p')
+              const { error } = await supabase.from('prayer_notification_schedule').insert({ 
+                user_id : session?.user.id, 
+                notification_time : PrayerTime, 
+                prayer : prayerName.toLowerCase(), 
+                message : `Iqamah for ${prayerName} at ${FormatIqaTime}`, 
+                push_notification_token : UserPushToken.push_notification_token, 
+                notification_type : 'Alert at Iqamah time'})
               }
             }
           }
-        }
-
-        else if( index == 3 ){
-          const { error } = await supabase.from('prayer_notification_schedule').delete().eq('user_id' , session?.user.id).eq('prayer' , prayerName.toLowerCase()).eq('notification_type', NotificationArray[index])
         }
       }
     }

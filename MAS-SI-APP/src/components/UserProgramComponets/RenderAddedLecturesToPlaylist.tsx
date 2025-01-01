@@ -234,13 +234,13 @@ export const RenderAddedEventLectures = ( {event_lecture_id, playlist , id} : Re
 
   async function stateOfLikedLecture(){
     if( liked.value == 0 ){
-    const { error } = await supabase.from("liked_event_lectures").insert({user_id : session?.user.id, lecture_id: event_lecture_id})
+    const { error } = await supabase.from("liked_event_lectures").insert({user_id : session?.user.id, event_lecture_id: event_lecture_id})
     if (error) {
       console.log(error)
     }
     }
     if ( liked.value == 1 ){
-      const { error } = await supabase.from("liked_event_lectures").delete().eq("user_id", session?.user.id).eq("lecture_id", event_lecture_id)
+      const { error } = await supabase.from("liked_event_lectures").delete().eq("user_id", session?.user.id).eq("event_lecture_id", event_lecture_id)
       if (error) {
         console.log(error)
       }

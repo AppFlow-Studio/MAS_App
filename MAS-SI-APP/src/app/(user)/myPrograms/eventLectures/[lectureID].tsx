@@ -18,7 +18,7 @@ import { Modal, Portal,Icon } from 'react-native-paper';
 export default function LecturesData() {
   const { session } = useAuth()
   const [ playing, setPlaying ] = useState(false)
-  const { events_lecture_id } = useLocalSearchParams();
+  const { lectureID } = useLocalSearchParams();
   const [ currentLecture, setLecture ] = useState<EventLectureType>()
   const [ visible, setVisible ] = useState(false);
   const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>()
@@ -33,7 +33,7 @@ export default function LecturesData() {
   const tabBarHeight = useBottomTabBarHeight() + 60
 
   async function getLecture(){
-    const { data, error } = await supabase.from("events_lectures").select("*").eq("event_lecture_id", events_lecture_id).single()
+    const { data, error } = await supabase.from("events_lectures").select("*").eq("event_lecture_id", lectureID).single()
     if( error ){
       console.log("event id", error)
     }
@@ -130,23 +130,6 @@ export default function LecturesData() {
           }) : <></>}
 
         </ScrollView>
-      { /* <View className='h-[75%] border'>
-          <FlatList 
-          data={[1,2,3,4,5]}
-          renderItem={({item, index}) => <LectureKeyNotesCard height={KEYNOTECARDHEIGHT} width={KEYNOTECARDWIDTH} index={index}  scrollY={scrollY}/>}
-          onScroll={(event) => {handleScroll(event); setScrollY(event.nativeEvent.contentOffset.y)}}
-          ItemSeparatorComponent={() => <View style={{ height : 20 }}/>}
-          getItemLayout={( data, index ) =>( {
-            length : KEYNOTECARDHEIGHT  + 20,
-            offset : KEYNOTECARDHEIGHT + 20 * index, 
-            index
-          })}
-          scrollEventThrottle={16}
-          disableIntervalMomentum={true}
-          snapToInterval={KEYNOTECARDHEIGHT + (20 * 0.2)}
-          decelerationRate={0.6}
-          />
-        </View> */}
     </View>
     )
   }
@@ -202,7 +185,6 @@ export default function LecturesData() {
       runOnJS(handleAnimationEnd)();
     });
   }
-
   return(
     <View className='flex-1 bg-[#ededed]'>
         <Stack.Screen options={{ title : currentLecture?.event_lecture_name, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white'} }} />

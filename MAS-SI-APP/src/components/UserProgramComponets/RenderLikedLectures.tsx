@@ -1,7 +1,6 @@
 import { View, Text, Pressable, FlatList, Dimensions, Image } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { useLocalSearchParams, Stack } from 'expo-router';
-import programsData from '@/assets/data/programsData';
 import { Lectures, Program } from '@/src/types';
 import { Link } from "expo-router";
 import { defaultProgramImage } from '../ProgramsListProgram';
@@ -12,6 +11,7 @@ import * as Haptics from "expo-haptics"
 import Animated, { useSharedValue, withSpring, useAnimatedStyle, interpolate, Extrapolation, runOnJS } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
+import { format } from 'date-fns';
 type RenderLikedLecturesProp = {
   lecture : Lectures
   index : number
@@ -163,7 +163,7 @@ const RenderLikedLectures = ({lecture, index, speaker} : RenderLikedLecturesProp
               <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
                 <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture.lecture_name}</Text>
                 <View className='flex-row' style={{flexShrink: 1, width: width / 1.5}}>
-                  {speaker == "MAS" ? <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture.lecture_speaker} </Text> : <Text className='ml-2 text-gray-500'> {lecture.lecture_date}</Text>}
+                  {speaker == "MAS" ? <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture.lecture_speaker} </Text> : <Text className='ml-2 text-gray-500'> {format(lecture.lecture_date, 'PP')}</Text>}
                 </View>
               </View>
               </Link>

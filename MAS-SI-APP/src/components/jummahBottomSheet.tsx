@@ -21,8 +21,8 @@ export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({speake
         <View className='flex-1'>
           { 
             speaker && (
-            <>
-              <View className=' flex-row'>
+             <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
+              <View className=' flex-row '>
                   <Image source={{uri : speaker?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
               <View className='flex-col px-5'>
                 <Text className='text-xl font-bold text-black'>Name: </Text>
@@ -36,13 +36,35 @@ export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({speake
                 return <Text key={i} className='text-black'> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
               })}
             </View>
-            </>
+            </View>
             )
           }
         </View>
       )
     }
+    {
+      /*
+      speakerData?.map((speakerData) => (
+                <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
+                  <Animated.View className=' flex-row'>
+                      <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+                  <View className='flex-col px-1'>
+                    <Text className='text-xl font-bold'>Name: </Text>
+                    <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
+                  </View>
+                </Animated.View>
+          
+                <View className='flex-col py-3'>
+                  { speakerData?.speaker_name == "MAS" ? <Text className='font-bold'>Impact </Text> :  <Text className='font-bold'>Credentials: </Text> } 
+                  { speakerData?.speaker_creds.map( (cred, i) => {
+                    return <Text key={i}> <Icon source="cards-diamond-outline"  size={15} color='black'/> {cred} {'\n'}</Text>
+                  })}
+                </View>
+                </View>
+                ))
+      */
 
+    }
   const renderBackDrop = useCallback( (props : any ) => <BottomSheetBackdrop appearsOnIndex={0} disappearsOnIndex={-1} {...props}/> , [])
   return (
     <BottomSheetModal
@@ -72,8 +94,13 @@ export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({speake
         </View>
 
         <Portal>
-        <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, width: "90%", borderRadius: 35, alignSelf: "center", height : '50%' }} >
-          <GetSheikData />
+        <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, minHeight : 400, maxHeight: "70%", width: "95%", borderRadius: 35, alignSelf: "center"}} >
+          <ScrollView className='flex-1'
+          showsVerticalScrollIndicator={true}
+          
+          >
+            <GetSheikData />
+          </ScrollView>
         </Modal>
       </Portal>
       </View>

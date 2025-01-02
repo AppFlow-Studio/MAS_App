@@ -108,6 +108,7 @@ const UploadEventLectures = () => {
     }else{
       const { error } = await supabase.from('events_lectures').insert({ event_id : event_id, event_lecture_name : lectureName, event_lecture_speaker : speakerSelected, event_lecture_link : lectureLink, event_lecture_date : lectureDate, event_lecture_keynotes : keyNotes, event_lecture_desc : lectureAI})
       handleSubmit()
+      router.back()
     }
   }
   useEffect(() => {

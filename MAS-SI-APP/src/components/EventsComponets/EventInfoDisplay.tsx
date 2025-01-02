@@ -26,7 +26,7 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc} : 
     const [ speakerString, setSpeakerString ] = useState('')
     const Tab = useBottomTabBarHeight()
   
-    const { width } = Dimensions.get("window")
+    const { width, height } = Dimensions.get("window")
     const scrollRef = useAnimatedRef<Animated.ScrollView>()
     const scrollOffset = useScrollViewOffset(scrollRef)
     const imageAnimatedStyle = useAnimatedStyle(() => {
@@ -64,7 +64,6 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc} : 
           )
           setSpeakerData(speakers)
           setSpeakerString(speaker_string.join(''))
-          console.log('speakers', speaker_string)
         }
 
         const GetSheikData =  () => {
@@ -121,7 +120,7 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc} : 
               </View>
 
               <View className='items-center justify-center'>
-                <View className='w-[95%] bg-white px-3 flex-wrap h-[300] py-2' style={{ borderRadius : 15, shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1}}>
+                <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={{ borderRadius : 15, height : height / 3.7 ,shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1}}>
                   <ScrollView><Text>{event_desc}</Text></ScrollView>
                 </View>
               </View>

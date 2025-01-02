@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView } from "react-native";
+import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, useWindowDimensions, Dimensions } from "react-native";
 import { router, Stack } from "expo-router";
 import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
@@ -60,7 +60,8 @@ const AddNewEventScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null)
   const descriptionRef = useRef<View>(null)
   const titleRef = useRef<View>(null)
-
+  const layoutHeight = Dimensions.get('screen').height
+  const [ keyboardOffset, setKeyboardOffset ] = useState(0)
   const [ submitDisabled, setSubmitDisabled ] = useState(true)
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
@@ -301,6 +302,9 @@ const AddNewEventScreen = () => {
             showsVerticalScrollIndicator={false}
             automaticallyAdjustKeyboardInsets
             ref={scrollViewRef}
+            onScroll={(e) => {
+              setKeyboardOffset(e.nativeEvent.contentOffset.y / 3.3)
+             }}
           >
              <Text className="text-base font-bold mb-1 mt-2 ml-2">Event Details</Text>
             <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
@@ -643,7 +647,7 @@ const AddNewEventScreen = () => {
                     <Text className="text-base font-bold">Paid</Text>
                   </Pressable>
                   {isPaid && (
-                    <View>
+                   <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={keyboardOffset}>
                       <Text className="text-base font-bold mb-1 ml-2">
                         Enter Event Website Link
                       </Text>
@@ -657,7 +661,7 @@ const AddNewEventScreen = () => {
                         placeholder="Enter MAS Shop Link..."
                         textColor="black"
                       />
-                    </View>
+                    </KeyboardAvoidingView>
                   )}
            </View>
             

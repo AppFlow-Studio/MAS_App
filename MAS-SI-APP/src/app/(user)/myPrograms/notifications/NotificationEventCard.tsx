@@ -65,6 +65,11 @@ const NotificationEventCard = ({height , width, index, scrollY, setSelectedNotif
       if( settings.includes(CardOptions[index]) ){
         const filter = settings.filter((e : any) => e !== CardOptions[index])
         const {data, error} = await supabase.from('event_notification_settings').update({notification_settings : filter}).eq('event_id', event_id ).eq('user_id', session?.user.id, )
+        const { error : DeleteScheduleError } = await supabase.from('program_notification_schedule')
+        .delete()
+        .eq('user_id', session?.user.id)
+        .eq('program_event_name', eventInfo.event_name)
+        .eq('notification_type', CardOptions[index])
       }
       else{
         settings.push(CardOptions[index])
@@ -73,19 +78,19 @@ const NotificationEventCard = ({height , width, index, scrollY, setSelectedNotif
           const day = currentDate.getDay()
           const eventStartTime =  setTimeToCurrentDate(eventInfo.event_start_time)
           const event_days = eventInfo.event_days
-          if( index == 0 ){
+          if( index == 2 ){
             await Promise.all(event_days.map( async ( days ) => {
               const indexOfDay = daysOfWeek.indexOf(days)
               if( ( indexOfDay - 1 ) % 6 == day ){
-                await schedule_notification(session?.user.id, pushToken,  `${eventInfo.event_name} is Tomorrow`, 'Day Before', eventInfo.event_name, eventStartTime)
+                await schedule_notification(session?.user.id, pushToken,  `${eventInfo.event_name} is Tomorrow, Don't Forget!`, 'Day Before', eventInfo.event_name, eventStartTime)
               }
             }))
           }else{
             if( event_days.includes(daysOfWeek[day]) && isBefore( currentDate, eventStartTime )){
-              if( index == 1 ){
+              if( index == 0 ){
                 await schedule_notification(session?.user.id, pushToken,  `${eventInfo.event_start_time} is Starting Now!`, 'When Program Starts', eventInfo.event_start_time, eventStartTime)
               }
-              else if( index == 2 && isBefore(currentDate, eventStartTime) ){
+              else if( index == 1 && isBefore(currentDate, eventStartTime) ){
                 const start_time = setTimeToCurrentDate(eventInfo.event_start_date)
                 start_time.setMinutes(start_time.getMinutes() - 30)
                 await schedule_notification(session?.user.id, pushToken, `${eventInfo.event_start_time} is Starting in 30 Mins!`, '30 Mins Before', eventInfo.event_start_time, start_time)

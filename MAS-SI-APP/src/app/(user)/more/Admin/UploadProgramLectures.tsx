@@ -97,7 +97,7 @@ const SpeakersData = (speakers  : any ) => {
 }
 
   const onUploadLecture = async () => {
-    if (!lectureName || !lectureSpeaker || !lectureLink || !lectureDate ) {
+    if ( !lectureName || (!speakerSelected || speakerSelected.length < 1) || !lectureLink || !lectureDate ) {
       Toast.show({
         type: "error",
         text1: "All fields are required!",
@@ -111,6 +111,7 @@ const SpeakersData = (speakers  : any ) => {
         console.log(error)
       }
       handleSubmit()
+      router.back()
     }
   }
 

@@ -12,6 +12,7 @@ const UpdateEventHomeScreen = () => {
   const tabBar = useBottomTabBarHeight()
   const getLectures = async () => {
     if( has_lecture ){
+      setLectures([])
       const { data, error } = await supabase.from('events_lectures').select('*').eq('event_id', event_id).order('event_lecture_date', {ascending : false})
       if( data ){
         setLectures( data )
@@ -137,7 +138,7 @@ const UpdateEventHomeScreen = () => {
                         },
                         {
                         text: 'Delete', 
-                        onPress: async () => await supabase.from('events_lectures').delete().eq('event_lecture_id', item.event_lecture_id),
+                        onPress: async () => {await supabase.from('events_lectures').delete().eq('event_lecture_id', item.event_lecture_id); await getLectures()},
                         style: 'destructive',
                         },
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, FlatList } from "react-native";
+import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, FlatList, KeyboardAvoidingView, useWindowDimensions, Dimensions } from "react-native";
 import { router, Stack } from "expo-router";
 import { TextInput, Checkbox, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
@@ -45,7 +45,8 @@ const AddNewProgramScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null)
   const descriptionRef = useRef<View>(null)
   const titleRef = useRef<View>(null)
-
+  const layoutHeight = Dimensions.get('screen').height
+  const [ keyboardOffset , setKeyboardOffset ] = useState(0)
   const [ submitDisabled, setSubmitDisabled ] = useState(true)
 
 
@@ -238,6 +239,9 @@ const AddNewProgramScreen = () => {
           contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
           showsVerticalScrollIndicator={false}
           ref={scrollViewRef}
+          onScroll={(e) => {
+            setKeyboardOffset(175 - e.nativeEvent.contentOffset.y)
+           }}
         >
           <Text className="text-base font-bold mb-1 mt-2 ml-2">Program Details</Text>
           <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
@@ -485,8 +489,8 @@ const AddNewProgramScreen = () => {
               <Text className="text-base font-bold">Paid</Text>
             </Pressable>
             {isPaid && (
-              <View>
-                <Text className="text-base font-bold mb-1 ml-2">
+              <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={ keyboardOffset }>
+                <Text className="text-base font-bold pb-1 ml-2 bg-white rounded-[15px]">
                   Enter Program Website Link
                 </Text>
                 <TextInput
@@ -499,7 +503,7 @@ const AddNewProgramScreen = () => {
                   placeholder="Enter MAS Shop Link..."
                   textColor="black"
                 />
-              </View>
+              </KeyboardAvoidingView>
             )}
          
   

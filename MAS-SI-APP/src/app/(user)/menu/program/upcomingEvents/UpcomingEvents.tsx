@@ -34,30 +34,33 @@ const UpcomingEvents = () => {
     GetUpcomingEvents()
   }, [])
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom : TabBarHeight + 30, gap : 20, marginTop : 10 }} 
-    className="bg-white h-full flex-1 w-full "
-    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={ async () => { await GetUpcomingEvents() } }/>}
-    >
-        <Stack.Screen options={{ 
-            headerStyle : { backgroundColor : 'white' },
-            headerTintColor : 'black'
-        }}/>
-        {
-          days.map(( item, index ) => {
-            const program = upcoming.filter(programs => programs.program_days.includes(item))
-            const DaysKidsPrograms = program.filter(programs => programs.is_kids == true)
-            const event = upcomingEvents.filter(events => events.event_days.includes(item) && events.pace == false)
-            const pace = upcomingEvents.filter(events => events.event_days.includes(item) && events.pace == true)
-            return(
-              <>
-                <Days Programs={program} Day={item} Kids={DaysKidsPrograms} Events={event} Pace={pace} TodaysDate={TodaysDate} index={index}/>
-                <Divider className='h-[0.5px] w-[70%] self-center'/>
-              </>
-            )
-          })
-        }
-      
-    </ScrollView>
+    <View className=' bg-[#0D509D] flex-1'>
+      <ScrollView contentContainerStyle={{ paddingBottom : TabBarHeight + 30, gap : 20, marginTop : 15 }} 
+      className="bg-white h-full flex-1 w-full"
+      style={{borderTopLeftRadius: 40, borderTopRightRadius: 40 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={ async () => { await GetUpcomingEvents() } }/>}
+      >
+          <Stack.Screen options={{ 
+              headerStyle : { backgroundColor : 'white' },
+              headerTintColor : 'black'
+          }}/>
+          {
+            days.map(( item, index ) => {
+              const program = upcoming.filter(programs => programs.program_days.includes(item))
+              const DaysKidsPrograms = program.filter(programs => programs.is_kids == true)
+              const event = upcomingEvents.filter(events => events.event_days.includes(item) && events.pace == false)
+              const pace = upcomingEvents.filter(events => events.event_days.includes(item) && events.pace == true)
+              return(
+                <>
+                  <Days Programs={program} Day={item} Kids={DaysKidsPrograms} Events={event} Pace={pace} TodaysDate={TodaysDate} index={index}/>
+                  <Divider className='h-[0.5px] w-[70%] self-center'/>
+                </>
+              )
+            })
+          }
+        
+      </ScrollView>
+   </View>
   )
 }
 

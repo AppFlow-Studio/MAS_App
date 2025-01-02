@@ -42,7 +42,7 @@ const ProgramLectures = () => {
   const hideAddToPlaylist = () => setAddToPlaylistVisible(false)
   const navigation = useNavigation<any>()
   const Tab = useBottomTabBarHeight()
-  const { width } = Dimensions.get("window")
+  const { width, height } = Dimensions.get("window")
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
   const scrollOffset = useScrollViewOffset(scrollRef)
   const notifade = useSharedValue(1)
@@ -364,7 +364,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
                       </View>
 
                       <View className='items-center justify-center'>
-                        <View className='w-[95%] bg-white px-3 flex-wrap h-[300] py-2' style={{ borderRadius : 15, shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1}}>
+                        <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={{ borderRadius : 15, height : height / 3.7 , shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1}}>
                           <ScrollView><Text>{program?.program_desc}</Text></ScrollView>
                         </View>
                       </View>

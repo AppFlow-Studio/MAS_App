@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native";
+import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, useWindowDimensions, Dimensions } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
@@ -79,7 +79,10 @@ const UpdateEventScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null)
   const descriptionRef = useRef<View>(null)
   const titleRef = useRef<View>(null)
+  const paidRef = useRef<View>(null)
   
+  const [ keyboardOffset, setKeyboardOffset ] = useState(0)
+  const layoutHeight = Dimensions.get('screen').height
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -349,6 +352,9 @@ const UpdateEventScreen = () => {
         contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
         showsVerticalScrollIndicator={false}
         ref={scrollViewRef}
+        onScroll={(e) => {
+          setKeyboardOffset(e.nativeEvent.contentOffset.y / 2.2)
+         }}
         >
          <Text className="text-base font-bold mb-1 mt-2 ml-2">Event Details</Text>
         <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
@@ -371,20 +377,20 @@ const UpdateEventScreen = () => {
         <Text className="font-bold text-[13px] text-black my-3 ml-2">Date:</Text>
         <View className="flex flex-row gap-x-2">
         <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartDatePicker(true)}>
-          <Text className="text-black text-[11px]">
-           Start Date: { eventStartDate ? eventStartDate.toLocaleDateString() : '__'}
-          </Text>
-          {showStartDatePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, date) => {
-                setShowStartDatePicker(false);
-                if (date) setEventStartDate(date);
-              }}
-            />
-          )}
+        <Text className="text-black text-[11px]">
+          Start Date: { eventStartDate ? eventStartDate.toLocaleDateString() : '__'}
+        </Text>
+        {showStartDatePicker && (
+          <DateTimePicker
+            value={eventStartDate ? eventStartDate : new Date()}
+            mode="date"
+            display="default"
+            onChange={(event, date) => {
+              setShowStartDatePicker(false);
+              if (date) setEventStartDate(date);
+            }}
+          />
+        )}
         </Pressable>
 
         <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowEndDatePicker(true)}>
@@ -706,8 +712,8 @@ const UpdateEventScreen = () => {
                           <Text className="text-base font-bold">Paid</Text>
                         </Pressable>
                         {isPaid && (
-                          <View>
-                            <Text className="text-base font-bold mb-1 ml-2">
+                   <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={keyboardOffset}>
+                            <Text className="text-base font-bold pb-1 ml-2 bg-white">
                               Enter Event Website Link
                             </Text>
                             <TextInput
@@ -719,8 +725,9 @@ const UpdateEventScreen = () => {
                               onChangeText={setEventPaidLink}
                               placeholder="Enter MAS Shop Link..."
                               textColor="black"
+                              
                             />
-                          </View>
+                          </KeyboardAvoidingView>
                         )}
                  </View>
 

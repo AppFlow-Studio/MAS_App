@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert } from "react-native";
+import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, useWindowDimensions, Dimensions } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { TextInput, Checkbox, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
@@ -48,6 +48,7 @@ const UpdateProgramScreen = () => {
   const [programStartTime, setProgramStartTime] = useState<Date | null>(null);
   const [programDays, setProgramDays] = useState<string[]>([]);
   const [ speakers, setSpeakers ] = useState<any[]>([])
+  const [ keyboardOffset , setKeyboardOffset ] = useState(0)
   const [showStartDatePicker, setShowStartDatePicker] =
     useState<boolean>(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState<boolean>(false);
@@ -65,6 +66,8 @@ const UpdateProgramScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null)
   const descriptionRef = useRef<View>(null)
   const titleRef = useRef<View>(null)
+  const paidRef = useRef<View>(null)
+  const layoutHeight = Dimensions.get('screen').height
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
     if( data ){
@@ -265,20 +268,22 @@ const UpdateProgramScreen = () => {
           contentContainerStyle={{ paddingBottom: tabHeight + 10 }}
           showsVerticalScrollIndicator={false}
           ref={scrollViewRef}
+          onScroll={(e) => {
+            setKeyboardOffset(225 - e.nativeEvent.contentOffset.y)
+           }}
         >
           <Text className="text-base font-bold mb-1 mt-2 ml-2">Program Details</Text>
           <Text className="font-bold text-[13px] text-black my-3 ml-2">Time: </Text>
           <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3" onPress={() => setShowStartTimePicker(true)}>
           <Text className=" text-black text-[11px]">
-             Start Time: { programStartTime ? format(programStartTime, 'p') : '__'}
+             Start Time: { programStartTime ? format(programStartTime,'p') : '__'}
             </Text>
             {showStartTimePicker && (
             <DateTimePicker
-              value={new Date()}
+              value={new Date(programStartTime!)}
               mode="time"
               display="default"
               onChange={(event, time) => {
-                setShowStartTimePicker(false);
                 if (time) setProgramStartTime(time);
               }}
             />
@@ -521,27 +526,28 @@ const UpdateProgramScreen = () => {
                           className="w-[35%] justify-between px-6 ml-5"
                         >
                           <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                             {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
+                              {isPaid ? <Icon  source={'check'} size={15} color="green"/> : <></>}
                           </View>
                           <Text className="text-base font-bold">Paid</Text>
                         </Pressable>
-                        {isPaid && (
-                          <View>
-                            <Text className="text-base font-bold mb-1 ml-2">
-                              Enter Program Website Link
-                            </Text>
-                            <TextInput
-                              mode="outlined"
-                              theme={{ roundness: 10 }}
-                              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-                              activeOutlineColor="#0D509D"
-                              value={programPaidLink}
-                              onChangeText={setprogramPaidLink}
-                              placeholder="Enter MAS Shop Link..."
-                              textColor="black"
-                            />
-                          </View>
-                        )}
+                          {isPaid && (
+                   <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={keyboardOffset}>
+                                <Text className="text-base font-bold pb-1 ml-2 bg-white">
+                                  Enter Program Website Link
+                                </Text>
+                                <TextInput
+                                  mode="outlined"
+                                  theme={{ roundness: 10 }}
+                                  style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
+                                  activeOutlineColor="#0D509D"
+                                  value={programPaidLink}
+                                  onChangeText={setprogramPaidLink}
+                                  placeholder="Enter MAS Shop Link..."
+                                  textColor="black"
+                                />
+                              </KeyboardAvoidingView>
+                              )}
+
 
           <Button
             mode="contained"

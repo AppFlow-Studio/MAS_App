@@ -132,7 +132,11 @@ const DeleteSlider = ({item, TodaysDate, width } : { item : SheikDataType, Today
                     },
                     {
                     text: 'Delete', 
-                    onPress: async () => await supabase.from('speaker_data').delete().eq('speaker_id', item.speaker_id),
+                    onPress: async () => {
+                      await supabase.from('speaker_data').delete().eq('speaker_id', item.speaker_id)
+                      const { error : remove} = await supabase.storage.from('sheikh_img').remove([`${item.speaker_name.trim().split(" ").join("_")}.png`]);
+                      
+                    },
                     style: 'destructive',
                     },
 

@@ -133,7 +133,11 @@ const DeleteSlider = ({item, TodaysDate, width } : { item : EventsType, TodaysDa
                   },
                   {
                   text: 'Delete', 
-                  onPress: async () => await supabase.from('events').delete().eq('event_id', item.event_id),
+                  onPress: async () => { 
+                    await supabase.from('events').delete().eq('event_id', item.event_id)
+                    const { error } = await supabase.storage.from('event_flyers').remove([`${item.event_name.trim().split(" ").join("_")}.png`]);
+                    
+                  },
                   style: 'destructive',
                   },
 

@@ -141,7 +141,7 @@ export default function LecturesData() {
     return(
       <ScrollView className='flex-1' contentContainerStyle={{ alignItems : "center", backgroundColor : "#ededed" }}>
         <View className='flex-col items-center mt-3'>
-            <Text className='font-bold text-black text-2xl'>{currentLecture?.lecture_name}</Text>
+            <Text className='font-bold text-black text-2xl text-center'>{currentLecture?.lecture_name}</Text>
             <Text className='font-bold text-blue-500' onPress={showModal}>{speakerString ? speakerString.join(' & ') : ''}</Text>
         </View>
         <View className='h-[350] w-[85%] mt-2'>

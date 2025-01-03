@@ -71,7 +71,6 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan, salah
           showToast(salahOption, salah, athan)
         }
     }else if( salahOption == 'Alert 30 mins before next prayer' ){
-      console.log( athan, iqamah )
       const { data : checkForSchedule, error : scheduleError } = await supabase.from('prayer_notification_schedule').select('*').eq('user_id', session?.user.id).eq('prayer', salah.toLowerCase()).eq('notification_type', salahOption).single()
       if( alertArray.includes(salahOption) || checkForSchedule){
         const filterOutSetting = alertArray.filter(setting => setting != salahOption)
@@ -127,7 +126,6 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan, salah
       topOffset : 60
     });
   };
-  console.log(salah, salahSettings)
   return (
     <TouchableOpacity className='flex-row items-center justify-center' onPress={() => setBellClick(true)}>
       <Menu>

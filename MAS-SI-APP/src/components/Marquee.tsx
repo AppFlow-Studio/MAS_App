@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     display: 'flex',
-    gap: '1rem',
+    gap: 8,
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,

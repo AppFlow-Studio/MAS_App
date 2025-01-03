@@ -242,8 +242,8 @@ const UpdateEventScreen = () => {
           handleSubmit()
           router.back()
         }else {
-          const filePath = `${eventName.trim().split(" ").join("")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
-          const { error } = await supabase.storage.from('event_flyers').remove([`${originalName.trim().split(" ").join("")}.png`]);
+          const filePath = `${eventName.trim().split(" ").join("_")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
+          const { error } = await supabase.storage.from('event_flyers').remove([`${originalName.trim().split(" ").join("_")}.png`]);
           const contentType = eventImage.type === 'image' ? 'image/png' : 'video/mp4';
           const { data : image, error :image_upload_error } = await supabase.storage.from('event_flyers').upload(filePath, decode(base64));
           if( image ){

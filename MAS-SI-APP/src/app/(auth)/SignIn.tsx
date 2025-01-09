@@ -8,7 +8,11 @@ import { StatusBar } from "react-native"
 import { Platform } from 'react-native'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { useAuth } from '@/src/providers/AuthProvider';
-
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 const SignIn = () => {
     const [loading, setLoading] = useState(false);
     const [ email, setEmail ] = useState("")
@@ -16,22 +20,50 @@ const SignIn = () => {
     const { session } = useAuth()
     const logoAnime = useSharedValue(0)
     const logoBounce = useSharedValue(-200)
-    const logoMountAnimeStyle = useAnimatedStyle(() => {
-     return {
-       opacity : logoAnime.value,
-       transform: [{translateY : logoBounce.value}]
-     }
-    })
 
-    const logoMountAnimeFunc = () => {
-      
-      logoBounce.value = withTiming(15, {
-        duration: 2000,
-        easing: Easing.elastic(1.3),
-        reduceMotion: ReduceMotion.System,
+    const GoogleButtonSignUp = () => {
+      GoogleSignin.configure({
+        iosClientId : '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
       })
-
-      logoAnime.value = withTiming(1, {duration: 2000})
+    
+      return (
+        <GoogleSigninButton
+          size={GoogleSigninButton.Size.Wide}
+          style={[ 
+            Platform.OS == 'android' ? {
+              height : 64
+            } : {height: 48}
+          ]}
+          color={GoogleSigninButton.Color.Dark}
+          onPress={async () => {
+            try {
+              await GoogleSignin.hasPlayServices()
+              const userInfo = await GoogleSignin.signIn()
+              if (userInfo.idToken) {
+                const { data, error } = await supabase.auth.signInWithIdToken({
+                  provider: 'google',
+                  token: userInfo.idToken,
+                })
+                if( !error ){
+                  await supabase.from('profiles').update({ first_name : userInfo?.user.name, email : userInfo?.user.email }).eq('id', data?.user.id)
+                }
+              } else {
+                throw new Error('no ID token present!')
+              }
+            } catch (error: any) {
+              if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                // user cancelled the login flow
+              } else if (error.code === statusCodes.IN_PROGRESS) {
+                // operation (e.g. sign in) is in progress already
+              } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                // play services not available or outdated
+              } else {
+                // some other error happened
+              }
+            }
+          }}
+        />
+      )
     }
     async function signInWithEmail() {
       setLoading(true);
@@ -108,7 +140,7 @@ const SignIn = () => {
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
           buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
           cornerRadius={5}
-          style={{ width: '70%', height: 64 }}
+          style={{ width: '78%', height: 40 }}
           onPress={async () => {
             try {
               const credential = await AppleAuthentication.signInAsync({
@@ -133,7 +165,7 @@ const SignIn = () => {
                   const{
                     error,
                     data
-                  } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
+                  } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName?.givenName }).eq('id', user?.id)
                 }
               } else {
                 throw new Error('No identityToken.')
@@ -149,6 +181,8 @@ const SignIn = () => {
   
         />
         ) : <></>}
+        <View className='h-[15]'/>
+        <GoogleButtonSignUp />
       </View>
     </View>
   )

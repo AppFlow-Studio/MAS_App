@@ -147,11 +147,9 @@ const Index = () => {
                 async () => {
                      await supabase.from('profiles').update({ push_notification_token : null }).eq('id', session?.user.id)
                      if( session?.user.is_anonymous ){ 
-                      /*
-                      const { data, error } = await AdminClient.auth.admin.deleteUser(
-                        session?.user.id!
-                      ) 
-                      */
+                      const { data, error } = await supabase.functions.invoke('delete-user', {
+                         body : { user_id : session.user.id }
+                        })
                      }
                      await supabase.auth.signOut()
                   }}>
@@ -176,9 +174,10 @@ const Index = () => {
                     text : 'Confirm',
                     style : 'destructive',
                     onPress : async ( ) => {
-                      const { data, error } = await AdminClient.auth.admin.deleteUser(
-                        session?.user.id!
-                      ) 
+                      const { data, error } = await supabase.functions.invoke('delete-user', {
+                        body : { user_id : session?.user.id }
+                       })
+                       
                       await supabase.auth.signOut()
                     }
                   }

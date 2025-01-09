@@ -66,11 +66,9 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     const { data , error } = await supabase.from('profiles').update({ 'push_notification_token' : null }).eq('id', CurrentSession?.user.id)
   }
   const DeleteGuestAcc = async() => {
-    /* 
-    const { data, error } = await AdminClient.auth.admin.deleteUser(
-      CurrentSession?.user.id!
-    )  
-    */
+    const { data, error } = await supabase.functions.invoke('delete-user', {
+      body : { user_id : CurrentSession?.user.id }
+    })
   }
   useEffect(() => {
     if( session ){

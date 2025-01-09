@@ -195,7 +195,7 @@ const UpdateEventScreen = () => {
      setEventEndDate(new Date(data.event_end_date));
      setEventStartTime(setTimeToCurrentDate(data.event_start_time));
      setEventDays(data.event_days);
-      setIsPaid(data.event_is_paid);
+      setIsPaid(data.is_paid);
      setEventPrice(data.event_price);
       setIsForKids(data.is_kids);
       setIsFor14Plus(data.is_fourteen_plus);

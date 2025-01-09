@@ -1,4 +1,4 @@
-import { View, Text, Dimensions, Image, ScrollView } from 'react-native'
+import { View, Text, Dimensions, Image, ScrollView, Pressable, Linking } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Stack, router } from "expo-router"
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -17,8 +17,9 @@ type EventInfoDisplayProp = {
     event_speaker : string 
     event_name : string 
     event_desc : string 
+    event : EventsType
 }
-const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc} : EventInfoDisplayProp) => {
+const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc, event} : EventInfoDisplayProp) => {
     const [ visible, setVisible ] = useState(false);
     const showModal = () => setVisible(true);
     const hideModal = () => setVisible(false);
@@ -122,6 +123,20 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc} : 
               <View className='items-center justify-center'>
                 <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={{ borderRadius : 15, height : height / 3.7 ,shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1}}>
                   <ScrollView><Text>{event_desc}</Text></ScrollView>
+                </View>
+                <View className='items-center justify-center'>
+                  {
+                    event?.is_paid ? 
+                    (
+                      <Pressable onPress={() => {
+                      Linking.canOpenURL(event.paid_link).then(() => {
+                      Linking.openURL(event.paid_link);
+                      });
+                      }}>
+                      <Button icon={() => <Icon source={"cart-variant"} size={20} color='white'/>} mode='elevated' style={{ backgroundColor : "#57BA47", marginTop : 10, width: "90%"}}><Text className='text-white'>Sign Up Now</Text></Button>
+                      </Pressable>
+                    ) : <></>
+                  }
                 </View>
               </View>
             </View>

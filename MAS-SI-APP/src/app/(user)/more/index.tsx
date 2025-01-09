@@ -19,7 +19,7 @@ import {
   MenuOption,
   MenuTrigger,
 } from 'react-native-popup-menu';
-import { AdminClient } from '@/src/lib/supabase'
+//import { AdminClient } from '@/src/lib/supabase'
 const Index = () => {
   const [ profile, setProfile ] = useState<Profile>()
   const { session } = useAuth()
@@ -147,9 +147,11 @@ const Index = () => {
                 async () => {
                      await supabase.from('profiles').update({ push_notification_token : null }).eq('id', session?.user.id)
                      if( session?.user.is_anonymous ){ 
+                      /*
                       const { data, error } = await AdminClient.auth.admin.deleteUser(
                         session?.user.id!
                       ) 
+                      */
                      }
                      await supabase.auth.signOut()
                   }}>

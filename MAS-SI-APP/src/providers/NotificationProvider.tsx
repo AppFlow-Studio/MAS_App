@@ -3,7 +3,7 @@ import { ExpoPushToken, NotificationTriggerInput } from 'expo-notifications';
 import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
-import { AdminClient, supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
 import { format, setHours, setMinutes, subMinutes } from 'date-fns';
 import { Alert } from 'react-native';
@@ -66,9 +66,11 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     const { data , error } = await supabase.from('profiles').update({ 'push_notification_token' : null }).eq('id', CurrentSession?.user.id)
   }
   const DeleteGuestAcc = async() => {
+    /* 
     const { data, error } = await AdminClient.auth.admin.deleteUser(
       CurrentSession?.user.id!
-    ) 
+    )  
+    */
   }
   useEffect(() => {
     if( session ){

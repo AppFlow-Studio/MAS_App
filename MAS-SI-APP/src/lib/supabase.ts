@@ -12,11 +12,11 @@ export const supabase = createClient(supabaseURL, supabaseAnonKey, {
     }
 });
 
-export const AdminClient = createClient(supabaseURL, AdminClientkey, {
+{/* export const AdminClient = createClient(supabaseURL, AdminClientkey, {
     auth : {
         storage: AsyncStorage as any,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
     }
-});
+}) */}

@@ -30,12 +30,14 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
       { buttonTitle : 'Edit Approved Fliers', link : '/more/Admin/ApprovedAdsScreen'},
     ]
   },
+  /* 
   {
     title : 'Donations', screens : [
       { buttonTitle : 'Create a new Category', link : '/more/Admin/CreateNewDonationProject'},
       { buttonTitle : 'Edit an existing Category', link : '/more/Admin/EditDonationCategory'}
     ]
-  },
+  }
+  */
   {
     title : 'Jummah', screens : [
       { buttonTitle : 'First Jummah', link : '/more/Admin/JummahDetails/1'},

@@ -3,11 +3,12 @@ import { ExpoPushToken, NotificationTriggerInput } from 'expo-notifications';
 import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
-import { supabase } from '../lib/supabase';
+import { AdminClient, supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
 import { format, setHours, setMinutes, subMinutes } from 'date-fns';
 import { Alert } from 'react-native';
 import { Session } from '@supabase/supabase-js';
+
 export type PrayerNotificationTemplateProp = {
   prayer_name : string
   hour : number
@@ -61,40 +62,13 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
    
   }
 
-  async function PrayerNotificationTemplate({prayer_name, hour, minute, body, title} : PrayerNotificationTemplateProp ){
-    const trigger = new Date()
-    trigger.setHours(hour)
-    trigger.setMinutes(minute)
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: { data: 'goes here', test: { test1: 'more data' } },
-      },
-      trigger
-    });
-  }
-
-
-  async function ProgramNotificationTemplate({program_name, hour, minute, body, title} : ProgramNotificationTemplate ){
-    const trigger = new Date()
-    trigger.setHours(hour)
-    trigger.setMinutes(minute)
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: { data: 'goes here', test: { test1: 'more data' } },
-      },
-      trigger
-    });
-  }
   const DeleteOldPushToken = async () => {
     const { data , error } = await supabase.from('profiles').update({ 'push_notification_token' : null }).eq('id', CurrentSession?.user.id)
   }
   const DeleteGuestAcc = async() => {
-    const { data , error } = await supabase.from('profiles').delete().eq('id', CurrentSession?.user.id)
-
+    const { data, error } = await AdminClient.auth.admin.deleteUser(
+      CurrentSession?.user.id!
+    ) 
   }
   useEffect(() => {
     if( session ){

@@ -49,7 +49,6 @@ serve(async (req) => {
     if( UserSettings ){
       await Promise.all(UserSettings.map( async ( program ) => {
         const { data : user_push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', program.user_id).single()
-        console.log('User Push Token', user_push_token)
         if( !user_push_token.push_notification_token ){
           return
         }

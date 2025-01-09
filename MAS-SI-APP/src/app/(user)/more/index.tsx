@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import LottieView from 'lottie-react-native'
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
-import { Button, Icon, Portal, Modal,TextInput } from 'react-native-paper'
+import { Button, Icon, Portal, Modal,TextInput, Divider } from 'react-native-paper'
 import { Link } from 'expo-router'
 import { Profile } from '@/src/types'
 import { useAuth } from '@/src/providers/AuthProvider'
@@ -13,6 +13,13 @@ import SignInAnonModal from '@/src/components/SignInAnonModal'
 import Toast from 'react-native-toast-message'
 import Svg, { Circle, err, Path, Rect } from 'react-native-svg'
 import { BlurView } from 'expo-blur'
+import {
+  Menu,
+  MenuOptions,
+  MenuOption,
+  MenuTrigger,
+} from 'react-native-popup-menu';
+import { AdminClient } from '@/src/lib/supabase'
 const Index = () => {
   const [ profile, setProfile ] = useState<Profile>()
   const { session } = useAuth()
@@ -126,6 +133,64 @@ const Index = () => {
   const MASHOPLINK = () => Linking.canOpenURL("https://massic.shop/").then(() => {
     Linking.openURL("https://massic.shop/");
   });
+  const LogoutButton  = () => {
+    return(
+      <Menu style={{ alignSelf : 'flex-end'}}>
+            <MenuTrigger>          
+              <View className='w-[100%] px-10'>
+                <Text className='text-right text-gray-400'>Logout</Text>
+              </View>
+            </MenuTrigger>
+            <MenuOptions customStyles={{optionsContainer: {width: 120, borderRadius: 8, marginTop: 20, padding: 8}}}>
+              <MenuOption 
+              onSelect={
+                async () => {
+                     await supabase.from('profiles').update({ push_notification_token : null }).eq('id', session?.user.id)
+                     if( session?.user.is_anonymous ){ 
+                      const { data, error } = await AdminClient.auth.admin.deleteUser(
+                        session?.user.id!
+                      ) 
+                     }
+                     await supabase.auth.signOut()
+                  }}>
+                <View>
+                  <Text 
+                 
+                  className='text-gray-400'
+                  >Logout</Text>
+                </View>
+                
+              </MenuOption>
+              <Divider className=' h-[0.5]'/>
+              <MenuOption
+              onSelect={ async () => {
+                Alert.alert(
+                  'Are you sure you would like to Delete your Account?', '', [{
+                    text : 'Cancel',
+                    style : 'default',
+                    onPress : () => {}
+                  },
+                  {
+                    text : 'Confirm',
+                    style : 'destructive',
+                    onPress : async ( ) => {
+                      const { data, error } = await AdminClient.auth.admin.deleteUser(
+                        session?.user.id!
+                      ) 
+                      await supabase.auth.signOut()
+                    }
+                  }
+                ]
+                )
+                
+              }}
+              >
+                <Text className='text-red-500'>Delete Account</Text>
+              </MenuOption>
+            </MenuOptions>
+        </Menu>
+    )
+  }
   return (
     <ScrollView className='bg-white pt-[18%] h-[100%]' 
     ref={scrollViewRef}
@@ -134,15 +199,7 @@ const Index = () => {
     >
       <StatusBar barStyle={'dark-content'}/>
       <View className='w-[100%] items-center justify-start' style={{ height : anonStatus ? height / 6 : height / 3.5  }}>
-        <Pressable className='w-[100%] px-10' onPress={async () =>  {
-          await supabase.from('profiles').update({ push_notification_token : null }).eq('id', session?.user.id)
-          if( session?.user.is_anonymous ){ 
-            await supabase.from('profiles').delete().eq('id', session?.user.id)
-          }
-          await supabase.auth.signOut()
-          }}>
-          <Text className='text-right text-gray-400'>Logout</Text>
-        </Pressable>
+        <LogoutButton />
         <Pressable style={{  shadowColor : "black", shadowOffset : {width : 0, height : 0}, shadowOpacity : 1, shadowRadius : 5  }} onPress={() => (spin.value = spin.value ? 0 : 1)} className='mt-3'>
           <Animated.Image 
             source={require('@/assets/images/MASHomeLogo.png')}

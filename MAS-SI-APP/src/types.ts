@@ -126,6 +126,8 @@ export type EventsType = {
     event_start_time : string
     event_days : string []
     pace : boolean
+    paid_link : string
+
 }
 export type EventLectureType = {
     id : number,

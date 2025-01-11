@@ -68,13 +68,16 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
         const filter = settings.filter((e : any) => e !== NotificationArray[index])
         const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : filter}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id )
         const { error : Delete } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', prayerName.toLowerCase()).eq('notification_type', index != 2 ? NotificationArray[index] : 'Alert 30mins before next prayer')
-        console.log(Delete)
+        if ( settings.length == 0 ){
+          const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : ['Mute']}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id )
+
+        }
       }
       else{
         // Set To Mute and delete schduled notifications for this prayer for this user 
         if( index == 3 ){
           const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : ['Mute']}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id, )
-          const { error : scheduleError} = await supabase.from('prayer_notification_schedule').delete().eq('user_id' , session?.user.id).eq('prayer' , prayerName.toLowerCase()).eq('notification_type', NotificationArray[index])
+          const { error : scheduleError} = await supabase.from('prayer_notification_schedule').delete().eq('user_id' , session?.user.id).eq('prayer' , prayerName.toLowerCase())
           return
         }
         //Check for Mute and filter it out before adding new settings

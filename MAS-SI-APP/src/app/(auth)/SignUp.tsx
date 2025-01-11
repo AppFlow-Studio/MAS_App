@@ -41,7 +41,7 @@ const SignUp = () => {
                     token: userInfo.idToken,
                   })
                   if( !error ){
-                    await supabase.from('profiles').update({ first_name : userInfo?.user.name, email : userInfo?.user.email }).eq('id', data?.user.id)
+                    await supabase.from('profiles').update({ first_name : userInfo?.user.name, profile_email : userInfo?.user.email }).eq('id', data?.user.id)
                   }
                 } else {
                   throw new Error('no ID token present!')

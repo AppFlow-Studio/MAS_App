@@ -44,8 +44,10 @@ const SignIn = () => {
                   provider: 'google',
                   token: userInfo.idToken,
                 })
+                console.log(userInfo)
                 if( !error ){
-                  await supabase.from('profiles').update({ first_name : userInfo?.user.name, email : userInfo?.user.email }).eq('id', data?.user.id)
+                  const {data : Profile , error : ProfileError } = await supabase.from('profiles').update({ first_name : userInfo?.user.name, profile_email : userInfo?.user.email }).eq('id', data?.user.id)
+                  console.log(Profile, ProfileError)
                 }
               } else {
                 throw new Error('no ID token present!')

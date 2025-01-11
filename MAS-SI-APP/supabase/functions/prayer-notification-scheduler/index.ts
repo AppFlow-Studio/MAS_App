@@ -129,7 +129,7 @@ serve(async (req) => {
 
       await Promise.all(
         TodaysPrayers.map( async ( prayer ) => {
-          // get users who have alert at athan on for this prayer
+          // get users who have alert at iqamah on for this prayer
           const { data : AthanAlertOn, error } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name).contains('notification_settings', ['Alert at Iqamah time'])
           if( error ){
             console.log(error)
@@ -158,7 +158,7 @@ serve(async (req) => {
 
     await Promise.all(
     TodaysPrayers.map( async ( prayer ) => {
-      // get users who have alert at athan on for this prayer
+      // get users who have alert 30 mins before next prayer on
       const { data : AthanAlertOn, error } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name).contains('notification_settings', ['Alert 30 mins before next prayer'])
       if( error ){
         console.log(error)
@@ -184,7 +184,7 @@ serve(async (req) => {
                 const nextPrayerTime = nextPrayerInfo[0].athan_time
                 const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
                 PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
-                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : 'Dhuhr', message : `30 mins before Asr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : 'dhuhr', message : `30 mins before Asr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
                 if( error ){
                   console.log(error)
                 }

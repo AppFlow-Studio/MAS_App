@@ -34,7 +34,7 @@ const JummahDetails = () => {
 
         {
             [1,2,3].map((item, index) => (
-                <JummahCards jummah={jummahName} height={NOTICARDHEIGHT} width={NOTICARDWIDTH} item={item} index={item} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} SupabaseJummahName={SupabaseJummahName}/>
+                <JummahCards jummah={jummahName} height={NOTICARDHEIGHT} width={NOTICARDWIDTH} item={item} index={index} setSelectedNotification={setSelectedNotification} selectedNotification={selectedNotification} SupabaseJummahName={SupabaseJummahName}/>
             ))
         }
                

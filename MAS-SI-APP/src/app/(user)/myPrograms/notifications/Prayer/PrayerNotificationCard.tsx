@@ -45,18 +45,6 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
   const scale = useSharedValue(1)
   const onPress = async () => {
     const { data : currentSettings, error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id).eq('prayer', prayerName.toLowerCase() ).single()
-    if(currentSettings == null) {
-      const {data, error} = await supabase.from('prayer_notification_settings').insert({prayer : prayerName.toLowerCase(), user_id : session?.user.id, notification_settings : [NotificationArray[index]]})
-      if( error ){
-        console.log(error)
-      }
-    }
-    else if(currentSettings.length == 0){
-     const {data, error} = await supabase.from('prayer_notification_settings').insert({prayer : prayerName.toLowerCase(), user_id : session?.user.id, notification_settings : [NotificationArray[index]]})
-     if( error ){
-      console.log(error)
-     }
-    }
     if(currentSettings){
       const settings = currentSettings.notification_settings
       // Disable setting if it exists 
@@ -68,9 +56,8 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
         const filter = settings.filter((e : any) => e !== NotificationArray[index])
         const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : filter}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id )
         const { error : Delete } = await supabase.from('prayer_notification_schedule').delete().eq('user_id', session?.user.id).eq('prayer', prayerName.toLowerCase()).eq('notification_type', index != 2 ? NotificationArray[index] : 'Alert 30mins before next prayer')
-        if ( settings.length == 0 ){
+        if ( filter.length == 0 ){
           const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : ['Mute']}).eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id )
-
         }
       }
       else{
@@ -232,21 +219,21 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
         if( index == 3 ){
           setSelectedNotification([0])
         }
+        else if ( selectedNotification.length == 1 && index != 3) {
+          setSelectedNotification([3])
+        }
         else{
           const setPlaylist = selectedNotification?.filter(id => id !== index)
           setSelectedNotification(setPlaylist)
         }
       }
-      else if( selectedNotification ){
+      else{
           if ( index == 3 ){
             setSelectedNotification([index])
           }else{
             const setPlaylist = selectedNotification?.filter(id => id !== 3)
             setSelectedNotification([...setPlaylist, index])
           }
-      }
-      else{
-          setSelectedNotification([index])
       }
       onPress()
   }

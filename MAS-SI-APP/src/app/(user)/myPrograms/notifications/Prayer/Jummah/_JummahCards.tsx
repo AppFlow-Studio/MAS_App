@@ -39,26 +39,15 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
 
    const onPress = async () => {
     const { data : CurrentSettings , error } = await supabase.from('jummah_notifications').select('notification_settings').eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id, ).single()
-    if(CurrentSettings == null) {
-        const {data, error} = await supabase.from('jummah_notifications').insert({jummah : SupabaseJummahName, user_id : session?.user.id, notification_settings : [NotificationArray[index]]})
-        if( error ){
-          console.log(error)
-        }
-    }
-    else if(CurrentSettings.notification_settings.length == 0){
-      const {data, error} = await supabase.from('jummah_notifications').insert({jummah : SupabaseJummahName, user_id : session?.user.id, notification_settings : [NotificationArray[index]]})
-      if( error ){
-      console.log(error)
-      }
-    }
     
     if( CurrentSettings ){
         const settings = CurrentSettings.notification_settings
         // If Setting Exists i.e : Deselect it
-        if( settings.includes(NotificationArray[index - 1]) ){
-            if( index == 3 ){
+        if( settings.includes(NotificationArray[index]) ){
+            if( index == 2 ){ 
               const TodayDate = new Date()
               const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : ['Alert at Athan Time']}).eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id )
+
               if( TodayDate.getDay() <= 4 ){
                 //If Today is Friday, Check time and if before jummah schedule it
                 const JummahTime = SupabaseJummahName == 'first' ? '12:15:00' : SupabaseJummahName == 'second' ? '13:00:00' :SupabaseJummahName == 'third' ? '13:45:00' : '15:45:00'
@@ -77,22 +66,25 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
               return
         }
 
-        const filter = settings.filter((e : any) => e != NotificationArray[index - 1])
+        const filter = settings.filter((e : any) => e != NotificationArray[index])
         const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : filter}).eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id )
-        const { error : DeleteNoti } = await supabase.from('prayer_notification_scheduler').delete().eq('user_id', session?.user.id).eq('prayer', `${SupabaseJummahName} jummah`).eq('notification_type', NotificationArray[index - 1])
+        const { error : DeleteNoti } = await supabase.from('prayer_notification_scheduler').delete().eq('user_id', session?.user.id).eq('prayer', `${SupabaseJummahName} jummah`).eq('notification_type', NotificationArray[index])
+        if ( filter.length == 0 ){
+          const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : ['Mute']}).eq('jummah',SupabaseJummahName).eq('user_id', session?.user.id)
+        }
         }
 
         //Else Condition if not already set
         else{
             //If Mute
-            if( index == 3 ){
+            if( index == 2 ){
                 const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : ['Mute']}).eq('jummah',SupabaseJummahName).eq('user_id', session?.user.id)
                 const { error : DeleteNoti } = await supabase.from('prayer_notification_scheduler').delete().eq('user_id', session?.user.id).eq('prayer', `${SupabaseJummahName} jummah`)
                 return
             }
             //Else 
             let filtersettings = settings.filter(e => e != 'Mute') // If Set to Mute, Clear then set assigned setting
-            filtersettings.push(NotificationArray[index - 1])
+            filtersettings.push(NotificationArray[index])
             const JummahTime = SupabaseJummahName == 'first' ? '12:15:00' :SupabaseJummahName == 'second' ? '13:00:00' :SupabaseJummahName == 'third' ? '13:45:00' : '15:45:00'
             //Set the Setting
             const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : filtersettings}).eq('jummah',SupabaseJummahName).eq('user_id', session?.user.id)
@@ -132,7 +124,7 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
       return
     }
     if( data && data.notification_settings.length > 0){
-      if( data.notification_settings.includes(NotificationArray[index - 1]) ){
+      if( data.notification_settings.includes(NotificationArray[index]) ){
         setSelectedNotification((prevSelected : any) => {
           if (!prevSelected.includes(index)) {
             return [...prevSelected, index];
@@ -141,7 +133,7 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
         });
         }
     }
-  }
+   }
     const handlePress = () => {
         scale.value = withSequence(withSpring(0.9), withSpring(1))
         
@@ -150,19 +142,22 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
           )
     
           if( selectedNotification.includes(index)  ){
-            if( index == 3 ){
+            if( index == 2 ){
               setSelectedNotification([0])
             }
+            else if ( selectedNotification.length == 1 && index != 2 ){
+              setSelectedNotification([2])
+            }
             else{
-              const setPlaylist = selectedNotification?.filter(id => id !== index)
+              const setPlaylist = selectedNotification?.filter(id => id !== index )
               setSelectedNotification(setPlaylist)
             }
           }
           else if( selectedNotification ){
-              if ( index == 3 ){
+              if ( index == 2 ){
                 setSelectedNotification([index])
               }else{
-                const setPlaylist = selectedNotification?.filter(id => id !== 3)
+                const setPlaylist = selectedNotification?.filter(id => id !== 2)
                 setSelectedNotification([...setPlaylist, index])
               }
           }
@@ -186,8 +181,8 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
             {selectedNotification.includes(index) ?    <Icon source={"checkbox-blank-circle"}  size={25} color='#6077F5'/>  : <Icon source={"checkbox-blank-circle-outline"}  size={25} color='#6077F5'/>}
             <View className='w-[5]'/>
             <View style={{ height : height, width : width, borderRadius : 20,  paddingVertical : 10, paddingHorizontal : '4%', justifyContent:'center'}}>
-            <Text className='font-bold text black text-lg' numberOfLines={1} adjustsFontSizeToFit>{CardInfo[index - 1] ? CardInfo[index - 1].header : ''}</Text>
-            <Text className='text-gray-400'>{CardInfo[index - 1] ? CardInfo[index - 1].subText : ''}</Text>
+            <Text className='font-bold text black text-lg' numberOfLines={1} adjustsFontSizeToFit>{CardInfo[index] ? CardInfo[index].header : ''}</Text>
+            <Text className='text-gray-400'>{CardInfo[index ] ? CardInfo[index ].subText : ''}</Text>
             </View>
         </Pressable>
     </Animated.View>

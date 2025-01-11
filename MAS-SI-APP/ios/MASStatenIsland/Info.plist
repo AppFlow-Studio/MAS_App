@@ -37,6 +37,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>exp+mas-si-app</string>
+          <string>com.googleusercontent.apps.991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf</string>
         </array>
       </dict>
     </array>

@@ -109,11 +109,11 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
         //If select Alert at 30 mins before next prayer Time
         else if( index == 2){
 
-          const { data : getPrayerTime, error } = await supabase.from('todays_prayers').select('prayer_name,iqamah_time')
+          const { data : getPrayerTime, error } = await supabase.from('todays_prayers').select('prayer_name,iqamah_time,athan_time')
 
           if( prayerName == 'Fajr' ){
             const nextPrayerInfo = getPrayerTime?.filter(e => e.prayer_name == 'zuhr')
-            const nextPrayerTime = nextPrayerInfo[0].iqamah_time
+            const nextPrayerTime = nextPrayerInfo[0].athan_time
             const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
             PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
             const currentTime = new Date()
@@ -129,7 +129,7 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
           
           if( prayerName == 'Dhuhr' ){
             const nextPrayerInfo = getPrayerTime?.filter(e => e.prayer_name == 'asr')
-            const nextPrayerTime = nextPrayerInfo[0].iqamah_time
+            const nextPrayerTime = nextPrayerInfo[0].athan_time
             const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
             PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
             const currentTime = new Date()
@@ -145,7 +145,7 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
 
           if( prayerName == 'Asr' ){
             const nextPrayerInfo = getPrayerTime?.filter(e => e.prayer_name == 'maghrib')
-            const nextPrayerTime = nextPrayerInfo[0].iqamah_time
+            const nextPrayerTime = nextPrayerInfo[0].athan_time
             const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
             PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
             const currentTime = new Date()
@@ -159,9 +159,9 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
           }
           }
 
-          if( prayerName== 'Mahgrib' ){
+          if( prayerName == 'Maghrib' ){
             const nextPrayerInfo = getPrayerTime?.filter(e => e.prayer_name == 'isha')
-            const nextPrayerTime = nextPrayerInfo[0].iqamah_time
+            const nextPrayerTime = nextPrayerInfo[0].athan_time
             const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
             PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
             const currentTime = new Date()
@@ -173,6 +173,22 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
               const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `30 mins before Isha!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
               }
           }
+        }
+
+        if ( prayerName == 'Isha' ){
+          const nextPrayerInfo = getPrayerTime?.filter(e => e.prayer_name == 'fajr')
+          const nextPrayerTime = nextPrayerInfo[0].athan_time
+          const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
+          PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
+          const currentTime = new Date()
+          if( isBefore(currentTime, PrayerTime )){
+            const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+            const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).eq('notification_type', 'Alert 30mins before next prayer').single()
+
+            if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists){
+            const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : session?.user.id, notification_time : PrayerTime, prayer : prayerName.toLowerCase(), message : `30 mins before Fajr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+            }
+        }
         }
 
         }

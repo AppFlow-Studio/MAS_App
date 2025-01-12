@@ -16,6 +16,11 @@ import SignInAnonModal from '@/src/components/SignInAnonModal';
 import { BlurView } from 'expo-blur';
 import * as AppleAuthentication from 'expo-apple-authentication'
 import Svg, { Path } from 'react-native-svg'
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 export default function userPrograms() {
   const { session } = useAuth()
   type program_id  = {
@@ -25,7 +30,8 @@ export default function userPrograms() {
   const [ email, setEmail ] = useState('')
   const [ password, setPassword] = useState("")
   const [ loading, setLoading ] = useState(false)
-
+  const [ name, setName ] = useState('')
+  
   const [ userPrograms, setUserPrograms ] = useState<program_id[]>()
   const [ userPlaylists, setUserPlaylists ] = useState<UserPlaylistType[]>()
   const [ latestFlier, setLatestFlier ] = useState<Program>()
@@ -34,6 +40,52 @@ export default function userPrograms() {
   const [ userNotis, setUserNotis ] = useState()
   const [ refreshing, setRefreshing ] = useState(false)
   const [ signIn, setSignIn ] = useState(true)
+  const GoogleButtonSignUp = () => {
+        GoogleSignin.configure({
+          iosClientId : '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
+        })
+      
+        return (
+          <GoogleSigninButton
+            size={GoogleSigninButton.Size.Wide}
+            style={[ 
+              Platform.OS == 'android' ? {
+                height : 64
+              } : {height: 48}
+            ]}
+            color={GoogleSigninButton.Color.Dark}
+            onPress={async () => {
+              try {
+                await GoogleSignin.hasPlayServices()
+                const userInfo = await GoogleSignin.signIn()
+                if (userInfo.idToken) {
+                  const { data, error } = await supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: userInfo.idToken,
+                  })
+                  console.log(userInfo)
+                  if( !error ){
+                    const {data : Profile , error : ProfileError } = await supabase.from('profiles').update({ first_name : userInfo?.user.name, profile_email : userInfo?.user.email }).eq('id', data?.user.id)
+                    console.log(Profile, ProfileError)
+                  }
+                } else {
+                  throw new Error('no ID token present!')
+                }
+              } catch (error: any) {
+                if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                  // user cancelled the login flow
+                } else if (error.code === statusCodes.IN_PROGRESS) {
+                  // operation (e.g. sign in) is in progress already
+                } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                  // play services not available or outdated
+                } else {
+                  // some other error happened
+                }
+              }
+            }}
+          />
+        )
+      }
   const checkIfAnon = async () => {
     if( session?.user.is_anonymous ){
       setAnonStatus(true)
@@ -91,21 +143,29 @@ export default function userPrograms() {
   const onRefresh = async () => {
     await getUserProgramLibrary()
   }
-  async function signUpWithEmail() {
+async function signUpWithEmail() {
     setLoading(true)
+    if( email && password && name ){
     const {
       data: { session },
       error,
     } = await supabase.auth.signUp({
       email: email,
       password: password,
+      options: {
+        data: {
+          first_name: name,
+          profile_email: email,
+        },
+      },
     })
 
-    if (error) alert(error.message)
-    setLoading(false)
-    await getUserProgramLibrary()
-    checkIfAnon()
-  }
+    if (error) {alert(error.message); return}
+    setLoading(false)}
+    else{
+      alert('Fill in the fields to complete sign up')
+    }
+  } 
   return (
     <ScrollView className='bg-white flex-1 w-[100%]' refreshControl={  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
    }>
@@ -161,7 +221,7 @@ export default function userPrograms() {
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
           buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
           cornerRadius={5}
-          style={{ width: '70%', height: 64 }}
+          style={{ width: 305, height: 40 }}
           onPress={async () => {
             try {
               const credential = await AppleAuthentication.signInAsync({
@@ -186,7 +246,7 @@ export default function userPrograms() {
                   const{
                     error,
                     data
-                  } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
+                  } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName?.givenName }).eq('id', user?.id)
                 }
               } else {
                 throw new Error('No identityToken.')
@@ -202,6 +262,8 @@ export default function userPrograms() {
   
         />
         ) : <></>}
+        <View className='h-[10]' />
+        <GoogleButtonSignUp />
             </View>
             <View className='mt-5'/>
 
@@ -218,6 +280,19 @@ export default function userPrograms() {
         <Text className='font-bold text-[#0D509D] text-3xl mt-[10%] mb-[2%]'>Sign Up</Text>
 
       <View className='w-[95%] items-center' style={{ shadowColor : 'black', shadowOffset : { width : 0, height : 2 }, shadowOpacity : 0.5, shadowRadius : 1 }}>
+          <TextInput
+            mode='outlined' 
+            value={name}
+            onChangeText={setName}
+            style={{ width: 250, backgroundColor: "#e8e8e8", height: 45 }}
+            theme={{ roundness : 50 }}
+            placeholder={'name'}
+            outlineColor='black'
+            activeOutlineColor='#0D509D'
+            textColor='black'
+          />
+
+         <View className='h-[15]'/>
 
           <TextInput
           mode='outlined'
@@ -231,7 +306,7 @@ export default function userPrograms() {
           textColor='black'
           />
 
-          <View className='h-[20]'/>
+          <View className='h-[15]'/>
       
           <TextInput
               mode='outlined'
@@ -260,7 +335,7 @@ export default function userPrograms() {
       buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
       buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
       cornerRadius={5}
-      style={{ width: '70%', height: 64 }}
+      style={{ width: 305, height: 40 }}
       onPress={async () => {
           try {
           const credential = await AppleAuthentication.signInAsync({
@@ -285,7 +360,7 @@ export default function userPrograms() {
               const{
                   error,
                   data
-              } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
+              } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName?.givenName }).eq('id', user?.id)
               }
           } else {
               throw new Error('No identityToken.')
@@ -301,6 +376,8 @@ export default function userPrograms() {
 
       />
       ) : <></>}
+      <View className='h-[10]' />
+      <GoogleButtonSignUp />
       <Pressable className='flex-row justify-center mt-[8%]' onPress={() => setSignIn(true)}>
           <Text>Have an Account?  </Text>
           

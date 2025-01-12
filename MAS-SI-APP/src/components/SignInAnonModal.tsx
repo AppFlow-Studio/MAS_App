@@ -6,7 +6,11 @@ import { supabase } from '../lib/supabase';
 import { BlurView } from 'expo-blur';
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { useAuth } from '../providers/AuthProvider';
-
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 type SignInAnonModalProps = {
     visible : boolean
     setVisible : () => void 
@@ -21,6 +25,52 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
   const [ password, setPassword] = useState("")
   const [ loading, setLoading ] = useState(false)
   const [ name, setName ] = useState('')
+  const GoogleButtonSignUp = () => {
+        GoogleSignin.configure({
+          iosClientId : '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
+        })
+      
+        return (
+          <GoogleSigninButton
+            size={GoogleSigninButton.Size.Wide}
+            style={[ 
+              Platform.OS == 'android' ? {
+                height : 64
+              } : {height: 48}
+            ]}
+            color={GoogleSigninButton.Color.Dark}
+            onPress={async () => {
+              try {
+                await GoogleSignin.hasPlayServices()
+                const userInfo = await GoogleSignin.signIn()
+                if (userInfo.idToken) {
+                  const { data, error } = await supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: userInfo.idToken,
+                  })
+                  console.log(userInfo)
+                  if( !error ){
+                    const {data : Profile , error : ProfileError } = await supabase.from('profiles').update({ first_name : userInfo?.user.name, profile_email : userInfo?.user.email }).eq('id', data?.user.id)
+                    console.log(Profile, ProfileError)
+                  }
+                } else {
+                  throw new Error('no ID token present!')
+                }
+              } catch (error: any) {
+                if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                  // user cancelled the login flow
+                } else if (error.code === statusCodes.IN_PROGRESS) {
+                  // operation (e.g. sign in) is in progress already
+                } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                  // play services not available or outdated
+                } else {
+                  // some other error happened
+                }
+              }
+            }}
+          />
+        )
+  }
   async function signInWithEmail() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
@@ -110,7 +160,7 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
           buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
           cornerRadius={5}
-          style={{ width: '70%', height: 64 }}
+          style={{ width: 305, height: 40 }}
           onPress={async () => {
             try {
               const credential = await AppleAuthentication.signInAsync({
@@ -134,7 +184,7 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                   const{
                     error,
                     data
-                  } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
+                  } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName?.givenName }).eq('id', user?.id)
                   setLoading(false)
                   setVisible()
                 }
@@ -152,6 +202,8 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
   
         />
         ) : <></>}
+        <View className='h-[10]' />
+        <GoogleButtonSignUp />
       </View>
             </View>
             <View className='mt-5'/>
@@ -229,7 +281,7 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                     buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                     buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
                     cornerRadius={5}
-                    style={{ width: '70%', height: 64 }}
+                    style={{ width: 305, height: 40}}
                     onPress={async () => {
                         try {
                         const credential = await AppleAuthentication.signInAsync({
@@ -254,7 +306,7 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
                             const{
                                 error,
                                 data
-                            } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName }).eq('id', session?.user.id)
+                            } = await supabase.from('profiles').update({ profile_email : credential.email, first_name : credential.fullName?.givenName }).eq('id', user?.id)
                             setLoading(false)
                             setVisible()
                             }
@@ -272,6 +324,8 @@ const SignInAnonModal = ( { visible, setVisible } : SignInAnonModalProps) => {
             
                     />
                     ) : <></>}
+                    <View className='h-[10]' />
+                    <GoogleButtonSignUp />
                     <Pressable className='flex-row justify-center mt-[8%]' onPress={() => setSignIn(true)}>
                         <Text>Have an Account?  </Text>
                         

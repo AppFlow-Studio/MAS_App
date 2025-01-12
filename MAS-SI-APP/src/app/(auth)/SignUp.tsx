@@ -156,7 +156,7 @@ const SignUp = () => {
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
           buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
           cornerRadius={5}
-          style={{ width: '78%', height: 40 }}
+          style={{ width: 305, height: 40 }}
           onPress={async () => {
             try {
               const credential = await AppleAuthentication.signInAsync({

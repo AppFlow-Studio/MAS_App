@@ -135,13 +135,13 @@ const Index = () => {
   });
   const LogoutButton  = () => {
     return(
-      <Menu style={{ alignSelf : 'flex-end'}}>
+      <Menu style={{ alignSelf : 'flex-end', marginRight : 8 }}>
             <MenuTrigger>          
-              <View className='w-[100%] px-10'>
+              <View className='w-[100%] px-10 ml-[8]'>
                 <Text className='text-right text-gray-400'>Logout</Text>
               </View>
             </MenuTrigger>
-            <MenuOptions customStyles={{optionsContainer: {width: 120, borderRadius: 8, marginTop: 20, padding: 8}}}>
+            <MenuOptions customStyles={{optionsContainer: {width: 135, borderRadius: 8, marginTop: 20, padding: 8 }}}>
               <MenuOption 
               onSelect={
                 async () => {

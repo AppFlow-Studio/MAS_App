@@ -17,7 +17,8 @@ const SignUp = () => {
   const [ loading, setLoading ] = useState(false)
   const { width } = Dimensions.get("window")
   const { session } = useAuth()
-   const GoogleButtonSignUp = () => {
+  
+  const GoogleButtonSignUp = () => {
         GoogleSignin.configure({
           iosClientId : '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
         })
@@ -61,6 +62,7 @@ const SignUp = () => {
           />
         )
   }
+
   async function signUpWithEmail() {
     setLoading(true)
     if( email && password && name ){

@@ -14,7 +14,6 @@ import { Divider, Icon, Modal, Portal } from 'react-native-paper';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
 
 export default function LecturesData() {

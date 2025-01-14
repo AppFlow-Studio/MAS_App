@@ -50,7 +50,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
             Programs && Programs.length > 0 ? <>
                 <Text className='text-black mt-4 mb-4 self-start text-[15px]'>Programs: </Text>
                 <FlatList 
-                    data={Programs}
+                    data={Programs.filter(program => program.is_kids == false)}
                     renderItem={({item}) => (
                         <Link href={`/menu/program/${item.program_id}`} asChild>
                             <Pressable className='flex-col'>

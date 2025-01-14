@@ -25,7 +25,7 @@ export default function ProgramsScreen(){
       const isoString = date.toISOString()
       const { data : CurrentPrograms , error } = await supabase
       .from("programs")
-      .select("*").gte('program_end_date', isoString)
+      .select("*").gte('program_end_date', isoString).eq('is_kids', false)
 
       const { data : PrevPrograms , error : prevError } = await supabase.from('programs').select('*').lte('program_end_date', isoString).eq('has_lectures', true )
       if( PrevPrograms ){

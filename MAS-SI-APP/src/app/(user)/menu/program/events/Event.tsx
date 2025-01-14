@@ -139,7 +139,7 @@ const Event = () => {
             </View>
           </Pressable>
           <AccordionItem isExpanded={specialEventsAccordionValue} style={{}} viewKey={'Past'}>
-          <View className='w-[100%] mb-[61] mt-[23]'>
+          <View className='w-[100%] mt-[23]'>
               <Text className='text-left ml-3 font-bold'>Brothers Breakfast: </Text>
               <View className='flex-row flex flex-wrap gap-y-5 mb-[42px] mt-[11]'>
               {
@@ -166,13 +166,14 @@ const Event = () => {
                 </View>
               ))
                }
+              
               </View>
 
             </View>
             <Divider className='h-[0.5] w-[70%] self-center'/>
 
-            <View className='w-[100%] mb-[54]'>
-              <Text className='text-left ml-3  mt-[23] font-bold mb-[23]'>Outreach Activities: </Text>
+            <View className='w-[100%]'>
+              <Text className='text-left ml-3  mt-[23] font-bold '>Outreach Activities: </Text>
               <View className='flex-row flex flex-wrap gap-y-5 mb-[42px] mt-[11]'>
               {
               outreach?.map((item) => (
@@ -228,6 +229,7 @@ const Event = () => {
                 </View>
               ))
                }
+               
               </View>
             </View>
             <Divider className='h-[0.5] w-[70%] self-center'/>

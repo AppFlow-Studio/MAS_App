@@ -101,7 +101,7 @@ export default function LecturesData() {
     const [ active, setActive ] = useState(0)
     const handleScroll = (event : any) =>{
       const scrollPositon = event.nativeEvent.contentOffset.y;
-      const index = scrollPositon / ( KEYNOTECARDHEIGHT + 20 );
+      const index = Math.ceil(scrollPositon / ( KEYNOTECARDHEIGHT + 20 ));
       setActive(index)
     }
     const array = currentLecture?.event_lecture_keynotes

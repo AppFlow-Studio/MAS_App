@@ -48,30 +48,31 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
               const TodayDate = new Date()
               const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : ['Alert at Athan Time']}).eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id )
 
-              if( TodayDate.getDay() <= 4 ){
-                //If Today is Friday, Check time and if before jummah schedule it
-                const JummahTime = SupabaseJummahName == 'first' ? '12:15:00' : SupabaseJummahName == 'second' ? '13:00:00' :SupabaseJummahName == 'third' ? '13:45:00' : '15:45:00'
-                const { data : push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
-                const PushToken = push_token?.push_notification_token
-                const JummahNotificationTime = setTimeToCurrentDate(JummahTime)
-                const JummahNotificationTime30Before = index == 2 ? JummahNotificationTime.setMinutes(JummahNotificationTime.getMinutes() - 30) : 0
-                const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
-                    user_id : session?.user.id, 
-                    prayer : `${SupabaseJummahName} jummah`, notification_time : JummahNotificationTime30Before == 0 ? JummahNotificationTime : JummahNotificationTime30Before, 
-                    message : `${SupabaseJummahName[0].toUpperCase() + SupabaseJummahName.slice(1)} Jummah Prayer ${ SupabaseJummahName == 'first' ? '12:15 PM' : SupabaseJummahName == 'second' ? '1:00 PM' : SupabaseJummahName == 'third' ? '1:45 PM' : '3:45 PM'}`,
-                    push_notification_token : PushToken,
-                    notification_type : 'Alert at Athan Time'
-                  })
-            }
+                if( TodayDate.getDay() == 5 ){
+                  //If Today is Friday, Check time and if before jummah schedule it
+                  const JummahTime = SupabaseJummahName == 'first' ? '12:15:00' : SupabaseJummahName == 'second' ? '13:00:00' :SupabaseJummahName == 'third' ? '13:45:00' : '15:45:00'
+                  const { data : push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+                  const PushToken = push_token?.push_notification_token
+                  const JummahNotificationTime = setTimeToCurrentDate(JummahTime)
+                  if( isBefore(TodayDate, JummahNotificationTime) && PushToken ){
+                  const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
+                      user_id : session?.user.id, 
+                      prayer : `${SupabaseJummahName} jummah`, notification_time : JummahNotificationTime, 
+                      message : `${SupabaseJummahName[0].toUpperCase() + SupabaseJummahName.slice(1)} Jummah Prayer ${ SupabaseJummahName == 'first' ? '12:15 PM' : SupabaseJummahName == 'second' ? '1:00 PM' : SupabaseJummahName == 'third' ? '1:45 PM' : '3:45 PM'}`,
+                      push_notification_token : PushToken,
+                      notification_type : 'Alert at Athan Time'
+                    })
+                  }
+              }
               return
-        }
+            }
 
-        const filter = settings.filter((e : any) => e != NotificationArray[index])
-        const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : filter}).eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id )
-        const { error : DeleteNoti } = await supabase.from('prayer_notification_scheduler').delete().eq('user_id', session?.user.id).eq('prayer', `${SupabaseJummahName} jummah`).eq('notification_type', NotificationArray[index])
-        if ( filter.length == 0 ){
-          const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : ['Mute']}).eq('jummah',SupabaseJummahName).eq('user_id', session?.user.id)
-        }
+          const filter = settings.filter((e : any) => e != NotificationArray[index])
+          const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : filter}).eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id )
+          const { error : DeleteNoti } = await supabase.from('prayer_notification_scheduler').delete().eq('user_id', session?.user.id).eq('prayer', `${SupabaseJummahName} jummah`).eq('notification_type', NotificationArray[index])
+          if ( filter.length == 0 ){
+            const {data, error} = await supabase.from('jummah_notifications').update({notification_settings : ['Mute']}).eq('jummah',SupabaseJummahName).eq('user_id', session?.user.id)
+          }
         }
 
         //Else Condition if not already set
@@ -91,25 +92,26 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
             const TodayDate = new Date()
             const JummahDateTime = setTimeToCurrentDate(JummahTime)
             console.log(isBefore(TodayDate, JummahDateTime))
-            if( TodayDate.getDay() <= 5 && isBefore(TodayDate, JummahDateTime) ){
+            if( TodayDate.getDay() == 5 && isBefore(TodayDate, JummahDateTime) ){
                 //If Today is Friday, Check time and if before jummah schedule it
                 const { data : push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
                 const PushToken = push_token?.push_notification_token
                 const JummahNotificationTime = setTimeToCurrentDate(JummahTime)
-                const JummahNotificationTime30Before = index == 2 ? JummahNotificationTime.setMinutes(JummahNotificationTime.getMinutes() - 30) : 0
-                console.log(JummahNotificationTime)
+                const JummahNotificationTime30Before = index == 1 ? JummahNotificationTime.setMinutes(JummahNotificationTime.getMinutes() - 30) : 0
 
-                const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
-                    user_id : session?.user.id, 
-                    prayer : `${SupabaseJummahName} jummah`, 
-                    notification_time : JummahNotificationTime, 
-                    message : index == 1 ?
-                    `${SupabaseJummahName[0].toUpperCase() + SupabaseJummahName.slice(1)} Jummah Prayer ${ SupabaseJummahName == 'first' ? '12:15 PM' : SupabaseJummahName == 'second' ? '1:00 PM' : SupabaseJummahName == 'third' ? '1:45 PM' : '3:45 PM'}`
-                    : `${SupabaseJummahName[0].toUpperCase() + SupabaseJummahName.slice(1)} Jummah Prayer will begin in 30 minutes`,
-                    push_notification_token : PushToken,
-                    notification_type : NotificationArray[index - 1],
-                    title : `${jummah} Jummah`
-                  })
+                if ( PushToken ) {
+                  const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
+                      user_id : session?.user.id, 
+                      prayer : `${SupabaseJummahName} jummah`, 
+                      notification_time : JummahNotificationTime, 
+                      message : index == 1 ?
+                      `${SupabaseJummahName[0].toUpperCase() + SupabaseJummahName.slice(1)} Jummah Prayer ${ SupabaseJummahName == 'first' ? '12:15 PM' : SupabaseJummahName == 'second' ? '1:00 PM' : SupabaseJummahName == 'third' ? '1:45 PM' : '3:45 PM'}`
+                      : `${SupabaseJummahName[0].toUpperCase() + SupabaseJummahName.slice(1)} Jummah Prayer will begin in 30 minutes`,
+                      push_notification_token : PushToken,
+                      notification_type : NotificationArray[index],
+                      title : `${jummah} Jummah`
+                    })
+                }
                   
             }
 

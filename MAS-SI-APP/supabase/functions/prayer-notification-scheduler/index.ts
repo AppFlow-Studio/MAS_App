@@ -179,7 +179,7 @@ serve(async (req) => {
                 }
               }
               
-              if( prayer.prayer_name == 'zuhr' ){
+              if( prayer.prayer_name == 'zuhr' ) {
                 const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'asr')
                 const nextPrayerTime = nextPrayerInfo[0].athan_time
                 const PrayerTime = setTimeToCurrentDate(nextPrayerTime)

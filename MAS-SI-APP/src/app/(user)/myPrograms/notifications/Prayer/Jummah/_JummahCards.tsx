@@ -28,7 +28,7 @@ function setTimeToCurrentDate(timeString : string) {
     return timestampISO
 }
 
-const JummahCards = ({ height , width, index, setSelectedNotification, selectedNotification, SupabaseJummahName, jummah}  : any) => {
+const JummahCards = ({ height , width, index, setSelectedNotification, selectedNotification, SupabaseJummahName, jummah }  : any) => {
   const { session } = useAuth()
   const scale = useSharedValue(1)
   const cardStyle = useAnimatedStyle(() => {

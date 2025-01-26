@@ -83,7 +83,7 @@ const NotificationCard = ({height , width, index, scrollY, setSelectedNotificati
           if( index == 2 ){
             await Promise.all(program_days.map( async ( days ) => {
               const indexOfDay = daysOfWeek.indexOf(days)
-              if( ( indexOfDay - 1 ) % 6 == day ){
+              if( ( indexOfDay - 1 ) % 7 == day ){
                 await schedule_notification(session?.user.id, pushToken,  `${programInfo.program_name} is Tomorrow, Don't Forget!`, 'Day Before', programInfo.program_name, programStartTime)
               }
             }))

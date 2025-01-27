@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity,  Image, useWindowDimensions, Pressable} from 'react-native'
-import React, {useRef}from 'react';
+import React, {useRef, useState}from 'react';
 import { Program } from '../types';
 import { defaultProgramImage } from './ProgramsListProgram';
 import { Link } from 'expo-router';
@@ -16,10 +16,10 @@ type ProgramsCircularCarouselCardProp = {
     disabled : boolean
 }
 
-
 export default function ProgramsCircularCarouselCard( {program, index, listItemWidth, scrollX, itemSpacer, spacing, lastIndex, disabled}: ProgramsCircularCarouselCardProp) {
     const {width : windowWidth} = useWindowDimensions();
     const size = useSharedValue(0.6);
+
 
     const inputRange = [
       (index - 1) * listItemWidth,
@@ -45,8 +45,9 @@ export default function ProgramsCircularCarouselCard( {program, index, listItemW
   }
   return (
     <Animated.View style={[{width: listItemWidth, marginLeft: spacing, marginRight: spacing}, cardStyle, {marginLeft : index == 0 ? itemSpacer : spacing, marginRight : index == lastIndex - 1 ? itemSpacer : spacing}]} className=''>
-      <Link href={"../menu/program/programsAndEventsScreen/"} asChild>
-        <Pressable style={{justifyContent: "center" , alignItems : "center"}} disabled={!disabled}>
+      <Link href={"/menu/program/programsAndEventsScreen"} asChild>
+        <Pressable style={{justifyContent: "center" , alignItems : "center"}} disabled={!disabled}
+        >
         <View style={{width: listItemWidth , height: 200, shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, justifyContent: "center", alignItems: "center", borderRadius: 20}} >
           <Image 
           source={{ uri: program.program_img || defaultProgramImage}}

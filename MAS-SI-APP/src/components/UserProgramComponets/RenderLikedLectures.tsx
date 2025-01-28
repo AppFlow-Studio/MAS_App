@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react'
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { Lectures, Program } from '@/src/types';
 import { Link } from "expo-router";
-import { defaultProgramImage } from '../ProgramsListProgram';
 import { ActivityIndicator, Icon, IconButton } from 'react-native-paper';
 import LectureDotsMenu from '../LectureComponets/LectureDotsMenu';
 import { Menu, MenuOptions, MenuOption, MenuTrigger} from 'react-native-popup-menu';
@@ -129,12 +128,6 @@ const RenderLikedLectures = ({lecture, index, speaker} : RenderLikedLecturesProp
                  <Icon source="playlist-plus" color='black' size={15}/>
                 </View>
               </MenuOption>
-              <MenuOption>
-                <View className='flex-row justify-between items-center'>
-                  <Text>Add To Library</Text>
-                  <Icon source="library" color='black' size={15}/>
-                </View>
-              </MenuOption>
             </MenuOptions>
           </Menu>           
         )
@@ -158,7 +151,7 @@ const RenderLikedLectures = ({lecture, index, speaker} : RenderLikedLecturesProp
           <View className='flex-row'>
             <Link href={`/myPrograms/lectures/${lecture.lecture_id}`}>
               <View className=''>
-                <Image source={{ uri : program_img?.program_img || defaultProgramImage}} style={{ width: 50, height: 50, borderRadius: 8}}/>
+                <Image source={ program_img ? { uri : program_img?.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, borderRadius: 8}}/>
               </View>
               <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
                 <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture.lecture_name}</Text>
@@ -169,8 +162,6 @@ const RenderLikedLectures = ({lecture, index, speaker} : RenderLikedLecturesProp
               </Link>
               <View className='flex-row mt-3 justify-center px-2'>
                 <LikeButton />
-                <View className='w-2'></View>
-                <DotsButton />
               </View>
             </View>
           </Pressable>

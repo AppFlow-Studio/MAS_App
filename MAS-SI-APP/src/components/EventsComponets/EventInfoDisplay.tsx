@@ -1,11 +1,10 @@
-import { View, Text, Dimensions, Image, ScrollView, Pressable, Linking } from 'react-native'
+import { View, Text, Dimensions, Image, ScrollView, Pressable, Linking, Platform } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Stack, router } from "expo-router"
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
-import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
 import { Divider, Portal, Modal, IconButton, Icon, Button } from 'react-native-paper';
 import { Lectures, SheikDataType, Program } from '@/src/types';
 import { EventsType } from '@/src/types';
@@ -75,7 +74,7 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc, ev
               speakerData?.map((speakerData) => (
                 <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
                   <Animated.View className=' flex-row'>
-                      <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+                      <Image source={ speakerData.speaker_img ? {uri : speakerData?.speaker_img } : require("@/assets/images/MASHomeLogo.png")} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
                   <View className='flex-col px-1'>
                     <Text className='text-xl font-bold'>Name: </Text>
                     <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
@@ -106,7 +105,7 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc, ev
      <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "14%" }} >
          
          <Animated.Image 
-           source={ { uri: event_img || defaultProgramImage } }
+           source={ event_img ?  { uri: event_img } : require("@/assets/images/MASHomeLogo.png") }
            style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
            resizeMode='stretch'
            className='mt-[70]'
@@ -121,7 +120,13 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc, ev
               </View>
 
               <View className='items-center justify-center'>
-                <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={{ borderRadius : 15, height : height / 3.7 ,shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1}}>
+                <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={[{ borderRadius : 15, height : height / 3.7 ,shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1, elevation : 5},
+                   Platform.OS == 'android' ?  
+                   {
+                    borderWidth: 1,
+                    borderColor : '#D3D3D3',
+                  } : {}
+                ]}>
                   <ScrollView><Text>{event_desc}</Text></ScrollView>
                 </View>
                 <View className='items-center justify-center'>

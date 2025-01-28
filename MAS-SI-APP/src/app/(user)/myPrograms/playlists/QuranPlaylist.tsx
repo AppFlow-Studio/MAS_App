@@ -8,7 +8,6 @@ import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOf
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { useAuth } from '@/src/providers/AuthProvider'
 import * as Haptics from "expo-haptics"
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
 import { Divider, Icon } from 'react-native-paper'
 const QuranPlaylist = () => {

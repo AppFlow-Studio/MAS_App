@@ -1,10 +1,8 @@
 import { View, Text, Pressable, FlatList, Dimensions } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useLocalSearchParams, Stack } from 'expo-router';
-import programsData from '@/assets/data/programsData';
 import { EventLectureType, Lectures, Program } from '@/src/types';
 import { Link } from "expo-router";
-import { defaultProgramImage } from '../ProgramsListProgram';
 import { Icon, IconButton } from 'react-native-paper';
 import LectureDotsMenu from '../LectureComponets/LectureDotsMenu';
 import {
@@ -130,16 +128,18 @@ const fillStyle = useAnimatedStyle(() => {
     <View className='bg-white mt-4'>
       <Pressable>
       <View className='ml-2 flex-row items-center' >
-        <Link href={`/menu/program/events/event_lectures/${lecture.event_lecture_id}`}>
-          <View className='w-[35] h-[25] items-center justify-center mb-2'>
-              <Text className='text-xl font-bold text-gray-400 ml-2' >{length - index}</Text>
-          </View>
-          <View className='flex-col justify-center' style={{width: width / 1.5}}>
-            <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1, }} numberOfLines={1}>{lecture.event_lecture_name}</Text>
-            <View className='flex-row' style={{flexShrink: 1, width: width / 1.5}}>
-              {speaker == "MAS" ? <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture.event_lecture_name} </Text> : <Text className='ml-2 text-gray-500'> {format(lecture.event_lecture_date, 'PP')}</Text>}
+        <Link href={`/menu/program/events/event_lectures/${lecture.event_lecture_id}`} asChild>
+          <Pressable className='flex-row items-center'>
+            <View className='w-[35] h-[25] items-center justify-center mb-2'>
+                <Text className='text-xl font-bold text-gray-400 ml-2' >{length - index}</Text>
             </View>
-          </View>
+            <View className='flex-col justify-center' style={{width: width / 1.5}}>
+              <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1, }} numberOfLines={1}>{lecture.event_lecture_name}</Text>
+              <View className='flex-row' style={{flexShrink: 1, width: width / 1.5}}>
+                {speaker == "MAS" ? <Text className='ml-1 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture.event_lecture_name} </Text> : <Text className='ml-1 text-gray-500'> {format(lecture.event_lecture_date, 'PP')}</Text>}
+              </View>
+            </View>
+          </Pressable>
         </Link>
         <View className='flex-row px-3'>
             <LikeButton />

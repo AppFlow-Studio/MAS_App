@@ -14,6 +14,7 @@ import {
   ScrollView,
   ImageSourcePropType,
   FlatList,
+  Platform,
 } from "react-native";
 import AlertBell from "../app/(user)/prayersTable/alertBell";
 import { usePrayer } from "../providers/prayerTimesProvider";
@@ -70,75 +71,84 @@ const NotificationPrayerTable = ({
                   pathname : '/myPrograms/notifications/Prayer/[prayerDetails]',
                   params : {prayerName: prayer.PrayerCap, prayerImage: prayer.img }
                 }}
-                 className="flex-row mt-4 border flex w-[100%]"
-                
+                 className=""
+                 asChild
                 >
-
-                  <View style={{
-                     shadowColor : 'gray',
-                     shadowOffset : { width : 0, height : 8 },
-                     shadowOpacity : 1,
-                     shadowRadius : 8
-                  }}
-                  className="mr-3"
-                  >
-                    <Image
-                      source={
-                        prayer.img
+               <Pressable className="flex-row mt-4 flex w-[100%]">
+                    <View style={[{
+                       shadowColor : 'gray',
+                       shadowOffset : { width : 0, height : 8 },
+                       shadowOpacity : 1,
+                       shadowRadius : 8,
+                       elevation : 8
+                    },
+                    Platform.OS == 'android' ? {
+                      borderWidth: 1,
+                      borderColor : '#D3D3D3',
+                      borderRadius : 8
+                    } : {}
+                    ]}
+                    className="mr-3"
+                    >
+                      <Image
+                        source={
+                          prayer.img
+                        }
+                        style={{
+                          width: 116,
+                          height: 110,
+                          borderRadius: 8,
+                          resizeMode: "stretch",
+                         
+                        }}
+                        className=" rounded-xl "
+                      />
+                    </View>
+  
+                    <View className="mb-5 w-[40%]">
+                      <Text className="font-bold text-xl  text-gray-800 ">{prayer.PrayerCap}</Text>
+                      <View className="flex-row mt-2">
+                        <Text className="text-left  text-[#6077F5] font-bold ">
+                          Athan :{" "}
+                        </Text>
+                        <Text
+                          className="text-left  text-gray-600 font-bold "
+                          adjustsFontSizeToFit
+                          numberOfLines={1}
+                        >
+                          {prayerData[prayer.athan]}
+                        </Text>
+                      </View>
+                      <View className="flex-row">
+                        <Text className="text-left  text-[#6077F5] font-bold ">
+                          Iqamah :{" "}
+                        </Text>
+                        <Text
+                          className="text-left  text-gray-600 font-bold "
+                          adjustsFontSizeToFit
+                          numberOfLines={1}
+                        >
+                          {prayerData[prayer.iqamah]}
+                        </Text>
+                      </View>
+                    </View>
+  
+                    <View 
+                      style={[{
+                        shadowColor : 'gray',
+                        shadowOffset : { width : 0, height : 8 },
+                        shadowOpacity : 1,
+                        shadowRadius : 8
                       }
-                      style={{
-                        width: 116,
-                        height: 110,
-                        borderRadius: 8,
-                        resizeMode: "stretch",
-                       
-                      }}
-                      className=" rounded-xl "
-                    />
-                  </View>
-
-                  <View className="mb-5">
-                    <Text className="font-bold text-xl  text-gray-800 ">{prayer.PrayerCap}</Text>
-                    <View className="flex-row mt-2">
-                      <Text className="text-left  text-[#6077F5] font-bold ">
-                        Athan :{" "}
-                      </Text>
-                      <Text
-                        className="text-left  text-gray-600 font-bold "
-                        adjustsFontSizeToFit
-                        numberOfLines={1}
-                      >
-                        {prayerData[prayer.athan]}
-                      </Text>
+                    ]}
+                      className="items-end justify-center"
+                    >
+                      <View className="bg-[#0D509E] h-[21] w-[65] self-center ml-[10%] text-white text-[10px] rounded-xl items-center justify-center mb-7">
+                          <Text className=" text-white font-[300]">Edit</Text>
+                      </View>
                     </View>
-                    <View className="flex-row">
-                      <Text className="text-left  text-[#6077F5] font-bold ">
-                        Iqamah :{" "}
-                      </Text>
-                      <Text
-                        className="text-left  text-gray-600 font-bold "
-                        adjustsFontSizeToFit
-                        numberOfLines={1}
-                      >
-                        {prayerData[prayer.iqamah]}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View 
-                    style={{
-                      shadowColor : 'gray',
-                      shadowOffset : { width : 0, height : 8 },
-                      shadowOpacity : 1,
-                      shadowRadius : 8
-                    }}
-                    className="items-end justify-center"
-                  >
-                    <View className="bg-[#0D509E] h-[21] w-[65] self-center ml-[10%] text-white text-[10px] rounded-xl items-center justify-center mb-7">
-                        <Text className="border text-white font-[300]">Edit</Text>
-                    </View>
-                  </View>
-
+  
+               </Pressable>
                 </Link>
               ))
             }

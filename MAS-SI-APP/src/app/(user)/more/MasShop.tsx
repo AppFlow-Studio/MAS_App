@@ -4,7 +4,6 @@ import  {LinearGradient } from "expo-linear-gradient"
 import { Link, Stack } from 'expo-router'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { Icon, Searchbar } from 'react-native-paper'
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import ShopCategories from './ShopCategories'
 import { useAuth } from '@/src/providers/AuthProvider'
 import { supabase } from '@/src/lib/supabase'

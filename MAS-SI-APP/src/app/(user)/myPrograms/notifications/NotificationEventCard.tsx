@@ -173,7 +173,7 @@ const NotificationEventCard = ({height , width, index, scrollY, setSelectedNotif
               <View style={{ height : height, borderRadius : 20,  paddingVertical : 10, paddingHorizontal : '4%', justifyContent:'center'}}
               className='w-[85%]'
               >
-                  <Text className='font-bold text black text-lg border' numberOfLines={1} adjustsFontSizeToFit>{CardInfo[index] ? CardInfo[index].header : ''}</Text>
+                  <Text className='font-bold text black text-lg' numberOfLines={1} adjustsFontSizeToFit>{CardInfo[index] ? CardInfo[index].header : ''}</Text>
                   <Text className='text-gray-400'>{CardInfo[index] ? CardInfo[index].subText : ''}</Text>
                 </View>
               </Pressable>

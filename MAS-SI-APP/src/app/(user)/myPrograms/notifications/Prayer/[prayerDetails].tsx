@@ -1,7 +1,6 @@
 import { Dimensions, Image, ImageSourcePropType, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import React, { useState } from 'react'
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
 import NotificationCard from './PrayerNotificationCard';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { format } from 'date-fns';

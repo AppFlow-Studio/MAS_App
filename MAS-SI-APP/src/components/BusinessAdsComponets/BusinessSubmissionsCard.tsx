@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, Pressable, Platform } from 'react-native'
 import React, { useState } from 'react'
 import { BusinessSubmissionsProp } from '@/src/types'
 import { format } from 'date-fns'
@@ -83,7 +83,11 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
             <View className='flex-col items-center '>
                 <Animated.Text style={textAnimatedStyle}>Application Recieved</Animated.Text>
                 <View className=''>
-                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been sent to MAS Staten Island!</Animated.Text>
+                    <Animated.Text style={[textAnimatedStyle,
+                        Platform.OS == 'android' ? {
+                            fontSize : 13
+                        } : {}
+                    ]} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been sent to MAS Staten Island!</Animated.Text>
                 </View>
             </View>
         </View>
@@ -101,7 +105,11 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
             <View className='flex-col items-center '>
                 <Animated.Text style={textAnimatedStyle}>Under Review</Animated.Text>
                 <View className=''>
-                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been seen by MAS Staten Island and is under review</Animated.Text>
+                    <Animated.Text style={[textAnimatedStyle,
+                        Platform.OS == 'android' ? {
+                            fontSize : 13
+                        } : {}
+                    ]} className='text-white text-center' numberOfLines={2}>Your Application has been seen by MAS Staten Island and is under review</Animated.Text>
                 </View>
             </View>
         </View>
@@ -117,7 +125,11 @@ const BusinessSubmissionsCard = ({ submission, index } : BusinessSubmissionsCard
             <View className='flex-col items-center '>
                 <Animated.Text style={textAnimatedStyle}>{submission.status == 'REJECT' ? 'Rejected' : 'Approved' }</Animated.Text>
                 <View className=''>
-                    <Animated.Text style={textAnimatedStyle} className='text-white text-center' numberOfLines={2} adjustsFontSizeToFit>Your Application has been {submission.status == 'REJECT' ? 'Rejected' : 'Approved'}</Animated.Text>
+                    <Animated.Text style={[textAnimatedStyle,
+                        Platform.OS == 'android' ? {
+                            fontSize : 13
+                        } : {}
+                    ]} className='text-white text-center' numberOfLines={2} >Your Application has been {submission.status == 'REJECT' ? 'Rejected' : 'Approved'}</Animated.Text>
                 </View>
             </View>
         </View>

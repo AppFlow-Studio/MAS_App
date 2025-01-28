@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native'
 import React, { useState } from 'react'
 import { UserPlaylistType } from '../types'
-import { defaultProgramImage } from './ProgramsListProgram'
 import { useAuth } from '../providers/AuthProvider'
 import { supabase } from '../lib/supabase'
 import { Icon, ToggleButton } from 'react-native-paper'

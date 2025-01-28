@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react'
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { EventLectureType, Lectures, Program } from '@/src/types';
 import { Link } from "expo-router";
-import { defaultProgramImage } from '../ProgramsListProgram';
 import { ActivityIndicator, Icon, IconButton } from 'react-native-paper';
 import LectureDotsMenu from '../LectureComponets/LectureDotsMenu';
 import { Menu, MenuOptions, MenuOption, MenuTrigger} from 'react-native-popup-menu';
@@ -157,12 +156,12 @@ const RenderAddedProgramLectures = ( {program_lecture_id, playlist, id} : Render
     getLecImage()
   },[])
   return (
-    <View className='bg-white mt-2  justify-center ml-2' style={{width: width}}>
+    <View className='bg-white mt-2  justify-center' style={{width: width}}>
     <Pressable>
-    <View className='flex-row'>
+    <View className='flex-row justify-between px-2'>
       <Link href={`/myPrograms/lectures/${lecture?.lecture_id}`}>
         <View className=''>
-          <Image source={{ uri : program_img || defaultProgramImage}} style={{ width: 50, height: 50, borderRadius: 8}}/>
+          <Image source={program_img ? { uri : program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, borderRadius: 8}}/>
         </View>
         <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
           <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture?.lecture_name}</Text>
@@ -333,12 +332,12 @@ export const RenderAddedEventLectures = ( {event_lecture_id, playlist , id} : Re
     getLecImage()
   },[])
   return (
-    <View className='bg-white mt-2  justify-center ml-2' style={{width: width}}>
+    <View className='bg-white mt-2  justify-center' style={{width: width}}>
     <Pressable>
-    <View className='flex-row'>
+    <View className='flex-row justify-between px-2'>
       <Link href={`/myPrograms/eventLectures/${lecture?.event_lecture_id}`}>
         <View className=''>
-          <Image source={{ uri : program_img || defaultProgramImage}} style={{ width: 50, height: 50, borderRadius: 8}}/>
+          <Image source={ program_img ? { uri : program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, borderRadius: 8}}/>
         </View>
         <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
           <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture?.event_lecture_name}</Text>

@@ -127,7 +127,7 @@ export default function homeScreen() {
             </View>
           <Link href={'/menu/program'} asChild>
             <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
-              <Text className='font-bold text-2xl text-[#0D509D]' style={{textShadowColor: "light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 0.6}} >Weekly Programs</Text>
+              <Text className='font-bold text-2xl text-[#0D509D]'>Weekly Programs</Text>
               <View className='flex-row items-center'>
                 <Text className='text-gray-300'>View All</Text>
                 <Icon source={'chevron-right'} size={20}/>
@@ -147,13 +147,13 @@ export default function homeScreen() {
                 <LinkToDonationModal />
               </View>
             <View className='flex-row pl-3 pt-5'>
-              <Text className='text-[#0D509D] font-bold text-2xl' style={{textShadowColor: "#light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 1 }}>Volunteers</Text>
+              <Text className='text-[#0D509D] font-bold text-2xl'>Volunteers</Text>
             </View>
             <View className='pt-2'>
               <LinkToVolunteersModal />
             </View>
             <View className='flex-row pl-3 pt-6'>
-              <Text className='text-[#0D509D] font-bold text-2xl' style={{textShadowColor: "#light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 1 }}>Jummah Schedule</Text>
+              <Text className='text-[#0D509D] font-bold text-2xl' >Jummah Schedule</Text>
             </View>
             <View className='justify-center items-center w-[95%] m-auto pt-2' style={{shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6}}>
               <ImageBackground style={{width:"100%", height: 450, justifyContent: "center"}} source={require("@/assets/images/jummahSheetBackImg.png")} resizeMode='stretch' imageStyle={{ borderRadius: 20 }}>

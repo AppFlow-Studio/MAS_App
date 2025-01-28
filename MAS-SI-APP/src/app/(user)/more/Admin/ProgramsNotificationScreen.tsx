@@ -173,8 +173,8 @@ const ProgramsEventNotificationScreen = () => {
                   />
                   <View className="px-2">
                     <View style={{width:'92%' ,flexDirection:'row', alignItems:'center', justifyContent:'space-between' }} className="">
-                      <Text className="text-md font-bold text-white w-[60%]" numberOfLines={1}>{program_name}</Text>
-                      <Text className="text-gray-400 w-[45%]" adjustsFontSizeToFit numberOfLines={1}>Now</Text>
+                      <Text className="text-md font-bold text-white " numberOfLines={1}>{program_name}</Text>
+                      <Text className="text-gray-800 " adjustsFontSizeToFit numberOfLines={1}>Now</Text>
                     </View>
                     <View style={{width:'90%'}} >
                     <Text numberOfLines={2} className="text-base text-white">{notificationMessage}</Text>

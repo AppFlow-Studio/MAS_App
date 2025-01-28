@@ -10,7 +10,6 @@ const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [ notificationTitle, setNotificationTitle ] = useState("");
   const [previewModal, setPreviewModal] = useState(false);
-  const [ totalUsers, setTotalUsers ] = useState(0)
   const [ userInfo, setUserInfo ] = useState([])
   const getUsersInfo = async () => {
     const { data : profile, error } = await supabase.from('profiles').select('push_notification_token').not('push_notification_token', 'is', null)
@@ -39,15 +38,6 @@ const SendToEveryoneScreen = () => {
     setNotificationMessage('')
     setNotificationTitle('')
   }
-  const getUsers = async () => {
-    const { data , error } = await supabase.from('profiles').select('id')
-    if( data ){
-      setTotalUsers(data.length)
-    }
-  }
-  useEffect(() => {
-   getUsers()
-  }, [])
   return (
     <ScrollView
       style={{
@@ -78,7 +68,7 @@ const SendToEveryoneScreen = () => {
           )
         }}
       />
-      <Text className="text-lg mt-4 border pt-[170px] text-center">This Notification Will Be Sent Out To Everyone </Text>
+      <Text className="text-lg mt-4 pt-[170px] text-left">This Notification Will Be Sent Out To Everyone </Text>
       <Text className="ml-1 text-md font-bold  mt-1">Title of Notification</Text>
       <TextInput
         mode="outlined"
@@ -186,7 +176,7 @@ const SendToEveryoneScreen = () => {
             </View>
 
             <Text className="self-end mt-1 font-bold">
-              Total Users: {totalUsers}
+              Total Users: {userInfo.length}
             </Text>
             <View className="self-center">
               <Button

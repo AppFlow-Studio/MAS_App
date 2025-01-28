@@ -11,15 +11,16 @@ import LottieView from 'lottie-react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, runOnJS, FadeIn } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message'
 import { View, Text, Image } from 'react-native'
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics'
 const toastConfig = {
   addProgramToNotificationsToast : ( {props} : any ) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-        <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' >
+        <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' 
+        experimentalBlurMethod={'dimezisBlurView'}
+        >
           <View>
-              <Image source={{ uri : props.props.program_img || defaultProgramImage }} style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
+              <Image source={props.props.program_img ? { uri : props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
           </View>
           <View className='flex-col pl-2'>
             <View>
@@ -35,9 +36,11 @@ const toastConfig = {
   ),
   LectureAddedToPlaylist : ( {props} : any) => (
     <Pressable className='rounded-xl overflow-hidden' onPress={props.onPress}>
-        <BlurView intensity={40} className='flex-row items-center justify-between px-3 p-1 max-w-[85%] max-h-[60]'>
+        <BlurView intensity={40} className='flex-row items-center justify-between px-3 p-1 max-w-[85%] max-h-[60]'
+        experimentalBlurMethod={'dimezisBlurView'}
+        >
           <View className=''>
-              <Image source={{ uri : props.props?.playlist_img || defaultProgramImage }} style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
+              <Image source={props.props?.playlist_img  ? { uri : props.props.playlist_img } : require("@/assets/images/MASHomeLogo.png") } style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
           </View>
           <View className='flex-col pl-2'>
             <View>
@@ -53,9 +56,11 @@ const toastConfig = {
   ),
   ProgramAddedToPrograms : ({props} : any) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-        <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' >
+        <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' 
+        experimentalBlurMethod={'dimezisBlurView'}
+        >
           <View>
-              <Image source={{ uri : props.props.program_img || defaultProgramImage }} style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
+              <Image source={ props.props.program_img  ? { uri : props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
           </View>
           <View className='flex-col pl-2'>
             <View>
@@ -71,9 +76,11 @@ const toastConfig = {
   ),
   addEventToNotificationsToast : ( {props} : any ) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-        <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' >
+        <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' 
+        experimentalBlurMethod={'dimezisBlurView'}
+        >
           <View>
-              <Image source={{ uri : props.props.event_img || defaultProgramImage }} style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
+              <Image source={props.props.event_img ? { uri :  props.props.event_img } : require("@/assets/images/MASHomeLogo.png") } style={{ width : 50, height : 50 , objectFit : 'fill', borderRadius : 10 }}/>
           </View>
           <View className='flex-col pl-2'>
             <View>
@@ -89,7 +96,9 @@ const toastConfig = {
   ),
   ConfirmNotificationOption : ( { props } : any ) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-2 max-w-[90%] max-h-[60]' >
+      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-2 max-w-[90%] max-h-[60]' 
+      experimentalBlurMethod={'dimezisBlurView'}
+      >
 
         <View className='flex-col pl-2'>
           <View>

@@ -8,7 +8,6 @@ import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOf
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { useAuth } from '@/src/providers/AuthProvider'
 import * as Haptics from "expo-haptics"
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
 import { Divider, Icon } from 'react-native-paper'
 import RenderAddedProgramLectures from '@/src/components/UserProgramComponets/RenderAddedLecturesToPlaylist'
@@ -118,7 +117,7 @@ const UserPlayListLectures = () => {
           {
             userPlayListInfo?.playlist_img ? 
             <Animated.Image 
-            source={ { uri: userPlayListInfo?.playlist_img || defaultProgramImage }}
+            source={ userPlayListInfo?.playlist_img ? { uri : userPlayListInfo?.playlist_img } : require("@/assets/images/MASHomeLogo.png") }
             style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
             resizeMode='stretch'
           />
@@ -132,7 +131,7 @@ const UserPlayListLectures = () => {
           }
           <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
             <Text className='text-center mt-2 text-xl text-black font-bold'>{userPlayListInfo?.playlist_name}</Text>
-              <View className='ml-3'>
+              <View className=''>
                 {
                   userPlaylistLectures && userPlaylistLectures.length > 0 ? userPlaylistLectures.map((lecture, index) => {
                     if(lecture.program_lecture_id){

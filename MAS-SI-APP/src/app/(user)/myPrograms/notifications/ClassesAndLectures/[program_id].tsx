@@ -6,7 +6,6 @@ import { supabase } from '@/src/lib/supabase'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated'
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { Icon } from 'react-native-paper'
 import NotificationCard from "@/src/app/(user)/myPrograms/notifications/NotificationCard"
 import * as Haptics from 'expo-haptics'
@@ -102,7 +101,7 @@ const ClassesAndLecturesSettings = () => {
       <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%", paddingBottom : tabBarHeight }}  >
           <View>
             <Animated.Image 
-              source={ { uri: program?.program_img || defaultProgramImage }}
+              source={ program?.program_img ? { uri: program.program_img } : require("@/assets/images/MASHomeLogo.png") }
               style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
               resizeMode='stretch'
             />

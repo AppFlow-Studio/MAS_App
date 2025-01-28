@@ -2,7 +2,6 @@ import { View, Text, Dimensions, Pressable, ScrollView } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated';
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { supabase } from '@/src/lib/supabase';
 import { Program, ProgramFormType } from '@/src/types';
@@ -88,7 +87,7 @@ const ProgramInfo = () => {
     <Stack.Screen options={ { title : "Details", headerTransparent: true, headerBackTitleVisible : false, headerRight: () => <View className='mt-1'><CartButton /></View>, headerTitleStyle: { color : 'black'} }}/>
      <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "15%" }} showsVerticalScrollIndicator={false} >
          <Animated.Image 
-           source={ { uri: program?.program_img || defaultProgramImage } }
+           source={ program?.program_img ? { uri: program.program_img } : require("@/assets/images/MASHomeLogo.png") }
            style={ [{width: width / 2, height: 200, borderRadius: 8 }, imageAnimatedStyle] }
            resizeMode='stretch'
          />

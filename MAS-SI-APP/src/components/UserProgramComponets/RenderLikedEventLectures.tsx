@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react'
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { EventLectureType, Lectures, Program } from '@/src/types';
 import { Link } from "expo-router";
-import { defaultProgramImage } from '../ProgramsListProgram';
 import { ActivityIndicator, Icon, IconButton } from 'react-native-paper';
 import LectureDotsMenu from '../LectureComponets/LectureDotsMenu';
 import {
@@ -114,12 +113,6 @@ const RenderLikedEventLectures = ({lecture, index, speaker} : RenderLikedLecture
                  <Icon source="playlist-plus" color='black' size={15}/>
                 </View>
               </MenuOption>
-              <MenuOption>
-                <View className='flex-row justify-between items-center'>
-                  <Text>Add To Library</Text>
-                  <Icon source="library" color='black' size={15}/>
-                </View>
-              </MenuOption>
             </MenuOptions>
           </Menu>           
         )
@@ -143,7 +136,7 @@ const RenderLikedEventLectures = ({lecture, index, speaker} : RenderLikedLecture
           <View className='flex-row'>
             <Link href={`/myPrograms/eventLectures/${lecture.event_lecture_id}`}>
               <View className=''>
-                <Image source={{ uri : program_img?.event_img || defaultProgramImage}} style={{ width: 50, height: 50, borderRadius: 8}}/>
+                <Image source={ program_img?.event_img ? { uri : program_img?.event_img} : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, borderRadius: 8}}/>
               </View>
               <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
                 <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture.event_lecture_name}</Text>
@@ -154,8 +147,6 @@ const RenderLikedEventLectures = ({lecture, index, speaker} : RenderLikedLecture
               </Link>
               <View className='flex-row mt-3 justify-center px-2'>
                 <LikeButton />
-                <View className='w-2'></View>
-                <DotsButton />
               </View>
             </View>
           </Pressable>

@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link, router } from 'expo-router';
 import  Swipeable, { SwipeableProps }  from 'react-native-gesture-handler/Swipeable';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-export const defaultProgramImage = "https://ugc.production.linktr.ee/e3KxJRUJTu2zELiw7FCf_hH45sO9R0guiKEY2?io=true&size=avatar-v3_0"
 import { supabase } from "@/src/lib/supabase";
 import { useAuth } from '@/src/providers/AuthProvider'; 
 import * as Haptics from "expo-haptics"
@@ -20,7 +19,7 @@ export default function RenderAddedPrograms( {programInfo} : {programInfo : Prog
         <Link  href={`/myPrograms/notifications/ClassesAndLectures/${programInfo?.program_id}`}  asChild>
             <TouchableOpacity>
               <View style={{width: 170, height: 170}}>
-                      <Image source={{uri: programInfo?.program_img || defaultProgramImage }} style={{width : "100%", height: "100%",borderRadius: 8}}/>
+                      <Image source={ programInfo?.program_img ? {uri: programInfo.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{width : "100%", height: "100%",borderRadius: 8}}/>
               </View>
               <View className='lex-col w-[170] h-[40] flex-shrink'>
                   <Text className='text-black font-bold' numberOfLines={1}>{programInfo?.program_name}</Text>

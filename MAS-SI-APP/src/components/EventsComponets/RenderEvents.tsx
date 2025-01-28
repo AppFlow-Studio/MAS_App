@@ -2,7 +2,6 @@ import { View, Text, TouchableOpacity, Image, Button, StyleSheet } from 'react-n
 import React, { useEffect, useRef, useState } from 'react'
 import { EventsType } from '@/src/types'
 import { Link } from "expo-router"
-import { defaultProgramImage } from '../ProgramsListProgram'
 import { Swipeable } from 'react-native-gesture-handler'
 import { useAuth } from '@/src/providers/AuthProvider'
 import { supabase } from '@/src/lib/supabase'

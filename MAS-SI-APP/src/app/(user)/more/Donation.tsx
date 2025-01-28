@@ -5,7 +5,6 @@ import { format } from 'date-fns'
 import Animated, { Extrapolation, interpolate, SharedValue, useAnimatedRef, useAnimatedStyle, useDerivedValue, useSharedValue, withSequence, withTiming } from 'react-native-reanimated'
 import { Canvas, SkFont, useFont } from '@shopify/react-native-skia'
 import AnimatedDonationAmount from '@/src/components/AnimatedDonationText'
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { LinearGradient } from 'expo-linear-gradient'
 import YoutubePlayer from "react-native-youtube-iframe"
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'

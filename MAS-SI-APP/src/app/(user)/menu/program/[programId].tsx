@@ -1,8 +1,7 @@
-import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, Easing, Alert, StatusBar, Linking } from 'react-native'
+import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, Easing, Alert, StatusBar, Linking, Platform } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
 import LecturesListLecture from '@/src/components/LectureListLecture';
-import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
 import { Divider, Portal, Modal, IconButton, Icon, Button, Badge } from 'react-native-paper';
 import { Lectures, SheikDataType, Program } from '@/src/types';
 import { ScrollView } from 'react-native-gesture-handler';
@@ -155,7 +154,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
           speakerData?.map((speakerData) => (
           <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
             <Animated.View className=' flex-row'>
-                <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+                <Image source={speakerData?.speaker_img ? { uri : speakerData?.speaker_img }  : require("@/assets/images/MASHomeLogo.png")} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
             <View className='flex-col px-1'>
               <Text className='text-xl font-bold'>Name: </Text>
               <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
@@ -339,7 +338,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
           
           <View>
             <Animated.Image 
-              source={ { uri: program?.program_img || defaultProgramImage }}
+              source={ program?.program_img ? { uri : program?.program_img } : require("@/assets/images/MASHomeLogo.png") }
               style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
               resizeMode='stretch'
             />
@@ -364,7 +363,12 @@ const fadeOutNotification = useAnimatedStyle(() => ({
                       </View>
 
                       <View className='items-center justify-center'>
-                        <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={{ borderRadius : 15, height : height / 3.7 , shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1}}>
+                        <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={[{ borderRadius : 15, height : height / 3.7 , shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1, elevation : 5 }, 
+                          Platform.OS == 'android' ?  {
+                            borderWidth: 1,
+                            borderColor : '#D3D3D3',
+                          } : {}
+                        ]}>
                           <ScrollView><Text>{program?.program_desc}</Text></ScrollView>
                         </View>
                       </View>

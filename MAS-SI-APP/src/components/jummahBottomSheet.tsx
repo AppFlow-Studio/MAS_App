@@ -4,7 +4,6 @@ import BottomSheet, { BottomSheetModal, BottomSheetBackdrop } from "@gorhom/bott
 import { SheikDataType } from '../types';
 import { JummahBottomSheetProp } from '../types';
 import { Modal, Portal, Text, Button, PaperProvider, Icon, Divider } from 'react-native-paper';
-import { defaultProgramImage } from './ProgramsListProgram';
 import { supabase } from '../lib/supabase';
 
 type Ref = BottomSheetModal;
@@ -23,7 +22,7 @@ export const JummahBottomSheet = forwardRef<Ref, JummahBottomSheetProp>(({speake
             speaker && (
              <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
               <View className=' flex-row '>
-                  <Image source={{uri : speaker?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+                  <Image source={speaker?.speaker_img ? {uri : speaker.speaker_img } : require("@/assets/images/MASHomeLogo.png") } style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
               <View className='flex-col px-5'>
                 <Text className='text-xl font-bold text-black'>Name: </Text>
                 <Text className='pt-2 font-semibold text-black'> {speaker?.speaker_name} </Text>

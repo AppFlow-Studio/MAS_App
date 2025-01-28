@@ -10,7 +10,6 @@ import RenderLikedLectures from '@/src/components/UserProgramComponets/RenderLik
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { UserPlaylistFliers } from '@/src/components/UpcomingFliers';
 import LottieView from 'lottie-react-native';
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
 import { EventsType } from '@/src/types';
 import SignInAnonModal from '@/src/components/SignInAnonModal';
 import { BlurView } from 'expo-blur';

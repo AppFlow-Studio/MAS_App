@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native'
 import React from 'react'
 import { Link } from "expo-router"
-import { defaultProgramImage } from '../ProgramsListProgram'
 import { UserPlaylistType } from '@/src/types'
 type RenderUserPlaylistProp = {
     playlist : UserPlaylistType
@@ -14,7 +13,7 @@ const RenderUserPlaylist = ({ playlist } : RenderUserPlaylistProp) => {
                 <View className='flex-col items-center px-2 '>
                     <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width: "30%",}}>
                                { playlist.playlist_img ? <Image 
-                                    source={{ uri: playlist.playlist_img || defaultProgramImage }}
+                                    source={ playlist.playlist_img ? { uri: playlist.playlist_img } : require("@/assets/images/MASHomeLogo.png")}
                                     style={{width: 160, height: 140, objectFit: "fill", borderRadius: 8}}
                                 />
                                 :

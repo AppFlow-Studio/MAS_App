@@ -1,6 +1,5 @@
 import { View, Text, Image, Pressable } from 'react-native'
 import React from 'react'
-import { defaultProgramImage } from '../ProgramsListProgram'
 import { Link } from 'expo-router'
 type ShopProgramFliersProp = {
     width : number
@@ -13,7 +12,7 @@ const ShopProgramFliers = ({ width, program_id, img } : ShopProgramFliersProp) =
     <Link href={`more/ProgramsPage/${program_id}`} asChild>
         <Pressable style={{ width : 170, height : 150, alignItems : "center", marginTop : 12 }} className=''>
             <Image
-            source={{ uri : img || defaultProgramImage }}
+            source={ img ? { uri : img  }  :require("@/assets/images/MASHomeLogo.png")}
             style={{ width : 170, height : 150, objectFit: "fill", borderRadius: 15 }}
             />
         </Pressable>

@@ -124,7 +124,7 @@ const ProgramsAndEventsScreen = () => {
   const [routes] = React.useState([
     { key: 'first', title: 'Upcoming' },
     { key: 'second', title: 'Kids'},
-    { key: 'third', title : 'Programs & Tarbiya'},
+    { key: 'third', title : 'Programs & \n Tarbiya'},
     { key: 'fourth', title : 'Events'},
     { key: 'fifth', title : 'PACE'}
   ]);

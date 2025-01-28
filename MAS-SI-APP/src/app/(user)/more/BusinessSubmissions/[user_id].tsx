@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Dimensions, SafeAreaView, StatusBar,   RefreshControl,} from 'react-native'
+import { View, Text, ScrollView, Dimensions, SafeAreaView, StatusBar,   RefreshControl, Platform,} from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Stack, useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
@@ -50,7 +50,11 @@ const BusinessSubmissions = () => {
     <View style={{ backgroundColor : 'gray', width, height }} >
       <Stack.Screen options={{ headerTransparent : true, headerTitle : '', headerBackTitleVisible : false, }}/>
       <StatusBar barStyle={'light-content'}/>
-      <SafeAreaView style={{ width : width, height : height / 5 }}>
+      <SafeAreaView style={[{ width : width, height : height / 5 },
+        Platform.OS == 'android' ? {
+          marginTop : '25%'
+        } : {}
+      ]}>
         <Text className='text-3xl text-center font-bold'>Status</Text>
       </SafeAreaView>
       <ScrollView style={{ backgroundColor : '#DADADA', borderTopRightRadius : 40, borderTopLeftRadius : 40, width : width }} contentContainerStyle={{  paddingTop : 15, width : width * .9, alignItems : 'center', alignSelf : 'center', flexGrow : 1, paddingBottom : tabBarHeight }} 

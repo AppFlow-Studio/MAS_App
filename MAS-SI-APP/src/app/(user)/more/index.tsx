@@ -1,7 +1,6 @@
 import { View, Text, ScrollView, useWindowDimensions, Image, Pressable, StatusBar, Linking, Alert, KeyboardAvoidingView  } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import LottieView from 'lottie-react-native'
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { Button, Icon, Portal, Modal,TextInput, Divider } from 'react-native-paper'
 import { Link } from 'expo-router'

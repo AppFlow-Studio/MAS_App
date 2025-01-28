@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity,  Image, useWindowDimensions, Pressable} from 'react-native'
 import React, {useRef, useState}from 'react';
 import { Program } from '../types';
-import { defaultProgramImage } from './ProgramsListProgram';
 import { Link } from 'expo-router';
 import Animated, {interpolate, Extrapolation, useSharedValue, useAnimatedStyle} from "react-native-reanimated";
 import { transform } from '@babel/core';
@@ -50,7 +49,7 @@ export default function ProgramsCircularCarouselCard( {program, index, listItemW
         >
         <View style={{width: listItemWidth , height: 200, shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, justifyContent: "center", alignItems: "center", borderRadius: 20}} >
           <Image 
-          source={{ uri: program.program_img || defaultProgramImage}}
+          source={ program.program_img ?  { uri: program.program_img } : require("@/assets/images/MASHomeLogo.png")}
           style={{width: "100%", height: "100%", resizeMode: "stretch", overflow :"hidden", borderRadius: 20}} 
           />
         </View>

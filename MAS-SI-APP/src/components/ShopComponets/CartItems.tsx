@@ -1,6 +1,5 @@
 import { View, Text, Image, Pressable, Alert} from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { defaultProgramImage } from '../ProgramsListProgram'
 import { supabase } from '@/src/lib/supabase'
 import { EventsType, Program } from '@/src/types'
 import { Button, Icon } from 'react-native-paper'
@@ -58,7 +57,7 @@ const CartProgramItems = ({program_id, product_quantity} : CartProgramItemsProp)
         <View style={{flexDirection: "row",alignItems : 'center', justifyContent: "center", height  : '100%', paddingHorizontal : 10, width : '100%'}}>
             <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width : '40%', height  : '95%'}}>
                 <Image 
-                source={{ uri: program?.program_img || defaultProgramImage }}
+                source={ program?.program_img ? { uri: program?.program_img } : require("@/assets/images/MASHomeLogo.png")}
                 style={{width: '100%', height: '100%', objectFit: "cover", borderRadius: 15}}                                    
                 />
             </View>
@@ -109,7 +108,7 @@ export const CartEventItems = ({event_id, product_quantity } : CartEventItemsPro
           <View style={{flexDirection: "row",alignItems : 'center', justifyContent: "center", height  : '100%', paddingHorizontal : 10, width : '100%'}} >
               <View style={{justifyContent: "center", alignItems: "center", borderRadius: 15, width : '40%', height  : '95%'}}>
                   <Image 
-                  source={{ uri: event?.event_img || defaultProgramImage }}
+                  source={ event?.event_img ? { uri: event?.event_img } : require("@/assets/images/MASHomeLogo.png")}
                   style={{width: '100%', height: '100%', objectFit: "cover", borderRadius: 15}}                                    
                   />
               </View>

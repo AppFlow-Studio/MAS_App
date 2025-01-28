@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, Pressable } from 'react-native'
+import { View, Text, SafeAreaView, Pressable, Platform } from 'react-native'
 import React from 'react'
 import { Link, Stack } from 'expo-router'
 import { Icon } from 'react-native-paper'
@@ -10,11 +10,23 @@ const BusinessSponsersScreen = () => {
     <View className='flex-1 bg-gray-300'>
       <Stack.Screen options={{ headerTransparent : true, headerBackTitleVisible : false, headerTitle : ''}}/>
       <SafeAreaView>
-        <View className='px-3 w-[100%] h-[20%] '>
+        <View className='px-3 w-[100%] h-[20%] '
+        style={[
+          Platform.OS == 'android' ? {
+            marginTop : '25%'
+          } : {}
+        ]}
+        >
             <Text className='text-center text-4xl'>Get Your Business</Text>
             <Text className='text-center text-4xl'>Out There!</Text>
         </View>
-        <View className='h-[50%] w-[100%] '>
+        <View className='h-[50%] w-[100%] '
+        style={[
+          Platform.OS == 'android' ? {
+            height : '40%'
+          } : {}
+        ]}
+        >
 
         </View>
         <View className='justify-end flex-col items-center h-[25%]  gap-3'>

@@ -1,6 +1,5 @@
 import { View, Text, Image, Dimensions, ScrollView } from "react-native"
 import Animated, { useAnimatedRef, useScrollViewOffset, useAnimatedStyle, interpolate } from "react-native-reanimated"
-import { defaultProgramImage } from "./ProgramsListProgram"
 import { Icon, IconButton } from "react-native-paper"
 
 const Header = () => {

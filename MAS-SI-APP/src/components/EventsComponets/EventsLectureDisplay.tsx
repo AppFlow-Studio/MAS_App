@@ -5,7 +5,6 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, withTiming } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
-import { defaultProgramImage }  from '@/src/components/ProgramsListProgram';
 import { Divider, Portal, Modal, IconButton, Icon, Button } from 'react-native-paper';
 import { Lectures, SheikDataType, Program } from '@/src/types';
 import { EventsType } from '@/src/types';
@@ -93,7 +92,7 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
           speakerData?.map((speakerData) => (
             <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
               <Animated.View className=' flex-row'>
-                  <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+                  <Image source={ speakerData.speaker_img ? {uri : speakerData?.speaker_img } : require("@/assets/images/MASHomeLogo.png")} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
               <View className='flex-col px-1'>
                 <Text className='text-xl font-bold'>Name: </Text>
                 <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
@@ -203,7 +202,7 @@ const EventsLectureDisplay = ( {event_id, event_img, event_speaker, event_name} 
           <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%" }} >
               
               <Animated.Image 
-                source={ { uri: event_img || defaultProgramImage } }
+                source={ event_img ? { uri: event_img }  : require("@/assets/images/MASHomeLogo.png")}
                 style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
                 resizeMode='stretch'
                 className='mt-[110]'

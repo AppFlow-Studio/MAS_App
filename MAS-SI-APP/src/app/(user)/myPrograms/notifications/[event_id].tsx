@@ -6,7 +6,6 @@ import { supabase } from '@/src/lib/supabase'
 import { Stack, useLocalSearchParams } from 'expo-router'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated'
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram'
 import NotificationCard from './NotificationCard'
 import { Icon } from 'react-native-paper'
 import NotificationEventCard from './NotificationEventCard'
@@ -81,7 +80,7 @@ const NotificationEventSettings = () => {
           
           <View>
             <Animated.Image 
-              source={ { uri: event?.event_img || defaultProgramImage }}
+              source={ event?.event_img ? { uri: event.event_img  } : require("@/assets/images/MASHomeLogo.png")}
               style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
               resizeMode='stretch'
             />

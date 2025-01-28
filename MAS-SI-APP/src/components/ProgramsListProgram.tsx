@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link, router } from 'expo-router';
 import  Swipeable, { SwipeableProps }  from 'react-native-gesture-handler/Swipeable';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-export const defaultProgramImage = "@/assets/images/MASHomeLogo.png"
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../providers/AuthProvider'; 
 import * as Haptics from "expo-haptics"
@@ -13,7 +12,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type ProgramsListProgramProps = {
     program : Program,
 }
-
 
 export default function ProgramsListProgram( {program} : ProgramsListProgramProps){
     const { session } = useAuth()

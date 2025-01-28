@@ -14,7 +14,6 @@ import { Divider, Icon, Modal, Portal } from 'react-native-paper';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
-import { defaultProgramImage } from '@/src/components/ProgramsListProgram';
 
 export default function LecturesData() {
   const { session } = useAuth()
@@ -66,7 +65,7 @@ export default function LecturesData() {
           speakerData?.map((speakerData) => (
           <View className='border-2 border-gray-400 border-solid rounded-[15px] p-2 my-1'>
             <Animated.View className=' flex-row'>
-                <Image source={{uri : speakerData?.speaker_img || defaultProgramImage}} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
+                <Image source={speakerData?.speaker_img ? {uri : speakerData.speaker_img } : require("@/assets/images/MASHomeLogo.png")} style={{width: 110, height: 110, borderRadius: 50}} resizeMode='cover'/>
             <View className='flex-col px-1'>
               <Text className='text-xl font-bold'>Name: </Text>
               <Text className='pt-2 font-semibold' numberOfLines={1}> {speakerData?.speaker_name} </Text>
@@ -195,14 +194,21 @@ export default function LecturesData() {
         <Stack.Screen options={{ title : currentLecture?.lecture_name, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}}} />
         <StatusBar barStyle={'dark-content'} />
 
-       <YoutubePlayer 
-          height={layoutHeight / 4}
-          width={layout * 0.98}
-          webViewStyle={{ borderRadius : 20, marginLeft : '2%', marginTop : 8, backgroundColor : "#ededed" }}
-          play={playing}
-          videoId={currentLecture?.lecture_link}
-          onChangeState={onStateChange}
-        /> 
+       <View 
+        style={{ 
+          width : layout * 0.98,
+          height : layoutHeight / 4,
+          borderRadius : 20, marginLeft : '1%', marginTop : 8, backgroundColor : "#ededed", overflow : 'hidden'
+        }}
+        >
+         <YoutubePlayer 
+            height={layoutHeight / 4}
+            width={layout * 0.98}
+            play={playing}
+            videoId={currentLecture?.lecture_link}
+            onChangeState={onStateChange}
+          /> 
+       </View>
 
         <View className='mt-[5]'/>
         { loading && (

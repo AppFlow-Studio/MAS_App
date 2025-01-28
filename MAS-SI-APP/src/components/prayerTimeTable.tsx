@@ -1,7 +1,7 @@
 import { DataTable, Icon, IconButton } from 'react-native-paper';
 import { gettingPrayerData, prayerTimeData } from '@/src/types';
 import ProgramWidgetSlider from "@/src/components/programWidgetSlider";
-import {View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground } from "react-native";
+import {View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground, Platform } from "react-native";
 import AlertBell from '../app/(user)/prayersTable/alertBell';
 import { usePrayer } from '../providers/prayerTimesProvider';
 
@@ -27,7 +27,13 @@ const Table = ( { prayerData, setTableIndex, tableIndex, index, userSettings } :
     return(
       <View style={ { width : width  } } className='items-center' >
         <View className='items-center justify-center  w-[95%] ' >
-            <View className='flex-row justify-between items-center  p-2 rounded-3xl bg-white h-[60] w-[80%]' style={{ shadowColor : 'black', shadowOffset : { width : 0,  height : 3}, shadowOpacity : 1, shadowRadius : 4 }}>
+            <View className='flex-row justify-between items-center  p-2 rounded-3xl bg-white h-[60] w-[80%]' 
+            style={[{ shadowColor : 'black', shadowOffset : { width : 0,  height : 3}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 },
+              Platform.OS == 'android' ? {
+                borderWidth: 1,
+                borderColor : '#D3D3D3',
+              } : {}
+            ]}>
               <Pressable onPress={backPress}>
                 <Icon source="chevron-left" size={30} color='black' />
               </Pressable>
@@ -41,7 +47,14 @@ const Table = ( { prayerData, setTableIndex, tableIndex, index, userSettings } :
             </View>
           <View className='mt-3 w-[100%]'>
 
-          <View style={ { backgroundColor: 'white', borderRadius: 8, shadowColor: "black", shadowOffset: {width : 0, height: 0}, shadowOpacity: 1, shadowRadius: 2, width : '100%',} } className='flex-col px-4 py-2'>
+          <View style={ 
+            [{ backgroundColor: 'white', borderRadius: 8, shadowColor: "black", shadowOffset: {width : 0, height: 0}, shadowOpacity: 1, shadowRadius: 2, width : '100%', elevation : 5},
+              Platform.OS == 'android' ? {
+                borderWidth: 1,
+                borderColor : '#D3D3D3',
+              } : {}
+
+            ] } className='flex-col px-4 py-2'>
 
             <View style={{ }} className=' flex-row items-center w-[100%] h-[35]'>
               <View className='w-[34%]  h-[100%] '><Text style={{fontSize:20, color:"#0D509D", fontWeight: "bold" }} className='text-left'>Salah</Text></View>

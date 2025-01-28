@@ -1,7 +1,6 @@
 import { View, Text, Pressable, Image, ImageBackground } from 'react-native'
 import React from 'react'
 import { Button } from 'react-native-paper'
-import { defaultProgramImage } from './ProgramsListProgram'
 import { Link, useNavigation, useRouter } from 'expo-router'
 const LinkToDonationModal = () => { 
   const navigation = useNavigation<any>()

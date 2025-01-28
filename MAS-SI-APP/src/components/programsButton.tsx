@@ -1,6 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native'
 import React from 'react'
-import { defaultProgramImage } from './ProgramsListProgram'
 import { Link, Stack } from 'expo-router'
 
 export default function ProgramsButton() {

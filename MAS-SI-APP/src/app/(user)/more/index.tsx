@@ -132,6 +132,9 @@ const Index = () => {
   const MASHOPLINK = () => Linking.canOpenURL("https://massic.shop/").then(() => {
     Linking.openURL("https://massic.shop/");
   });
+  const MASDONATIONLINK = () => Linking.canOpenURL("https://massic.org/give/").then(() => {
+    Linking.openURL("https://massic.org/give/");
+  });
   const LogoutButton  = () => {
     return(
       <Menu style={{ alignSelf : 'flex-end', marginRight : 8 }}>
@@ -226,8 +229,11 @@ const Index = () => {
       <View className='flex-col items-center pb-10 w-[100%] justify-center' >
         {/*Donations and Notification Center */}
         <View className=' flex flex-row w-[100%] gap-x-1  items-center justify-between px-2 ml-[0.5]'>
-          <Link href={"/more/Donation"} asChild disabled>
-            <Pressable className='w-[60%] bg-[#DAE8F6] mt-5 items-center flex-col px-3 py-2 relative' style={{ borderRadius  : 10 }}>
+
+          {/*<Link href={"/more/Donation"} asChild disabled>*/}
+            <Pressable className='w-[60%] bg-[#DAE8F6] mt-5 items-center flex-col px-3 py-2 relative' style={{ borderRadius  : 10 }}
+            onPress={MASDONATIONLINK}
+            >
 
               <View className='flex-row px-1 w-[100%]'>
                 <Text className=' text-gray-400 text-[10px]'>Support Your Community by</Text>
@@ -249,12 +255,14 @@ const Index = () => {
               </View>
 
              <View className='absolute w-[112%] h-[120%] rounded-[10px] top-0 overflow-hidden'>
-                <BlurView className='w-[100%] h-[100%] items-center justify-center left-0' intensity={10}>
+                <BlurView className='w-[100%] h-[100%] items-center justify-center left-0' intensity={10}
+                experimentalBlurMethod={'dimezisBlurView'}
+                >
                   <Text className='text-black font-bold'>Coming soon...</Text>
                 </BlurView>
              </View>
             </Pressable>
-          </Link>
+          {/*</Link>*/}
 
           <Pressable onPress={SignInModalCheck} className=' w-[35%] mt-5 bg-[#CBFED0] rounded-xl px-[0.5] h-[100px]'>
           <Link

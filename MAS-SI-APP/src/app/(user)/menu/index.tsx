@@ -162,7 +162,7 @@ export default function homeScreen() {
             </View>
 
             <View className='flex-row pl-3 pt-6'>
-              <Text className='text-[#0D509D] font-bold text-2xl' style={{textShadowColor: "#light-gray", textShadowOffset: { width: 0.5, height: 3 }, textShadowRadius: 1 }}>Connect With Us</Text>
+              <Text className='text-[#0D509D] font-bold text-2xl'>Connect With Us</Text>
             </View>
             <IconsMarquee />
             <View style={[{paddingBottom : tabBarHeight}]}></View>

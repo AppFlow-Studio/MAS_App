@@ -441,7 +441,7 @@ async function signUpWithEmail() {
           </Svg>
           <View className='flex flex-col'>         
               <Text className='text-xl font-bold px-[2]'>Programs</Text>
-              <Text className='text-gray-400 text-sm mb-1'>Enjoy a Lecture Add it </Text>
+              <Text className='text-gray-400 text-sm mb-1'>Enjoy a Lecture? Add it </Text>
           </View>           
         </View>
         </View>

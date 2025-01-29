@@ -27,7 +27,7 @@ const MasShopHomeScreen = () => {
         <ImageBackground 
             style={{ flex : 1, justifyContent : 'space-between'}}
             imageStyle={{ height : height / 1.5, width : width,}}
-            source={require('@/assets/images/MASshophome.png')}
+            source={require('@/assets/images/MASshophome.jpeg')}
         >
             <SafeAreaView className='self-center w-[60%] items-center justify-center flex-col gap-y-9' style={{ height : height / 2}}>
                 <Text className='text-white text-center shadow-xl font-bold' style={{textShadowColor: "#D3D3D3", textShadowOffset: { width: 0.5, height: 1.5 }, textShadowRadius: 1, fontSize : 40 }}>

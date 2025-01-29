@@ -138,14 +138,14 @@ const ShopCategories = () => {
             if( focused ){
                 return (
                     <Animated.Image 
-                        source={require('@/assets/images/MasShopCategorie/sports.png')}
+                        source={require('@/assets/images/MasShopCategorie/sports.jpeg')}
                         style={[{ width : 75, height : 75, borderRadius : 50}, flip]}
                     />
                 )
             }else{
                 return (
                     <Image 
-                        source={require('@/assets/images/MasShopCategorie/sports.png')}
+                        source={require('@/assets/images/MasShopCategorie/sports.jpeg')}
                         style={{ width : 75, height : 75, borderRadius : 50}}
                      />
                 ) 
@@ -154,14 +154,14 @@ const ShopCategories = () => {
             if( focused ){
                 return (
                     <Animated.Image 
-                        source={require('@/assets/images/MasShopCategorie/kids.png')}
+                        source={require('@/assets/images/MasShopCategorie/kids.jpeg')}
                         style={[{ width : 75, height : 75, borderRadius : 50}, flip]}
                     />
                 )
             }else{
                 return (
                     <Image 
-                        source={require('@/assets/images/MasShopCategorie/kids.png')}
+                        source={require('@/assets/images/MasShopCategorie/kids.jpeg')}
                         style={{ width : 75, height : 75, borderRadius : 50}}
                     />
                 ) 
@@ -170,14 +170,14 @@ const ShopCategories = () => {
             if( focused ){
                 return (
                     <Animated.Image 
-                        source={require('@/assets/images/MasShopCategorie/education.png')}
+                        source={require('@/assets/images/MasShopCategorie/education.jpeg')}
                         style={[{ width : 75, height : 75, borderRadius : 50}, flip]}
                     />
                 )
             }else{
                 return (
                     <Image 
-                        source={require('@/assets/images/MasShopCategorie/education.png')}
+                        source={require('@/assets/images/MasShopCategorie/education.jpeg')}
                         style={{ width : 75, height : 75, borderRadius : 50}}
                     />
                 ) 
@@ -187,14 +187,14 @@ const ShopCategories = () => {
             if( focused ){
                 return (
                     <Animated.Image 
-                        source={require('@/assets/images/MasShopCategorie/16+.png')}
+                        source={require('@/assets/images/MasShopCategorie/16+.jpeg')}
                         style={[{ width : 75, height : 75, borderRadius : 50}, flip]}
                     />
                 )
             }else{
                 return (
                     <Image 
-                        source={require('@/assets/images/MasShopCategorie/16+.png')}
+                        source={require('@/assets/images/MasShopCategorie/16+.jpeg')}
                         style={{ width : 75, height : 75, borderRadius : 50}}
                     />
                 ) 

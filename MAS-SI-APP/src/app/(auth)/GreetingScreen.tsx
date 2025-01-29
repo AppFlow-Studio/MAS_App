@@ -127,7 +127,7 @@ const GreetingScreen = () => {
       <Stack.Screen options={{ headerShown : false}} />
       <StatusBar barStyle={"dark-content"}/>
       <Animated.View className='w-[100%] h-[160] justify-center, items-center  mt-[1%]' style={[logoMountAnimeStyle]}>
-        <Image source={require("@/assets/images/massiLogo.png")} style={{width: "90%", height: "100%", objectFit: "contain"}}/>
+        <Image source={require("@/assets/images/massiLogo.webp")} style={{width: "90%", height: "100%", objectFit: "contain"}}/>
       </Animated.View>
       <ImageBackground source={require('@/assets/images/MASGreetingScreen.png')} style={{ height : height, width : width, alignItems : 'center', alignSelf : 'center', justifyContent : 'center' }} imageStyle={{ height : height , width : width, borderRadius : 20, alignSelf : 'center', objectFit : 'cover'  }} >
         <View style={{ width : width, height : height, backgroundColor : 'rgba(255, 255, 255, 0.6)'}} className='items-center'>

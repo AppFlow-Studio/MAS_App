@@ -156,7 +156,7 @@ export default function homeScreen() {
               <Text className='text-[#0D509D] font-bold text-2xl' >Jummah Schedule</Text>
             </View>
             <View className='justify-center items-center w-[95%] m-auto pt-2' style={{shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6}}>
-              <ImageBackground style={{width:"100%", height: 450, justifyContent: "center"}} source={require("@/assets/images/jummahSheetBackImg.png")} resizeMode='stretch' imageStyle={{ borderRadius: 20 }}>
+              <ImageBackground style={{width:"100%", height: 450, justifyContent: "center"}} source={require("@/assets/images/jummahSheetBackImg.jpeg")} resizeMode='stretch' imageStyle={{ borderRadius: 20 }}>
                 <JummahTable ref={bottomSheetRef}/>
               </ImageBackground>
             </View>

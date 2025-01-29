@@ -7,7 +7,7 @@ const Volunteers = () => {
   return (
     <View className='justify-center'>
         <Pressable onPress={() => Router.back()}>
-            <Image source={require("@/assets/images/jummahSheetBackImg.png")} style={{height: 200, width: "100%", alignItems: "center"}} resizeMode='stretch' />
+            <Image source={require("@/assets/images/jummahSheetBackImg.jpeg")} style={{height: 200, width: "100%", alignItems: "center"}} resizeMode='stretch' />
                 <Animated.Text entering={FadeInLeft.duration(900)} className="text-black text-2xl">Hello</Animated.Text>
             
         </Pressable>

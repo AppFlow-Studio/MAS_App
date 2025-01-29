@@ -197,19 +197,19 @@ export default NotificationPrayerTable;
 
 const Prayers = [
   {
-    PrayerCap : "Fajr", img : require('@/assets//images/fajr.png'), athan : 'athan_fajr', iqamah : 'iqa_fajr'
+    PrayerCap : "Fajr", img : require('@/assets//images/fajr.jpeg'), athan : 'athan_fajr', iqamah : 'iqa_fajr'
   },
   {
-    PrayerCap : "Dhuhr", img : require('@/assets//images/dhuhr.png'), athan : 'athan_zuhr', iqamah : 'iqa_zuhr'
+    PrayerCap : "Dhuhr", img : require('@/assets//images/dhuhr.jpeg'), athan : 'athan_zuhr', iqamah : 'iqa_zuhr'
   },
   {
-    PrayerCap : "Asr", img : require('@/assets//images/asr.png'), athan : 'athan_asr', iqamah : 'iqa_asr'
+    PrayerCap : "Asr", img : require('@/assets//images/asr.jpeg'), athan : 'athan_asr', iqamah : 'iqa_asr'
   },
   {
-    PrayerCap : "Maghrib", img : require('@/assets//images/maghrib.png'), athan : 'athan_maghrib', iqamah : 'iqa_maghrib'
+    PrayerCap : "Maghrib", img : require('@/assets//images/maghrib.jpeg'), athan : 'athan_maghrib', iqamah : 'iqa_maghrib'
   },
   {
-    PrayerCap : "Isha", img : require('@/assets//images/isha.png'), athan : 'athan_isha', iqamah : 'iqa_isha'
+    PrayerCap : "Isha", img : require('@/assets//images/isha.jpeg'), athan : 'athan_isha', iqamah : 'iqa_isha'
   },
 ]
 

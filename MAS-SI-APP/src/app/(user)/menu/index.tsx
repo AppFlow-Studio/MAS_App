@@ -129,7 +129,7 @@ export default function homeScreen() {
             <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
               <Text className='font-bold text-2xl text-[#0D509D]'>Weekly Programs</Text>
               <View className='flex-row items-center'>
-                <Text className='text-gray-300'>View All</Text>
+                <Text className='text-gray-400'>View All</Text>
                 <Icon source={'chevron-right'} size={20}/>
               </View>
             </Pressable>

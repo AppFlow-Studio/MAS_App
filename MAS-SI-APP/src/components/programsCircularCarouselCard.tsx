@@ -47,7 +47,7 @@ export default function ProgramsCircularCarouselCard( {program, index, listItemW
       <Link href={"/menu/program/programsAndEventsScreen"} asChild>
         <Pressable style={{justifyContent: "center" , alignItems : "center"}} disabled={!disabled}
         >
-        <View style={{width: listItemWidth , height: 200, shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, justifyContent: "center", alignItems: "center", borderRadius: 20}} >
+        <View style={{width: listItemWidth , height: 200, shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, justifyContent: "center", alignItems: "center", borderRadius: 20, elevation : 8 }} >
           <Image 
           source={ program.program_img ?  { uri: program.program_img } : require("@/assets/images/MASHomeLogo.png")}
           style={{width: "100%", height: "100%", resizeMode: "stretch", overflow :"hidden", borderRadius: 20}} 

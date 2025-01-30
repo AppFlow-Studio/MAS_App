@@ -19,7 +19,29 @@ import * as Haptics from "expo-haptics"
 import LottieView from 'lottie-react-native';
 import Toast from 'react-native-toast-message';
 import { isBefore } from 'date-fns';
+function setTimeToCurrentDate(timeString : string ) {
 
+  // Split the time string into hours, minutes, and seconds
+  const [hours, minutes, seconds] = timeString.split(':').map(Number);
+
+  // Create a new Date object with the current date
+  const timestampWithTimeZone = new Date();
+
+  // Set the time with setHours (adjust based on local timezone or UTC as needed)
+  timestampWithTimeZone.setHours(hours , minutes, seconds, 0); // No milliseconds
+
+  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
+  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
+
+  return timestampISO
+}
+const schedule_notification = async ( user_id, push_notification_token, message, notification_type, program_event_name, notification_time ) => {
+  console.log(program_event_name)
+  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, message : message, notification_type : notification_type, program_event_name : program_event_name, notification_time : notification_time, title : program_event_name})
+  if( error ){
+    console.log(error)
+  }
+}
 const ProgramLectures = () => {
   const { session } = useAuth()
   const { programId } = useLocalSearchParams();
@@ -205,6 +227,23 @@ const fadeOutNotification = useAnimatedStyle(() => ({
     }
     else{
       const { error } = await supabase.from("added_notifications_programs").insert({user_id :session?.user.id, program_id : programId, has_lectures : program?.has_lectures})
+      const TodaysDate = new Date()
+      const DaysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      const programDays = program?.program_days
+      const ProgramStartTime = setTimeToCurrentDate(program?.program_start_time!)
+
+      if ( programDays && isBefore(TodaysDate, ProgramStartTime) ){
+      await Promise.all(
+        programDays?.map( async (day) => {
+          const { data : user_push_token } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+          if( (TodaysDate.getDay() == DaysOfWeek.indexOf(day)) && (user_push_token?.push_notification_token) ){
+            await schedule_notification(session?.user.id, user_push_token?.push_notification_token,  `${program.program_name} is Starting Now!`, 'When Program Starts', program.program_name, ProgramStartTime)
+          }
+        })
+      )
+    }
+      
+
       if( error ){
         console.log(error)
       }

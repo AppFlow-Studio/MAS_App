@@ -137,7 +137,7 @@ function IconsMarquee() {
                     <Pressable className='flex-col flex' onPress={onPress} style={{ left : index == 0 ? 30 : 0, marginRight : index == 0 ? 30 : 0}}>
                         <View
                         className=' w-[60] h-[60] rounded-full items-center  justify-center p-2 bg-gradient-to-br from-[#7D09FF] via-[#FF3E09] to-[#B9244E] '
-                        style={{ backgroundColor : item.bg, shadowColor : 'gray', shadowOffset : { width : 0, height : 5 }, shadowOpacity : 1, shadowRadius : 3 }}
+                        style={{ backgroundColor : item.bg, shadowColor : 'gray', shadowOffset : { width : 0, height : 5 }, shadowOpacity : 1, shadowRadius : 3, elevation : 8 }}
                         >
                         {item.platform}
                         </View>

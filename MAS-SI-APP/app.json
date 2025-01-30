@@ -18,7 +18,8 @@
       "usesAppleSignIn": true
     },
     "android": {
-      "package": "com.anonymous.MASSIAPP"
+      "package": "com.anonymous.MASSIAPP",
+      "googleServicesFile" : "./android/app/google-services.json"
     },
     "web": {
       "bundler": "metro",

@@ -223,6 +223,7 @@ const fadeOutNotification = useAnimatedStyle(() => ({
     if( programInNotfications ) {
       const { error } = await supabase.from("added_notifications_programs").delete().eq("user_id" , session?.user.id).eq("program_id", programId)
       const { error : settingsError } = await supabase.from('program_notifications_settings').delete().eq('user_id', session?.user.id).eq("program_id", programId)
+      const { error : ScheduleNotisError } = await supabase.from('program_notification_schedule').delete().eq('user_id', session?.user.id).eq("program_event_name", program?.program_name)
       setProgramInNotifications(false)
     }
     else{
@@ -276,9 +277,9 @@ const fadeOutNotification = useAnimatedStyle(() => ({
    return(
     <View className='flex-row items-center gap-x-5'>
       <Animated.View style={fadeOutNotification}>
-        <Badge style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-end font-semibold'>
-          Notifications
-        </Badge>
+        <View style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-center text-center z-[1] rounded-xl p-1 ' >
+          <Text className='text-black text-[10px] font-semibold'>Notifications</Text>
+        </View>
       </Animated.View>
       <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
         {programInNotfications ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }

@@ -154,8 +154,6 @@ const TabButton = ({ props, items }: TabButtonProps) => {
         ref={textRef}
         style={{ fontSize: 14, color: "black", textAlign: "center", fontWeight: "bold" }}
         numberOfLines={1}
-        adjustsFontSizeToFit
-        allowFontScaling
       >
         {items?.title ? items?.title : ""}
       </Animatable.Text>
@@ -167,7 +165,13 @@ export default function TabLayout() {
   const { session } = useAuth();
   const [loading, setLoading] = useState(true);
   const opacity = useSharedValue(1);
+  interface TextWithDefaultProps extends Text {
+    defaultProps?: { allowFontScaling?: boolean };
+  }
 
+  ((Text as unknown) as TextWithDefaultProps).defaultProps =
+  ((Text as unknown) as TextWithDefaultProps).defaultProps || {};
+  ((Text as unknown) as TextWithDefaultProps).defaultProps!.allowFontScaling = false;
   const playMASAnimation = useAnimatedStyle(() => {
     return {
       opacity: opacity.value,
@@ -224,8 +228,9 @@ export default function TabLayout() {
             shadowRadius: 8,
             justifyContent: "center",
             alignItems: "center",
+            
           },
-          tabBarItemStyle: { height: 30 },
+          tabBarItemStyle: { height: 30, },
         }}
                 
       >
@@ -240,7 +245,8 @@ export default function TabLayout() {
               title: tab.title,
               headerShown: false,
               tabBarButton: (props) => <TabButton items={TabArray[i]} props={{ ...props }} />,
-              
+              tabBarAllowFontScaling : false,
+              headerTitleAllowFontScaling : false
             }}
             
           />

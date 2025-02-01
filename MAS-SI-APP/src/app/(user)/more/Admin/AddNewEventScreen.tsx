@@ -538,21 +538,6 @@ const AddNewEventScreen = () => {
                <View className="flex flex-row flex-wrap gap-5 my-4 w-[100%]  self-center ml-[0.5] items-center">
               { !isPace ? 
                 <>
-                  <  Pressable
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: "4%",
-                      }}
-                      onPress={() => setIsSocialService(!isSocialService)}
-                      className="w-[35%] justify-between px-2 "
-                    >
-                      <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center ">
-                        {isSocialService ? <Icon  source={'check'} size={15} color="green"/> : <></>}
-                      </View>
-                      <Text className="text-[12px] font-[400] text-black">Social Services</Text>
-                    </Pressable>
-    
                     <Pressable
                       style={{
                         flexDirection: "row",
@@ -605,7 +590,7 @@ const AddNewEventScreen = () => {
                         marginBottom: "4%",
                       }}
                       onPress={() => setIsOutreach(!isOutreach)}
-                      className="w-[80%] justify-center  px-2 "
+                      className="w-[30%] justify-center  px-2 "
                     >
                       <View className="border border-[#6077F5] h-[20px] w-[20px] items-center justify-center mx-5">
                         {isOutreach ? <Icon  source={'check'} size={15} color="green"/> : <></>}

@@ -1,4 +1,4 @@
-import { View, Text, Button, Pressable, Image } from 'react-native'
+import { View, Text, Button, Pressable, Image, Alert } from 'react-native'
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState, } from 'react'
 import BottomSheet, { BottomSheetModal, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 import { useAuth } from '@/src/providers/AuthProvider';
@@ -19,7 +19,7 @@ type CreatePlaylistBottomSheetProp = {
 type Ref = BottomSheetModal
 const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
     const [ playlistImg, setPlaylistImg ] = useState<ImagePicker.ImagePickerAsset>()
-    const [ playlistName, setPlaylistName ] = useState<string>()
+    const [ playlistName, setPlaylistName ] = useState<string>('')
     const [ isReady, setIsReady ] = useState(false)
     const { session } = useAuth()
     const [selectedColor, setSelectedColor] = useState("#E5E7EB")
@@ -119,7 +119,14 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
             <View className='flex-row justify-between items-center px-5'> 
                 <Button title='Cancel' onPress={handleClose} />
                 <Text className='text-xl font-semibold'> New Playlist </Text>
-                <Button title='Create' disabled={!isReady} onPress={async () => await uploadImage()}/>
+                <Button title='Create' disabled={!isReady} onPress={async () => {
+                    if (playlistName.length < 4) {
+                        Alert.alert('Name of Playlist shoule be atleast 4 characters')
+                    }
+                    else{
+                        await uploadImage()
+                    }
+                    }}/>
             </View>
             
             <View className='items-center pt-[10%]'>

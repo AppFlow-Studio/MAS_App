@@ -14,9 +14,16 @@ import AuthProvider from '../providers/AuthProvider';// Prevent the splash scree
 import { StripeProvider } from '@stripe/stripe-react-native'
 import NotificationProvider from '../providers/NotificationProvider';
 SplashScreen.preventAutoHideAsync();
-
+import { Text } from 'react-native'
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  interface TextWithDefaultProps extends Text {
+        defaultProps?: { allowFontScaling?: boolean };
+  }
+
+  ((Text as unknown) as TextWithDefaultProps).defaultProps =
+  ((Text as unknown) as TextWithDefaultProps).defaultProps || {};
+  ((Text as unknown) as TextWithDefaultProps).defaultProps!.allowFontScaling = false;
   const [loaded] = useFonts({
     SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
     'Oleo' : require('../../assets/fonts/OleoScript-Regular.ttf'),

@@ -81,13 +81,16 @@ const PlaylistIndex = () => {
 
                 {
                   userPlayLists?.length == 0 &&
-                  <Pressable className='border border-dotted border-[#0073EE] h-[140] w-[160] rounded-xl items-center justify-center flex flex-col ml-3' onPress={handlePresentModalPress}>
-                      <Icon source={'playlist-plus'} size={50} color='#0073EE'/>
-                      <Text className='text-center text-black text-[10px] font-[300]'>Add a lecture to your playlist to see your playlist here </Text>
-                  </Pressable>
+                  <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center" }} className=''>
+                    <Pressable className='border border-dotted border-[#0073EE] h-[140] w-[160] rounded-xl items-center justify-center flex flex-col ' onPress={handlePresentModalPress} >
+                        <Icon source={'playlist-plus'} size={50} color='#0073EE'/>
+                        <Text className='text-center text-black text-[10px] font-[300]'>Make Your First Playlist</Text>
+                    </Pressable>
+                    <View className='mb-10'/>
+                  </View>
                 }
                 
-               <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}}>
+               <View style={{ width : layout / 2, justifyContent : "center", alignItems : "center", paddingTop : 5}} className=''>
                   <Link href={`/myPrograms/playlists/QuranPlaylist`} asChild>
                     <TouchableOpacity>
                     <View className='flex-col items-center px-2'>
@@ -99,7 +102,7 @@ const PlaylistIndex = () => {
                               </View>
                         </View>
                         <View className='items-center justify-center w-[70%]'>
-                            <Text className='text-[15px] font-[300] text-black mb-6' numberOfLines={1} allowFontScaling adjustsFontSizeToFit>Quran</Text>
+                            <Text className='text-[20px] font-[300] text-black my-2' numberOfLines={1}>Quran</Text>
                         </View>
                     </View>
                     </TouchableOpacity>
@@ -118,7 +121,7 @@ const PlaylistIndex = () => {
                               </View>
                         </View>
                         <View className='items-center justify-center w-[70%]'>
-                            <Text className='text-[15px] font-[300] text-black mb-6' numberOfLines={1} allowFontScaling adjustsFontSizeToFit>Athkar</Text>
+                            <Text className='text-[20px] font-[300] text-black my-2' numberOfLines={1}>Athkar</Text>
                         </View>
                     </View>
                     </TouchableOpacity>

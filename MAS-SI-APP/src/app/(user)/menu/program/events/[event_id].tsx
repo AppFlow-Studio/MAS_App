@@ -12,6 +12,29 @@ import { useAuth } from '@/src/providers/AuthProvider'
 import * as Haptics from 'expo-haptics'
 import { isAfter, isBefore } from 'date-fns'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+function setTimeToCurrentDate(timeString : string ) {
+
+  // Split the time string into hours, minutes, and seconds
+  const [hours, minutes, seconds] = timeString.split(':').map(Number);
+
+  // Create a new Date object with the current date
+  const timestampWithTimeZone = new Date();
+
+  // Set the time with setHours (adjust based on local timezone or UTC as needed)
+  timestampWithTimeZone.setHours(hours , minutes, seconds, 0); // No milliseconds
+
+  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
+  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
+
+  return timestampISO
+}
+const schedule_notification = async ( user_id, push_notification_token, message, notification_type, program_event_name, notification_time ) => {
+  console.log(program_event_name)
+  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, message : message, notification_type : notification_type, program_event_name : program_event_name, notification_time : notification_time, title : program_event_name})
+  if( error ){
+    console.log(error)
+  }
+}
 const EventInfo = () => {
   const { session } = useAuth()
   const navigation = useNavigation<any>()
@@ -60,13 +83,30 @@ const EventInfo = () => {
       if( eventInNotification ) {
         const { error } = await supabase.from("added_notifications_events").delete().eq("user_id" , session?.user.id).eq("event_id", event_id)
         const { error : settingsError } = await supabase.from('event_notification_settings').delete().eq('user_id', session?.user.id).eq("event_id", event_id)
+        const { error : ScheduleNotisError } = await supabase.from('program_notification_schedule').delete().eq('user_id', session?.user.id).eq("program_event_name", eventInfoData?.event_name)
         setEventInNotification(false)
       }
       else{
         const { error } = await supabase.from("added_notifications_events").insert({user_id :session?.user.id, event_id : event_id})
+         const TodaysDate = new Date()
+              const DaysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+              const programDays = eventInfoData?.event_days
+              const ProgramStartTime = setTimeToCurrentDate(eventInfoData?.event_start_time!)
+        
+              if ( programDays && isBefore(TodaysDate, ProgramStartTime) ){
+              await Promise.all(
+                programDays?.map( async (day) => {
+                  const { data : user_push_token } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
+                  if( (TodaysDate.getDay() == DaysOfWeek.indexOf(day)) && (user_push_token?.push_notification_token) ){
+                    await schedule_notification(session?.user.id, user_push_token?.push_notification_token,  `${eventInfoData.event_name} is Starting Now!`, 'When Program Starts', eventInfoData.event_name, ProgramStartTime)
+                  }
+                })
+              )
+            }
         if( error ){
           console.log(error)
         }
+
         setEventInNotification(true)
         addedToNoti()
       }
@@ -77,9 +117,9 @@ const EventInfo = () => {
      return(
       <View className='flex-row items-center gap-x-5'>
         <Animated.View style={fadeOutNotification}>
-          <Badge style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-end font-semibold'>
-            Notifications
-          </Badge>
+          <View style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-center text-center z-[1] rounded-xl p-1 ' >
+            <Text className='text-black text-[10px] font-semibold'>Notifications</Text>
+          </View>
         </Animated.View>
         <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
           {eventInNotification ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }

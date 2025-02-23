@@ -58,20 +58,15 @@ serve(async (req) => {
           const { data : program_info, error } = await supabase.from('programs').select('*').eq('program_id', program.program_id).single() 
           const currentDate = new Date()
           const day = currentDate.getDay()
-          console.log('Current Day: ', daysOfWeek[day])
-          console.log(currentDate)
+          
           const program_days = program_info.program_days
-          console.log('program days', program_days)
           // Run Through User Settings for this program
           await Promise.all(program.notification_settings.map( async ( setting : string ) => {
 
               if( setting == 'Day Before' ){
-                console.log('program days', program_days)
                 await Promise.all( program_days.map( async ( days : string ) => {
                     const program_day = daysOfWeek.indexOf(days)
-                    console.log('curr day', day )
-                    console.log('program day before: ', (program_day - 1) % 7 )
-                    console.log('program_day', program_day)
+                    
                     if( day == ( (program_day - 1) % 7 ) ){
                       
                       // schedule notification
@@ -114,8 +109,7 @@ serve(async (req) => {
            
               await Promise.all( program_days.map( async ( days : string ) => {
                   const program_day = daysOfWeek.indexOf(days)
-                  console.log('curr day', day - 1)
-                  console.log(( program_day - 1 ) % 7, days )
+                  
                   if( day == ( (program_day - 1) % 7 ) ){
                     // schedule notification
                     const start_time = setTimeToCurrentDate(program_info.program_start_time)
@@ -158,21 +152,18 @@ serve(async (req) => {
           const { data : event_info, error } = await supabase.from('events').select('*').eq('event_id', event.event_id).single() 
           const currentDate = new Date()
           const day = currentDate.getDay()
-          console.log('Current Day: ', day)
           const event_days = event_info.event_days
-          console.log('program days', event_days)
           // Run Through User Settings for this program
           await Promise.all(event.notification_settings.map( async ( setting : string ) => {
 
               if( setting == 'Day Before' ){
-                console.log('program days', event_days)
                 await Promise.all( event_days.map( async ( days : string ) => {
                     const event_day = daysOfWeek.indexOf(days)
                     if( day == ( (event_day - 1) % 7 ) ){
                       
                       // schedule notification
-                      const start_time = setTimeToCurrentDate(event_info.program_start_time)
-                      await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', event_info.program_name, start_time)  
+                      const start_time = setTimeToCurrentDate(event_info.event_start_time)
+                      await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Tomorrow, Don't Forget!`, 'Day Before', event_info.event_name, start_time)  
                     }
                   }) 
                 )
@@ -200,7 +191,6 @@ serve(async (req) => {
           const event_info_array = UserSignedUpEvents.filter(obj => {
             return obj.event_id == event.event_id
           })
-          console.log(event_info_array)
           const event_info = event_info_array[0]
           await Promise.all(event.notification_settings.map( async ( setting : string ) => {
             const event_days = event_info.event_days
@@ -209,8 +199,6 @@ serve(async (req) => {
             if( setting == 'Day Before' ){           
               await Promise.all( event_days.map( async ( days : string ) => {
                   const event_day = daysOfWeek.indexOf(days)
-                  console.log('curr day', day - 1)
-                  console.log(event_day - 1 % 7, days )
                   if( day  == ( (event_day) - 1 % 7 ) ){
                     // schedule notification
                     const start_time = setTimeToCurrentDate(event_info.event_start_time)

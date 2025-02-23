@@ -5,7 +5,7 @@
     "slug": "MAS-SI-APP",
     "version": "1.0.4",
     "orientation": "portrait",
-    "icon": "./assets/images/MASHomeLogo.png",
+    "icon": "./assets/images/ .png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {

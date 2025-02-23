@@ -13,7 +13,6 @@ import { MenuProvider } from "react-native-popup-menu"
 import AuthProvider from '../providers/AuthProvider';// Prevent the splash screen from auto-hiding before asset loading is complete.
 import { StripeProvider } from '@stripe/stripe-react-native'
 import NotificationProvider from '../providers/NotificationProvider';
-SplashScreen.preventAutoHideAsync();
 import { Text } from 'react-native'
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -35,6 +34,10 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  SplashScreen.preventAutoHideAsync().catch(() => {
+    /* reloading the app might trigger some race conditions, ignore them */
+  });
+
   if (!loaded) {
     return null;
   }
@@ -53,12 +56,12 @@ export default function RootLayout() {
                         <Stack.Screen name="(user)" options={{ headerShown : false }} />
                         <Stack.Screen name="(auth)" options={{ headerShown : false }}/>
                         <Stack.Screen name="+not-found" />
-                        </Stack>
+                      </Stack>
                     </PaperProvider>
                   </MenuProvider>
                 </BottomSheetModalProvider>
               </ThemeProvider>
-            </NotificationProvider>
+            </NotificationProvider> 
           </PrayerTimesProvider>
         </AuthProvider>
       </StripeProvider>

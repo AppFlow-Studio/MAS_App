@@ -69,7 +69,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                 <FlatList 
                     data={Events}
                     renderItem={({item}) => (
-                        <Link href={`/menu/program/events${item.event_id}`} asChild>
+                        <Link href={`/menu/program/events/${item.event_id}`} asChild>
                             <Pressable className='flex-col'>
                                 <Image source={{ uri : item.event_img || undefined }} style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}/>
                                 <Text className='text-gray-500 font-medium text-[10px] pl-2' numberOfLines={1}>{item.event_name}</Text>

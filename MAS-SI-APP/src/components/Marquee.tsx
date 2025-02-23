@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Button, StyleSheet, View, Image, Pressable, Text, Linking } from 'react-native';
 import Animated, {
+  clamp,
   useAnimatedStyle,
   useFrameCallback,
   useSharedValue,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import X from '@/src/components/Icons/X';
 import WhatsApp from '@/src/components/Icons/Whatsapp';
 import Instagram from '@/src/components/Icons/Instagram';
@@ -44,7 +46,7 @@ const getIndicesArray = (length) => Array.from({ length }, (_, i) => i);
 
 const Cloner = ({ count, renderChild }) => (
   <>{getIndicesArray(count).map(renderChild)}</>
-);
+);    
 
 const ChildrenScroller = ({
   duration,
@@ -55,6 +57,21 @@ const ChildrenScroller = ({
 }) => {
   const offset = useSharedValue(0);
   const coeff = useSharedValue(reverse ? 1 : -1);
+  const isPanning = useSharedValue(false);
+  const prevTranslationX = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+  .minDistance(1)
+  .onStart(() => {
+    isPanning.value = true;
+    prevTranslationX.value = offset.value;
+  })
+  .onUpdate((event) => {
+    offset.value = prevTranslationX.value + event.translationX 
+  })
+  .onEnd((e)=> {
+    isPanning.value = false;
+  })
 
   React.useEffect(() => {
     coeff.value = reverse ? 1 : -1;
@@ -62,8 +79,11 @@ const ChildrenScroller = ({
 
   useFrameCallback((i) => {
     // prettier-ignore
-    offset.value += (coeff.value * ((i.timeSincePreviousFrame ?? 1) * childrenWidth)) / duration;
-    offset.value = offset.value % childrenWidth;
+    if (!isPanning.value) {
+      offset.value += (coeff.value * ((i.timeSincePreviousFrame ?? 1) * childrenWidth)) / duration;
+      offset.value = offset.value % childrenWidth;
+    }
+    
   }, true);
 
   const count = Math.round(parentWidth / childrenWidth) + 2;
@@ -77,7 +97,13 @@ const ChildrenScroller = ({
     </TranslatedElement>
   );
 
-  return <Cloner count={count} renderChild={renderChild} />;
+  return (
+   <GestureDetector gesture={panGesture}>
+      <Animated.View style={{ width : parentWidth * .9 }}>
+        <Cloner count={count} renderChild={renderChild} />
+      </Animated.View>
+   </GestureDetector>
+  );
 };
 
 export const Marquee = ({ duration = 30000, reverse = false, children, style }) => {

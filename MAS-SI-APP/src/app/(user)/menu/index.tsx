@@ -1,4 +1,4 @@
-import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl } from 'react-native';
+import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, SafeAreaView } from 'react-native';
 import React, { useState, useEffect, useRef, useContext, useCallback} from 'react';
 import { gettingPrayerData, prayerTimesType, Profile } from '@/src/types';
 import { format, parse, setHours, setMinutes, subMinutes } from 'date-fns';
@@ -43,22 +43,22 @@ export default function homeScreen() {
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
   const scrollOffset = useSharedValue(0)
     const scrollHandler = useAnimatedScrollHandler(event => {
-      scrollOffset.value = event.contentOffset.y;
+      scrollOffset.value = interpolate(event.contentOffset.y, [ -1, 1], [-1, 1]);
     });
-    const imageAnimatedStyle = useAnimatedStyle(() => {
-      return{
+    const HeaderRadius = useAnimatedStyle(() => {
+      return {
         transform: [
           {
-            translateY : interpolate(
-            scrollOffset.value,
-            [-width / 2, 0, width / 2 ],
-            [-width/4, 0, width/ 2 * 0.75]
-            )
-          },
-          {
-            scale: interpolate(scrollOffset.value, [-width/ 2, 0, width / 2], [2, 1, 1])
+            translateY: interpolate(scrollOffset.value, [-width / 2, 0, width / 2], [-width/4, 0, width / 2] )
           }
-        ]
+        ],
+      }
+    })
+    const imageAnimatedStyle = useAnimatedStyle(() => {
+      return{
+        height: interpolate(scrollOffset.value, [0, 75-50], [75, 50], 'clamp'),
+        width: interpolate(scrollOffset.value, [0, (width / 1.8) - (width / 2.8)], [width / 1.8, width / 2.8], 'clamp'),
+
       }
     })
 
@@ -115,58 +115,58 @@ export default function homeScreen() {
     }
     const prayer = prayerTimesWeek
     return (
-      <Animated.ScrollView ref={scrollRef} className="bg-white h-full flex-1" onScroll={scrollHandler} 
-      >
-            <StatusBar barStyle={"dark-content"}/>
-            <View className='justify-center items-center mt-[12%] '>
-              <Animated.Image source={require("@/assets/images/massiLogo2.png")} style={[{width: width / 2, height: 75, justifyContent: "center" }, imageAnimatedStyle]} />
-            </View>
-
-            <View style={{height: 250, overflow: "hidden", justifyContent:"center", borderEndStartRadius: 30 ,borderEndEndRadius: 30}} className=''>
-              <SalahDisplayWidget prayer={prayer[0]} nextPrayer={prayer[1]}/>
-            </View>
-          <Link href={'/menu/program'} asChild>
-            <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
-              <Text className='font-bold text-2xl text-[#0D509D]'>Weekly Programs</Text>
-              <View className='flex-row items-center'>
-                <Text className='text-gray-400'>View All</Text>
-                <Icon source={'chevron-right'} size={20}/>
-              </View>
-            </Pressable>
-          </Link>
-              <View className='pt-3' style={{height: 250}}>
-                <ProgramsCircularCarousel />
-              </View>
-
-              <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
-                
-              <View className='pl-3 flex-row pt-4'>
-                  <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
-              </View>
-              <View className='pt-2'>
-                <LinkToDonationModal />
-              </View>
-            <View className='flex-row pl-3 pt-5'>
-              <Text className='text-[#0D509D] font-bold text-2xl'>Volunteers</Text>
-            </View>
-            <View className='pt-2'>
-              <LinkToVolunteersModal />
-            </View>
-            <View className='flex-row pl-3 pt-6'>
-              <Text className='text-[#0D509D] font-bold text-2xl' >Jummah Schedule</Text>
-            </View>
-            <View className='justify-center items-center w-[95%] m-auto pt-2' style={{shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6}}>
-              <ImageBackground style={{width:"100%", height: 450, justifyContent: "center"}} source={require("@/assets/images/jummahSheetBackImg.jpeg")} resizeMode='stretch' imageStyle={{ borderRadius: 20 }}>
-                <JummahTable ref={bottomSheetRef}/>
-              </ImageBackground>
-            </View>
-
-            <View className='flex-row pl-3 pt-6'>
-              <Text className='text-[#0D509D] font-bold text-2xl'>Connect With Us</Text>
-            </View>
-            <IconsMarquee />
-            <View style={[{paddingBottom : tabBarHeight}]}></View>
-      </Animated.ScrollView>
+           <Animated.ScrollView ref={scrollRef} className="bg-white h-full z-[0]" onScroll={scrollHandler} 
+            >
+                  <StatusBar barStyle={"dark-content"}/>
+                  <Animated.View className='justify-center items-center pt-[14%] bg-white w-full overflow-clip z-[1]' style={HeaderRadius} > 
+                    <Animated.Image source={require("@/assets/images/massiLogo2.png")} style={[{width: width / 1.5, justifyContent: "center", objectFit : 'fill' }, imageAnimatedStyle]}  />
+                  </Animated.View>
+                  
+                  <View style={{height: 250, overflow: "hidden", justifyContent:"center", borderEndStartRadius: 30 ,borderEndEndRadius: 30}} className=''>
+                    <SalahDisplayWidget prayer={prayer[0]} nextPrayer={prayer[1]}/>
+                  </View>
+                <Link href={'/menu/program'} asChild>
+                  <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
+                    <Text className='font-bold text-2xl text-[#0D509D]'>Weekly Programs</Text>
+                    <View className='flex-row items-center'>
+                      <Text className='text-gray-400'>View All</Text>
+                      <Icon source={'chevron-right'} size={20}/>
+                    </View>
+                  </Pressable>
+                </Link>
+                    <View className='pt-3' style={{height: 250}}>
+                      <ProgramsCircularCarousel />
+                    </View>
+      
+                    <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
+                      
+                    <View className='pl-3 flex-row pt-4'>
+                        <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
+                    </View>
+                    <View className='pt-2'>
+                      <LinkToDonationModal />
+                    </View>
+                  <View className='flex-row pl-3 pt-5'>
+                    <Text className='text-[#0D509D] font-bold text-2xl'>Volunteers</Text>
+                  </View>
+                  <View className='pt-2'>
+                    <LinkToVolunteersModal />
+                  </View>
+                  <View className='flex-row pl-3 pt-6'>
+                    <Text className='text-[#0D509D] font-bold text-2xl' >Jummah Schedule</Text>
+                  </View>
+                  <View className='justify-center items-center w-[95%] m-auto pt-2' style={{shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6}}>
+                    <ImageBackground style={{width:"100%", height: 450, justifyContent: "center"}} source={require("@/assets/images/jummahSheetBackImg.jpeg")} resizeMode='stretch' imageStyle={{ borderRadius: 20 }}>
+                      <JummahTable ref={bottomSheetRef}/>
+                    </ImageBackground>
+                  </View>
+      
+                  <View className='flex-row pl-3 pt-6'>
+                    <Text className='text-[#0D509D] font-bold text-2xl'>Connect With Us</Text>
+                  </View>
+                  <IconsMarquee />
+                  <View style={[{paddingBottom : tabBarHeight}]}></View>
+           </Animated.ScrollView>
     )
     
   }

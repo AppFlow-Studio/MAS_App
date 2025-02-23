@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "MAS Staten Island",
+    "owner": "appflowcreations",
     "slug": "MAS-SI-APP",
     "version": "1.0.4",
     "orientation": "portrait",
@@ -8,7 +9,7 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/MASsplash.png",
+      "image": "./assets/images/MASsplasgit h.png",
       "resizeMode": "contain",
       "backgroundColor": "white"
     },

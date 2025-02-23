@@ -128,19 +128,19 @@ const TabButton = ({ props, items }: TabButtonProps) => {
 
   useEffect(() => {
     if (focused) {
-      textRef.current?.transitionTo({ scale: 1 });
+      textRef.current?.transitionTo({ scale: 1.2 });
       Haptics.notificationAsync (
         Haptics.NotificationFeedbackType.Success
       )
     } else {
-      textRef.current?.transitionTo({ scale: 0 });
+      textRef.current?.transitionTo({ scale: 0.8 });
     }
   }, [focused]);
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={{ alignItems: "center", flex: 1, marginTop: 4.5, height : '200%' }}
+      style={{ alignItems: "center", flex: 1, marginTop: 7, height : '200%' }}
     >
       <Animatable.View
         className='justify-center items-center'
@@ -152,7 +152,7 @@ const TabButton = ({ props, items }: TabButtonProps) => {
       </Animatable.View>
       <Animatable.Text
         ref={textRef}
-        style={{ fontSize: 14, color: "black", textAlign: "center", fontWeight: "bold" }}
+        style={{ fontSize: 10, color: focused ? "#57BA47" : '#0D509D', textAlign: "center", fontWeight: focused ? "bold"  : 'regular', opacity : focused ? 1 : 0.5 }}
         numberOfLines={1}
       >
         {items?.title ? items?.title : ""}
@@ -193,7 +193,7 @@ export default function TabLayout() {
   }
   return (
     <>
-      { loading && (
+     { loading && (
         <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '100%' }, playMASAnimation]}>
           <LottieView
             autoPlay
@@ -232,7 +232,6 @@ export default function TabLayout() {
           },
           tabBarItemStyle: { height: 30, },
         }}
-                
       >
         <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen name="tabArray" options={{ href: null }} />

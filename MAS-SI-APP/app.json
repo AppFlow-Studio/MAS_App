@@ -37,8 +37,9 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
-    },
+  "typedRoutes": true
+},
+
     "extra": {
       "router": {
         "origin": false

@@ -54,12 +54,12 @@ const prayerDetails = () => {
   const NOTICARDHEIGHT  = layoutHeight / 12
   const NOTICARDWIDTH  = layout * 0.8
   const tabBarHeight = useBottomTabBarHeight() + 30
-  const notificationArray = [
+  const notificationArray =  [
     "Alert at Athan time",
     "Alert 30 mins before next prayer",
     "Alert at Iqamah time",
     "Mute"
-  ]
+  ] 
   return (
     <ScrollView className='flex-1 bg-white' style={{flexGrow: 1}} contentContainerStyle={{alignItems: "center" , paddingBottom : tabBarHeight}}>
      <StatusBar barStyle={"dark-content"}/>

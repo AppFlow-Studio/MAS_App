@@ -7,7 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import {Expo} from 'https://esm.sh/expo-server-sdk';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import {format} from 'https://esm.sh/date-fns@4.1.0/format.mjs'
+import {format, isBefore, isAfter} from 'https://esm.sh/date-fns@4.1.0/format.mjs'
 console.log("Hello from Functions!")
 
 const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
@@ -93,6 +93,8 @@ serve(async (req) => {
     const { data : UserSettings, error : settingError } = await supabase.from('prayer_notification_settings').select('*')
     const { data : TodaysPrayers, error : todayError} = await supabase.from('todays_prayers').select('*')
       // Loop through todays prayers
+
+      //Alert At Athan Time
       await Promise.all(
         TodaysPrayers.map( async ( prayer ) => {
           // get users who have alert at athan on for this prayer
@@ -127,6 +129,7 @@ serve(async (req) => {
         })
       )
 
+      //Alert At Iqamah Time
       await Promise.all(
         TodaysPrayers.map( async ( prayer ) => {
           // get users who have alert at iqamah on for this prayer
@@ -153,83 +156,188 @@ serve(async (req) => {
           }
           // save these users to the notification_schedule table 
         })
-    )
+      )
+
+      //Alert 30 Mins Before Next Prayer
+      await Promise.all(
+      TodaysPrayers.map( async ( prayer ) => {
+        // get users who have alert 30 mins before next prayer on
+        const { data : AthanAlertOn, error } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name).contains('notification_settings', ['Alert 30 mins before next prayer'])
+        if( error ){
+          console.log(error)
+        }
+        if( AthanAlertOn ){
+          await Promise.all(
+            AthanAlertOn.map( async ( user ) => {
+              const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).single()
+              if( UserPushToken && UserPushToken.push_notification_token ){
+                if( prayer.prayer_name == 'fajr' ){
+                  const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'zuhr')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
+                  PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
+                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Dhuhr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+                  if( error ){
+                    console.log(error)
+                  }
+                }
+                
+                if( prayer.prayer_name == 'zuhr' ) {
+                  const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'asr')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
+                  PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
+                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : 'dhuhr', message : `30 mins before Asr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+                  if( error ){
+                    console.log(error)
+                  }
+                }
+
+                if( prayer.prayer_name == 'asr' ){
+                  const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'maghrib')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
+                  PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
+                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Maghrib!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+                  if( error ){
+                    console.log(error)
+                  }
+                }
+
+                if( prayer.prayer_name == 'maghrib' ){
+                  const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'isha')
+                  const nextPrayerTime = nextPrayerInfo[0].athan_time
+                  const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
+                  PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
+                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Isha!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+                  if( error ){
+                    console.log(error)
+                  }
+                }
+
+                if( prayer.prayer_name == 'isha' ){
+                  const { data : nextPrayerInfo, error : nextPrayerError } = await supabase.from('prayers').select('prayerData').single()
+                  const nextPrayerTime = nextPrayerInfo[1]['fajr']
+                  const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
+                  PrayerTime.setDate(PrayerTime.getDate() + 1)
+                  const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Fajr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
+                  if( error ){
+                    console.log(error)
+                  }
+                }
+
+              }
+            })
+          )
+        }
+        // save these users to the notification_schedule table 
+      })
+      )
 
 
-    await Promise.all(
-    TodaysPrayers.map( async ( prayer ) => {
-      // get users who have alert 30 mins before next prayer on
-      const { data : AthanAlertOn, error } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name).contains('notification_settings', ['Alert 30 mins before next prayer'])
-      if( error ){
-        console.log(error)
+      if( isBefore(todaysDate, new Date(2025, 3, 30)) && isAfter(todaysDate, new Date(2025, 2, 28)) ){
+          const {data : UsersWithAlertOnFirst, error : UsersAthanFirstError } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', 'tarawih one').contains('notification_settings', ['Alert at Athan time'])
+          const {data : Users30MinsBeforeFirst, error : Users30MinsFirstError} = await supabase.from('prayer_notification_settings').select('*').eq('prayer', 'tarawih one').contains('notification_settings', ['Alert 30 Mins Before'])
+          const {data : UsersWithAlertOnSecond, error : UsersAthanSecondError } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', 'tarawih two').contains('notification_settings', ['Alert at Athan time'])
+          const {data : Users30MinsBeforeSecond, error : Users30MinsSecondError} = await supabase.from('prayer_notification_settings').select('*').eq('prayer', 'tarawih two').contains('notification_settings', ['Alert 30 Mins Before'])
+          const { data : IshaTime, error : todayError} = await supabase.from('todays_prayers').select('*').eq('prayer_name', 'isha').single()
+          const FirstTaraweehTime = setTimeToCurrentDate(IshaTime.iqamah_time)
+          let FirstTaraweehTime30MinBefore = setTimeToCurrentDate(IshaTime.iqamah_time)
+          FirstTaraweehTime30MinBefore.setMinutes(FirstTaraweehTime30MinBefore.getMinutes() - 30)
+          const SecondTaraweehTime = setTimeToCurrentDate(IshaTime.iqamah_time)
+          SecondTaraweehTime.setHours(SecondTaraweehTime.getHours() + 1, SecondTaraweehTime.getMinutes() + 20)
+
+          let SecondTaraweehTime30MinBefore = new Date(SecondTaraweehTime)
+
+          SecondTaraweehTime30MinBefore.setMinutes(SecondTaraweehTime30MinBefore.getMinutes() - 30)
+          console.log(SecondTaraweehTime30MinBefore)
+          let FormattedFirst = new Date(FirstTaraweehTime)
+          FormattedFirst = format(FormattedFirst.setHours(FormattedFirst.getHours() - 5), 'p')
+          let FormattedSecond = new Date(SecondTaraweehTime)
+          FormattedSecond = format(FormattedSecond.setHours(FormattedSecond.getHours() - 5), 'p')
+          let FormattedFirst30 = new Date( FirstTaraweehTime30MinBefore )
+          let FormattedSecond30 = new Date( SecondTaraweehTime30MinBefore )
+          FormattedFirst30 = format(FormattedFirst30.setHours(FormattedFirst30.getHours() - 5), 'p')
+          FormattedSecond30 = format(FormattedSecond30.setHours(FormattedSecond30.getHours() - 5), 'p')
+
+          //First Taraweeh Alert at Athan
+          await Promise.all(
+            UsersWithAlertOnFirst.map( async (UserSettings) => {
+  
+              const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', UserSettings.user_id).single()
+              if( UserPushToken && UserPushToken.push_notification_token ){
+                  const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
+                    notification_time : FirstTaraweehTime, prayer : 'tarawih one', 
+                    message : `First Tarawih Starting Now!\n${FormattedFirst}`, 
+                    push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
+                    if(ScheduleError){
+                      console.log(ScheduleError)
+                    }
+                  }
+            })
+          )
+          //First Taraweeh alert 30 mins before
+          await Promise.all(
+            Users30MinsBeforeFirst.map( async ( UserSettings ) => {
+              const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', UserSettings.user_id).single()
+              if( UserPushToken && UserPushToken.push_notification_token ){
+
+                  const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
+                    notification_time : FirstTaraweehTime30MinBefore, prayer : 'tarawih one', 
+                    message : `First Tarawih Starting in 30 Mins!\n${FormattedFirst30}`, 
+                    push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 Mins Before'})
+                    if(ScheduleError){
+                      console.log(ScheduleError)
+                    }
+
+                  }
+            })
+          )
+          
+          //Second Taraweeh Alert at Athan
+          await Promise.all(
+            UsersWithAlertOnSecond.map( async (UserSettings) => {
+  
+              const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', UserSettings.user_id).single()
+              if( UserPushToken && UserPushToken.push_notification_token ){
+
+                  const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
+                    notification_time : SecondTaraweehTime, prayer : 'tarawih two', 
+                    message : `Second Tarawih Starting Now!\n${FormattedSecond}`, 
+                    push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
+                    if(ScheduleError){
+                      console.log(ScheduleError)
+                    }
+
+                  }
+  
+            })
+          )
+          
+          //Second Taraweeh alert 30 mins before
+          await Promise.all(
+            Users30MinsBeforeSecond.map( async ( UserSettings ) => {
+              const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', UserSettings.user_id).single()
+              if( UserPushToken && UserPushToken.push_notification_token ){
+
+                  const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
+                    notification_time : SecondTaraweehTime30MinBefore, prayer : 'tarawih two', 
+                    message : `Second Tarawih Starting in 30 Mins!\n${FormattedSecond30}`, 
+                    push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 Mins Before'})
+                    if(ScheduleError){
+                      console.log(ScheduleError)
+                    }
+                    
+                  }
+            })
+          )
+
       }
-      if( AthanAlertOn ){
-        await Promise.all(
-          AthanAlertOn.map( async ( user ) => {
-            const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).single()
-            if( UserPushToken && UserPushToken.push_notification_token ){
-              if( prayer.prayer_name == 'fajr' ){
-                const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'zuhr')
-                const nextPrayerTime = nextPrayerInfo[0].athan_time
-                const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
-                PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
-                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Dhuhr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
-                if( error ){
-                  console.log(error)
-                }
-              }
-              
-              if( prayer.prayer_name == 'zuhr' ) {
-                const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'asr')
-                const nextPrayerTime = nextPrayerInfo[0].athan_time
-                const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
-                PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
-                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : 'dhuhr', message : `30 mins before Asr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
-                if( error ){
-                  console.log(error)
-                }
-              }
 
-              if( prayer.prayer_name == 'asr' ){
-                const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'maghrib')
-                const nextPrayerTime = nextPrayerInfo[0].athan_time
-                const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
-                PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
-                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Maghrib!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
-                if( error ){
-                  console.log(error)
-                }
-              }
 
-              if( prayer.prayer_name == 'maghrib' ){
-                const nextPrayerInfo = TodaysPrayers.filter(e => e.prayer_name == 'isha')
-                const nextPrayerTime = nextPrayerInfo[0].athan_time
-                const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
-                PrayerTime.setMinutes(PrayerTime.getMinutes() - 30)
-                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Isha!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
-                if( error ){
-                  console.log(error)
-                }
-              }
 
-              if( prayer.prayer_name == 'isha' ){
-                const { data : nextPrayerInfo, error : nextPrayerError } = await supabase.from('prayers').select('prayerData').single()
-                const nextPrayerTime = nextPrayerInfo[1]['fajr']
-                const PrayerTime = setTimeToCurrentDate(nextPrayerTime)
-                PrayerTime.setDate(PrayerTime.getDate() + 1)
-                const { error } = await supabase.from('prayer_notification_schedule').insert({ user_id : user.user_id, notification_time : PrayerTime, prayer : prayer.prayer_name, message : `30 mins before Fajr!`, push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30mins before next prayer'})
-                if( error ){
-                  console.log(error)
-                }
-              }
 
-            }
-          })
-        )
-      }
-      // save these users to the notification_schedule table 
-    })
-    )
+
 }
 
   await scheduler()

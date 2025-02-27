@@ -1,10 +1,10 @@
-import { DataTable, Icon, IconButton } from 'react-native-paper';
+import { DataTable, Divider, Icon, IconButton } from 'react-native-paper';
 import { gettingPrayerData, prayerTimeData } from '@/src/types';
 import ProgramWidgetSlider from "@/src/components/programWidgetSlider";
 import {View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground, Platform } from "react-native";
 import AlertBell from '../app/(user)/prayersTable/alertBell';
 import { usePrayer } from '../providers/prayerTimesProvider';
-
+import {FajrIcon, DhuhrIcon, AsrIcon, MaghribIcon, IshaIcon } from './SalahIcons/FajrIcon';
 type prayerDataProp = {
     prayerData : gettingPrayerData,
     setTableIndex : ( tableIndex : number ) => void
@@ -15,7 +15,6 @@ type prayerDataProp = {
 const Table = ( { prayerData, setTableIndex, tableIndex, index, userSettings } :  prayerDataProp) => {
   const { currentPrayer } = usePrayer()
   const { width, height } = useWindowDimensions();
-  
   const nextPress = () => {
     const nextPressNum = Math.ceil(index + 1)
     setTableIndex(Math.min(6,nextPressNum))
@@ -24,84 +23,145 @@ const Table = ( { prayerData, setTableIndex, tableIndex, index, userSettings } :
     setTableIndex(Math.max(0,index - 1))
   }
 
+    const icons = [
+      <FajrIcon />, <DhuhrIcon />, <AsrIcon />, <MaghribIcon />, <IshaIcon />
+    ]
+    
     return(
-      <View style={ { width : width  } } className='items-center' >
-        <View className='items-center justify-center  w-[95%] ' >
-            <View className='flex-row justify-between items-center  p-2 rounded-3xl bg-white h-[60] w-[80%]' 
-            style={[{ shadowColor : 'black', shadowOffset : { width : 0,  height : 3}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 },
-              Platform.OS == 'android' ? {
-                borderWidth: 1,
-                borderColor : '#D3D3D3',
-              } : {}
-            ]}>
-              <Pressable onPress={backPress}>
-                <Icon source="chevron-left" size={30} color='black' />
-              </Pressable>
-              <View className='flex-col items-center justify-center'>
-                <Text className="text- font-bold">{prayerData.date}</Text>
-                <Text className='text-23 font-bold text-gray-400'>{prayerData.hijri_month} {prayerData.hijri_date}</Text>
-              </View>
-              <Pressable onPress={nextPress}>
-                <Icon source="chevron-right" size={30} color='black'/>
-              </Pressable>
-            </View>
-          <View className='mt-3 w-[100%]'>
-
-          <View style={ 
-            [{ backgroundColor: 'white', borderRadius: 8, shadowColor: "black", shadowOffset: {width : 0, height: 0}, shadowOpacity: 1, shadowRadius: 2, width : '100%', elevation : 5},
-              Platform.OS == 'android' ? {
-                borderWidth: 1,
-                borderColor : '#D3D3D3',
-              } : {}
-
-            ] } className='flex-col px-4 py-2'>
-
-            <View style={{ }} className=' flex-row items-center w-[100%] h-[35]'>
-              <View className='w-[34%]  h-[100%] '><Text style={{fontSize:20, color:"#0D509D", fontWeight: "bold" }} className='text-left'>Salah</Text></View>
-              <View className=' w-[33%] h-[100%] '><Text style={{fontSize: 20,  color:"#0D509D", fontWeight: 700}} className='text-center'>Athan</Text></View>
-              <View className=' w-[33%] h-[100%] '><Text style={{fontSize:20, fontWeight: 700, color:"black" }} className='text-right'>Iqamah</Text></View>
-            </View>
-
-            {
-              index == 0 ?
-              ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map(( salah ) => {
-                const prayerSetting = userSettings?.filter( setting  =>  setting.prayer == salah.toLowerCase() )
-                return (
-                  <View style={{borderBottomWidth: 0, backgroundColor : currentPrayer == salah && index == 0 ? 'rgba(147, 250, 165, 0.5)' : 'white', paddingHorizontal : currentPrayer == salah && index == 0 ? 8 : 0 , borderRadius : currentPrayer == salah && index == 0 ? 20 : 0,}} className=' items-center w-[100%] flex-row h-[35]'>
-                    <View className='w-[34%]  h-[100%] items-start justify-center'>
-                      { index == 0 ? <AlertBell salah={salah} 
-                      athan={prayerData[`athan_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]} 
-                      iqamah={prayerData[`iqa_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]} 
-                      nextPrayerAthan={ salah == 'Fajr' ? prayerData.athan_zuhr : salah == 'Dhuhr' ? prayerData.athan_asr : salah == 'Asr' ? prayerData.athan_maghrib : salah == 'Maghrib' ? prayerData.athan_isha  : prayerData.athan_fajr }
-                      salahSettings={prayerSetting ? prayerSetting[0] : undefined}
-                      />
-                      : < Text className='font-bold text-[#0D509D] text-lg pl-2'>{salah}</Text>
-                      }
-                    </View>
-                    <View className=' w-[33%] h-[100%] justify-center'><Text style={{  color:"#0D509D" , fontWeight: 700 }} className=' text-center' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
-                    <View className=' w-[33%] h-[100%] justify-center'><Text style={{  fontWeight: 700, color: 'black' }} className=' text-right' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
+      <View style={ { width : width  } } className='items-center py-2' >
+        <View className='items-center justify-center  w-[95%]' >
+                <View className='flex-row justify-between items-center p-1 rounded-3xl bg-white h-[60] w-[80%]' 
+                style={[{ shadowColor : '#D3D3D3', shadowOffset : { width : 0,  height : 5}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 },
+                  Platform.OS == 'android' ? {
+                    borderWidth: 1,
+                    borderColor : '#D3D3D3',
+                  } : {}
+                ]}>
+                  <Pressable onPress={backPress}>
+                    <Icon source="chevron-left" size={30} color='black' />
+                  </Pressable>
+                  <View className='flex-col items-center justify-center'>
+                    <Text className="text- font-bold">{prayerData.date}</Text>
+                    <Text className='text-23 font-bold text-gray-400'>{prayerData.hijri_month} {prayerData.hijri_date}</Text>
+                  </View>
+                  <Pressable onPress={nextPress}>
+                    <Icon source="chevron-right" size={30} color='black'/>
+                  </Pressable>
                 </View>
-                )
-              })
-              :
-              ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map(( salah ) => {
-                return (
-                  <View style={{borderBottomWidth: 0, backgroundColor : currentPrayer == salah && index == 0 ? 'rgba(147, 250, 165, 0.5)' : 'white', paddingHorizontal : currentPrayer == salah && index == 0 ? 8 : 0 , borderRadius : currentPrayer == salah && index == 0 ? 20 : 0,}} className=' items-center w-[100%] flex-row h-[35]'>
-                    <View className='w-[34%]  h-[100%] items-start justify-center'>
-                       < Text className='font-bold text-[#0D509D] text-lg pl-2'>{salah}</Text>
-                    </View>
-                    <View className=' w-[33%] h-[100%] justify-center'><Text style={{  color:"#0D509D" , fontWeight: 700 }} className=' text-center' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
-                    <View className=' w-[33%] h-[100%] justify-center'><Text style={{  fontWeight: 700, color: 'black' }} className=' text-right' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
+
+                <View className='mt-3 w-[100%]'>
+                  <View style={ 
+                  [{ width : '100%', elevation : 5},
+                    Platform.OS == 'android' ? {
+                      borderWidth: 1,
+                      borderColor : '#D3D3D3',
+                    } : {}
+
+                  ] } className='flex-col'>
+
+                  <View style={{ 
+                          shadowColor : '#D3D3D3', shadowOffset : { width : 0,  height : 5}, shadowOpacity : 1, shadowRadius : 4,
+                  }} className=' flex-row items-center w-[100%] h-[40] px-3 py-2 bg-white rounded-t-[30px] my-0.5'>
+                    <View className='w-[34%]  h-[100%] '><Text style={{fontSize:20, color:"#949494", paddingLeft : 16 }} className='text-left'>Salah</Text></View>
+                    <View className=' w-[33%] h-[100%] '><Text style={{fontSize: 20,  color:"#949494"}} className='text-center'>Athan</Text></View>
+                    <View className=' w-[33%] h-[100%] '><Text style={{fontSize:20, color:"#949494" }} className='text-right'>Iqamah</Text></View>
+                  </View>
+                  {
+                    index == 0 ?
+                    ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map(( salah, prayerIndex ) => {
+                      const prayerSetting = userSettings?.filter( setting  =>  setting.prayer == salah.toLowerCase() )
+                      return (
+                        <>
+                          <View style={{borderBottomWidth: 0, 
+                          backgroundColor : 'white', 
+                        
+                            shadowColor: "rgba(0,0,0,0.1)", shadowOffset: {width : 0.5, height: 5}, shadowOpacity: 1, shadowRadius: 2, elevation : 5
+                            }} className=' items-center w-[100%] flex-row h-[50] my-0.5'>
+                            <View className='w-[34%]  h-[100%] items-start justify-center '
+                            style={{
+                              backgroundColor : currentPrayer == salah && index == 0 ? 'rgba(147, 250, 165, 0.5)' : 'white',
+                              paddingHorizontal : currentPrayer == salah && index == 0 ? 20 : 10
+                            }}
+                            >
+                              { index == 0 ? 
+                                <View className='flex flex-row'
+                                >
+                                  {icons[prayerIndex]}
+                                  < Text className='font-bold text-[#0D509D] text-lg pl-2'>{salah}</Text>
+                                </View>
+                              : < Text className='font-bold text-[#0D509D] text-lg pl-2'>{salah}</Text>
+                              }
+                            </View>
+                            <View className=' w-[33%] h-[100%] justify-center'
+                            style={{
+                              backgroundColor : currentPrayer == salah && index == 0 ? 'rgba(147, 250, 165, 0.5)' : 'white'
+                            }}
+                            ><Text style={{  color:"#0D509D" }} className=' text-center' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
+                            <View className=' w-[33%] h-[100%] justify-center'
+                            style={{
+                              backgroundColor : currentPrayer == salah && index == 0 ? 'rgba(147, 250, 165, 0.5)' : 'white',
+                              paddingHorizontal : currentPrayer == salah && index == 0 ? 20 : 10
+                              
+                            }}
+                            ><Text style={{   color: 'black' }} className=' text-right' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
+                        </View>
+                        </>
+                      )
+                    })
+                    :
+                    ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map(( salah, prayerIndex ) => {
+                      return (
+                        <>
+                          <View style={{borderBottomWidth: 0, 
+                          backgroundColor : 'white', 
+                        
+                            shadowColor: "rgba(0,0,0,0.1)", shadowOffset: {width : 0.5, height: 5}, shadowOpacity: 1, shadowRadius: 2, elevation : 5
+                            }} className=' items-center w-[100%] flex-row h-[50] my-0.5 px-3'>
+                            <View className='w-[34%]  h-[100%] items-start justify-center'
+                            style={{
+                            }}
+                            >
+                              <View className='flex flex-row'>
+                                {icons[prayerIndex]}
+                                < Text className='font-bold text-[#0D509D] text-lg pl-2'>{salah}</Text>
+                              </View>
+                            </View>
+                            <View className=' w-[33%] h-[100%] justify-center'
+                            style={{
+                              backgroundColor : currentPrayer == salah && index == 0 ? 'rgba(147, 250, 165, 0.5)' : 'white'
+                            }}
+                            ><Text style={{  color:"#0D509D" }} className=' text-center' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
+                            <View className=' w-[33%] h-[100%] justify-center'
+                            style={{
+                            }}
+                            ><Text style={{   color: 'black' }} className=' text-right' adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text></View>
+                        </View>
+                        </>
+                      )
+                    })
+                  }
+
+                  <View className='flex flex-row items-center justify-center space-x-2 py-2 rounded-b-[30px] my-0.5'
+                  style={{
+                    shadowColor: "#808080", shadowOffset: {width : 0, height: 5}, shadowOpacity: 1, shadowRadius: 2, elevation : 5,
+                    backgroundColor : 'white'
+                  }}
+                  
+                  >
+                    <Icon
+                    source="bell-outline" 
+                    color="#59BB48"
+                    size={19}
+                    />
+                    <Text className='text-[#949494] underline text-sm' >Customize Salah Notifictions</Text>
+                  </View>
+                  
+              
                 </View>
-                )
-              })
-            }
-            
-        
-          </View>
+
+            </View>
+        </View>
       </View>
-      </View>
-    </View>
     )
 }
 
@@ -159,3 +219,10 @@ export default Table
             </View>
   */
 } 
+
+{/* <AlertBell salah={salah} 
+athan={prayerData[`athan_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]} 
+iqamah={prayerData[`iqa_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]} 
+nextPrayerAthan={ salah == 'Fajr' ? prayerData.athan_zuhr : salah == 'Dhuhr' ? prayerData.athan_asr : salah == 'Asr' ? prayerData.athan_maghrib : salah == 'Maghrib' ? prayerData.athan_isha  : prayerData.athan_fajr }
+salahSettings={prayerSetting ? prayerSetting[0] : undefined}
+/> */}

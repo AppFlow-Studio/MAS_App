@@ -10,6 +10,8 @@ import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 import { BlurView } from 'expo-blur';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
+import { ScrollView } from 'react-native';
+import { format } from 'date-fns';
 
 
 export default function Index() {
@@ -61,37 +63,104 @@ export default function Index() {
 
     return () => { supabase.removeChannel(listenForSettings) }
   }, [])
+
+  const FirstTaraweehTime = setTimeToCurrentDate(convertTo24Hour(prayerTimesWeek[0].iqa_isha))
+  const FirstTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1)
+  const SecondTaraweehTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1, FirstTaraweehTime.getMinutes() + 20)
+  const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2,  FirstTaraweehTime.getMinutes() + 20)
+
   return (
-    <View className='h-[100%]  bg-white'>
-      <StatusBar barStyle={"dark-content"} />
-      <View className='items-center justify-center '>
-      <ImageBackground
-        source={require('@/assets/images/PrayerTimesHeader.jpg')}
-        style={{ height : isRendered ? height / 1.85 : height / 1.7 , justifyContent : 'flex-end' }}
-        imageStyle={{ height : isRendered ? height / 4.5 : height / 3.5 , opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10}}
-        className=''
-      >
-        <View className=' h-[300] items-center justify-center '>
-          <FlatList 
-            data={prayerTimesWeek}
-            renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings}/>}
-            horizontal
-            bounces={false}
-            showsHorizontalScrollIndicator={false}
-            pagingEnabled
-            scrollEventThrottle={32}
-            viewabilityConfig={viewConfig}
-            contentContainerStyle={{justifyContent: "center", alignItems: "center"}}
-            ref={flatlistRef}
-          />
+    <ScrollView className='h-[100%]  bg-white flex flex-col space-y-0'>
+    <StatusBar barStyle={"dark-content"} />
+    <ImageBackground
+      source={require('@/assets/images/PrayerTimesHeader.jpg')}
+      style={{ justifyContent : 'flex-start', height: '100%' }}
+      imageStyle={{ height : isRendered ? height / 4.5 : height / 3.5 , opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10 , width : '100%'}}
+      className='flex flex-col'
+    >
+      {/* Weekly Prayer Times */}
+        <FlatList 
+          data={prayerTimesWeek}
+          renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings}/>}
+          horizontal
+          bounces={false}
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          scrollEventThrottle={32}
+          viewabilityConfig={viewConfig}
+          contentContainerStyle={{justifyContent: "center", alignItems: "center"}}
+          ref={flatlistRef}
+          className='h-[100%] mt-[50%] p-0'
+        />
+        {/* Taraweeh Times */}
+        <View className='flex flex-row space-x-2 items-center justify-center w-full'>
+          <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
+          style={{height: 130, width: 190, padding: 15}} imageStyle={{borderRadius: 15}}
+          className='flex flex-col '
+          >
+            <Text className='text-black text-[10px] text-start'>Starting</Text>
+            <Text className='text-[#06F] text-md text-start'>Tarawih One</Text>
+            <Text className='text-black font-bold text-lg mt-4'>{format(FirstTaraweehTime, 'p')}</Text>
+            <Text className='text-xs'>End Time: <Text className='font-bold text-md'>{format(FirstTaraweehEndTime, 'p')}</Text></Text>
+          </ImageBackground>
+          <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
+          style={{height: 130, width: 190, padding: 15 }} imageStyle={{borderRadius: 15}}
+          >
+            <Text className='text-black text-[10px] text-start'>Following</Text>
+            <Text className='text-[#06F] text-md text-start'>Tarawih Two</Text>
+            <Text className='text-black font-bold text-lg mt-4'>{format(SecondTaraweehTime, 'p')}</Text>
+            <Text className='text-xs'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
+          </ImageBackground>
+        </View> 
+
+        {/* Ramadan Quran Tracker */}
+
+        <View className='w-full flex flex-row'>
+          <View>
+
+          </View>
+          <View>
+
+          </View>
         </View>
-        </ImageBackground>
-        <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
-      </View>
-    </View>
+
+    </ImageBackground>
+      {/* <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/> */}
+  </ScrollView>
   )
 }
 
+
+
+{/* <View className='h-[100%]  bg-white'>
+<StatusBar barStyle={"dark-content"} />
+<View className='items-center justify-center '>
+<ImageBackground
+  source={require('@/assets/images/PrayerTimesHeader.jpg')}
+  style={{ height : isRendered ? height / 1.85 : height / 1.3 , justifyContent : 'flex-end' }}
+  imageStyle={{ height : isRendered ? height / 4.5 : height / 3.5 , opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10}}
+  className='border-2 border-orange-500'
+>
+  <View className='items-center justify-center border border-black h-[100%]'>
+    <FlatList 
+      data={prayerTimesWeek}
+      renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings}/>}
+      horizontal
+      bounces={false}
+      showsHorizontalScrollIndicator={false}
+      pagingEnabled
+      scrollEventThrottle={32}
+      viewabilityConfig={viewConfig}
+      contentContainerStyle={{justifyContent: "center", alignItems: "center"}}
+      ref={flatlistRef}
+    />
+  </View>
+  </ImageBackground>
+
+
+
+</View>
+</View> */}
 
 {
   /*
@@ -119,4 +188,61 @@ export default function Index() {
                 </View>
             </View>
   */
+}
+      {/* <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
+        <View className='flex flex-row space-x-2 items-center justify-center w-full '>
+          <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
+          style={{height: 130, width: 190, padding: 15}} imageStyle={{borderRadius: 15}}
+          className='flex flex-col '
+          >
+            <Text className='text-black text-xs text-start'>Starting</Text>
+            <Text className='text-[#06F] text-md text-start'>Tarawih One</Text>
+            <Text className='text-black font-bold text-lg mt-4'>{format(FirstTaraweehTime, 'p')}</Text>
+            <Text className='text-xs'>End Time: <Text className='font-bold text-md'>{format(FirstTaraweehEndTime, 'p')}</Text></Text>
+          </ImageBackground>
+          <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
+          style={{height: 130, width: 190, padding: 15 }} imageStyle={{borderRadius: 15}}
+          >
+            <Text className='text-black text-xs text-start'>Following</Text>
+            <Text className='text-[#06F] text-md text-start'>Tarawih Two</Text>
+            <Text className='text-black font-bold text-lg mt-4'>{format(SecondTaraweehTime, 'p')}</Text>
+            <Text className='text-xs'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
+          </ImageBackground>
+        </View> */}
+
+function setTimeToCurrentDate(timeString : string) {
+
+  const currentDate = new Date(); // Get current date
+
+   // Split the time string into hours, minutes, and seconds
+   const [hours, minutes, seconds] = timeString.split(':').map(Number);
+   // Create a new Date object with the current date
+   const timestampWithTimeZone = new Date();
+ 
+   // Set the time with setHours (adjust based on local timezone or UTC as needed)
+   timestampWithTimeZone.setHours(hours, minutes, seconds, 0); // No milliseconds
+ 
+   // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
+   const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
+ 
+   return timestampISO
+ }
+
+ function convertTo24Hour(timeStr : string) {
+  // Extract the period ("AM"/"PM") and the time part ("7:15")
+  const period = timeStr.slice(-2).toUpperCase();
+  const [hourStr, minuteStr] = timeStr.slice(0, -2).split(":");
+  let hour = parseInt(hourStr, 10);
+  
+  // Adjust hour based on period
+  if (period === 'PM' && hour !== 12) {
+    hour += 12;
+  } else if (period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  // Format hour and minute to two digits and add seconds ":00"
+  const hh = hour.toString().padStart(2, '0');
+  const mm = minuteStr.padStart(2, '0');
+  return `${hh}:${mm}:00`;
 }

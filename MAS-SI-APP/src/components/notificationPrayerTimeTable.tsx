@@ -185,7 +185,7 @@ const NotificationPrayerTable = ({
                     >
                       <Image
                         source={
-                          require('@/assets/images/TaraweehCard.png')
+                          require('@/assets/images/TarawihNotiCard.jpeg')
                         }
                         style={{
                           width: 116,
@@ -269,7 +269,7 @@ const NotificationPrayerTable = ({
                     >
                       <Image
                         source={
-                          require('@/assets/images/TaraweehCard.png')
+                          require('@/assets/images/TarawihNotiCard.jpeg')
                         }
                         style={{
                           width: 116,

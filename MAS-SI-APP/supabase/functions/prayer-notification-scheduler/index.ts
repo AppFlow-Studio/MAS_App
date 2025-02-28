@@ -7,7 +7,9 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import {Expo} from 'https://esm.sh/expo-server-sdk';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import {format, isBefore, isAfter} from 'https://esm.sh/date-fns@4.1.0/format.mjs'
+import {format} from 'https://esm.sh/date-fns@4.1.0/format.mjs'
+import { isBefore, isAfter } from 'https://esm.sh/date-fns@4.1.0'
+
 console.log("Hello from Functions!")
 
 const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
@@ -250,7 +252,6 @@ serve(async (req) => {
           let SecondTaraweehTime30MinBefore = new Date(SecondTaraweehTime)
 
           SecondTaraweehTime30MinBefore.setMinutes(SecondTaraweehTime30MinBefore.getMinutes() - 30)
-          console.log(SecondTaraweehTime30MinBefore)
           let FormattedFirst = new Date(FirstTaraweehTime)
           FormattedFirst = format(FormattedFirst.setHours(FormattedFirst.getHours() - 5), 'p')
           let FormattedSecond = new Date(SecondTaraweehTime)

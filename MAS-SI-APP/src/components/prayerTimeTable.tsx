@@ -5,6 +5,7 @@ import {View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground,
 import AlertBell from '../app/(user)/prayersTable/alertBell';
 import { usePrayer } from '../providers/prayerTimesProvider';
 import {FajrIcon, DhuhrIcon, AsrIcon, MaghribIcon, IshaIcon } from './SalahIcons/FajrIcon';
+import { Link } from 'expo-router';
 type prayerDataProp = {
     prayerData : gettingPrayerData,
     setTableIndex : ( tableIndex : number ) => void
@@ -141,20 +142,22 @@ const Table = ( { prayerData, setTableIndex, tableIndex, index, userSettings } :
                     })
                   }
 
-                  <View className='flex flex-row items-center justify-center space-x-2 py-2 rounded-b-[30px] my-0.5'
-                  style={{
-                    shadowColor: "#808080", shadowOffset: {width : 0, height: 5}, shadowOpacity: 1, shadowRadius: 2, elevation : 5,
-                    backgroundColor : 'white'
-                  }}
-                  
-                  >
-                    <Icon
-                    source="bell-outline" 
-                    color="#59BB48"
-                    size={19}
-                    />
-                    <Text className='text-[#949494] underline text-sm' >Customize Salah Notifictions</Text>
-                  </View>
+                  <Link href={'/myPrograms/notifications'} asChild>
+                    <Pressable className='flex flex-row items-center justify-center space-x-2 py-2 rounded-b-[30px] my-0.5'
+                    style={{
+                      shadowColor: "#808080", shadowOffset: {width : 0, height: 5}, shadowOpacity: 1, shadowRadius: 2, elevation : 5,
+                      backgroundColor : 'white'
+                    }}
+                    
+                    >
+                      <Icon
+                      source="bell-outline" 
+                      color="#59BB48"
+                      size={19}
+                      />
+                      <Text className='text-[#949494] underline text-sm' >Customize Salah Notifictions</Text>
+                    </Pressable>
+                  </Link>
                   
               
                 </View>

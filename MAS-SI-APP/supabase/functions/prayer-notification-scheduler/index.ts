@@ -235,7 +235,7 @@ serve(async (req) => {
       )
 
 
-      if( isBefore(todaysDate, new Date(2025, 3, 30)) && isAfter(todaysDate, new Date(2025, 2, 28)) ){
+      if( isBefore(todaysDate, new Date(2025, 2, 30)) && isAfter(todaysDate, new Date(2025, 1, 28)) ){
           const {data : UsersWithAlertOnFirst, error : UsersAthanFirstError } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', 'tarawih one').contains('notification_settings', ['Alert at Athan time'])
           const {data : Users30MinsBeforeFirst, error : Users30MinsFirstError} = await supabase.from('prayer_notification_settings').select('*').eq('prayer', 'tarawih one').contains('notification_settings', ['Alert 30 Mins Before'])
           const {data : UsersWithAlertOnSecond, error : UsersAthanSecondError } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', 'tarawih two').contains('notification_settings', ['Alert at Athan time'])
@@ -327,7 +327,7 @@ serve(async (req) => {
                     if(ScheduleError){
                       console.log(ScheduleError)
                     }
-                    
+
                   }
             })
           )

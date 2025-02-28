@@ -125,10 +125,10 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
             onSetTimeToNextPrayer('Now')
         }
         if( TimeToAthanHours == 0 ){
-            onSetTimeToNextPrayer(`${TimeToAthanMinutes} Mins`)
+            onSetTimeToNextPrayer(`${TimeToAthanMinutes} min`)
         }
         if( TimeToAthanHours > 0 ){
-            onSetTimeToNextPrayer(`${TimeToAthanHours} hr ${TimeToAthanMinutes} mins`)
+            onSetTimeToNextPrayer(`${TimeToAthanHours}hr ${TimeToAthanMinutes} min`)
         }
         
         if( hours == 0 && minutes == 0){

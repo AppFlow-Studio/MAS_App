@@ -27,7 +27,6 @@ const Table = ( { prayerData, setTableIndex, tableIndex, index, userSettings } :
     const icons = [
       <FajrIcon />, <DhuhrIcon />, <AsrIcon />, <MaghribIcon />, <IshaIcon />
     ]
-    
     return(
       <View style={ { width : width  } } className='items-center py-2' >
         <View className='items-center justify-center  w-[95%]' >

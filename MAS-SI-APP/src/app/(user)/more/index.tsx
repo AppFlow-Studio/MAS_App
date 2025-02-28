@@ -254,13 +254,13 @@ const Index = () => {
               </View>                  
               </View>
 
-             <View className='absolute w-[112%] h-[120%] rounded-[10px] top-0 overflow-hidden'>
+             {/* <View className='absolute w-[112%] h-[120%] rounded-[10px] top-0 overflow-hidden'>
                 <BlurView className='w-[100%] h-[100%] items-center justify-center left-0' intensity={10}
                 experimentalBlurMethod={'dimezisBlurView'}
                 >
                   <Text className='text-black font-bold'>Coming soon...</Text>
                 </BlurView>
-             </View>
+             </View> */}
             </Pressable>
           {/*</Link>*/}
 

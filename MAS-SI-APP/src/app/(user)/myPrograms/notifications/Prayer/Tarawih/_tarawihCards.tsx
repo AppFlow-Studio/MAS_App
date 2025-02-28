@@ -48,7 +48,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
             if( index == 2 ){ 
               const TodayDate = new Date()
               const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : ['Alert at Athan time']}).eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id )
-                if( isBefore(TodayDate, new Date(2025, 3, 30)) && isAfter(TodayDate, new Date(2025, 2, 28)) ){
+                if( isBefore(TodayDate, new Date(2025, 2, 30)) && isAfter(TodayDate, new Date(2025, 1, 28)) ){
                     if( isBefore(TodayDate, tarawihTime) ){
                         const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
                         const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id).eq('notification_type', 'Alert at Athan time').single()
@@ -91,7 +91,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
             const TodayDate = new Date()
 
             if (index == 0){
-                if( isBefore(TodayDate, new Date(2025, 3, 30)) && isAfter(TodayDate, new Date(2025, 2, 28)) ){
+                if( isBefore(TodayDate, new Date(2025, 2, 30)) && isAfter(TodayDate, new Date(2025, 1, 28)) ){
                     if( isBefore(TodayDate, tarawihTime) ){
                         const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
                         const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id).eq('notification_type', 'Alert at Athan time').single()
@@ -112,7 +112,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
             }
             
             if( index == 1 ){
-                if( isBefore(TodayDate, new Date(2025, 3, 30)) && isAfter(TodayDate, new Date(2025, 2, 28)) ){
+                if( isBefore(TodayDate, new Date(2025, 2, 30)) && isAfter(TodayDate, new Date(2025, 1, 28)) ){
                     tarawihTime.setMinutes(tarawihTime.getMinutes() - 30)
                     if( isBefore(TodayDate, tarawihTime) ){
                         const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()

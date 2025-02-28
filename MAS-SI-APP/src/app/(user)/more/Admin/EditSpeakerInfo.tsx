@@ -57,7 +57,7 @@ const EditSpeakerInfo = () => {
         const base64 = await FileSystem.readAsStringAsync(uploadedImg.uri, { encoding: 'base64' });
         if( speakerName == speaker_name ){
             const filePath = `${speakerName.trim().split(" ").join("_")}.${uploadedImg.type === 'image' ? 'png' : 'mp4'}`;
-            const { data : image, error :image_upload_error } = await supabase.storage.from('sheikh_img').update(filePath, decode(base64));
+            const { data : image, error : image_upload_error } = await supabase.storage.from('sheikh_img').update(filePath, decode(base64));
             const { error } = await supabase.from('speaker_data').update({ speaker_name : speakerName, speaker_creds : speakerCreds }).eq('speaker_id', speaker_id)
             handleSubmit()
             router.back()

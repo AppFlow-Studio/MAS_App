@@ -160,7 +160,7 @@ export default function Index() {
             >
               <View className='flex flex-col w-[50%] items-center justify-center'>
                 {
-                   currentPrayer == 'Isha' || currentPrayer == ''  ? 
+                   currentPrayer == 'Isha' || currentPrayer == '' || currentPrayer == 'Fajr'  ? 
                   <>
                     <Text className='text-black'>Time Until Suhoor Ends</Text>
                     <Text className='font-bold text-[24px]'>{timeToNextPrayer}</Text>

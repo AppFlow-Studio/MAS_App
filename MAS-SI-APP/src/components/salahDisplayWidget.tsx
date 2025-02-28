@@ -106,25 +106,26 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
 
         const AthanTime = moment(currentTime, "HH:mm A")
 
-        let NextAthanTime = ( currentSalah.salah != 'Fajr' ) ? moment(prayer.athan_maghrib, "HH:mm A") :  moment(prayer.athan_fajr, "HH:mm A")
+        let NextAthanTime =  ( currentSalah.salah != 'Fajr' && currentSalah.salah != 'Isha' ) ? moment(prayer.athan_maghrib, "HH:mm A") : currentSalah.salah == 'Isha' ? moment(nextPrayer.athan_fajr, "HH:mm A") : moment(prayer.athan_fajr, "HH:mm A")
 
         if (salahIndex == 6){
             time2.add(1, "day")
             NextAthanTime.add(1, "day")
         }else{
             time2 = moment(currentSalah.iqamah, "HH:mm A")
-            NextAthanTime = ( currentSalah.salah != 'Fajr' )  ? moment(prayer.athan_maghrib, "HH:mm A") :  moment(prayer.athan_fajr, "HH:mm A")
+            NextAthanTime =  ( currentSalah.salah != 'Fajr' && currentSalah.salah != "Isha" ) ? moment(prayer.athan_maghrib, "HH:mm A") : currentSalah.salah == 'Isha' ? NextAthanTime.add(1, "day") : moment(prayer.athan_fajr, "HH:mm A")
         }
 
         const duration = moment.duration(time2.diff(time1))
         const AthanDuration = moment.duration(NextAthanTime.diff(AthanTime))
-
+        
         const hours = Math.floor(duration.asHours());
         const minutes = duration.minutes();
 
         const TimeToAthanHours = Math.floor(AthanDuration.asHours())
         const TimeToAthanMinutes = AthanDuration.minutes()
         
+
         if( TimeToAthanHours <= 0 && TimeToAthanMinutes <= 0 ){
             onSetTimeToNextPrayer('Now')
         }

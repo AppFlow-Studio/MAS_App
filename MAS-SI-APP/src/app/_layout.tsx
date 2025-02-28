@@ -27,17 +27,19 @@ export default function RootLayout() {
     SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
     'Oleo' : require('../../assets/fonts/OleoScript-Regular.ttf'),
   });
-
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    async function hideSplash() {
+      await SplashScreen.preventAutoHideAsync(); // Ensure splash stays visible at first
+      if (loaded) {
+        setTimeout(async () => {
+          await SplashScreen.hideAsync(); // Hide it with a slight delay
+        }, 50); // A short delay to prevent animation glitches
+      }
     }
+    hideSplash();
   }, [loaded]);
-
-  SplashScreen.preventAutoHideAsync().catch(() => {
-    /* reloading the app might trigger some race conditions, ignore them */
-  });
-
+  
+  
   if (!loaded) {
     return null;
   }
@@ -47,21 +49,21 @@ export default function RootLayout() {
       <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
         <AuthProvider>
           <PrayerTimesProvider>
-            <NotificationProvider>
+            {/* <NotificationProvider> */}
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <BottomSheetModalProvider>
                   <MenuProvider>
                     <PaperProvider>
-                      <Stack>
-                        <Stack.Screen name="(user)" options={{ headerShown : false }} />
-                        <Stack.Screen name="(auth)" options={{ headerShown : false }}/>
-                        <Stack.Screen name="+not-found" />
-                      </Stack>
+                    <Stack key={Date.now()}>
+                    <Stack.Screen name="(user)" options={{ headerShown: false, animation: 'none' }} />
+                    <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'none' }} />
+                    <Stack.Screen name="+not-found" options={{ animation: 'none' }} />
+                    </Stack>
                     </PaperProvider>
                   </MenuProvider>
                 </BottomSheetModalProvider>
               </ThemeProvider>
-            </NotificationProvider> 
+            {/* </NotificationProvider> */}
           </PrayerTimesProvider>
         </AuthProvider>
       </StripeProvider>

@@ -9,7 +9,7 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/MASsplash.png",
+      "image": "./assets/images/MASsplasgit h.png",
       "resizeMode": "contain",
       "backgroundColor": "white"
     },
@@ -37,8 +37,9 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
-    },
+  "typedRoutes": true
+},
+
     "extra": {
       "router": {
         "origin": false

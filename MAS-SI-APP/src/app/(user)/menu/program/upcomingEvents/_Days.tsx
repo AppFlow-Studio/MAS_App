@@ -43,6 +43,8 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         </Link>
                     )}
                     horizontal
+                    showsHorizontalScrollIndicator={false}
+
                 />
             </> : <></>
             }
@@ -60,6 +62,8 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         </Link>
                     )}
                     horizontal
+                    showsHorizontalScrollIndicator={false}
+
                 /> 
             </> : <></>
             }
@@ -77,6 +81,8 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         </Link>
                     )}
                     horizontal
+                    showsHorizontalScrollIndicator={false}
+
                 /> 
             </> : <></>
             }
@@ -94,6 +100,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         </Link>
                     )}
                     horizontal
+                    showsHorizontalScrollIndicator={false}
                 />
             </> : <></>
             }

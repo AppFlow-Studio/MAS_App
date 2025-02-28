@@ -16,7 +16,7 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
   const [ newCred, setNewCred ] = useState<string>('')
   const [ pressAddCred, setPressAddCred ] = useState(false) 
   const layoutHeight = useWindowDimensions().height
-  
+  const [ submitDisabled, setSubmitDisabled ] = useState(true)
   const pickImage = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -49,27 +49,29 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
         visibilityTime: 2000,
       });
   }
-  const UploadNewSpeaker = async () => {
-    if ( speakerName && speakerImg ) {
-        const base64 = await FileSystem.readAsStringAsync(speakerImg.uri, { encoding: 'base64' });
-        const filePath = `${speakerName.trim()}.${speakerImg.type === 'image' ? 'png' : 'mp4'}`;
-        const contentType = speakerImg.type === 'image' ? 'image/png' : 'video/mp4';
-        const { data : image, error :image_upload_error } = await supabase.storage.from('sheikh_img').upload(filePath, decode(base64));
-        if( image ){
-          const { data : speaker_img_url} = await supabase.storage.from('fliers').getPublicUrl(image?.path)
-          const { error } = await supabase.from('speaker_data').insert({ speaker_name : speakerName, speaker_img : speaker_img_url.publicUrl, speaker_creds : creds })
-          if( error ){
-            console.log(error)
+   const UploadNewSpeaker = async () => {
+        if ( speakerName && speakerImg ) {
+            setSubmitDisabled(false)
+            const base64 = await FileSystem.readAsStringAsync(speakerImg.uri, { encoding: 'base64' });
+            const filePath = `${speakerName.trim().split(" ").join("_")}.${speakerImg.type === 'image' ? 'png' : 'mp4'}`;
+            const contentType = speakerImg.type === 'image' ? 'image/png' : 'video/mp4';
+            const { data : image, error :image_upload_error } = await supabase.storage.from('sheikh_img').upload(filePath, decode(base64));
+            if( image ){
+              const { data : speaker_img_url} = await supabase.storage.from('sheikh_img').getPublicUrl(image?.path)
+              const { error } = await supabase.from('speaker_data').insert({ speaker_name : speakerName, speaker_img : speaker_img_url.publicUrl, speaker_creds : creds })
+              if( error ){
+                console.log(error)
+              }
+              handleSubmit()
+              setSubmitDisabled(true)
+            }else{
+              Alert.alert(image_upload_error.message)
+              return
+            }
+          }else{
+            Alert.alert('Please Fill All Info Before Proceeding')
           }
-          handleSubmit()
-        }else{
-          Alert.alert(image_upload_error.message)
-          return
-        }
-      }else{
-        Alert.alert('Please Fill All Info Before Proceeding')
-      }
-    }  
+        }  
   return (
     <Dialog visible={isOpen} onDismiss={hideDialog} style={{ backgroundColor : "white", height : '80%', marginTop : 60}}>
         <Dialog.Content className='h-[100%]'>
@@ -153,7 +155,9 @@ const AddSpeakerModal = ( { isOpen, setIsOpen } : { isOpen : boolean , setIsOpen
 
                { 
                !pressAddCred &&
-                <Pressable className='bg-[#57BA49] w-[60%] h-[35px] p-1 items-center justify-center rounded-[15px] self-end my-10' onPress={async () => await UploadNewSpeaker() }>
+                <Pressable className='bg-[#57BA49] w-[60%] h-[35px] p-1 items-center justify-center rounded-[15px] self-end my-10' onPress={async () => await UploadNewSpeaker() }
+                disabled={!submitDisabled}
+                >
                     <Text className='font-bold text-white '>Confirm New Speaker</Text>
                 </Pressable>
                 }

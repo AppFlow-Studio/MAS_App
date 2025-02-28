@@ -22,7 +22,7 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
     if ( !prayer ){
         return
     }
-    const { onSetCurrentPrayer } = usePrayer()
+    const { currentPrayer, onSetCurrentPrayer } = usePrayer()
     const { onSetTimeToNextPrayer } = usePrayer()
     const salahArray = ["fajr", "dhuhr", "asr", "maghrib", "isha", "nextDayFajr"];
     const [liveTime, setLiveTime] = useState(new Date());
@@ -100,16 +100,20 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
     const getTimeToNextPrayer = () => {
         const time1 = moment(currentTime, "HH:mm A")
         let time2 = moment(currentSalah.iqamah, "HH:mm A")
+        
+        // Time After Fajr & Before Maghrib -> Countdown To Iftar
+        // Time After Maghrib & Before Fajr -> Countdown To Suhoor
 
         const AthanTime = moment(currentTime, "HH:mm A")
-        let NextAthanTime = moment(currentSalah.athan, "HH:mm A")
+
+        let NextAthanTime = ( currentSalah.salah != 'Fajr' ) ? moment(prayer.athan_maghrib, "HH:mm A") :  moment(prayer.athan_fajr, "HH:mm A")
 
         if (salahIndex == 6){
             time2.add(1, "day")
             NextAthanTime.add(1, "day")
         }else{
             time2 = moment(currentSalah.iqamah, "HH:mm A")
-            NextAthanTime = moment(currentSalah.athan, "HH:mm A")
+            NextAthanTime = ( currentSalah.salah != 'Fajr' )  ? moment(prayer.athan_maghrib, "HH:mm A") :  moment(prayer.athan_fajr, "HH:mm A")
         }
 
         const duration = moment.duration(time2.diff(time1))
@@ -121,10 +125,10 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
         const TimeToAthanHours = Math.floor(AthanDuration.asHours())
         const TimeToAthanMinutes = AthanDuration.minutes()
         
-        if( TimeToAthanHours == 0 && TimeToAthanMinutes == 0 ){
+        if( TimeToAthanHours <= 0 && TimeToAthanMinutes <= 0 ){
             onSetTimeToNextPrayer('Now')
         }
-        if( TimeToAthanHours == 0 ){
+        if( TimeToAthanHours == 0  ){
             onSetTimeToNextPrayer(`${TimeToAthanMinutes} min`)
         }
         if( TimeToAthanHours > 0 ){
@@ -167,7 +171,6 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
         else if ( time1.isAfter(time2) ){
             setCurrentSalahIndex(salahIndex => salahIndex + 1)
             onSetCurrentSalah()
-            console.log(salahIndex)
         }
     }
     compareTime()

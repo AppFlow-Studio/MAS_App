@@ -19,7 +19,7 @@ import moment from 'moment';
 
 export default function Index() {
   const { prayerTimesWeek } = usePrayer();
-  const { currentPrayer } = usePrayer();
+  const { currentPrayer, upcomingPrayer } = usePrayer();
   if( prayerTimesWeek.length == 0 ){
     return
   }
@@ -67,7 +67,6 @@ export default function Index() {
       setCurrentSurah(data)
     }
   }
-
   useEffect(() => {
     getUserSetting()
     GetRamadanTracker()
@@ -126,9 +125,8 @@ export default function Index() {
             ref={flatlistRef}
             className='h-[100%] mt-[50%] p-0'
           />
-          {/* Business Ads */}
-          <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/> 
-
+          {/* Business Ads */}          
+          <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>           
           {
             ( isBefore(todaysDate, new Date(2025, 2, 30)) && isAfter(todaysDate, new Date(2025, 1, 28)) ) ? 
             <>
@@ -162,9 +160,9 @@ export default function Index() {
             >
               <View className='flex flex-col w-[50%] items-center justify-center'>
                 {
-                   currentPrayer == 'Isha' || currentPrayer == 'Fajr' ? 
+                   currentPrayer == 'Isha' || currentPrayer == ''  ? 
                   <>
-                    <Text className='text-black'>Time Until Suhoor</Text>
+                    <Text className='text-black'>Time Until Suhoor Ends</Text>
                     <Text className='font-bold text-[24px]'>{timeToNextPrayer}</Text>
                   </>
                   :
@@ -178,7 +176,7 @@ export default function Index() {
               <View className='w-[1px] h-[55%] border self-center'/>
               <View className='w-[50%] items-center justify-center'>
               {
-                   currentPrayer == 'Fajr' || currentPrayer == 'Dhuhr' || currentPrayer == 'Asr' || currentPrayer == 'Maghrib' ? 
+                   currentPrayer == 'Dhuhr' || currentPrayer == 'Asr' || currentPrayer == 'Maghrib' ? 
                   <>
                     <Text className='text-black'>Time To Iftar</Text>
                     <Text className='font-bold text-[24px]'>{timeToNextPrayer}</Text>

@@ -6,7 +6,9 @@ type programsContextProp = {
     timeToNextPrayer : string,
     onSetTimeToNextPrayer : (timeToNextPrayer: string) =>void,
     onSetCurrentPrayer : ( currentPrayer : string ) => void,
-    onSetPrayerTimesWeek : (prayer: gettingPrayerData[]) => void
+    onSetPrayerTimesWeek : (prayer: gettingPrayerData[]) => void,
+    upcomingPrayer : string,
+    onSetUpcomingPrayer : ( upcomingPrayer : string ) => void
 }
 const PrayersContext = createContext<programsContextProp>({
     prayerTimesWeek: [],
@@ -14,13 +16,16 @@ const PrayersContext = createContext<programsContextProp>({
     currentPrayer : '',
     onSetCurrentPrayer : () => {},
     timeToNextPrayer : '',
-    onSetTimeToNextPrayer: () => {}
+    onSetTimeToNextPrayer: () => {},
+    upcomingPrayer : '',
+    onSetUpcomingPrayer : () => {}
 })
 
 const PrayerTimesProvider = ( {children} : PropsWithChildren ) =>{
-    const[prayerTimesWeek, setPrayerTimesWeek] = useState<gettingPrayerData[]>([]);
+    const [prayerTimesWeek, setPrayerTimesWeek] = useState<gettingPrayerData[]>([]);
     const [ currentPrayer, setCurrentPrayer ] = useState<string>('')
-    const [ timeToNextPrayer, setTimeToNextPrayer ] = useState('')
+    const [ timeToNextPrayer, setTimeToNextPrayer ] = useState<string>('')
+    const [ upcomingPrayer, setUpcomingPrayer ] = useState<string>('')
     const onSetPrayerTimesWeek = ( prayer: gettingPrayerData[] ) =>{
         setPrayerTimesWeek(prayer)
     }
@@ -32,9 +37,18 @@ const PrayerTimesProvider = ( {children} : PropsWithChildren ) =>{
         setTimeToNextPrayer(prayer)
     }
 
+    const onSetUpcomingPrayer = ( prayer : string ) => {
+        setUpcomingPrayer(prayer)
+    }
+
 return(
     <PrayersContext.Provider
-        value={{prayerTimesWeek, onSetPrayerTimesWeek, currentPrayer, onSetCurrentPrayer, timeToNextPrayer, onSetTimeToNextPrayer}}
+        value={{
+            prayerTimesWeek, onSetPrayerTimesWeek, 
+            currentPrayer, onSetCurrentPrayer, 
+            timeToNextPrayer, onSetTimeToNextPrayer,
+            upcomingPrayer, onSetUpcomingPrayer
+        }}
     >
         {children}
     </PrayersContext.Provider>

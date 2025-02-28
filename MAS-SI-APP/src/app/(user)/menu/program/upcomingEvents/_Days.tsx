@@ -38,7 +38,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         <Link href={`/menu/program/${item.program_id}`} asChild>
                             <Pressable className='flex-col'>
                                 <Image source={{ uri : item.program_img || undefined }} style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}/>
-                                <Text className='text-gray-500 font-medium text-left pl-2 text-[10px]' numberOfLines={1}>{item.program_name}</Text>
+                                <Text className='text-gray-500 font-medium pl-2 text-[10px] w-[150px] text-center' numberOfLines={1}>{item.program_name}</Text>
                             </Pressable>
                         </Link>
                     )}
@@ -55,7 +55,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         <Link href={`/menu/program/${item.program_id}`} asChild>
                             <Pressable className='flex-col'>
                                 <Image source={{ uri : item.program_img || undefined }} style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}/>
-                                <Text className='text-gray-500 font-medium text-[10px] pl-2' numberOfLines={1}>{item.program_name}</Text>
+                                <Text className='text-gray-500 font-medium text-[10px] pl-2 w-[150px]  text-center' numberOfLines={1}>{item.program_name}</Text>
                             </Pressable>
                         </Link>
                     )}
@@ -72,7 +72,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         <Link href={`/menu/program/events/${item.event_id}`} asChild>
                             <Pressable className='flex-col'>
                                 <Image source={{ uri : item.event_img || undefined }} style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}/>
-                                <Text className='text-gray-500 font-medium text-[10px] pl-2' numberOfLines={1}>{item.event_name}</Text>
+                                <Text className='text-gray-500 font-medium text-[10px] pl-2 w-[150px] text-center' numberOfLines={1}>{item.event_name}</Text>
                             </Pressable>
                         </Link>
                     )}
@@ -89,7 +89,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
                         <Link href={`/menu/program/events/${item.event_id}`} asChild>
                             <Pressable className='flex-col'>
                                 <Image source={{ uri : item.event_img || undefined }} style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}/>
-                                <Text className='text-gray-500 font-medium text-[10px] pl-2' numberOfLines={1}>{item.event_name}</Text>
+                                <Text className='text-gray-500 font-medium text-[10px] pl-2 w-[150px] text-center' numberOfLines={1}>{item.event_name}</Text>
                             </Pressable>
                         </Link>
                     )}

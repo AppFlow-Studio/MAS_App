@@ -52,6 +52,11 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
       { buttonTitle : 'Edit Speaker or Sheik Info', link : '/more/Admin/SpeakersScreen'},
       { buttonTitle : 'Delete a Speaker or Sheik', link : '/more/Admin/DeleteSpeakers'},
     ]
+  },
+  {
+    title: 'Ramdan Quran Tracker', screens : [
+      { buttonTitle : 'Update Information', link : '/more/Admin/RamadanQuranTracker'}
+    ]
   }
 ]
 const AdminScreen = () => {

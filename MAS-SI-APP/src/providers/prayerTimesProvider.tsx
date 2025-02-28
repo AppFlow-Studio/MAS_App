@@ -3,6 +3,8 @@ import { gettingPrayerData } from "../types";
 type programsContextProp = {
     prayerTimesWeek : gettingPrayerData[],
     currentPrayer : string,
+    timeToNextPrayer : string,
+    onSetTimeToNextPrayer : (timeToNextPrayer: string) =>void,
     onSetCurrentPrayer : ( currentPrayer : string ) => void,
     onSetPrayerTimesWeek : (prayer: gettingPrayerData[]) => void
 }
@@ -10,13 +12,15 @@ const PrayersContext = createContext<programsContextProp>({
     prayerTimesWeek: [],
     onSetPrayerTimesWeek: () => {},
     currentPrayer : '',
-    onSetCurrentPrayer : () => {}
-
+    onSetCurrentPrayer : () => {},
+    timeToNextPrayer : '',
+    onSetTimeToNextPrayer: () => {}
 })
 
 const PrayerTimesProvider = ( {children} : PropsWithChildren ) =>{
     const[prayerTimesWeek, setPrayerTimesWeek] = useState<gettingPrayerData[]>([]);
     const [ currentPrayer, setCurrentPrayer ] = useState<string>('')
+    const [ timeToNextPrayer, setTimeToNextPrayer ] = useState('')
     const onSetPrayerTimesWeek = ( prayer: gettingPrayerData[] ) =>{
         setPrayerTimesWeek(prayer)
     }
@@ -24,9 +28,13 @@ const PrayerTimesProvider = ( {children} : PropsWithChildren ) =>{
         setCurrentPrayer(prayer)
     }
 
+    const onSetTimeToNextPrayer = ( prayer : string ) =>{
+        setTimeToNextPrayer(prayer)
+    }
+
 return(
     <PrayersContext.Provider
-        value={{prayerTimesWeek, onSetPrayerTimesWeek, currentPrayer, onSetCurrentPrayer}}
+        value={{prayerTimesWeek, onSetPrayerTimesWeek, currentPrayer, onSetCurrentPrayer, timeToNextPrayer, onSetTimeToNextPrayer}}
     >
         {children}
     </PrayersContext.Provider>

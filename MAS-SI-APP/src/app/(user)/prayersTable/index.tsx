@@ -4,7 +4,7 @@ import Table from "@/src/components/prayerTimeTable";
 import React, {useEffect, useRef, useState } from 'react';
 import { usePrayer } from '@/src/providers/prayerTimesProvider';
 import { gettingPrayerData } from '@/src/types';
-import { Divider } from 'react-native-paper';
+import { Divider, Icon } from 'react-native-paper';
 import { Link } from 'expo-router';
 import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 import { BlurView } from 'expo-blur';
@@ -12,15 +12,23 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { ScrollView } from 'react-native';
 import { format } from 'date-fns';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import Svg, { Path } from 'react-native-svg';
+import moment from 'moment';
 
 
 export default function Index() {
   const { prayerTimesWeek } = usePrayer();
+  const { currentPrayer } = usePrayer();
+  console.log(currentPrayer)
   if( prayerTimesWeek.length == 0 ){
     return
   }
+  const { timeToNextPrayer } = usePrayer()
+  const tabBar = useBottomTabBarHeight()
   const { session } = useAuth()
   const [isRendered, setIsRendered ] = useState(false)
+  const [ currentSurah, setCurrentSurah ] = useState({surah : 1, ayah_num : 1, ayah : 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', surah_name : 'Surah Al-Fatiha'})
   const { height } = Dimensions.get('window')
   const tableWidth = Dimensions.get('screen').width * .95
   const [ tableIndex, setTableIndex ] = useState(0)
@@ -39,6 +47,8 @@ export default function Index() {
     })  
   }, [tableIndex])
     
+  {/* Get Time to Suhoor or Iftar */}
+  
   const getUserSetting = async () => {
       const { data , error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id)
       if( data ){
@@ -48,8 +58,17 @@ export default function Index() {
       console.log(error)
     }
   }
+
+  const GetRamadanTracker = async ( ) => {
+    const { data, error } = await supabase.from('ramadan_quran_tracker').select('*').eq('id', 1).single()
+    if( data ){
+      setCurrentSurah(data)
+    }
+  }
+
   useEffect(() => {
     getUserSetting()
+    GetRamadanTracker()
     const listenForSettings = supabase.channel('Listen for user settings change').on(
       'postgres_changes',
       {
@@ -61,8 +80,21 @@ export default function Index() {
       async (payload) => await getUserSetting()
     ).subscribe()
 
-    return () => { supabase.removeChannel(listenForSettings) }
+    const listenForQuranTrackerChanges = supabase.channel('Listen for Quran Tracker Changes').on(
+      'postgres_changes',
+      {
+        event : '*',
+        schema : 'public',
+        table : 'ramadan_quran_tracker',
+        filter : `id=eq.1`
+      },
+      async (payload) => await GetRamadanTracker()
+    ).subscribe()
+
+    return () => { supabase.removeChannel(listenForSettings); supabase.removeChannel(listenForQuranTrackerChanges) }
   }, [])
+
+  
 
   const FirstTaraweehTime = setTimeToCurrentDate(convertTo24Hour(prayerTimesWeek[0].iqa_isha))
   const FirstTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1)
@@ -70,63 +102,125 @@ export default function Index() {
   const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2,  FirstTaraweehTime.getMinutes() + 20)
 
   return (
-    <ScrollView className='h-[100%]  bg-white flex flex-col space-y-0'>
-    <StatusBar barStyle={"dark-content"} />
-    <ImageBackground
-      source={require('@/assets/images/PrayerTimesHeader.jpg')}
-      style={{ justifyContent : 'flex-start', height: '100%' }}
-      imageStyle={{ height : isRendered ? height / 4.5 : height / 3.5 , opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10 , width : '100%'}}
-      className='flex flex-col'
-    >
-      {/* Weekly Prayer Times */}
-        <FlatList 
-          data={prayerTimesWeek}
-          renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings}/>}
-          horizontal
-          bounces={false}
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          scrollEventThrottle={32}
-          viewabilityConfig={viewConfig}
-          contentContainerStyle={{justifyContent: "center", alignItems: "center"}}
-          ref={flatlistRef}
-          className='h-[100%] mt-[50%] p-0'
-        />
-        {/* Taraweeh Times */}
-        <View className='flex flex-row space-x-2 items-center justify-center w-full'>
-          <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
-          style={{height: 130, width: 190, padding: 15}} imageStyle={{borderRadius: 15}}
-          className='flex flex-col '
+    <View className='flex flex-1 h-screen'>
+      <ScrollView className='h-full  bg-white flex flex-col space-y-0' style={{paddingBottom : tabBar + 30 }}>
+      <StatusBar barStyle={"dark-content"} />
+      <ImageBackground
+        source={require('@/assets/images/PrayerTimesHeader.jpg')}
+        style={{ justifyContent : 'flex-start', height: '100%' }}
+        imageStyle={{ height : isRendered ? height / 4.5 : height / 3.5 , opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10 , width : '100%'}}
+        className='flex flex-col'
+      >
+        {/* Weekly Prayer Times */}
+          <FlatList 
+            data={prayerTimesWeek}
+            renderItem={({item, index}) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings}/>}
+            horizontal
+            bounces={false}
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            scrollEventThrottle={32}
+            viewabilityConfig={viewConfig}
+            contentContainerStyle={{justifyContent: "center", alignItems: "center"}}
+            ref={flatlistRef}
+            className='h-[100%] mt-[50%] p-0'
+          />
+          {/* Taraweeh Times */}
+          <View className='flex flex-row space-x-2 items-center justify-center w-full'>
+            <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
+            style={{height: 130, width: 190, padding: 15}} imageStyle={{borderRadius: 15}}
+            className='flex flex-col '
+            >
+              <Text className='text-black text-[10px] text-start'>Starting</Text>
+              <Text className='text-[#06F] text-[13px] text-start'>Tarawih One</Text>
+              <Text className='text-black font-bold text-[15px] mt-4'>{format(FirstTaraweehTime, 'p')}</Text>
+              <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(FirstTaraweehEndTime, 'p')}</Text></Text>
+            </ImageBackground>
+            <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
+            style={{height: 130, width: 190, padding: 15 }} imageStyle={{borderRadius: 15}}
+            >
+              <Text className='text-black text-[10px] text-start'>Following</Text>
+              <Text className='text-[#06F] text-[13px] text-start'>Tarawih Two</Text>
+              <Text className='text-black font-bold text-[15px] mt-4'>{format(SecondTaraweehTime, 'p')}</Text>
+              <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
+            </ImageBackground>
+          </View> 
+
+          {/* Suhoor & Iftar Timer */}
+          <ImageBackground 
+          source={require('@/assets/images/SuhoorIftarBG.png')}
+          style={{ width : '95%', height : 60, borderRadius : 15, alignSelf : 'center' }}
+          imageStyle={{ width : '100%', height : 60,  borderRadius : 15 }}
+          className='mt-2 flex flex-row justify-between'
           >
-            <Text className='text-black text-[10px] text-start'>Starting</Text>
-            <Text className='text-[#06F] text-md text-start'>Tarawih One</Text>
-            <Text className='text-black font-bold text-lg mt-4'>{format(FirstTaraweehTime, 'p')}</Text>
-            <Text className='text-xs'>End Time: <Text className='font-bold text-md'>{format(FirstTaraweehEndTime, 'p')}</Text></Text>
+            <View className='flex flex-col'>
+              {
+                 currentPrayer == 'Isha' || currentPrayer == 'Fajr' ? 
+                <>
+                  <Text>Time To Suhoor</Text>
+                  <Text>{timeToNextPrayer}</Text>
+                </>
+                :
+                <>
+                  <Text>Suhoor</Text>
+                  <Text></Text>
+                </>
+              }
+            </View>
+
+
+            <View>
+            {
+                 currentPrayer == 'Fajr' || currentPrayer == 'Dhuhr' || currentPrayer == 'Asr' || currentPrayer == 'Maghrib' ? 
+                <>
+                  <Text>Time To Iftar</Text>
+                  <Text>{timeToNextPrayer}</Text>
+                </>
+                :
+                <>
+                  <Text>Iftar</Text>
+                  <Text></Text>
+                </>
+              }
+            </View>
           </ImageBackground>
-          <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
-          style={{height: 130, width: 190, padding: 15 }} imageStyle={{borderRadius: 15}}
+
+          {/* Ramadan Quran Tracker */}
+          <View className=' self-center flex flex-row w-[95%] bg-white rounded-[15px] mt-4 h-[130]'
+            style={{ 
+              shadowColor : '#D3D3D3', shadowOffset : { width : 0,  height : 5}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 
+            }}
           >
-            <Text className='text-black text-[10px] text-start'>Following</Text>
-            <Text className='text-[#06F] text-md text-start'>Tarawih Two</Text>
-            <Text className='text-black font-bold text-lg mt-4'>{format(SecondTaraweehTime, 'p')}</Text>
-            <Text className='text-xs'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
-          </ImageBackground>
-        </View> 
-
-        {/* Ramadan Quran Tracker */}
-
-        <View className='w-full flex flex-row'>
-          <View>
-
+            <View className='flex flex-col w-[60%] p-2 h-full'>
+              <Text className='text-black font-bold text-[13px]'>Ramandan Quran Tracker</Text>
+              <View className='h-[60%] overflow-hidden items-center justify-center'><Text className='' numberOfLines={5}>{currentSurah?.ayah}</Text></View>
+              <Text className='text-[#767676] text-[11px] '>Last Ayah Read:</Text>
+              <Text className='text-[#F6D169] text-[14px] font-bold'>Surah {currentSurah.surah_name} - {currentSurah.surah}:{currentSurah.ayah_num}</Text>
+            </View>
+            <View className='w-[40%] h-full relative'
+            >
+              <Image 
+                source={require('@/assets/images/QuranImg.png')}
+                className='w-[100%] h-[130] object-cover '
+                style={{
+                  borderBottomRightRadius : 15,
+                  borderTopRightRadius : 15
+                }}
+              />
+              <Pressable className=' absolute top-1 left-[80%]'>
+              <Icon 
+                source={'information-outline'}
+                size={24}
+                color='black'
+              />
+              </Pressable>
+            </View>
           </View>
-          <View>
-
-          </View>
-        </View>
-
-    </ImageBackground>
-      {/* <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/> */}
-  </ScrollView>
+  
+      </ImageBackground>
+        {/* <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/> */}
+    </ScrollView>
+    </View>
   )
 }
 

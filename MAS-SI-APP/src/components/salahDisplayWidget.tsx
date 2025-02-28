@@ -23,6 +23,7 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
         return
     }
     const { onSetCurrentPrayer } = usePrayer()
+    const { onSetTimeToNextPrayer } = usePrayer()
     const salahArray = ["fajr", "dhuhr", "asr", "maghrib", "isha", "nextDayFajr"];
     const [liveTime, setLiveTime] = useState(new Date());
     const [salahIndex, setCurrentSalahIndex] = useState(0);
@@ -97,17 +98,39 @@ export default function SalahDisplayWidget ( {prayer, nextPrayer} : salahDisplay
     }
 
     const getTimeToNextPrayer = () => {
-        const time1 = moment(currentTime, "HH:mm A");
+        const time1 = moment(currentTime, "HH:mm A")
         let time2 = moment(currentSalah.iqamah, "HH:mm A")
+
+        const AthanTime = moment(currentTime, "HH:mm A")
+        let NextAthanTime = moment(currentSalah.athan, "HH:mm A")
+
         if (salahIndex == 6){
             time2.add(1, "day")
+            NextAthanTime.add(1, "day")
         }else{
             time2 = moment(currentSalah.iqamah, "HH:mm A")
+            NextAthanTime = moment(currentSalah.athan, "HH:mm A")
         }
 
         const duration = moment.duration(time2.diff(time1))
+        const AthanDuration = moment.duration(NextAthanTime.diff(AthanTime))
+
         const hours = Math.floor(duration.asHours());
         const minutes = duration.minutes();
+
+        const TimeToAthanHours = Math.floor(AthanDuration.asHours())
+        const TimeToAthanMinutes = AthanDuration.minutes()
+        
+        if( TimeToAthanHours == 0 && TimeToAthanMinutes == 0 ){
+            onSetTimeToNextPrayer('Now')
+        }
+        if( TimeToAthanHours == 0 ){
+            onSetTimeToNextPrayer(`${TimeToAthanMinutes} Mins`)
+        }
+        if( TimeToAthanHours > 0 ){
+            onSetTimeToNextPrayer(`${TimeToAthanHours} hr ${TimeToAthanMinutes} mins`)
+        }
+        
         if( hours == 0 && minutes == 0){
             return 'Now'
         }

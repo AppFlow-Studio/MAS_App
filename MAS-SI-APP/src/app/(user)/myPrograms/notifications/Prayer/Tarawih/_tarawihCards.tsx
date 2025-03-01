@@ -57,7 +57,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
                         user_id : session?.user.id, 
                         notification_time : tarawihTime, 
                         prayer : lowercasedTarawihName, 
-                        message : `First Tarawih Starting Now!\n${format(tarawihTime, 'p')}`, 
+                        message : tarawihName == 'Tarawih One' ? `First Taraweeh Starting Now!\n${format(tarawihTime, 'p')}` : `Second Taraweeh Starting Now!\n${format(tarawihTime, 'p')}`, 
                         push_notification_token : UserPushToken.push_notification_token, 
                         notification_type : 'Alert at Athan time'})
                         }
@@ -100,7 +100,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
                         user_id : session?.user.id, 
                         notification_time : tarawihTime, 
                         prayer : lowercasedTarawihName, 
-                        message : tarawihName == 'Tarawih One' ? `First Tarawih Starting Now!\n${format(tarawihTime, 'p')}` : `Second Tarawih Starting Now!\n${format(tarawihTime, 'p')}`, 
+                        message : tarawihName == 'Tarawih One' ? `First Taraweeh Starting Now!\n${format(tarawihTime, 'p')}` : `Second Taraweeh Starting Now!\n${format(tarawihTime, 'p')}`, 
                         push_notification_token : UserPushToken.push_notification_token, 
                         notification_type : 'Alert at Athan time'})
                         }
@@ -122,7 +122,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
                         user_id : session?.user.id, 
                         notification_time : tarawihTime, 
                         prayer : lowercasedTarawihName, 
-                        message : tarawihName == 'Tarawih One' ? `First Tarawih Starting in 30 mins!\n${format(tarawihTime, 'p')}` : `Second Tarawih is Starting in 30 mins!\n${format(tarawihTime, 'p')}`, 
+                        message : tarawihName == 'Tarawih One' ? `First Taraweeh Starting in 30 mins!\n${format(tarawihTime, 'p')}` : `Second Taraweeh is Starting in 30 mins!\n${format(tarawihTime, 'p')}`, 
                         push_notification_token : UserPushToken.push_notification_token, 
                         notification_type : 'Alert 30 Mins Before'})
                         }
@@ -186,7 +186,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
       }
   const CardInfo = [
         { header : 'Notify at Prayer Time:' , subText : "Get notified exactly when it's time to pray"},
-        { header : '30-Minute Reminder Before Tarawih:' , subText : "Get reminded 30 minutes before this jummah starts"},
+        { header : '30-Minute Reminder Before Taraweeh:' , subText : "Get reminded 30 minutes before this Taraweeh starts"},
         { header : 'Mute' , subText : ""}
   ]
 

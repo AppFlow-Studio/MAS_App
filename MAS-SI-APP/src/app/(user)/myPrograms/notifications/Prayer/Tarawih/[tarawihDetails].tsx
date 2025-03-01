@@ -5,7 +5,7 @@ import TarawihCards from './_tarawihCards'
 import { usePrayer } from '@/src/providers/prayerTimesProvider'
 
 const TarawihDetails = () => {
-    const { tarawihName } = useLocalSearchParams() 
+    const { tarawihName, tarawihTitle } = useLocalSearchParams() 
     const { prayerTimesWeek } = usePrayer();
 
     const [ selectedNotification, setSelectedNotification ] = useState<number[]>([])
@@ -22,7 +22,7 @@ const TarawihDetails = () => {
     SecondTaraweehTime.setHours(FirstTaraweehTime.getHours() + 1, FirstTaraweehTime.getMinutes() + 20)
     return (
     <View className='flex-1 bg-white items-center'>
-      <Stack.Screen options={{ headerTitle : 'Tarawih Settings', headerBackTitle : '', headerBackTitleVisible : false , headerStyle : {backgroundColor : "white"}, headerTintColor : '#1B85FF'}}/>
+      <Stack.Screen options={{ headerTitle : 'Taraweeh Settings', headerBackTitle : '', headerBackTitleVisible : false , headerStyle : {backgroundColor : "white"}, headerTintColor : '#1B85FF'}}/>
       <StatusBar barStyle={'dark-content'}/>
       <Text className='text-[20px] font-bold '></Text>
       <View className='mt-4'>
@@ -33,7 +33,7 @@ const TarawihDetails = () => {
             />
             </View>
             <View className='flex-col bg-white w-[100%]'>
-                <Text className='font-bold text-2xl text-center m-4'>{tarawihName}</Text>
+                <Text className='font-bold text-2xl text-center m-4'>{tarawihTitle}</Text>
                 <View className='ml-2'>
                 <Text>Notification Options</Text>
             </View>

@@ -137,7 +137,7 @@ export default function Index() {
               className='flex flex-col '
               >
                 <Text className='text-black text-[10px] text-start'>Starting</Text>
-                <Text className='text-[#06F] text-[13px] text-start'>Tarawih One</Text>
+                <Text className='text-[#06F] text-[13px] text-start'>Taraweeh One</Text>
                 <Text className='text-black font-bold text-[15px] mt-4'>{format(FirstTaraweehTime, 'p')}</Text>
                 <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(FirstTaraweehEndTime, 'p')}</Text></Text>
               </ImageBackground>
@@ -145,7 +145,7 @@ export default function Index() {
               style={{height: 130, width: 190, padding: 15 }} imageStyle={{borderRadius: 15}}
               >
                 <Text className='text-black text-[10px] text-start'>Following</Text>
-                <Text className='text-[#06F] text-[13px] text-start'>Tarawih Two</Text>
+                <Text className='text-[#06F] text-[13px] text-start'>Taraweeh Two</Text>
                 <Text className='text-black font-bold text-[15px] mt-4'>{format(SecondTaraweehTime, 'p')}</Text>
                 <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
               </ImageBackground>

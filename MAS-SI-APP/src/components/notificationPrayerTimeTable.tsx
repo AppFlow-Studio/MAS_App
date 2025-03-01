@@ -158,11 +158,11 @@ const NotificationPrayerTable = ({
               ))
             }
 
-            <Text className="font-bold text-lg mt-[15%] mb-1">Tarawih Notifications</Text>
+            <Text className="font-bold text-lg mt-[15%] mb-1">Taraweeh Notifications</Text>
             <Link 
                 href={{
                   pathname : '/myPrograms/notifications/Prayer/Tarawih/[tarawihDetails]',
-                  params : {tarawihName: 'Tarawih One' }
+                  params : {tarawihName: 'Tarawih One', tarawihTitle : 'Taraweeh One' }
                 }}
                  className=""
                  asChild
@@ -199,7 +199,7 @@ const NotificationPrayerTable = ({
                     </View>
   
                     <View className="mb-5 w-[40%]">
-                      <Text className="font-bold text-xl  text-gray-800 ">Tarawih One</Text>
+                      <Text className="font-bold text-xl  text-gray-800 ">Taraweeh One</Text>
                       <View className="flex-row mt-2">
                         <Text className="text-left  text-[#6077F5] font-bold ">
                           Starts :{" "}
@@ -246,7 +246,7 @@ const NotificationPrayerTable = ({
             <Link 
                 href={{
                   pathname : '/myPrograms/notifications/Prayer/Tarawih/[tarawihDetails]',
-                  params : {tarawihName: 'Tarawih Two' }
+                  params : {tarawihName: 'Tarawih Two',tarawihTitle : 'Taraweeh Two'  }
                 }}
                  className=""
                  asChild
@@ -283,7 +283,7 @@ const NotificationPrayerTable = ({
                     </View>
   
                     <View className="mb-5 w-[40%]">
-                      <Text className="font-bold text-xl  text-gray-800 ">Tarawih Two</Text>
+                      <Text className="font-bold text-xl  text-gray-800 ">Taraweeh Two</Text>
                       <View className="flex-row mt-2">
                         <Text className="text-left  text-[#6077F5] font-bold ">
                           Starts :{" "}

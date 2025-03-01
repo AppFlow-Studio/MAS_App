@@ -269,7 +269,7 @@ serve(async (req) => {
               if( UserPushToken && UserPushToken.push_notification_token ){
                   const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
                     notification_time : FirstTaraweehTime, prayer : 'tarawih one', 
-                    message : `First Tarawih Starting Now!\n${FormattedFirst}`, 
+                    message : `First Taraweeh Starting Now!\n${FormattedFirst}`, 
                     push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
                     if(ScheduleError){
                       console.log(ScheduleError)
@@ -285,7 +285,7 @@ serve(async (req) => {
 
                   const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
                     notification_time : FirstTaraweehTime30MinBefore, prayer : 'tarawih one', 
-                    message : `First Tarawih Starting in 30 Mins!\n${FormattedFirst30}`, 
+                    message : `First Taraweeh Starting in 30 Mins!\n${FormattedFirst30}`, 
                     push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 Mins Before'})
                     if(ScheduleError){
                       console.log(ScheduleError)
@@ -304,7 +304,7 @@ serve(async (req) => {
 
                   const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
                     notification_time : SecondTaraweehTime, prayer : 'tarawih two', 
-                    message : `Second Tarawih Starting Now!\n${FormattedSecond}`, 
+                    message : `Second Taraweeh Starting Now!\n${FormattedSecond}`, 
                     push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
                     if(ScheduleError){
                       console.log(ScheduleError)
@@ -323,7 +323,7 @@ serve(async (req) => {
 
                   const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
                     notification_time : SecondTaraweehTime30MinBefore, prayer : 'tarawih two', 
-                    message : `Second Tarawih Starting in 30 Mins!\n${FormattedSecond30}`, 
+                    message : `Second Taraweeh Starting in 30 Mins!\n${FormattedSecond30}`, 
                     push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 Mins Before'})
                     if(ScheduleError){
                       console.log(ScheduleError)

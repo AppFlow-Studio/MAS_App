@@ -31,7 +31,7 @@ const Days = ( {Programs , Day, Kids, Pace, Events, TodaysDate, index } : {Progr
             <AccordionItem isExpanded={Section}  viewKey={Day} style={{ flexDirection:'column', gap: 20, width : '100%', alignItems : 'flex-start' }}>
             {
             Kids && Kids.length > 0 ? <>
-                <Text className='text-black text-left self-start text-[15px]'>Kids Programs: </Text>
+                <Text className='text-black text-left self-start text-[15px] mb-4'>Kids Programs: </Text>
                 <FlatList 
                     data={Kids}
                     renderItem={({item}) => (

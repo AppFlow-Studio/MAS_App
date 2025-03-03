@@ -68,7 +68,7 @@ serve(async (req) => {
                 const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', UserSettings.user_id).single()
                     const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
                       notification_time : FirstTaraweehTime, prayer : 'tarawih one', 
-                      message : `First Tarawih Starting Now!\n${FormattedFirst}`, 
+                      message : `First Taraweeh Starting Now!\n${FormattedFirst}`, 
                       push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
                       if(ScheduleError){
                         console.log(ScheduleError)
@@ -97,7 +97,7 @@ serve(async (req) => {
                 const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', UserSettings.user_id).single()
                     const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
                       notification_time : SecondTaraweehTime, prayer : 'tarawih two', 
-                      message : `Second Tarawih Starting Now!\n${FormattedSecond}`, 
+                      message : `Second Taraweeh Starting Now!\n${FormattedSecond}`, 
                       push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert at Athan time'})
                       if(ScheduleError){
                         console.log(ScheduleError)
@@ -112,7 +112,7 @@ serve(async (req) => {
                 const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', UserSettings.user_id).single()
                     const { error : ScheduleError } = await supabase.from('prayer_notification_schedule').insert({ user_id : UserSettings.user_id, 
                       notification_time : SecondTaraweehTime30MinBefore, prayer : 'tarawih two', 
-                      message : `Second Tarawih Starting in 30 Mins!\n${FormattedSecond30}`, 
+                      message : `Second Taraweeh Starting in 30 Mins!\n${FormattedSecond30}`, 
                       push_notification_token : UserPushToken.push_notification_token, notification_type : 'Alert 30 Mins Before'})
                       if(ScheduleError){
                         console.log(ScheduleError)
@@ -137,7 +137,6 @@ serve(async (req) => {
 
   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/prayer-scheduler-test' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
+    --header 'Content-Type: application/json' 
 
 */

@@ -67,7 +67,7 @@ const ChildrenScroller = ({
     prevTranslationX.value = offset.value;
   })
   .onUpdate((event) => {
-    offset.value = prevTranslationX.value + event.translationX 
+    offset.value = prevTranslationX.value - event.translationX 
   })
   .onEnd((e)=> {
     isPanning.value = false;

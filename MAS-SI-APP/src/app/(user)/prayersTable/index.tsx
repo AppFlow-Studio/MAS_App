@@ -103,13 +103,13 @@ export default function Index() {
   const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2,  FirstTaraweehTime.getMinutes() + 20)
   return (
     <View className='flex flex-1 h-screen'>
-      <ScrollView className='h-full  bg-white flex flex-col ' contentContainerStyle={{ paddingBottom : tabBar + 100 }}>
+      <ScrollView className='h-full  bg-white flex flex-col ' contentContainerStyle={{ paddingBottom : tabBar + 100 }} bounces={false}>
       <StatusBar barStyle={"dark-content"} />
       <ImageBackground
         source={require('@/assets/images/PrayerTimesHeader.jpg')}
         style={{ justifyContent : 'flex-start', height: '100%' }}
         imageStyle={{ height : height / 3.5 , opacity : 0.9, borderBottomLeftRadius : 10, borderBottomRightRadius : 10 , width : '100%'}}
-        className='flex flex-col'
+        className='flex flex-col w-full'
       >
         {/* Weekly Prayer Times */}
           <FlatList 
@@ -131,30 +131,38 @@ export default function Index() {
             ( isBefore(todaysDate, new Date(2025, 2, 30)) && isAfter(todaysDate, new Date(2025, 1, 28)) ) ? 
             <>
             {/* Taraweeh Times */}
-            <View className='flex flex-row space-x-2 items-center justify-center w-full my-2'>
+            <View className='flex flex-row w-[95%] my-2 space-x-2 px-1 self-center'>
               <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
-              style={{height: 130, width: 190, padding: 15}} imageStyle={{borderRadius: 15}}
+              style={{height: 130, width: '50%', shadowColor : 'rgba(0, 0, 0, 0.25)', shadowOffset : { width : 0,  height : 6}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 
+            }} imageStyle={{borderRadius: 15, width :'100%'}}
               className='flex flex-col '
               >
-                <Text className='text-black text-[10px] text-start'>Starting</Text>
-                <Text className='text-[#06F] text-[13px] text-start'>Taraweeh One</Text>
-                <Text className='text-black font-bold text-[15px] mt-4'>{format(FirstTaraweehTime, 'p')}</Text>
-                <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(FirstTaraweehEndTime, 'p')}</Text></Text>
+                <View className='p-[15]'>
+                  <Text className='text-black text-[10px] text-start'>Starting</Text>
+                  <Text className='text-[#06F] text-[13px] text-start'>Taraweeh One</Text>
+                  <Text className='text-black font-bold text-[15px] mt-4'>{format(FirstTaraweehTime, 'p')}</Text>
+                  <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(FirstTaraweehEndTime, 'p')}</Text></Text>
+                </View>
               </ImageBackground>
               <ImageBackground source={require('@/assets/images/TaraweehCard.png')} 
-              style={{height: 130, width: 190, padding: 15 }} imageStyle={{borderRadius: 15}}
+              style={{height: 130, width: '50%', shadowColor : 'rgba(0, 0, 0, 0.25)', shadowOffset : { width : 0,  height : 6}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 
+            }} imageStyle={{borderRadius: 15, width :'100%'}}
+              className='flex flex-col'
               >
-                <Text className='text-black text-[10px] text-start'>Following</Text>
-                <Text className='text-[#06F] text-[13px] text-start'>Taraweeh Two</Text>
-                <Text className='text-black font-bold text-[15px] mt-4'>{format(SecondTaraweehTime, 'p')}</Text>
-                <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
+                <View className='p-[15]'>             
+                  <Text className='text-black text-[10px] text-start'>Following</Text>
+                  <Text className='text-[#06F] text-[13px] text-start'>Taraweeh Two</Text>
+                  <Text className='text-black font-bold text-[15px] mt-4'>{format(SecondTaraweehTime, 'p')}</Text>
+                  <Text className='text-[10px] my-1'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
+                </View>
               </ImageBackground>
             </View> 
   
             {/* Suhoor & Iftar Timer */}
             <ImageBackground 
             source={require('@/assets/images/SuhoorIftarBG.png')}
-            style={{ width : '95%', height : 60, borderRadius : 15, alignSelf : 'center' }}
+            style={{ width : '95%', height : 60, borderRadius : 15, alignSelf : 'center', shadowColor : 'rgba(0, 0, 0, 0.25)', shadowOffset : { width : 0,  height : 6}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 
+          }}
             imageStyle={{ width : '100%', height : 60,  borderRadius : 15 }}
             className='my-2 flex flex-row justify-between'
             >
@@ -235,7 +243,7 @@ export default function Index() {
                 display : showRamadanTrackerInfo ? 'flex' : 'none'
               }}
               >
-                <Text className='text-center w-[85%]'>Check after Tarawih One,  Tarawih Two, and Fajr. 
+                <Text className='text-center w-[85%]'>Check after Taraweeh One,  Taraweeh Two, and Fajr. 
                 The ayah updates automatically.</Text>
               </View>
   

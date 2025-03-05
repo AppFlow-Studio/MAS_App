@@ -35,9 +35,92 @@ function setTimeToCurrentDate(timeString) {
   return timestampISO
 }
 
+// Optimized function to process prayer notifications
+async function processPrayerNotifications() {
+  // Get today's prayers
+  const { data: todaysPrayers, error: todayError } = await supabase
+    .from('todays_prayers')
+    .select('*');
+  if (todayError) {
+    console.error('TodaysPrayers error:', todayError);
+    return;
+  }
+
+  const insertRows = [];
+
+  // Loop through today's prayers
+  for (const prayer of todaysPrayers) {
+    // Normalize prayer name: if 'zuhr' then use 'dhuhr'
+    const normalizedPrayer = prayer.prayer_name === 'zuhr' ? 'dhuhr' : prayer.prayer_name;
+    // Query all users with "Alert at Athan time" for this prayer
+    const { data: athanAlertOn, error: notifError } = await supabase
+      .from('prayer_notification_settings')
+      .select('*')
+      .eq('prayer', normalizedPrayer)
+      .contains('notification_settings', ['Alert at Athan time']);
+    if (notifError) {
+      console.error(`Error fetching notification settings for ${normalizedPrayer}:`, notifError);
+      continue;
+    }
+    if (!athanAlertOn || athanAlertOn.length === 0) continue;
+
+    // Collect user IDs for this prayer
+    const userIds = athanAlertOn.map((u) => u.user_id);
+    // Fetch all push tokens for these users in one query
+    const { data: userPushTokens, error: tokenError } = await supabase
+      .from('profiles')
+      .select('id, push_notification_token')
+      .in('id', userIds);
+    if (tokenError) {
+      console.error('Error fetching push tokens:', tokenError);
+      continue;
+    }
+
+    // Create a mapping from user id to push_notification_token
+    const pushTokenMap = {};
+    userPushTokens.forEach((user) => {
+      if (user.push_notification_token) {
+        pushTokenMap[user.id] = user.push_notification_token;
+      }
+    });
+
+    // For each user in athanAlertOn, if they have a push token, prepare an insert object
+    for (const user of athanAlertOn) {
+      const pushToken = pushTokenMap[user.user_id];
+      if (pushToken) {
+        const PrayerTime = setTimeToCurrentDate(prayer.athan_time);
+        const IqaPrayerTime = setTimeToCurrentDate(prayer.iqamah_time);
+        const TimeToFormat = new Date(PrayerTime);
+        const IqaTimeToFormat = new Date(IqaPrayerTime);
+        const FormatAthTime = format(TimeToFormat.setHours(TimeToFormat.getHours() - 5), 'p');
+        const FormatIqaTime = format(IqaTimeToFormat.setHours(IqaTimeToFormat.getHours() - 5), 'p');
+        const message = `Time to pray ${normalizedPrayer === 'dhuhr' ? 'Dhuhr' : normalizedPrayer[0].toUpperCase() + normalizedPrayer.slice(1)} ${FormatAthTime} \n Iqamah Time ${FormatIqaTime}`;
+
+        insertRows.push({
+          user_id: user.user_id,
+          notification_time: PrayerTime,
+          prayer: normalizedPrayer,
+          message,
+          push_notification_token: pushToken,
+          notification_type: 'Alert at Athan time'
+        });
+      }
+    }
+  }
+
+  // Bulk insert into prayer_notification_schedule if there are rows to insert
+  if (insertRows.length > 0) {
+    const { error: insertError } = await supabase
+      .from('prayer_notification_schedule')
+      .insert(insertRows);
+    if (insertError) {
+      console.error('Error during bulk insert:', insertError);
+    }
+  }
+}
+
 serve(async (req) => {
   const scheduler = async () => {
-
     const todaysDate = new Date()
     if( todaysDate.getDay() == 5 ){
       //Get the 2 Diff Settings at Athan Time & 30 Mins Before
@@ -97,7 +180,6 @@ serve(async (req) => {
       // Loop through todays prayers
 
       //Alert At Athan Time
-      await Promise.all(
         TodaysPrayers.map( async ( prayer ) => {
           // get users who have alert at athan on for this prayer
           const { data : AthanAlertOn, error } = await supabase.from('prayer_notification_settings').select('*').eq('prayer', prayer.prayer_name == 'zuhr' ? 'dhuhr' : prayer.prayer_name).contains('notification_settings', ['Alert at Athan time'])
@@ -107,10 +189,8 @@ serve(async (req) => {
           if( AthanAlertOn ){
             await Promise.all(
               AthanAlertOn.map( async ( user ) => {
-                console.log('user', user)
                 const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).single()
                 if( UserPushToken && UserPushToken.push_notification_token ){
-                  console.log(prayer.athan_time)
                   const PrayerTime = setTimeToCurrentDate(prayer.athan_time)
                   const IqaPrayerTime = setTimeToCurrentDate(prayer.iqamah_time)
                   const TimeToFormat = new Date(PrayerTime)
@@ -129,7 +209,8 @@ serve(async (req) => {
           }
           // save these users to the notification_schedule table 
         })
-      )
+
+      console.log('Alert At Athan Done')
 
       //Alert At Iqamah Time
       await Promise.all(
@@ -142,7 +223,6 @@ serve(async (req) => {
           if( AthanAlertOn ){
             await Promise.all(
               AthanAlertOn.map( async ( user ) => {
-                console.log('user', user)
                 const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).single()
                 if( UserPushToken &&  UserPushToken.push_notification_token ){
                   const PrayerTime = setTimeToCurrentDate(prayer.iqamah_time)
@@ -159,6 +239,7 @@ serve(async (req) => {
           // save these users to the notification_schedule table 
         })
       )
+      console.log('Alert At Iqamah Time')
 
       //Alert 30 Mins Before Next Prayer
       await Promise.all(
@@ -235,6 +316,7 @@ serve(async (req) => {
         // save these users to the notification_schedule table 
       })
       )
+      console.log('Alert At Iqamah Time')
 
 
       if( isBefore(todaysDate, new Date(2025, 2, 30)) ){
@@ -335,7 +417,7 @@ serve(async (req) => {
                     })
                   )
           
-                }
+      }
 }
 
   await scheduler()

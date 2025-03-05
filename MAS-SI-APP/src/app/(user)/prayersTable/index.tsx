@@ -87,7 +87,7 @@ export default function Index() {
         event : '*',
         schema : 'public',
         table : 'ramadan_quran_tracker',
-        filter : `id=eq.1`
+        filter : `id=eq.${1}`
       },
       async (payload) => await GetRamadanTracker()
     ).subscribe()
@@ -207,7 +207,7 @@ export default function Index() {
                 shadowColor : 'rgba(0, 0, 0, 0.25)', shadowOffset : { width : 0,  height : 6}, shadowOpacity : 1, shadowRadius : 4, elevation : 5 
               }}
               >
-                <Text className='text-black font-bold text-[13px]'>Ramandan Quran Tracker</Text>
+                <Text className='text-black font-bold text-[13px]'>Ramadan Quran Tracker</Text>
                 <View className='h-[60%] overflow-hidden items-center justify-center'><Text className='' numberOfLines={5}>{currentSurah?.ayah}</Text></View>
                 <Text className='text-[#767676] text-[11px] '>Last Ayah Read:</Text>
                 <Text className='text-[#F6D169] text-[14px] font-bold'>Surah {currentSurah.surah_name} - {currentSurah.surah}:{currentSurah.ayah_num}</Text>

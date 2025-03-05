@@ -27,7 +27,7 @@ const TarawihDetails = () => {
       <Text className='text-[20px] font-bold '></Text>
       <View className='mt-4'>
             <Image
-                source={require('@/assets/images/TaraweehCard.png')}
+                source={require('@/assets/images/TarawihNotiCard.jpeg')}
                 style={{width: width / 2, height: 200, borderRadius: 8 } }
                 resizeMode='stretch'
             />

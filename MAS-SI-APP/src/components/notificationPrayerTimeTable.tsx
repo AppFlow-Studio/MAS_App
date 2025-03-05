@@ -63,7 +63,7 @@ const NotificationPrayerTable = ({
   const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2, FirstTaraweehTime.getMinutes() + 20)
   return (
     <View style={{ width: width }} className="items-center">
-      <View className="items-center  justify-center w-[95%]">
+      <View className="items-center  justify-center w-[100%]">
         <View className="w-[100%]">
           <ScrollView
             style={{ width: "100%", height: "95%", paddingLeft:'4%'}}

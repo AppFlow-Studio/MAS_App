@@ -72,7 +72,6 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
   }
   useEffect(() => {
     if( session ){
-      console.log('session',session?.user.id)
       registerForPushNotificationsAsync().then( (token : any) => savePushToken(token) );
       if( session?.user.id != CurrentSession?.user.id && CurrentSession != null ){
         //Delete Push Token

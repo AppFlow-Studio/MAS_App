@@ -27,7 +27,7 @@ function setTimeToCurrentDate(timeString) {
   const timestampWithTimeZone = new Date();
 
   // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 5, minutes, seconds, 0); // No milliseconds
+  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
 
   // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
   const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
@@ -109,8 +109,8 @@ async function ProcessAlertAtAthan() {
           const IqaPrayerTime = setTimeToCurrentDate(prayer.iqamah_time);
           const TimeToFormat = new Date(PrayerTime);
           const IqaTimeToFormat = new Date(IqaPrayerTime);
-          const FormatAthTime = format(TimeToFormat.setHours(TimeToFormat.getHours() - 5), 'p');
-          const FormatIqaTime = format(IqaTimeToFormat.setHours(IqaTimeToFormat.getHours() - 5), 'p');
+          const FormatAthTime = format(TimeToFormat.setHours(TimeToFormat.getHours() - 4), 'p');
+          const FormatIqaTime = format(IqaTimeToFormat.setHours(IqaTimeToFormat.getHours() - 4), 'p');
           const message = `Time to pray ${normalizedPrayer === 'dhuhr' ? 'Dhuhr' : normalizedPrayer[0].toUpperCase() + normalizedPrayer.slice(1)} ${FormatAthTime} \n Iqamah Time ${FormatIqaTime}`;
   
           insertRows.push({
@@ -185,8 +185,8 @@ async function ProcessAlertAtIqamah() {
           const IqaPrayerTime = setTimeToCurrentDate(prayer.iqamah_time);
           const TimeToFormat = new Date(PrayerTime);
           const IqaTimeToFormat = new Date(IqaPrayerTime);
-          const FormatAthTime = format(TimeToFormat.setHours(TimeToFormat.getHours() - 5), 'p');
-          const FormatIqaTime = format(IqaTimeToFormat.setHours(IqaTimeToFormat.getHours() - 5), 'p');
+          const FormatAthTime = format(TimeToFormat.setHours(TimeToFormat.getHours() - 4), 'p');
+          const FormatIqaTime = format(IqaTimeToFormat.setHours(IqaTimeToFormat.getHours() - 4), 'p');
           const message = `Iqamah Time for ${normalizedPrayer === 'dhuhr' ? 'Dhuhr' : normalizedPrayer[0].toUpperCase() + normalizedPrayer.slice(1)} at ${FormatIqaTime}`;
   
           insertRows.push({
@@ -370,10 +370,10 @@ async function processTaraweehNotifications(todaysDate : Date) {
   let FormattedSecond30 = new Date(SecondTaraweehTime);
   FormattedSecond30.setMinutes(FormattedSecond30.getMinutes() - 30);
 
-  FormattedFirst = format(FormattedFirst.setHours(FormattedFirst.getHours() - 5), 'p');
-  FormattedFirst30 = format(FormattedFirst30.setHours(FormattedFirst30.getHours() - 5), 'p');
-  FormattedSecond = format(FormattedSecond.setHours(FormattedSecond.getHours() - 5), 'p');
-  FormattedSecond30 = format(FormattedSecond30.setHours(FormattedSecond30.getHours() - 5), 'p');
+  FormattedFirst = format(FormattedFirst.setHours(FormattedFirst.getHours() - 4), 'p');
+  FormattedFirst30 = format(FormattedFirst30.setHours(FormattedFirst30.getHours() - 4), 'p');
+  FormattedSecond = format(FormattedSecond.setHours(FormattedSecond.getHours() - 4), 'p');
+  FormattedSecond30 = format(FormattedSecond30.setHours(FormattedSecond30.getHours() - 4), 'p');
 
   // Helper to process each notification group.
   async function processNotificationGroup(users, notificationTime, prayerName, message, notificationType) {

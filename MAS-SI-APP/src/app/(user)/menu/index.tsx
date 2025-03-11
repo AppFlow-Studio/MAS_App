@@ -166,8 +166,10 @@ export default function homeScreen() {
                     <Text className='text-[#0D509D] font-bold text-2xl'>Connect With Us</Text>
                   </View>
                   <IconsMarquee />
-                  <Portal>
-                    <Modal visible>
+                  <Portal >
+                    <Modal visible style={{
+                      backgroundColor : 'white'
+                    }}>
                       <MASQuestionaire />
                     </Modal>
                   </Portal>

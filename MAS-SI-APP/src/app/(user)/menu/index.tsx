@@ -167,7 +167,7 @@ export default function homeScreen() {
                   </View>
                   <IconsMarquee />
                   <Portal >
-                    <Modal visible style={{
+                    <Modal visible={false} style={{
                       backgroundColor : 'white'
                     }}>
                       <MASQuestionaire />

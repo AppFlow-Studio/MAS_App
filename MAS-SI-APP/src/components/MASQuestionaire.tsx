@@ -1,6 +1,6 @@
-import { View, Text, Image, useWindowDimensions, Pressable } from 'react-native'
+import { View, Text, Image, useWindowDimensions, Pressable, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import Animated, { Easing, FadeIn, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import Animated, { Easing, FadeIn, FadeInUp, FadeOutUp, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useForm, SubmitHandler, Controller } from "react-hook-form"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { HelperText, Modal, TextInput } from 'react-native-paper';
@@ -13,7 +13,7 @@ import * as ImagePicker from "expo-image-picker"
 import * as FileSystem from 'expo-file-system';
 import { supabase } from '../lib/supabase';
 import { Program } from '../types';
-
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const MASQuestionaire = () => {
   const CurrentSection = useSharedValue(1)
   const [CurrSec, setCurrSec] = useState(1) 
@@ -52,7 +52,6 @@ const MASQuestionaire = () => {
         mediaTypes : ImagePicker.MediaTypeOptions.Images,
         allowsEditing : true
     }
-
     const result = await ImagePicker.launchImageLibraryAsync(options)
 
     if( !result.canceled ){
@@ -106,7 +105,7 @@ const MASQuestionaire = () => {
       {
         CurrSec == 1 &&
             <Animated.View className='h-[70%]  space-y-2 flex flex-col w-[90%] self-center'
-            entering={FadeIn.duration(2000).easing(Easing.inOut(Easing.quad))}
+            entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
             >
                 <View className='h-[85%]'>
                     <Text className='font-bold text-3xl text-center py-6'>What's Your name?</Text>
@@ -153,7 +152,22 @@ const MASQuestionaire = () => {
                 </View>
 
                 <Pressable className=' bg-[#0E4F9F] rounded-[10px] h-[75px] w-[75px] items-center justify-center self-end '
-                onPress={() => {CurrentSection.value += 1; setCurrSec(CurrSec + 1)}}
+                onPress={() => {
+                    // get current form values
+                    const currFormValues = NameMethods.getValues();
+
+                    // Prevalidate using zod's safeParse
+                    const result = NameQuestionsSchema.safeParse(currFormValues);
+
+                    // If prevalidation is failed, display the error
+                    if (!result.success) {
+                        Alert.alert('Fill out all questions please')
+                    }
+                    else{
+                    CurrentSection.value += 1; setCurrSec(CurrSec + 1)
+                    }
+                }}
+
                 >
                     <Svg width="40" height="34" viewBox="0 0 40 34" fill="none">
                         <Path d="M33.3333 17L33.6572 16.619L34.1054 17L33.6572 17.381L33.3333 17ZM8.33334 17.5C8.0572 17.5 7.83334 17.2761 7.83334 17C7.83334 16.7239 8.0572 16.5 8.33334 16.5V17.5ZM23.6572 8.11903L33.6572 16.619L33.0095 17.381L23.0095 8.88097L23.6572 8.11903ZM33.6572 17.381L23.6572 25.881L23.0095 25.119L33.0095 16.619L33.6572 17.381ZM33.3333 17.5H8.33334V16.5H33.3333V17.5Z" fill="white"/>
@@ -164,7 +178,7 @@ const MASQuestionaire = () => {
         } 
        { CurrSec== 2 &&
             <Animated.View className='h-[66%]  space-y-2 flex flex-col w-[90%] self-center'
-            entering={FadeIn.duration(2000).easing(Easing.inOut(Easing.quad))}
+            entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
             >
                 <View className='h-[85%] space-y-2'>
                     <Text className='font-bold text-3xl text-center py-6'>What's Your Gender?</Text>
@@ -194,7 +208,7 @@ const MASQuestionaire = () => {
         }
         {CurrSec == 3 &&
             <Animated.View className='h-[66%]  space-y-2 flex flex-col w-[90%] self-center'
-            entering={FadeIn.duration(2000).easing(Easing.inOut(Easing.quad))}
+            entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
             >
                 <View className=' h-[85%] space-y-3'>
                     <Text className='font-bold text-3xl text-center py-6'>What age range do you fall in? </Text>
@@ -224,7 +238,7 @@ const MASQuestionaire = () => {
        }
        { CurrSec == 4 &&
             <Animated.View className='h-[66%] space-y-2 flex flex-col w-[90%] self-center'
-            entering={FadeIn.duration(2000).easing(Easing.inOut(Easing.quad))}
+            entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
             >
                 <View className='h-[85%] space-y-3'>
                     <Text className='font-bold text-3xl text-center py-6'>Add a profile picture !</Text>
@@ -292,7 +306,7 @@ const MASQuestionaire = () => {
        }
        {
         CurrSec == 5 && 
-        <View className='h-[73%] space-y-6 px-6 '>
+        <View className='h-[67%] space-y-4 px-6 '>
             <View>
                 <Text className='font-bold text-2xl text-black mt-4'>Add programs ...</Text>
                 <Text className=' text-[10px] text-left'>Select the programs you want to be notified for </Text>
@@ -302,21 +316,35 @@ const MASQuestionaire = () => {
                 <View className=' z-[-1] items-center justify-center  rounded-2xl'><RunnyOuterCircle programs={programs.slice(0, programs.length / 2)} onSetSelectProgram={onSetSelectProgram}/></View>
             </View>
             <Text className='text-2xl text-left'>Programs Added</Text>
-            <View className='flex flex-row space-x-2'>
-                {
-                    AddedPrograms.map((item, index) => (
-                        <Pressable
-                        onPress={() => {onRemoveFromAddToProgram(item)}}
-                        >
-                            <Image src={item?.program_img ? item.program_img : require('@/assets/images/MasPlaylistDef.png')} className='w-[75px] h-[75px] rounded-xl '
-                            style={{
-                                objectFit : 'fill'
-                            }}
-                            key={index}
-                            />
-                        </Pressable>
-                    ))
-                }
+            <View className='flex flex-row space-x-2 full '>
+                <View className='w-[70%] space-x-2 flex-row flex overflow-scroll'>
+                    {
+                        AddedPrograms.map((item, index) => (
+                            <AnimatedPressable
+                            onPress={() => {onRemoveFromAddToProgram(item)}}
+                            exiting={FadeOutUp.duration(1000).easing(Easing.inOut(Easing.quad))}
+    
+                            >
+                                <Animated.Image src={item?.program_img ? item.program_img : require('@/assets/images/MasPlaylistDef.png')} className='w-[75px] h-[75px] rounded-xl '
+                                style={{
+                                    objectFit : 'fill'
+                                }}
+                                key={index}
+                                entering={FadeIn.duration(500).easing(Easing.inOut(Easing.quad))}
+                                />
+                            </AnimatedPressable>
+                        ))
+                    }
+                </View>
+                <View className='w-[30%] items-end'>
+                    <Pressable className=' bg-[#0E4F9F] rounded-[10px] h-[75px] w-[75px] items-center justify-center mt-8 border'
+                    onPress={() => {CurrentSection.value += 1; setCurrSec(CurrSec + 1)}}
+                    >
+                        <Svg width="40" height="34" viewBox="0 0 40 34" fill="none">
+                            <Path d="M33.3333 17L33.6572 16.619L34.1054 17L33.6572 17.381L33.3333 17ZM8.33334 17.5C8.0572 17.5 7.83334 17.2761 7.83334 17C7.83334 16.7239 8.0572 16.5 8.33334 16.5V17.5ZM23.6572 8.11903L33.6572 16.619L33.0095 17.381L23.0095 8.88097L23.6572 8.11903ZM33.6572 17.381L23.6572 25.881L23.0095 25.119L33.0095 16.619L33.6572 17.381ZM33.3333 17.5H8.33334V16.5H33.3333V17.5Z" fill="white"/>
+                        </Svg>
+                    </Pressable>
+                </View>
             </View>
         </View>
        }
@@ -324,6 +352,7 @@ const MASQuestionaire = () => {
             <Text className='text-[#A4A4A4] text-center'>experiencing issues? Email our team:</Text>
             <Text className='text-black underline text-center'>developer@massic.org</Text>
         </View>
+
         <Modal visible={selectedProgram != undefined} onDismiss={() => setSelectedProgram(undefined)}
         theme={{
             colors : {
@@ -332,8 +361,8 @@ const MASQuestionaire = () => {
         }}    
         >
             <View className='items-center justify-center w-[220px] space-y-10  self-center'>
-                <View className='max-h-[220px] max-w-[220px] rounded-xl self-center  w-[100%]'>
-                    <Image src={selectedProgram?.program_img ? selectedProgram.program_img : require('@/assets/images/MasPlaylistDef.png')} className='w-full h-full rounded-xl '
+                <View className='max-h-[230px] max-w-[250px] rounded-xl self-center  w-[100%] overflow-hidden'>
+                    <Image src={selectedProgram?.program_img ? selectedProgram.program_img : require('@/assets/images/MasPlaylistDef.png')} className='w-full h-full rounded-[10px] '
                     style={{
                         objectFit : 'fill'
                     }}
@@ -354,9 +383,3 @@ const MASQuestionaire = () => {
 
 export default MASQuestionaire
 
-
-const NameSection = () => {
-    return{
-
-    }
-}

@@ -29,7 +29,7 @@ function setTimeToCurrentDate(timeString : string ) {
   const timestampWithTimeZone = new Date();
 
   // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 5, minutes, seconds, 0); // No milliseconds
+  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
 
   // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
   const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC

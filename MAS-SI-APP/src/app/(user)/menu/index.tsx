@@ -22,6 +22,7 @@ import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 import { BlurView } from 'expo-blur';
 import SocialPlatforms from '@/src/components/SocialPlatforms';
 import IconsMarquee from '@/src/components/Marquee';
+import MASQuestionaire from '@/src/components/MASQuestionaire';
 
 export default function homeScreen() {
   const { onSetPrayerTimesWeek, prayerTimesWeek } = usePrayer()
@@ -165,6 +166,14 @@ export default function homeScreen() {
                     <Text className='text-[#0D509D] font-bold text-2xl'>Connect With Us</Text>
                   </View>
                   <IconsMarquee />
+                  <Portal >
+                    <Modal visible style={{
+                      backgroundColor : 'white'
+                    }}>
+                      <MASQuestionaire />
+                    </Modal>
+                  </Portal>
+
                   <View style={[{paddingBottom : tabBarHeight}]}></View>
            </Animated.ScrollView>
     )

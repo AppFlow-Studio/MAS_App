@@ -1,5 +1,5 @@
-import { View, Text, Image, useWindowDimensions, Pressable, Alert } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import { View, Text, Image, useWindowDimensions, Pressable, Alert, FlatList } from 'react-native'
+import React, { useEffect, useRef, useState } from 'react'
 import Animated, { Easing, FadeIn, FadeInUp, FadeOut, FadeOutUp, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useForm, SubmitHandler, Controller } from "react-hook-form"
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,15 +17,18 @@ import { ExpoPushToken } from 'expo-notifications';
 import { useAuth } from '../providers/AuthProvider';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { LinearGradient } from 'expo-linear-gradient';
+import { decode } from 'base64-arraybuffer';
+import Confetti from './Confetti';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => void }) => {
   const { session } = useAuth()
+  const ConfettiRef = useRef(null)
   const [ newToken, setExpoPushToken ] = useState<ExpoPushToken>()
   const CurrentSection = useSharedValue(1)
   const [CurrSec, setCurrSec] = useState(1) 
   const [ ProfilePic, setProfilePic ] = useState<ImagePicker.ImagePickerAsset>()
   const LAYOUTWIDTH = useWindowDimensions().width
-  const [ UserGender, setUserGender ] = useState('') 
+  const [ UserGender, setUserGender ] = useState('All') 
   const [ UserAgeRange, setUserAgeRange ] = useState('')
   const [ ProfilePicBG, setProfilePicBG ] = useState('')
   const [ programs, setPrograms ] = useState<Program[]>([])
@@ -39,6 +42,7 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
   })
   const { register, handleSubmit, formState } = useForm();
   const { isValid } = formState;
+  const [ isReady, setIsReady ] = useState(true)
   const Section1Questions : {schemaId : "first_name" | "last_name", label : string}[] = [{schemaId : "first_name", label : 'First Name'}, { schemaId : "last_name", label : 'Last Name'}]
   const Section2Questions = ['Male', 'Female']
   const Section3Questions = ['4 - 13 years old', '14 - 18 years old', '19 - 23 years old', '24 - 30 years old', '31+ years old'] 
@@ -65,24 +69,52 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
      }
 
   const GetPrograms = async () => {
-    const { data, error } = await supabase.from('programs').select('*')
+    const { data : AllPrograms, error : AllProgramsError } = await supabase.from('programs').select().eq('program_gender', 'Both')
+    const { data, error } = await supabase.from('programs').select().eq('program_gender', UserGender)
     if(data){
-        setPrograms(data)
+        const Combined = AllPrograms?.concat(data)
+        setPrograms(Combined!)
     }
-  }
+    }
     const onSelectImage = async () => {
-    const options : ImagePicker.ImagePickerOptions = {
-        mediaTypes : ImagePicker.MediaTypeOptions.Images,
-        allowsEditing : true
-    }
-    const result = await ImagePicker.launchImageLibraryAsync(options)
+        const options : ImagePicker.ImagePickerOptions = {
+            mediaTypes : ImagePicker.MediaTypeOptions.Images,
+            allowsEditing : true
+        }
+        const result = await ImagePicker.launchImageLibraryAsync(options)
 
-    if( !result.canceled ){
-        const img = result.assets[0]
-        setProfilePicBG('')
-        setProfilePic(img)
+        if( !result.canceled ){
+            const img = result.assets[0]
+            setProfilePicBG('')
+            setProfilePic(img)
+        }
     }
+
+    const uploadImage = async () => {
+        if( ProfilePic ){
+            setIsReady(false)
+            const base64 = await FileSystem.readAsStringAsync(ProfilePic.uri, { encoding: 'base64' });
+            const filePath = `${session?.user.id}/${new Date().getTime()}.${ProfilePic.type === 'image' ? 'png' : 'mp4'}`;
+            const contentType = ProfilePic.type === 'image' ? 'image/png' : 'video/mp4';
+            const { data : image, error :image_upload_error } = await supabase.storage.from('profile_pic').upload(filePath, decode(base64));
+
+            if( image ){
+                const { data : profile_pic_url} = await supabase.storage.from('profile_pic').getPublicUrl(image?.path)
+                if( profile_pic_url ) {
+                    const { error } = await supabase.from("profiles").update({ profile_pic: profile_pic_url.publicUrl}).eq('id', session?.user.id)
+                }
+            }
+        }
+        else{
+            setIsReady(false)
+            const { error } = await supabase.from("user_playlist").update({ def_background : ProfilePicBG }).eq('id', session?.user.id)
+        }
     }
+
+    const onAddProgramsToNotification = async () => {
+
+    }
+
 
     const onSetSelectProgram = (program : Program) => {
         setSelectedProgram(program)
@@ -106,7 +138,7 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
 
     useEffect(() => {
         GetPrograms()
-    }, [])
+    }, [UserGender, UserAgeRange])
   return (
     <View className='h-[110%] w-full bg-white flex flex-col'>
       { 
@@ -218,6 +250,8 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
 
             </Animated.View>
         } 
+
+        {/* User Gender  */}
        { CurrSec== 2 &&
             <Animated.View className='h-[66%]  space-y-2 flex flex-col w-[90%] self-center'
             entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
@@ -234,8 +268,8 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
                         </Pressable>
                     )) }
                     <View className='flex flex-row space-x-4 w-full self-center'>
-                        <Lock /> 
-                        <Text className=' text-[#A4A4A4] text-[10px]'>This information is only shared with MAS employees </Text>
+                        <Lock />                                                                         
+                        <Text className=' text-[#A4A4A4] text-[10px] '>This information is only shared with MAS employees </Text>
                     </View>
                 </View>
 
@@ -248,6 +282,8 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
                 </Pressable> */}
             </Animated.View> 
         }
+
+        {/* User Age Range */}
         {CurrSec == 3 &&
             <Animated.View className='h-[66%]  space-y-2 flex flex-col w-[90%] self-center'
             entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
@@ -278,6 +314,8 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
                 </Pressable> */}
             </Animated.View> 
        }
+
+       {/* Add a Profile Pi  */}
        { CurrSec == 4 &&
             <Animated.View className='h-[66%] space-y-2 flex flex-col w-[90%] self-center'
             entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
@@ -295,12 +333,10 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
                          :
                          ProfilePicBG ? 
                         <View className='bg-gray-200 rounded-full items-center justify-center w-[150px] h-[150px]'>
-                             <Image source={require('@/assets/images/MasPlaylistDef.png')} className='rounded-full' 
+                             <Image source={require('@/assets/images/MasPlaylistDef.png')} className='rounded-full h-full w-full' 
                                 style={{
                                     objectFit : 'contain',
                                     backgroundColor : ProfilePicBG,
-                                    width : 150,
-                                    height : 150
                                 }}
                                 />
                         </View>
@@ -318,8 +354,8 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
     
                     <View className='flex flex-row space-x-6 self-center'>
                         {
-                            ['#FDE2E4','#BEE1E6','#F0E6EF','#FAEDCB', '#C6DEF1'].map((item) => (
-                                <Pressable onPress={() => {setProfilePicBG(item); setProfilePic(undefined)}}>
+                            ['#FFFF','#FDE2E4','#BEE1E6','#F0E6EF','#FAEDCB',].map((item) => (
+                                <Pressable onPress={() => {setProfilePicBG(item); setProfilePic(undefined)}} className=''>
                                     <Image source={require('@/assets/images/MasPlaylistDef.png')} key={item} className='rounded-full h-[50px] w-[50px]' 
                                     style={{
                                         objectFit : 'contain',
@@ -346,6 +382,8 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
                 </Pressable>
             </Animated.View>       
        }
+
+       {/* Add programs quickstart */}
        {
         CurrSec == 5 && 
         <View className='h-[67%] space-y-4 px-6 '>
@@ -360,14 +398,16 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
             <Text className='text-2xl text-left'>Programs Added</Text>
             <View className='flex flex-row space-x-2 full '>
                 <View className='w-[70%] space-x-2 flex-row flex overflow-scroll'>
-                    {
-                        AddedPrograms.map((item, index) => (
+
+                    <FlatList 
+                        data={AddedPrograms}
+                        renderItem={({item, index}) => (
                             <AnimatedPressable
                             onPress={() => {onRemoveFromAddToProgram(item)}}
                             exiting={FadeOutUp.duration(1000).easing(Easing.inOut(Easing.quad))}
-                            className={' border-3 border-[#CAFDC1] rounded-xl'}
+                            className={'rounded-xl mx-2'}
                             >
-                                <Animated.Image src={item?.program_img ? item.program_img : require('@/assets/images/MasPlaylistDef.png')} className='w-[75px] h-[75px] rounded-xl '
+                                <Animated.Image src={item?.program_img ? item.program_img : require('@/assets/images/MasPlaylistDef.png')} className='w-[75px] h-[75px] rounded-xl  border-4 border-[#CAFDC1]  '
                                 style={{
                                     objectFit : 'fill'
                                 }}
@@ -375,8 +415,10 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
                                 entering={FadeIn.duration(500).easing(Easing.inOut(Easing.quad))}
                                 />
                             </AnimatedPressable>
-                        ))
-                    }
+                        )}
+                        horizontal
+                        className=''
+                    />
                 </View>
                 <View className='w-[30%] items-end'>
                     <Pressable className=' bg-[#0E4F9F] rounded-[10px] h-[75px] w-[75px] items-center justify-center mt-8 border'
@@ -390,13 +432,23 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
             </View>
         </View>
        }
+       
+       {/* Turn Notifications on */}
+       {/* 
+       
+            GOES HERE
+       
+       */}
+
+
+       {/* Account Completion */}
        {
         CurrSec == 6 && 
         <Animated.View className='h-full w-full bg-[#0E4F9F] flex flex-col items-center justify-start border pt-[45%]'
         entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
         >
 
-            <View className=' relative items-center justify-center border-green-500 h-[200px] w-[200px]'>
+            <Pressable className=' relative items-center justify-center border-green-500 h-[200px] w-[200px]' onPress={() => {ConfettiRef?.current.fire()}}>
                 <View className=' '>
                     <Svg width="200" height="200" viewBox="0 0 200 200" fill="none">
                         <Path d="M89.8413 21.7321C94.9433 15.0035 105.059 15.0035 110.161 21.7321L121.611 36.833C123.43 39.2326 126.403 40.4639 129.386 40.0537L148.161 37.4723C156.526 36.3221 163.679 43.4747 162.529 51.8402L159.947 70.6147C159.537 73.598 160.768 76.5706 163.168 78.3901L178.269 89.8404C184.997 94.9424 184.997 105.058 178.269 110.16L163.168 121.61C160.768 123.429 159.537 126.402 159.947 129.385L162.529 148.16C163.679 156.525 156.526 163.678 148.161 162.528L129.386 159.946C126.403 159.536 123.43 160.767 121.611 163.167L110.161 178.268C105.059 184.997 94.9433 184.997 89.8413 178.268L78.391 163.167C76.5715 160.767 73.5989 159.536 70.6156 159.946L51.841 162.528C43.4756 163.678 36.323 156.525 37.4732 148.16L40.0546 129.385C40.4648 126.402 39.2335 123.429 36.8339 121.61L21.733 110.16C15.0044 105.058 15.0044 94.9424 21.733 89.8404L36.8339 78.3901C39.2335 76.5706 40.4648 73.598 40.0546 70.6147L37.4732 51.8402C36.323 43.4747 43.4756 36.3221 51.8411 37.4723L70.6156 40.0537C73.5989 40.4639 76.5715 39.2326 78.391 36.833L89.8413 21.7321Z" fill="#CAFDC1"/>
@@ -407,15 +459,24 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
                         <Path d="M20.8333 58.3333L36.7331 70.2581C37.1618 70.5797 37.7677 70.5061 38.107 70.0914L75 25" stroke="#33363F" strokeWidth="2" strokeLinecap="round"/>
                     </Svg>
                 </View>
-            </View>
+                <View className=' absolute self-center'>
+                    <Confetti ref={ConfettiRef}/>
+                </View>
+            </Pressable>
 
-            <View className=' self-center w-[65%] space-y-10 text-center my-[15%]'>
+            <View className=' self-center w-[70%] space-y-10 text-center my-[15%]'>
                 <Text className='text-white text-[36px] font-[400] font-serif text-center'
+                style={{
+                    fontFamily : 'Poltawski'
+                }}
                 >
                     Account Made !
                 </Text>
     
-                <Text className='text-white font-[400] text-center text-[14px]' 
+                <Text className='text-white font-[400] text-center text-[15px]' 
+                style={{
+                    fontFamily : 'Poltawski'
+                }}
                 >
                     Account created successfully! Dive into a
                     unique adventure with MAS SI.

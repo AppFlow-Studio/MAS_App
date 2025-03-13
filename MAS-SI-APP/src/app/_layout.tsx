@@ -26,6 +26,7 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
     'Oleo' : require('../../assets/fonts/OleoScript-Regular.ttf'),
+    'Poltawski' : require('../../assets/fonts/PoltawskiNowy-VariableFont_wght.ttf')
   });
   useEffect(() => {
     async function hideSplash() {

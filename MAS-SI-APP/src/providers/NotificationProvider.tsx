@@ -57,7 +57,6 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
     else{
       console.log('session fail')
     }
-
   }
 
   const DeleteOldPushToken = async () => {

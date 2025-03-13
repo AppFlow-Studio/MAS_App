@@ -169,12 +169,10 @@ export default function homeScreen() {
                   <IconsMarquee />
                   <Portal >
                     <Modal visible={showQuestionaire} style={{
-                      backgroundColor : 'white'
                     }}>
                       <MASQuestionaire onCloseQuestionaire={() => setShowQuestionaire(false)}/>
                     </Modal>
                   </Portal>
-
                   <View style={[{paddingBottom : tabBarHeight}]}></View>
            </Animated.ScrollView>
     )

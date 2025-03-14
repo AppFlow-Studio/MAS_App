@@ -5,17 +5,19 @@ import Animated, {
   useAnimatedStyle, 
   withTiming, 
   withSpring,
-  withSequence
+  withSequence,
+  withRepeat
 } from 'react-native-reanimated';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const NUM_CONFETTI = 30;
+const NUM_CONFETTI = 80;
 const rainbowColors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
 
-const ConfettiItem = ({ trigger }) => {
+const ConfettiItem = ({ trigger, firstTimeFired } ) => {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const rotate = useSharedValue(0);
+  const rotateY = useSharedValue(0)
   const opacity = useSharedValue(1);
 
   // Assign a random rainbow color once per confetti item.
@@ -26,17 +28,25 @@ const ConfettiItem = ({ trigger }) => {
 
   useEffect(() => {
     if (trigger) {
-      const angle = Math.random() * 2 * Math.PI;
-      const distance = Math.random() * (screenWidth / 2);
-      translateX.value = withSequence(withSpring(distance * Math.cos(angle)), withTiming(-(distance * Math.cos(angle)), { duration : 3000 }));
-      translateY.value = withSequence(withSpring(distance * Math.sin(angle)), withTiming(-(distance * Math.sin(angle)), { duration : 3000 }));
-      rotate.value = withTiming(Math.random() * 360, { duration: 1000 });
-      opacity.value = withTiming(0, { duration: 1000 });
-    } else {
-      translateX.value = 0;
-      translateY.value = 0;
-      rotate.value = 0;
-      opacity.value = 1;
+      const variation = Math.PI / 5; // ~10° in radians
+      const angle = -( Math.PI / 2 + (Math.random() - 0.5) * 2 * variation);
+      const angleX = -(Math.random() * 2 * Math.PI);
+      const distance = Math.random() * (screenHeight / 4);
+
+      const angleXConfetti = (distance * Math.cos(angleX)) / 1.5
+      translateX.value = withSequence(withTiming(((distance * Math.cos(angleX)) / 1.5 ), {duration : 300}));
+      translateY.value = withSequence( withTiming(distance * Math.sin(angle), {duration : 300}), withTiming(-distance * Math.sin(angle), { duration : 2500 }));
+      rotate.value = withRepeat(withTiming(Math.random() * 360, { duration: 600 }), 5, true);
+      rotateY.value = withRepeat(withTiming(Math.random()* 360 , { duration : 600}) , 5, true)
+      opacity.value = withSequence(withTiming(1), withTiming(0, { duration : 1500 }));
+    } else{
+        const angleX = -(Math.random() * 2 * Math.PI);
+        const distance = Math.random() * (screenHeight / 4);
+        const angleXConfetti = (distance * Math.cos(angleX)) / 1.5;
+
+        translateX.value = 0;
+        translateY.value = 0;
+        rotate.value = 0;
     }
   }, [trigger]);
 
@@ -44,7 +54,8 @@ const ConfettiItem = ({ trigger }) => {
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
-      { rotateX: `${rotate.value}deg` },
+      { rotateY: `${rotateY.value}deg` },
+      { rotateX : `${rotate.value}deg`}
     ],
     opacity: opacity.value,
   }));
@@ -54,19 +65,21 @@ const ConfettiItem = ({ trigger }) => {
 
 const Confetti = forwardRef((props, ref) => {
   const [trigger, setTrigger] = useState(false);
-
+  const [ firstTimeFired, setFirstTimeFired ] = useState(false)
   useImperativeHandle(ref, () => ({
     fire: () => {
       setTrigger(true);
-      // Reset trigger after animation completes (1000ms + buffer)
-      setTimeout(() => setTrigger(false), 1100);
+      setFirstTimeFired(true)
+      // Reset trigger after animation completes 
+      setTimeout(() => setTrigger(false), 3000);
     },
   }));
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container}
+    >
       {Array.from({ length: NUM_CONFETTI }).map((_, index) => (
-        <ConfettiItem key={index} trigger={trigger} />
+        <ConfettiItem key={index} trigger={trigger} firstTimeFired={firstTimeFired}/>
       ))}
     </View>
   );
@@ -75,11 +88,10 @@ const Confetti = forwardRef((props, ref) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 0,
+    top: '50%',
     left: 0,
     width: screenWidth,
     height: screenHeight,
-    pointerEvents: 'none', // allows touches to pass through
   },
   confettiItem: {
     position: 'absolute',

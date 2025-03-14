@@ -139,6 +139,13 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
     useEffect(() => {
         GetPrograms()
     }, [UserGender, UserAgeRange])
+
+    useEffect(() => {
+        if( CurrSec == 6 ){
+           setTimeout(() => ConfettiRef?.current.fire(), 500)
+        }
+    }, [ CurrSec == 6 ])
+
   return (
     <View className='h-[110%] w-full bg-white flex flex-col'>
       { 
@@ -253,11 +260,11 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
 
         {/* User Gender  */}
        { CurrSec== 2 &&
-            <Animated.View className='h-[66%]  space-y-2 flex flex-col w-[90%] self-center'
+            <Animated.View className='h-[66%] flex flex-col w-[90%] self-center'
             entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
             >
-                <View className='h-[85%] space-y-2'>
-                    <Text className='font-bold text-3xl text-center py-6'>What's Your Gender?</Text>
+                <View className='h-[85%] space-y-6'>
+                    <Text className='font-bold text-2xl text-center py-6'>What's your Gender?</Text>
                     { Section2Questions.map((item, index) => (
                         <Pressable className='w-full self-center flex-2 rounded-[8px] h-[40px] items-start justify-center pl-3' key={index} onPress={() => {setUserGender(item);  CurrentSection.value += 1; setCurrSec(CurrSec + 1)}}
                         style={{
@@ -288,8 +295,8 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
             <Animated.View className='h-[66%]  space-y-2 flex flex-col w-[90%] self-center'
             entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
             >
-                <View className=' h-[85%] space-y-3'>
-                    <Text className='font-bold text-3xl text-center py-6'>What age range do you fall in? </Text>
+                <View className=' h-[85%] space-y-6'>
+                    <Text className='font-bold text-2xl text-center py-6'>What age range do you fall in? </Text>
                     { Section3Questions.map((item, index) => (
                             <Pressable 
                             style={{
@@ -321,7 +328,7 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
             entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
             >
                 <View className='h-[85%] space-y-3'>
-                    <Text className='font-bold text-3xl text-center py-6'>Add a profile picture !</Text>
+                    <Text className='font-bold text-2xl text-center py-6'>Add a profile picture !</Text>
     
                     <Pressable className='border-2 border-[#0E4F9F] rounded-full p-4 self-center w-[160px] h-[160px] aspect-1 items-center justify-center'
                     onPress={onSelectImage}
@@ -448,13 +455,13 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
         entering={FadeIn.duration(1000).easing(Easing.inOut(Easing.quad))}
         >
 
-            <Pressable className=' relative items-center justify-center border-green-500 h-[200px] w-[200px]' onPress={() => {ConfettiRef?.current.fire()}}>
-                <View className=' '>
+            <Pressable className=' relative items-center justify-center border-green-500 h-[200px] w-[200px]' >
+                <View className=' z-[2]'>
                     <Svg width="200" height="200" viewBox="0 0 200 200" fill="none">
                         <Path d="M89.8413 21.7321C94.9433 15.0035 105.059 15.0035 110.161 21.7321L121.611 36.833C123.43 39.2326 126.403 40.4639 129.386 40.0537L148.161 37.4723C156.526 36.3221 163.679 43.4747 162.529 51.8402L159.947 70.6147C159.537 73.598 160.768 76.5706 163.168 78.3901L178.269 89.8404C184.997 94.9424 184.997 105.058 178.269 110.16L163.168 121.61C160.768 123.429 159.537 126.402 159.947 129.385L162.529 148.16C163.679 156.525 156.526 163.678 148.161 162.528L129.386 159.946C126.403 159.536 123.43 160.767 121.611 163.167L110.161 178.268C105.059 184.997 94.9433 184.997 89.8413 178.268L78.391 163.167C76.5715 160.767 73.5989 159.536 70.6156 159.946L51.841 162.528C43.4756 163.678 36.323 156.525 37.4732 148.16L40.0546 129.385C40.4648 126.402 39.2335 123.429 36.8339 121.61L21.733 110.16C15.0044 105.058 15.0044 94.9424 21.733 89.8404L36.8339 78.3901C39.2335 76.5706 40.4648 73.598 40.0546 70.6147L37.4732 51.8402C36.323 43.4747 43.4756 36.3221 51.8411 37.4723L70.6156 40.0537C73.5989 40.4639 76.5715 39.2326 78.391 36.833L89.8413 21.7321Z" fill="#CAFDC1"/>
                     </Svg>
                 </View>
-                <View className=' absolute self-center '>
+                <View className=' absolute self-center z-[2] '>
                     <Svg width="100" height="100" viewBox="0 0 100 100" fill="none">
                         <Path d="M20.8333 58.3333L36.7331 70.2581C37.1618 70.5797 37.7677 70.5061 38.107 70.0914L75 25" stroke="#33363F" strokeWidth="2" strokeLinecap="round"/>
                     </Svg>

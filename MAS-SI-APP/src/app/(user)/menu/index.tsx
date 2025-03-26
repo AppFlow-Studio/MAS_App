@@ -166,13 +166,13 @@ export default function homeScreen() {
                     <Text className='text-[#0D509D] font-bold text-2xl'>Connect With Us</Text>
                   </View>
                   <IconsMarquee />
-                  <Portal >
+                  {/* <Portal >
                     <Modal visible style={{
                       backgroundColor : 'white'
                     }}>
                       <MASQuestionaire />
                     </Modal>
-                  </Portal>
+                  </Portal> */}
 
                   <View style={[{paddingBottom : tabBarHeight}]}></View>
            </Animated.ScrollView>

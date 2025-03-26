@@ -2,7 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+//import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import PrayerTimesProvider from '../providers/prayerTimesProvider';
@@ -15,13 +15,17 @@ import AuthProvider from '../providers/AuthProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import NotificationProvider from '../providers/NotificationProvider';
 import { Text } from 'react-native';
-import TutorialOverlay from "../components/TutorialOverlay"; // Import tutorial
+//import TutorialOverlay from "../components/TutorialOverlay"; // Import tutorial
+import LottieView from 'lottie-react-native';
+import Animated, { useSharedValue, withTiming, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [showTutorial, setShowTutorial] = useState(false);
-  const [isLogoAnimationDone, setIsLogoAnimationDone] = useState(false);
-  const [isFirstLaunch, setIsFirstLaunch] = useState(true); // ✅ Always show tutorial for testing
+  const [isFirstLaunchChecked, setIsFirstLaunchChecked] = useState(false);
+  const [isFirstLaunch, setIsFirstLaunch] = useState(true); // Set to false for final version
+  const [showLogo, setShowLogo] = useState(true);
+  const logoOpacity = useSharedValue(1);
 
   interface TextWithDefaultProps extends Text {
     defaultProps?: { allowFontScaling?: boolean };
@@ -41,47 +45,111 @@ export default function RootLayout() {
     Poppins_800ExtraBold: require("../../assets/fonts/Poppins-ExtraBold.ttf"),
   });
 
+
+  // ✅ Clear AsyncStorage on every launch (for testing)
+  // useEffect(() => {
+  //   const clearAsyncStorage = async () => {
+  //     try {
+  //       await AsyncStorage.clear();
+  //       console.log('✅ AsyncStorage cleared!');
+  //     } catch (e) {
+  //       console.error('❌ Failed to clear AsyncStorage', e);
+  //     }
+  //   };
+
+  //   clearAsyncStorage();
+  // }, []);
+
+
+
+
+
+
+// ✅ Simulate "haven’t used the app in a while" scenario
+  // useEffect(() => {
+  //   const updateLastUsed = async () => {
+  //     await AsyncStorage.setItem('last_used', Date.now().toString());
+  //   };
+  
+  //   const checkLastUsed = async () => {
+  //     const lastUsed = await AsyncStorage.getItem('last_used');
+  //     if (lastUsed) {
+  //       const diff = Date.now() - parseInt(lastUsed, 10);
+  //       const twoHours = 2 * 60 * 60 * 1000;
+  //       if (diff > twoHours) {
+  //         console.log('🚨 Simulating "haven’t used the app in a while" scenario');
+  //         // Add test logic here to simulate your bug or behavior
+  //       } else {
+  //         console.log('✅ User has used app recently');
+  //       }
+  //     }
+  //     updateLastUsed(); // Update timestamp every time app launches
+  //   };
+  
+  //   checkLastUsed();
+  // }, []);
+
+
+
+
+
+  
+  // ✅ Force tutorial to show on every launch (for testing)
+  useEffect(() => {
+    setIsFirstLaunch(true); // Change to false for final version  //pretty sure this entire block gets commented out for full version (double check with GPT)
+    setIsFirstLaunchChecked(true);
+  }, []);
+
+  // ✅ Uncomment this block for final version to check only first-time users
+  /*
   useEffect(() => {
     async function checkFirstLaunch() {
       const hasSeenTutorial = await AsyncStorage.getItem('hasSeenTutorial');
       if (!hasSeenTutorial) {
         setIsFirstLaunch(true);
       } else {
-        setIsLogoAnimationDone(true); // ✅ Skip animation if app has been opened before
+        setIsFirstLaunch(false);
       }
+      setIsFirstLaunchChecked(true);
     }
     checkFirstLaunch();
   }, []);
-
-  useEffect(() => {
-    async function hideSplash() {
-      await SplashScreen.preventAutoHideAsync(); // Keep splash screen visible
-      if (loaded) {
-        setTimeout(async () => {
-          await SplashScreen.hideAsync(); // Hide splash screen
-          setIsLogoAnimationDone(true); // ✅ Mark logo animation as done
-        }, 50);
-      }
-    }
-    hideSplash();
-  }, [loaded]);
-
-  useEffect(() => {
-    if (isLogoAnimationDone && isFirstLaunch) {
-      setTimeout(() => {
-        setShowTutorial(true); // ✅ Show tutorial after logo animation
-      }, 5000);
-    }
-  }, [isLogoAnimationDone]);
+  */
 
   const handleTutorialFinish = async () => {
     setShowTutorial(false);
-    setIsFirstLaunch(false); // ✅ Prevents logo animation from replaying
-     // await AsyncStorage.setItem('hasSeenTutorial', 'true'); // Uncomment for final version
+    // await AsyncStorage.setItem('hasSeenTutorial', 'true'); // Enable for final version
   };
 
-  if (!loaded) {
-    return null;
+  // ✅ Logo fade animation
+  const logoAnimation = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+  }));
+
+  const hideLogo = () => {
+    logoOpacity.value = withTiming(0, { duration: 600 }, () => {
+      runOnJS(setShowLogo)(false);
+      if (isFirstLaunch) {
+        runOnJS(setShowTutorial)(true);
+      }
+    });
+  };
+
+  useEffect(() => {
+    async function hideSplash() {
+      await SplashScreen.preventAutoHideAsync();
+      if (loaded && isFirstLaunchChecked) {
+        await SplashScreen.hideAsync();
+        setTimeout(() => {
+          hideLogo();
+        }, 3500); // Duration to show the logo screen before fading
+      }
+    }
+    hideSplash();
+  }, [loaded, isFirstLaunchChecked]);
+
+  if (!loaded || !isFirstLaunchChecked) {
+    return null; // Wait until fonts and AsyncStorage are ready
   }
 
   return (
@@ -89,37 +157,42 @@ export default function RootLayout() {
       <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
         <AuthProvider>
           <PrayerTimesProvider>
-            {/* <NotificationProvider> */}
+             <NotificationProvider>
             <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <BottomSheetModalProvider>
                 <MenuProvider>
                   <PaperProvider>
-                    {/* ✅ Show the logo animation only ONCE before tutorial */}
-                    {!isLogoAnimationDone && !showTutorial && (
-                      <Stack key={Date.now()}>
-                        <Stack.Screen name="(user)" options={{ headerShown: false, animation: 'none' }} />
-                        <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'none' }} />
-                        <Stack.Screen name="+not-found" options={{ animation: 'none' }} />
-                      </Stack>
+                    {/* ✅ Show animated logo once */}
+                    {showLogo && (
+                      <Animated.View style={[{ position: 'absolute', zIndex: 10, width: '100%', height: '100%' }, logoAnimation]}>
+                        <LottieView
+                          autoPlay
+                          loop={false}
+                          source={require("@/assets/lottie/MASLogoAnimation3.json")}
+                          style={{ width: '100%', height: '100%', backgroundColor: 'white' }}
+                          speed={1.5}
+                        />
+                      </Animated.View>
                     )}
-                    
-                    {/* ✅ Ensure home screen is ALWAYS in the background */}
+
+                    {/* ✅ Main App */}
                     <Stack key="main-app">
                       <Stack.Screen name="(user)" options={{ headerShown: false, animation: 'none' }} />
                       <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'none' }} />
                       <Stack.Screen name="+not-found" options={{ animation: 'none' }} />
                     </Stack>
 
-                    {/* ✅ Show tutorial over home screen (instead of bringing back logo) */}
-                    {showTutorial && <TutorialOverlay visible={showTutorial} onClose={handleTutorialFinish} />}
+                    {/* ✅ Tutorial (every time for now) */} 
+                    {/* {showTutorial && <TutorialOverlay visible={showTutorial} onClose={handleTutorialFinish} />} */}
                   </PaperProvider>
                 </MenuProvider>
               </BottomSheetModalProvider>
             </ThemeProvider>
-              {/* </NotificationProvider> */}
+             </NotificationProvider> 
           </PrayerTimesProvider>
         </AuthProvider>
       </StripeProvider>
     </GestureHandlerRootView>
   );
 }
+

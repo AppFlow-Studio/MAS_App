@@ -35,7 +35,7 @@ export default function homeScreen() {
   const [ confirmProfile, setConfirmProfile ] = useState(true)
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = React.useState(false);
-  const [ showQuestionaire, setShowQuestionaire ] = useState(true)
+  const [ showQuestionaire, setShowQuestionaire ] = useState(false)
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
   const tabBarHeight = useBottomTabBarHeight();

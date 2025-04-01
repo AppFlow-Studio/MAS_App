@@ -100,6 +100,7 @@ const BusinessAds = () => {
 
   const onSubmit = async () => {
     if( businessFlyer ){
+        setFinishedSelectedChoices(false)
         const base64 = await FileSystem.readAsStringAsync(businessFlyer.uri, { encoding: 'base64' });
         const filePath = `${session?.user.id}/${new Date().getTime()}.${businessFlyer.type === 'image' ? 'png' : 'mp4'}`;
         const contentType = businessFlyer.type === 'image' ? 'image/png' : 'video/mp4';
@@ -131,6 +132,7 @@ const BusinessAds = () => {
                 visibilityTime: 2000,
             }
         )
+        setFinishedSelectedChoices(true)
     }
     else{
         Alert.alert("Submit Business Flyer")

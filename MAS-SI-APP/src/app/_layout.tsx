@@ -14,6 +14,8 @@ import AuthProvider from '../providers/AuthProvider';// Prevent the splash scree
 import { StripeProvider } from '@stripe/stripe-react-native'
 import NotificationProvider from '../providers/NotificationProvider';
 import { Text } from 'react-native'
+
+SplashScreen.preventAutoHideAsync()
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   interface TextWithDefaultProps extends Text {
@@ -28,16 +30,13 @@ export default function RootLayout() {
     'Oleo' : require('../../assets/fonts/OleoScript-Regular.ttf'),
     'Poltawski' : require('../../assets/fonts/PoltawskiNowy-VariableFont_wght.ttf')
   });
+
   useEffect(() => {
-    async function hideSplash() {
-      await SplashScreen.preventAutoHideAsync(); // Ensure splash stays visible at first
       if (loaded) {
         setTimeout(async () => {
-          await SplashScreen.hideAsync(); // Hide it with a slight delay
+          SplashScreen.hideAsync(); // Hide it with a slight delay
         }, 50); // A short delay to prevent animation glitches
       }
-    }
-    hideSplash();
   }, [loaded]);
   
   
@@ -55,7 +54,7 @@ export default function RootLayout() {
                 <BottomSheetModalProvider>
                   <MenuProvider>
                     <PaperProvider>
-                    <Stack key={Date.now()}>
+                    <Stack>
                     <Stack.Screen name="(user)" options={{ headerShown: false, animation: 'none' }} />
                     <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'none' }} />
                     <Stack.Screen name="+not-found" options={{ animation: 'none' }} />

@@ -19,6 +19,7 @@ import * as Haptics from "expo-haptics"
 import LottieView from 'lottie-react-native';
 import Toast from 'react-native-toast-message';
 import { isBefore } from 'date-fns';
+import { FlyerSkeleton } from '@/src/components/FlyerSkeleton';
 function setTimeToCurrentDate(timeString : string ) {
 
   // Split the time string into hours, minutes, and seconds
@@ -48,6 +49,7 @@ const ProgramLectures = () => {
   const [ lectures, setLectures ] = useState<Lectures[] | null>(null)
   const [ program, setProgram ] = useState<Program>()
   const [ visible, setVisible ] = useState(false);
+  const [ imageReady, setImageReady ] = useState(false)
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
   const [ programInNotfications, setProgramInNotifications ] = useState(false)
@@ -376,11 +378,16 @@ const fadeOutNotification = useAnimatedStyle(() => ({
      <StatusBar barStyle={"dark-content"}/>
       <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%" }} >
           
-          <View>
+          <View className=' relative' style={{width: width / 1.2, height: 300, borderRadius: 8 }}>
+            { !imageReady && 
+            <FlyerSkeleton width={width / 1.2} height={300} style={{position : 'absolute', top : 0, zIndex : 2}}/>
+            }
             <Animated.Image 
               source={ program?.program_img ? { uri : program?.program_img } : require("@/assets/images/MASHomeLogo.png") }
               style={ [{width: width / 1.2, height: 300, borderRadius: 8 }, imageAnimatedStyle] }
               resizeMode='stretch'
+              onLoad={() => setImageReady(true)}
+              onError={() => setImageReady(false)}
             />
           </View>
        

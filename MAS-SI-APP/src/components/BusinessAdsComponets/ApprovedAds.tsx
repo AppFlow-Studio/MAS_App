@@ -134,7 +134,7 @@ const handleScroll = (event : any) =>{
   } 
   return (
       <View className='h-[300] bg-gray-300 p-1 self-center mt-3 relative' style={{ borderRadius : 20,  width : listItemWidth * .95 }}>
-        <BlurView className=' bg-white h-[293]' style={{ borderRadius : 19,overflow : 'hidden', width : listItemWidth * .93 }} intensity={80}>
+        <BlurView className=' bg-white' style={{ borderRadius : 19,overflow : 'hidden', width : listItemWidth * .93 }} intensity={80}>
         <Animated.FlatList 
             className='h-[100%] w-full'
             ref={flatListRef}
@@ -154,7 +154,7 @@ const handleScroll = (event : any) =>{
             renderItem={({item}) => (
               <View className='h-[100%] flex flex-col bg-gray-500' style={{  borderRadius : 19, overflow : 'hidden', width : listItemWidth * .93}}>
                   <Image source={{ uri : item.business_flyer_img}} style={{  width : '100%', height : 250, objectFit : 'fill' }}/>
-                  <View className='px-2 mt-1 '>
+                  <View className='px-2 mt-1'>
                     <Text className='text-white text-[12px]' numberOfLines={1} adjustsFontSizeToFit><Text className='font-bold'>{item.business_name}</Text> {item.business_address}</Text>
                     <Text className='text-white text-[12px]' numberOfLines={1} adjustsFontSizeToFit>Contacts: {item.business_email} {formatPhoneNumber(item.business_phone_number)}</Text>
                   </View>

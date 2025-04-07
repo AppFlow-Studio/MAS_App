@@ -121,7 +121,7 @@ export default function homeScreen() {
             >
                   <StatusBar barStyle={"dark-content"}/>
                   <Animated.View className='justify-center items-center pt-[14%] bg-white w-full overflow-clip z-[1]' style={HeaderRadius} > 
-                    <Animated.Image source={require("@/assets/images/massiLogo2.png")} style={[{width: width / 1.5, justifyContent: "center", objectFit : 'fill' }, imageAnimatedStyle]}  />
+                    <Animated.Image source={require("@/assets/images/massiLogo2.png")} style={[{width: width / 1.3, justifyContent: "center", objectFit : 'fill' }, imageAnimatedStyle]}  />
                   </Animated.View>
                   
                   <View style={{height: 250, overflow: "hidden", justifyContent:"center", borderEndStartRadius: 30 ,borderEndEndRadius: 30}} className=''>

@@ -1,3 +1,4 @@
+
 import { Tabs, Redirect } from "expo-router";
 import * as Animatable from 'react-native-animatable';
 import { Pressable, TouchableOpacity } from "react-native";
@@ -255,3 +256,4 @@ export default function TabLayout() {
     </>
   );
 }
+

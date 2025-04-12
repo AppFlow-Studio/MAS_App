@@ -35,6 +35,7 @@ export default function homeScreen() {
   const [ confirmProfile, setConfirmProfile ] = useState(true)
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = React.useState(false);
+  const [ showQuestionaire, setShowQuestionaire ] = useState(false)
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
   const tabBarHeight = useBottomTabBarHeight();
@@ -75,19 +76,19 @@ export default function homeScreen() {
         setProfile(data)
       }
     }
-    const onConfirmButton = async () => {
-      console.log(profileFirstName, profileLastName, profileEmail)
-      const { data, error } = await supabase.from('profiles').update({ first_name : profileFirstName, last_name : profileLastName, profile_email : profileEmail}).eq('id', session?.user.id)
-      if( data ){
-        console.log(data)
-      }
-      if( error ){
-        console.log(error)
-      }
-      else{
-      setVisible(false)
-      }
-    }
+    // const onConfirmButton = async () => {
+    //   console.log(profileFirstName, profileLastName, profileEmail)
+    //   const { data, error } = await supabase.from('profiles').update({ first_name : profileFirstName, last_name : profileLastName, profile_email : profileEmail}).eq('id', session?.user.id)
+    //   if( data ){
+    //     console.log(data)
+    //   }
+    //   if( error ){
+    //     console.log(error)
+    //   }
+    //   else{
+    //   setVisible(false)
+    //   }
+    // }
     const getPrayer = async () => {
       const prayerTimesInfo = await supabase.from('prayers').select('*').eq('id', 1).single()
         const prayerTimes = prayerTimesInfo.data
@@ -120,7 +121,7 @@ export default function homeScreen() {
             >
                   <StatusBar barStyle={"dark-content"}/>
                   <Animated.View className='justify-center items-center pt-[14%] bg-white w-full overflow-clip z-[1]' style={HeaderRadius} > 
-                    <Animated.Image source={require("@/assets/images/massiLogo2.png")} style={[{width: width / 1.5, justifyContent: "center", objectFit : 'fill' }, imageAnimatedStyle]}  />
+                    <Animated.Image source={require("@/assets/images/massiLogo2.png")} style={[{width: width / 1.3, justifyContent: "center", objectFit : 'fill' }, imageAnimatedStyle]}  />
                   </Animated.View>
                   
                   <View style={{height: 250, overflow: "hidden", justifyContent:"center", borderEndStartRadius: 30 ,borderEndEndRadius: 30}} className=''>
@@ -170,7 +171,7 @@ export default function homeScreen() {
                     <Modal visible style={{
                       backgroundColor : 'white'
                     }}>
-                      <MASQuestionaire />
+                      <MASQuestionaire onCloseQuestionaire={() => setShowQuestionaire(false)}/>
                     </Modal>
                   </Portal> */}
 

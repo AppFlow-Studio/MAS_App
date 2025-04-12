@@ -27,7 +27,7 @@ serve(async (req) => {
       Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: 'developer@massic.org',
+      from: 'temur@temurbeksayfutdinov.info',
       to: 'temurbeksayfutdinov@gmail.com',
       subject: 'New App Advertisment Submission',
       html: `
@@ -150,6 +150,27 @@ serve(async (req) => {
   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/resend' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
     --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
+    --data  '{
+  "submission": {
+    "personal_full_name": "Jane Doe",
+    "personal_phone_number": "123-456-7890",
+    "personal_email": "jane.doe@example.com",
+    "business_name": "Doe Law Firm",
+    "business_address": "456 Elm Street, New York, NY",
+    "business_phone_number": "987-654-3210",
+    "business_email": "contact@doelaw.com",
+    "business_flyer_duration": "60 days",
+    "business_flyer_img": "https://example.com/flyer.jpg",
+    "onApprove": "onApproveFunctionPlaceholder"
+  }}' 
+
+*/
+
+
+
+/*
+
+'{"submission" : '{"personal_full_name":"Test Name", "personal_phone_number" : "347-659-1866", "personal_email" : "temurbeksayfutdinov@gmail.com", "business_name" : "Test Business",
+    "business_address" : "Test Address", "business_phone_number", : "347-659-1866", "business_email" : "businesstest@gmail.com", "business_flyer_duration" : "1 Month", "business_flyer_img" : ""}'}'
 
 */

@@ -13,7 +13,7 @@ import { PaperProvider } from 'react-native-paper';
 import { MenuProvider } from "react-native-popup-menu";
 import AuthProvider from '../providers/AuthProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
-import NotificationProvider from '../providers/NotificationProvider';
+// import NotificationProvider from '../providers/NotificationProvider';
 import { Text } from 'react-native';
 //import TutorialOverlay from "../components/TutorialOverlay"; // Import tutorial
 import LottieView from 'lottie-react-native';
@@ -158,7 +158,7 @@ export default function RootLayout() {
       <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
         <AuthProvider>
           <PrayerTimesProvider>
-             <NotificationProvider>
+             {/* <NotificationProvider> */}
             <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <BottomSheetModalProvider>
                 <MenuProvider>
@@ -189,7 +189,7 @@ export default function RootLayout() {
                 </MenuProvider>
               </BottomSheetModalProvider>
             </ThemeProvider>
-             </NotificationProvider> 
+             {/* </NotificationProvider>  */}
           </PrayerTimesProvider>
         </AuthProvider>
       </StripeProvider>

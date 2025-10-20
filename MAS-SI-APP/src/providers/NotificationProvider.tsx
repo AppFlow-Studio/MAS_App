@@ -39,8 +39,8 @@ const NotificationProvider = ({ children }: PropsWithChildren) => {
   const [ CurrentSession, setCurrentSession ] = useState<Session | null>()
   const [notification, setNotification] =
     useState<Notifications.Notification>();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.EventSubscription>(null);
+  const responseListener = useRef<Notifications.EventSubscription>(null);
 
   const savePushToken = async ( newToken : ExpoPushToken | undefined ) => {
     setExpoPushToken(newToken)

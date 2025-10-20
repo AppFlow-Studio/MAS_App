@@ -35,10 +35,9 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf"
+          "iosUrlScheme": "com.googleusercontent.apps.954205600936-3fvho6btee6op0l226scerlhsirsjprc"
         }
-      ],
-      "expo-font"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

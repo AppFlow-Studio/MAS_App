@@ -228,8 +228,7 @@ export default function TabLayout() {
             shadowOpacity: 1,
             shadowRadius: 8,
             justifyContent: "center",
-            alignItems: "center",
-            
+            alignItems: "center",    
           },
           tabBarItemStyle: { height: 30, },
         }}

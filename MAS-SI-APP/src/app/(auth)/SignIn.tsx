@@ -11,21 +11,20 @@ import { useAuth } from '@/src/providers/AuthProvider';
 import {
   GoogleSignin,
   GoogleSigninButton,
-  statusCodes,
   isErrorWithCode,
 } from '@react-native-google-signin/google-signin';
 const SignIn = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const { session } = useAuth()
-  const logoAnime = useSharedValue(0)
-  const logoBounce = useSharedValue(-200)
+ 
 
+  GoogleSignin.configure({
+    iosClientId: '954205600936-3fvho6btee6op0l226scerlhsirsjprc.apps.googleusercontent.com',
+    webClientId: '954205600936-pb00kg6p7dojg8es9ub8bb7l09j5kj36.apps.googleusercontent.com',
+  })
   const GoogleButtonSignUp = () => {
-    GoogleSignin.configure({
-      iosClientId: '954205600936-3fvho6btee6op0l226scerlhsirsjprc.apps.googleusercontent.com'
-    })
+
 
     return (
       <GoogleSigninButton
@@ -38,15 +37,14 @@ const SignIn = () => {
         color={GoogleSigninButton.Color.Dark}
         onPress={async () => {
           try {
-
-            const userInfo = await GoogleSignin.signIn()
+            await GoogleSignin.hasPlayServices();
+            const userInfo = await GoogleSignin.signIn();
             console.log(userInfo)
             if (userInfo.idToken) {
               const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'google',
                 token: userInfo.idToken,
               })
-              console.log(userInfo)
               if (!error) {
                 const { data: Profile, error: ProfileError } = await supabase.from('profiles').update({ first_name: userInfo?.user.name, profile_email: userInfo?.user.email }).eq('id', data?.user.id)
                 console.log(Profile, ProfileError)
@@ -55,25 +53,11 @@ const SignIn = () => {
               throw new Error('no ID token present!')
             }
           } catch (error: any) {
-            if (isErrorWithCode(error)){
+            if (isErrorWithCode(error)) {
               console.log(error.code)
+              console.log(error.message)
             }
-              if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-                console.log(error.message)
-                // user cancelled the login flow
-              } else if (error.code === statusCodes.IN_PROGRESS) {
-                console.log(error.message)
-
-                // operation (e.g. sign in) is in progress already
-              } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                console.log(error.message)
-
-                // play services not available or outdated
-              } else {
-                console.log(error.message)
-
-                // some other error happened
-              }
+            
           }
         }}
       />

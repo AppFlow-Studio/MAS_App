@@ -24,7 +24,7 @@ const SignIn = () => {
 
   const GoogleButtonSignUp = () => {
     GoogleSignin.configure({
-      iosClientId: '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
+      iosClientId: '954205600936-3fvho6btee6op0l226scerlhsirsjprc.apps.googleusercontent.com'
     })
 
     return (
@@ -38,8 +38,9 @@ const SignIn = () => {
         color={GoogleSigninButton.Color.Dark}
         onPress={async () => {
           try {
-            await GoogleSignin.hasPlayServices()
+
             const userInfo = await GoogleSignin.signIn()
+            console.log(userInfo)
             if (userInfo.idToken) {
               const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'google',

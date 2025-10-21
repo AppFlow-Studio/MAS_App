@@ -22,8 +22,7 @@
       }
     },
     "android": {
-      "package": "com.anonymous.MASSIAPP",
-      "googleServicesFile": "./android/app/google-services.json"
+      "package": "com.anonymous.MASSIAPP"
     },
     "web": {
       "bundler": "metro",
@@ -32,6 +31,7 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
+      "expo-font",
       [
         "@react-native-google-signin/google-signin",
         {

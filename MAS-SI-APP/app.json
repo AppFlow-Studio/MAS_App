@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/massicliquidglassicon.png",
       "resizeMode": "contain",
-      "backgroundColor": "white"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,

@@ -171,36 +171,56 @@ const RamadanQuranTracker = () => {
   }
   const SurahMenuDropDown = () => {
     return(
-        <Menu style={{height : 50, alignItems : 'center', justifyContent : "center", width : '90%'}}> 
+        <Menu style={{height : 50, alignItems : 'center', justifyContent : "center", width : '100%'}}> 
             <MenuTrigger>
-                <View className='border-2 border-black w-full rounded-xl items-center justify-between h-[50px] flex flex-row p-2'>
+                <View className='bg-gray-50 border border-gray-200 rounded-xl items-center h-[50px] flex flex-row px-4'>
                     { !selectedSurah ? 
                     <>
-                        <Text>select the surah number</Text>
-                        <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <Path d="M6 9L12 15L18 9" stroke="black" stroke-width="2"/>
-                        </Svg> 
+                        <Text className='text-gray-500 flex-1 text-left'>Select Surah Number</Text>
+                        <View className='ml-2'>
+                            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <Path d="M6 9L12 15L18 9" stroke="#6077F5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </Svg>
+                        </View>
                     </>
                     : 
                     <>
-                    <Text className='w-[90%]' numberOfLines={1} >{selectedSurah.number}: {selectedSurah.name}</Text>
-                    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <Path d="M6 9L12 15L18 9" stroke="black" stroke-width="2"/>
-                    </Svg> 
+                    <Text className='flex-1 text-blue-600 font-medium text-left' numberOfLines={1} >{selectedSurah.number}: {selectedSurah.name}</Text>
+                    <View className='ml-2'>
+                        <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <Path d="M6 9L12 15L18 9" stroke="#6077F5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </Svg>
+                    </View>
                     </>
                     }
                 </View>
             </MenuTrigger>
-            <MenuOptions optionsContainerStyle={{
-                height : '50%',
-                overflow : 'hidden'
+            <MenuOptions customStyles={{
+                optionsContainer: {
+                  borderRadius: 12, 
+                  paddingHorizontal: 8, 
+                  paddingVertical: 8,
+                  maxHeight: 300,
+                  backgroundColor: 'white',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3
+                }
             }}
             >
-                <ScrollView className='h-[100%]'>
+                <ScrollView 
+                  nestedScrollEnabled={true}
+                  showsVerticalScrollIndicator={true}
+                  style={{ maxHeight: 300 }}
+                >
                     {Surahs.map(( surah ) => {
                        return ( 
-                       <MenuOption onSelect={() => OnSelectSurah(surah)}>
-                            <Text>{surah.number}: {surah.name}</Text>
+                       <MenuOption key={surah.number} onSelect={() => OnSelectSurah(surah)}>
+                            <View className='flex-row items-center p-2 rounded-lg'>
+                                <Text className='text-gray-700'>{surah.number}: {surah.name}</Text>
+                            </View>
                        </MenuOption>
                        )
                     })}
@@ -229,90 +249,86 @@ const RamadanQuranTracker = () => {
 
 
   return (
-        <View className='flex-1 grow bg-white px-6 flex-col space-y-3' style={{ paddingBottom : tabBar + 30, paddingTop : 220 }}>
+        <View className='flex-1 grow bg-gray-50' style={{ paddingBottom : tabBar + 30 }}>
           <Stack.Screen 
             options={{
-              headerTransparent : true,
-              header : () => (
-                <View className="relative">
-                  <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#6077F5] items-start justify-end pb-[5%] z-[1]">
-                    <Pressable className="flex flex-row items-center justify-between w-[70%]" onPress={() => router.back()}>
-                      <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                        <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="white" stroke-width="2"/>
-                      </Svg>
-                      <Text className=" text-[25px] text-white">Ramadan Quran Tracker</Text>
-                    </Pressable>
-                  </View>
-                  <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-                   <View className="w-[65%] items-center"> 
-                    <Text className=" text-[15px] text-black ">Update Information</Text>
-                  </View>
-                  </View>
-                </View>
-              )
-            }}
+          title: "Update Information",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
+        }}
           />
-
-          <Text>Select Surah Number</Text>
-          <SurahMenuDropDown />
-          {
-           selectedSurah ? 
-            <View>
-                <Text>Select Ayah Number: (1-{selectedSurah.ayahs})</Text>
-                <TextInput
-                    mode='outlined' 
-                    value={selectedAyah}
-                    onChangeText={(text) => {
-                        if ( !text ){
-                            setSelectedAyah('')
-                            return
-                        }
-                        const num = Number(text)
-                        if( num > selectedSurah.ayahs || num < 1 || !num){
-                            setAyahError(true)
-                        }
-                        else{
-                            setAyahError(false)
-                        }
-                        setSelectedAyah(text)
-
-                    }}
-                    style={{ backgroundColor : 'white', borderBottomWidth : 0, borderWidth : 0, paddingLeft : 10 }}
-                    theme={{ roundness : 20 }}
-                    placeholder={'Enter Ayah Number'}
-                    outlineColor='black'
-                    activeOutlineColor='black'
-                    textColor='black'
-                    contentStyle={{ paddingLeft  : 3 }}
-                    selectionColor='black'
-                />
-                {
-                    ayahError ? 
-                    <Text className='text-red-500'>Error Input a Valid Number Between 1-{selectedSurah.ayahs}</Text>
-                    : <></>
-                }
+          <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+            <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+              <Text className="text-base font-bold mb-3 text-gray-800">Select Surah Number</Text>
+              <SurahMenuDropDown />
             </View>
-          :
-            <></>
-         }
 
-        {
-            !ayahError && selectedAyah ? 
-            <>
-                <Text className='text-xl font-bold text-black px-4'>Ayah: </Text>
-                <View className='rounded-xl border border-gray-500 p-4'>
-                    <Text className='text-xl'>{ayahOptions[Number(selectedAyah) - 1]}</Text>
-                </View>
-            </>
-            :<></>
-        }
+            {
+             selectedSurah ? 
+              <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+                  <Text className="text-base font-bold mb-3 text-gray-800">Select Ayah Number: (1-{selectedSurah.ayahs})</Text>
+                  <TextInput
+                      mode='outlined' 
+                      value={selectedAyah}
+                      onChangeText={(text) => {
+                          if ( !text ){
+                              setSelectedAyah('')
+                              return
+                          }
+                          const num = Number(text)
+                          if( num > selectedSurah.ayahs || num < 1 || !num){
+                              setAyahError(true)
+                          }
+                          else{
+                              setAyahError(false)
+                          }
+                          setSelectedAyah(text)
 
-          <Pressable className='bg-[#6077F5] self-center w-[50%] p-4 rounded-[10px] items-center justify-center'
-          onPress={OnUpdate}
-          >
-            <Text className='text-white '>Update</Text>
-          </Pressable>   
-          </View>
+                      }}
+                      style={{ width: "100%", height: 50, backgroundColor : 'white' }}
+                      theme={{ roundness: 12 }}
+                      placeholder={'Enter Ayah Number'}
+                      activeOutlineColor="#6077F5"
+                      outlineColor="#E2E8F0"
+                      textColor='black'
+                      contentStyle={{ paddingLeft  : 3 }}
+                      selectionColor='#6077F5'
+                  />
+                  {
+                      ayahError ? 
+                      <Text className='text-red-500 text-sm mt-2'>Error: Input a valid number between 1-{selectedSurah.ayahs}</Text>
+                      : <></>
+                  }
+              </View>
+            :
+              <></>
+           }
+
+          {
+              !ayahError && selectedAyah ? 
+              <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+                  <Text className='text-base font-bold mb-3 text-gray-800'>Ayah:</Text>
+                  <View className='bg-gray-50 rounded-xl border border-gray-200 p-4'>
+                      <Text className='text-xl text-gray-800'>{ayahOptions[Number(selectedAyah) - 1]}</Text>
+                  </View>
+              </View>
+              :<></>
+          }
+
+            <Pressable 
+              className='bg-[#6077F5] self-center w-[70%] h-[50px] rounded-xl items-center justify-center mb-6 shadow-sm'
+              onPress={OnUpdate}
+            >
+              <Text className='text-white font-semibold text-base'>Update</Text>
+            </Pressable>   
+          </ScrollView>
+        </View>
   )
 }
 

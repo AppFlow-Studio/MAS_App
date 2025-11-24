@@ -40,30 +40,21 @@ const EventsScreen = () => {
   }, [])
 
   return (
-    <View className='flex-1 bg-white grow' style={{ paddingBottom : tabBar + 30 }}>
+    <View className='flex-1 bg-gray-50 grow' style={{ paddingBottom : tabBar + 30 }}>
       <Stack.Screen 
         options={{
-          headerTransparent : true,
-          header : () => (
-            <View className="relative">
-              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-                <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.back()}>
-                  <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
-                  </Svg>
-                  <Text className=" text-[25px] text-white">Events</Text>
-                </Pressable>
-              </View>
-              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-               <View className="w-[65%] items-center"> 
-                <Text className=" text-[15px] text-black ">Edit Existing Events</Text>
-              </View>
-              </View>
-            </View>
-          )
+          title: "Edit Existing Events",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
         }}
       />
-      <View className='flex-1 pt-[170px]'>
+      <View className='flex-1'>
         <FlatList 
         style={{ flex : 1, }}
         data={events}

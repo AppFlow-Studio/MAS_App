@@ -81,38 +81,19 @@ const EditSpeakerInfo = () => {
     getCreds()
   }, []);
   return (
-         <View className='flex-1 grow bg-white pt-[220px]' style={{ paddingBottom : tabHeight }}>
+         <View className='flex-1 bg-gray-50' style={{ paddingBottom : tabHeight }}>
             <Stack.Screen 
             options={{
-                headerTransparent : true,
-                header : () => (
-                <View className="relative">
-                    <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-                    <Pressable className="flex flex-row items-center justify-between w-[65%]" onPress={() => router.dismiss(2)}>
-                        <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                        <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
-                        </Svg>
-                        <Text className=" text-[25px] text-white">Speakers & Sheiks</Text>
-                    </Pressable>
-                    </View>
-                    <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-                    <View className="w-[75%] items-center"> 
-                    <Text className=" text-[15px] text-black ">Edit Speaker & Sheik Info</Text>
-                    </View>
-                    </View>
-                    <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
-                    <Pressable className="w-[100%] items-center flex flex-row px-6" onPress={() => router.back()}> 
-                        <View className='w-[10%]'>
-                            <Svg  width="16" height="9" viewBox="0 0 16 9" fill="none">
-                                <Path d="M4.5 8.22607L1 4.61303M1 4.61303L4.5 0.999987M1 4.61303H15" stroke="#6077F5" stroke-linecap="round"/>
-                            </Svg>
-                        </View>
-                        <View><Text className=" text-[15px] text-black " numberOfLines={1} adjustsFontSizeToFit>{speaker_name}</Text></View>
-                    </Pressable>
-                    </View>
-                </View>
-                )
-            }}
+          title: "Edit Speaker & Sheik Info",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
+        }}
             />
             <View className='px-4'>
                 <Text className='font-bold text-black text-lg my-1'>Upload Speaker Image </Text>
@@ -131,64 +112,69 @@ const EditSpeakerInfo = () => {
                     }
                 </Pressable>
 
-                <Text className='font-bold text-black text-md my-1'>Title & Full Name</Text>
+                <Text className='font-bold text-gray-800 text-md my-1'>Title & Full Name</Text>
                 <TextInput
                 mode="outlined"
-                theme={{ roundness: 10 }}
-                style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-                activeOutlineColor="#0D509D"
+                theme={{ roundness: 12 }}
+                style={{ width: "100%", height: 50, marginBottom: 10, backgroundColor  : 'white' }}
+                activeOutlineColor="#6077F5"
+                outlineColor="#E2E8F0"
                 value={speakerName}
                 onChangeText={setSpeakerName}
-                placeholder="Enter The Name..."
+                placeholder="Enter the name..."
                 textColor="black"
                 />
 
-                <Text className='font-bold text-black text-md my-1'>Credentials</Text>
-               <View className='max-h-[32%] border border-gray-400 border-solid rounded-[15px] p-4'>
+                <Text className='font-bold text-gray-800 text-md my-1'>Credentials</Text>
+               <View className='max-h-[32%] border border-gray-300 border-solid rounded-xl p-4 bg-white'>
                     <ScrollView contentContainerStyle={{  }}>
                         {
                             speakerCreds ? speakerCreds?.map((item, index) => (
-                                <Pressable onPress={ () => {
-                                    const removeFromCred = speakerCreds.filter(cred => cred != item)
-                                    setSpeakerCreds(removeFromCred)
-                                } }
-                                key={index}
-                                >
-                                    <Text numberOfLines={3}>* {item}</Text>
-                                    <View className='h-[0.5] bg-black w-[70%] self-center my-2 '/>
-                                </Pressable>
+                                <View key={index} className='flex-row items-center justify-between py-2 border-b border-gray-200'>
+                                    <Text numberOfLines={3} className='flex-1 text-gray-800'>• {item}</Text>
+                                    <Pressable 
+                                        onPress={() => {
+                                            const removeFromCred = speakerCreds.filter(cred => cred != item)
+                                            setSpeakerCreds(removeFromCred)
+                                        }}
+                                        className='ml-2 bg-red-100 w-7 h-7 rounded-full items-center justify-center'
+                                    >
+                                        <Text className='text-red-600 font-bold text-lg'>×</Text>
+                                    </Pressable>
+                                </View>
                             )) : <></>
                         }
                     </ScrollView>
                </View>
                 {
                     pressAddCred && (
-                        <KeyboardAvoidingView behavior='position' keyboardVerticalOffset={layoutHeight * .25} className='bg-white'>
-                         <View className='bg-white h-[100]'>
+                        <KeyboardAvoidingView behavior='position' keyboardVerticalOffset={layoutHeight * .25}>
+                         <View className='bg-white h-[100] mt-2'>
                             <TextInput
                             mode="outlined"
-                            theme={{ roundness: 10 }}
-                            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-                            activeOutlineColor="#0D509D"
+                            theme={{ roundness: 12 }}
+                            style={{ width: "100%", height: 50, marginBottom: 10, backgroundColor  : 'white' }}
+                            activeOutlineColor="#6077F5"
+                            outlineColor="#E2E8F0"
                             value={newCred}
                             onChangeText={setNewCred}
-                            placeholder="Enter New Credential..."
+                            placeholder="Enter new credential..."
                             textColor="black"
                             />
 
-                            <View className='flex flex-row items-center justify-between w-[100%]'>
-                                <Pressable className='bg-gray-400 w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => { setPressAddCred(false); setNewCred('')}}>
-                                    <Text className='text-white font-bold'>Cancel</Text>
+                            <View className='flex flex-row items-center justify-between w-[100%] gap-3'>
+                                <Pressable className='bg-gray-300 flex-1 h-[40px] items-center justify-center rounded-xl' onPress={() => { setPressAddCred(false); setNewCred('')}}>
+                                    <Text className='text-gray-700 font-semibold'>Cancel</Text>
                                 </Pressable>
-                                <Pressable className='bg-[#57BA49] w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => {setPressAddCred(false); setSpeakerCreds(prev => [...prev, newCred]); setNewCred('')}}>
-                                    <Text className='font-bold text-white '>Confirm</Text>
+                                <Pressable className='bg-[#6077F5] flex-1 h-[40px] items-center justify-center rounded-xl' onPress={() => {setPressAddCred(false); setSpeakerCreds(prev => prev ? [...prev, newCred] : [newCred]); setNewCred('')}}>
+                                    <Text className='font-semibold text-white'>Confirm</Text>
                                 </Pressable>
                             </View>
                          </View>
                         </KeyboardAvoidingView>
                     )
                 }
-                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>
+                <Text className='text-blue-600 underline self-center my-2' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>
                 {
                     pressAddCred ? '' : 'Add Credentials'
                 }
@@ -197,8 +183,8 @@ const EditSpeakerInfo = () => {
 
                { 
                !pressAddCred &&
-                <Pressable className='bg-[#57BA49] w-[60%] h-[35px] p-1 items-center justify-center rounded-[15px] self-end my-10' onPress={ async () => await onUpdate() }>
-                    <Text className='font-bold text-white '>Confirm Speaker Updates</Text>
+                <Pressable className='bg-[#6077F5] w-[70%] h-[45px] items-center justify-center rounded-xl self-center my-10' onPress={ async () => await onUpdate() }>
+                    <Text className='font-semibold text-white text-base'>Confirm Speaker Updates</Text>
                 </Pressable>
                 }
             </View>

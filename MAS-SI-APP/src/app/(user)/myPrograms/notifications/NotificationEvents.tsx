@@ -7,7 +7,7 @@ import { EventsType, Program } from '@/src/types'
 import RenderAddedEvents from "@/src/components/UserProgramComponets/RenderAddedEvents" 
 import ProgramsListProgram from '@/src/components/ProgramsListProgram'
 import RenderAddedPrograms from '@/src/components/UserProgramComponets/RenderAddedPrograms'
-import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { TabView, SceneMap, TabBar, TabBarProps } from 'react-native-tab-view';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { Dialog, Icon, IconButton } from 'react-native-paper'
 import { usePrayer } from '@/src/providers/prayerTimesProvider'
@@ -275,7 +275,7 @@ const renderScene = ({ route } : any) => {
     { key : 'fifth', title: 'Events'},
     ]
 
-  const renderTabBar = (props : any) => (
+  const renderTabBar = (props : TabBarProps<any>) => (
     <TabBar
       {...props}
       indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "23%", borderRadius : 20  }}

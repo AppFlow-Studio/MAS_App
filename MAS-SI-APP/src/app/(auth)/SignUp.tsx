@@ -10,6 +10,15 @@ import {
   GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+
+// Configure Google Sign-In once
+GoogleSignin.configure({
+  iosClientId: '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com',
+  webClientId: '991344123272-p3p68bb5kk77j6f36fij21t42ovhcr93.apps.googleusercontent.com', // Web client ID for Supabase
+  scopes: ['profile', 'email'],
+  offlineAccess: false,
+});
+
 const SignUp = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState("")
@@ -17,14 +26,57 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false)
   const { width } = Dimensions.get("window")
   const { session } = useAuth()
-  GoogleSignin.configure({
-    iosClientId: '954205600936-3fvho6btee6op0l226scerlhsirsjprc.apps.googleusercontent.com',
-    webClientId: '954205600936-pb00kg6p7dojg8es9ub8bb7l09j5kj36.apps.googleusercontent.com',
-  })
+
+  const handleGoogleSignUp = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      console.log('Google Sign-Up response:', response);
+
+      const idToken = (response as any).data?.idToken || (response as any).idToken;
+      const user = (response as any).data?.user || (response as any).user;
+
+      if (idToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
+
+        if (!error && data?.user) {
+          // Update profile with Google info
+          const { error: ProfileError } = await supabase
+            .from('profiles')
+            .update({
+              first_name: user?.name || user?.givenName,
+              profile_email: user?.email
+            })
+            .eq('id', data.user.id);
+
+          if (ProfileError) {
+            console.error('Profile update error:', ProfileError);
+          }
+        } else {
+          console.error('Supabase sign-in error:', error);
+          alert(error?.message || 'Google sign-up failed');
+        }
+      } else {
+        throw new Error('No ID token present!');
+      }
+    } catch (error: any) {
+      console.error('Google Sign-Up Error:', error);
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log('User cancelled the login flow');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        console.log('Sign in is in progress already');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        console.log('Play services not available or outdated');
+      } else {
+        alert(`Sign-up error: ${error.message || 'Unknown error'}`);
+      }
+    }
+  };
 
   const GoogleButtonSignUp = () => {
-
-
     return (
       <GoogleSigninButton
         size={GoogleSigninButton.Size.Wide}
@@ -34,33 +86,7 @@ const SignUp = () => {
           } : { height: 48 }
         ]}
         color={GoogleSigninButton.Color.Dark}
-        onPress={async () => {
-          try {
-            await GoogleSignin.hasPlayServices()
-            const userInfo = await GoogleSignin.signIn()
-            if (userInfo.idToken) {
-              const { data, error } = await supabase.auth.signInWithIdToken({
-                provider: 'google',
-                token: userInfo.idToken,
-              })
-              if (!error) {
-                await supabase.from('profiles').update({ first_name: userInfo?.user.name, profile_email: userInfo?.user.email }).eq('id', data?.user.id)
-              }
-            } else {
-              throw new Error('no ID token present!')
-            }
-          } catch (error: any) {
-            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-              // user cancelled the login flow
-            } else if (error.code === statusCodes.IN_PROGRESS) {
-              // operation (e.g. sign in) is in progress already
-            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-              // play services not available or outdated
-            } else {
-              // some other error happened
-            }
-          }
-        }}
+        onPress={handleGoogleSignUp}
       />
     )
   }
@@ -92,7 +118,7 @@ const SignUp = () => {
 
   return (
     <View className='border w-full h-full bg-white'>
-      <Stack.Screen options={{ headerTransparent: true, headerTitle: '', headerBackTitleVisible: false }} />
+      <Stack.Screen options={{ headerTransparent: true, headerTitle: '' }} />
       <StatusBar barStyle={"dark-content"} />
       <View className='h-[25%] justify-end px-8' style={{ borderBottomRightRadius: 40, borderBottomLeftRadius: 40, backgroundColor: 'gray' }}>
         <View className='pt-8'>
@@ -198,7 +224,8 @@ const SignUp = () => {
                   // handle other errors
                 }
               }
-            }}
+            }
+            }
 
           />
         ) : <></>}

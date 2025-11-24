@@ -137,7 +137,7 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan, salah
           />
           <Text className='font-bold text-[#0D509D] text-lg pl-2'>{salah}</Text>
         </MenuTrigger>
-        <MenuOptions optionsContainerStyle={{ borderRadius : 10, width : 250, paddingVertical : 3 }}>
+        <MenuOptions customStyles={{ optionsContainer: { borderRadius : 10, width : 250, paddingVertical : 3 } }}>
          <MenuOption onSelect={async () => await onPressOption('Alert at Athan time')} style={{ flexDirection : 'row' }}>
           {salahSettings?.notification_settings.includes('Alert at Athan time') ? <Icon source={'checkbox-blank-circle'} size={15} color='black'/> : <Icon source={'checkbox-blank-circle-outline'} size={15} color='black'/> }
           <Text className='ml-[20%]'>Alert at Athan time</Text>

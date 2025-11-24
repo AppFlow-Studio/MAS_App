@@ -12,6 +12,7 @@ import {
 import Toast from 'react-native-toast-message'
 import Svg, { Circle, Path } from 'react-native-svg'
 import AddSpeakerModal from '@/src/components/AdminComponents/AddSpeakerModal'
+import SelectSpeakerBottomSheet from '@/src/components/AdminComponents/SelectSpeakerBottomSheet'
 export default function JummahId() {
   const { jummah_id } = useLocalSearchParams()
   const [ topic, setTopic ] = useState('')
@@ -19,9 +20,10 @@ export default function JummahId() {
   const [ desc, setDesc ] = useState('')
   const [ speakers, setSpeakers] = useState<any[]>([])
   const [ openAddSpeaker, setOpenAddSpeaker ] = useState(false)
-  const descriptionRef = useRef()
+  const [ speakerBottomSheetOpen, setSpeakerBottomSheetOpen ] = useState(false)
+  const descriptionRef = useRef<any>(null)
   const getSpeakers = async () => {
-    const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
+    const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name, speaker_img, speaker_creds')
     if( data ){
       setSpeakers(data)
     }
@@ -36,69 +38,43 @@ export default function JummahId() {
   }
 
   const SpeakersData = (speakers  : any ) => {
+    const selectedSpeakerName = chosenSpeaker && speakers.speakers ? 
+      speakers.speakers.find((s: any) => s.speaker_id === chosenSpeaker)?.speaker_name : null;
+      
     return(
-      <Menu>
-        <MenuTrigger style={{ marginHorizontal  : 10 }}>
-
-         <View className="flex flex-row w-[100%} justify-between">
-            <View className="items-center justify-between flex flex-row w-[35%]">
-             {
-              chosenSpeaker ?  
-              <Text className='text-green-600'>
-                Speaker Chosen 
-              </Text> :
-              <Text className="text-blue-600 underline">
-              </Text>
-             }
-              <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#6077F5" stroke-width="2"/>
-              </Svg>
-            </View> 
-            { chosenSpeaker ? 
-            <Pressable className="items-center justify-between flex flex-row w-[35%]" onPress={() => setOpenAddSpeaker(true)}>
-              <Text>Add a speaker</Text>
-              <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <Circle cx="12" cy="8" r="4" stroke="#222222" stroke-linecap="round"/>
-                <Path fill-rule="evenodd" clip-rule="evenodd" d="M15.2749 16C13.8962 15.5613 12.3886 15.4073 10.9057 15.5538C9.26518 15.7157 7.71374 16.2397 6.4495 17.0712C5.18515 17.9028 4.25277 19.0137 3.80077 20.2789C3.70786 20.5389 3.84336 20.825 4.1034 20.9179C4.36345 21.0108 4.64957 20.8754 4.74247 20.6153C5.10951 19.588 5.88417 18.64 6.99902 17.9067C8.11398 17.1734 9.50702 16.6967 11.0039 16.5489C11.5538 16.4946 12.1066 16.4858 12.6526 16.521C13.008 16.1974 13.4805 16 13.999 16L15.2749 16Z" fill="#222222"/>
-                <Path d="M18 14L18 22" stroke="#222222" stroke-linecap="round"/>
-                <Path d="M22 18L14 18" stroke="#222222" stroke-linecap="round"/>
-              </Svg>
-            </Pressable>
-            : <Text>{chosenSpeaker} Speaker(s) Chosen</Text>}
-          </View>
-
-        </MenuTrigger>
-        <MenuOptions 
-          optionsContainerStyle={{  
-            borderRadius: 10, 
-            paddingHorizontal: 4, 
-            paddingVertical: 4,
-            maxHeight: 250,
-            backgroundColor: 'white',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5
-          }}
+      <View className="space-y-3">
+        <Pressable
+          onPress={() => setSpeakerBottomSheetOpen(true)}
+          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between"
         >
-          <ScrollView 
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={true}
-            style={{ maxHeight: 250 }}
+          <View className="flex-1">
+            <Text className={`text-base ${chosenSpeaker ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
+              {chosenSpeaker ? 'Speaker Selected' : 'Select Speaker'}
+            </Text>
+            {selectedSpeakerName && (
+              <Text className="text-sm text-gray-500 mt-1">{selectedSpeakerName}</Text>
+            )}
+          </View>
+          <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <Path d="M7.5 15L12.5 10L7.5 5" stroke="#6077F5" strokeWidth="2"/>
+          </Svg>
+        </Pressable>
+        
+        {!chosenSpeaker && (
+          <Pressable 
+            className="flex-row items-center justify-center px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl"
+            onPress={() => setOpenAddSpeaker(true)}
           >
-            {
-              speakers.speakers && speakers.speakers.length > 0 ? speakers.speakers.map(( speaker ) =>{
-                return(
-                  <MenuOption key={speaker.speaker_id} onSelect={() => setSpeaker(speaker.speaker_id)}>
-                    <Text className="text-black ">{speaker.speaker_name} {chosenSpeaker == speaker.speaker_id ? <Icon source={'check'} color="green" size={15}/> : <></>}</Text>
-                  </MenuOption>
-                )
-              }) : <></>
-            }
-          </ScrollView>
-        </MenuOptions>
-      </Menu>
+            <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ marginRight: 8 }}>
+              <Circle cx="12" cy="8" r="4" stroke="#6077F5" strokeLinecap="round"/>
+              <Path fillRule="evenodd" clipRule="evenodd" d="M15.2749 16C13.8962 15.5613 12.3886 15.4073 10.9057 15.5538C9.26518 15.7157 7.71374 16.2397 6.4495 17.0712C5.18515 17.9028 4.25277 19.0137 3.80077 20.2789C3.70786 20.5389 3.84336 20.825 4.1034 20.9179C4.36345 21.0108 4.64957 20.8754 4.74247 20.6153C5.10951 19.588 5.88417 18.64 6.99902 17.9067C8.11398 17.1734 9.50702 16.6967 11.0039 16.5489C11.5538 16.4946 12.1066 16.4858 12.6526 16.521C13.008 16.1974 13.4805 16 13.999 16L15.2749 16Z" fill="#6077F5"/>
+              <Path d="M18 14L18 22" stroke="#6077F5" strokeLinecap="round"/>
+              <Path d="M22 18L14 18" stroke="#6077F5" strokeLinecap="round"/>
+            </Svg>
+            <Text className="text-blue-600 font-semibold">Add New Speaker</Text>
+          </Pressable>
+        )}
+      </View>
     )
   }
 
@@ -146,85 +122,90 @@ export default function JummahId() {
   }, [])
 
   return (
-    <View className='p-[16] bg-white flex-1'>
+    <View className='flex-1 bg-gray-50'>
        <Stack.Screen
         options={{
-          headerTransparent : true,
-          header : () => (
-            <View className="relative">
-              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-                <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.back()}>
-                  <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
-                  </Svg>
-                  <Text className=" text-[25px] text-white">Jummah</Text>
-                </Pressable>
-              </View>
-              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-               <View className="w-[56%] items-start"> 
-                <Text className=" text-[15px] text-black ml-[30%]">{jummah_id == '1' ? 'First' : jummah_id == '2' ? 'Second' : jummah_id == '3' ? 'Third' : 'Student' } Jummah</Text>
-              </View>
-              </View>
-            </View>
-          )
+          title: `${jummah_id == '1' ? 'First' : jummah_id == '2' ? 'Second' : jummah_id == '3' ? 'Third' : 'Student'} Jummah`,
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
         }}
       />
-          <View className='mb-3'>
-            <Text className="text-base font-bold mb-1 mt-2 ml-2 my-4 pt-[170px]">
+      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">
             Select Who Will be the Khateeb
-            </Text>
-           { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
-          </View>
+          </Text>
+          { speakers ? <SpeakersData speakers={speakers} /> : <Text className="text-gray-500">Fetching Speakers...</Text>}
+        </View>
 
-          <View>
-            <Text className="text-base font-bold mb-1 ml-2 ">
-              Jummah Title
-            </Text>
-            <TextInput
-              mode="outlined"
-              theme={{ roundness: 10 }}
-              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-              activeOutlineColor="#0D509D"
-              value={topic}
-              onChangeText={setTopic}
-              placeholder="Topic Name"
-              textColor="black"
-            />
-          </View>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">
+            Jummah Title
+          </Text>
+          <TextInput
+            mode="outlined"
+            theme={{ roundness: 12 }}
+            style={{ width: "100%", height: 50, backgroundColor: 'white' }}
+            activeOutlineColor="#6077F5"
+            outlineColor="#E2E8F0"
+            value={topic}
+            onChangeText={setTopic}
+            placeholder="Enter Jummah topic..."
+            textColor="black"
+          />
+        </View>
 
-         <View>
-            <Text className="text-base font-bold mb-1 mt-2 ml-2">
-              Jummah Description
-            </Text>
-            <TextInput
-              mode="outlined"
-              theme={{ roundness: 10 }}
-              ref={descriptionRef}
-              style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor  : 'white' }}
-              multiline
-              activeOutlineColor="#0D509D"
-              value={desc}
-              onChangeText={setDesc}
-              placeholder="Description"
-              textColor="black"
-              returnKeyType="done"
-              onKeyPress={(e) => {
-                if (e.nativeEvent.key == 'Enter' ){ e.preventDefault(); descriptionRef.current?.blur()  }
-              }}
-            />
-         </View>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">
+            Jummah Description
+          </Text>
+          <TextInput
+            mode="outlined"
+            theme={{ roundness: 12 }}
+            ref={descriptionRef}
+            style={{ width: "100%", height: 120, backgroundColor: 'white' }}
+            multiline
+            activeOutlineColor="#6077F5"
+            outlineColor="#E2E8F0"
+            value={desc}
+            onChangeText={setDesc}
+            placeholder="Enter description..."
+            textColor="black"
+            returnKeyType="done"
+            onKeyPress={(e) => {
+              if (e.nativeEvent.key == 'Enter' ){ e.preventDefault(); (descriptionRef.current as any)?.blur()  }
+            }}
+          />
+        </View>
 
-         <Button
-            mode="contained"
-            buttonColor="#57BA47"
-            textColor="white"
-            theme={{ roundness: 1 }}
-            style={{ marginTop : '30%'}}
-            onPress={ async () => await onUpdate()}
-         >
-            Update
-         </Button>
+        <Button
+          mode="contained"
+          buttonColor="#6077F5"
+          textColor="white"
+          theme={{ roundness: 12 }}
+          style={{ marginTop: 16, marginBottom: 24, height: 50, justifyContent: 'center' }}
+          labelStyle={{ fontSize: 16, fontWeight: '600' }}
+          onPress={async () => await onUpdate()}
+        >
+          Update
+        </Button>
+      </ScrollView>
          <AddSpeakerModal isOpen={openAddSpeaker} setIsOpen={setOpenAddSpeaker}/>
+         <SelectSpeakerBottomSheet
+          isOpen={speakerBottomSheetOpen}
+          setIsOpen={setSpeakerBottomSheetOpen}
+          speakers={speakers}
+          selectedSpeakers={chosenSpeaker ? [chosenSpeaker] : []}
+          onSelectSpeaker={(id) => setSpeaker(id)}
+          multiSelect={false}
+          title="Select Khateeb"
+        />
     </View>
   )
 }

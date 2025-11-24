@@ -60,73 +60,121 @@ const ApproveBusinessScreen = () => {
      <Stack.Screen
         options={{
           headerBackTitleVisible: false,
-          headerStyle: { backgroundColor: "white" },
-          headerTintColor : 'black',
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTintColor : '#4A5568',
           title: "Approve Business Ads",
+          headerTitleStyle: {
+            fontWeight: '600',
+            color: '#1F2937'
+          }
         }}
       />
-    <View style={{ padding: 16, backgroundColor: 'white' , flex : 1}}>
+    <View style={{ padding: 16, backgroundColor: '#F9FAFB', flex : 1}}>
     <ScrollView
-        contentContainerStyle={{ paddingBottom: tabHeight }}
+        contentContainerStyle={{ paddingBottom: tabHeight + 16 }}
         showsVerticalScrollIndicator={false}
     >
-        <Text className="text-base font-bold mb-1 ml-2">Personal Information</Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Personal Information</Text>
+          <View className='space-y-2'>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Full Name:</Text>
+              <Text className="text-gray-800 flex-1">{submissionInfo?.personal_full_name}</Text>
+            </View>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Phone:</Text>
+              <Text className="text-gray-800 flex-1">{submissionInfo?.personal_phone_number}</Text>
+            </View>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Email:</Text>
+              <Text className="text-gray-800 flex-1" numberOfLines={2}>{submissionInfo?.personal_email}</Text>
+            </View>
+          </View>
+        </View>
 
-        <Text className="text-black ml-4">Full Name: {submissionInfo?.personal_full_name}</Text>
-        <Text className="text-black ml-4">Phone Number: {submissionInfo?.personal_phone_number}</Text>
-        <Text className="text-black ml-4">Email: {submissionInfo?.personal_email}</Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Business Information</Text>
+          <View className='space-y-2'>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Business Name:</Text>
+              <Text className="text-gray-800 flex-1">{submissionInfo?.business_name}</Text>
+            </View>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Address:</Text>
+              <Text className="text-gray-800 flex-1" numberOfLines={2}>{submissionInfo?.business_address}</Text>
+            </View>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Phone:</Text>
+              <Text className="text-gray-800 flex-1">{submissionInfo?.business_phone_number}</Text>
+            </View>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Email:</Text>
+              <Text className="text-gray-800 flex-1" numberOfLines={2}>{submissionInfo?.business_email}</Text>
+            </View>
+          </View>
+        </View>
 
-        <Text className="text-base font-bold mb-1 mt-2 ml-2">Business Information</Text>
-
-        <Text className="text-black ml-4">Business Name: {submissionInfo?.business_name}</Text>
-        <Text className="text-black ml-4">Business Address: {submissionInfo?.business_address}</Text>
-        <Text className="text-black ml-4">Business Phone Number: {submissionInfo?.business_phone_number}</Text>
-        <Text className="text-black ml-4">Business Email: {submissionInfo?.business_email}</Text>
-
-        <Text className="text-base font-bold mb-1 mt-2 ml-2">Flyer Information</Text>
-
-        <Text className="text-black ml-4">Flyer Duration: {submissionInfo?.business_flyer_duration}</Text>        
-        <Text className="text-base font-bold mb-1 mt-2 ml-2">Flyer: </Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Flyer Information</Text>
+          <View className='flex-row mb-3'>
+            <Text className="text-gray-600 font-medium w-[35%]">Duration:</Text>
+            <Text className="text-gray-800 flex-1">{submissionInfo?.business_flyer_duration}</Text>
+          </View>
+          <Text className="text-sm font-semibold mb-2 text-gray-700">Flyer Preview:</Text>
+          <View className='bg-gray-50 rounded-xl p-2'>
             <Image
                 source={{ uri: submissionInfo?.business_flyer_img }}
                 style={{
-                    width: '80%',
-                    height: 200,
-                    marginVertical: '1%',
-                    alignSelf: 'center',
-                    borderRadius: 15,
+                    width: '100%',
+                    height: 250,
+                    borderRadius: 12,
                 }}
                 resizeMode="contain"
             />
+          </View>
+        </View>
 
-        <Text className="text-base font-bold mb-1 mt-2 ml-2">Submission Information</Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Submission Information</Text>
+          <View className='space-y-2'>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Created At:</Text>
+              <Text className="text-gray-800 flex-1">{date ? format(date, 'PPPP') : ''}</Text>
+            </View>
+            <View className='flex-row'>
+              <Text className="text-gray-600 font-medium w-[35%]">Submission ID:</Text>
+              <Text className="text-gray-800 flex-1 text-xs">{submissionInfo?.submission_id}</Text>
+            </View>
+          </View>
+        </View>
 
-        <Text className="text-black ml-4 my-1">Created At: {date ? format(date, 'PPPP') : ''}</Text>
-        <Text className="text-black ml-4 my-1">Submission ID: {submissionInfo?.submission_id}</Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-4 text-gray-800">Approve or Reject</Text>
+          <View className='flex-row gap-x-3 justify-center'>
+              <Button
+                  mode="contained"
+                  buttonColor="#6077F5"
+                  textColor="white"
+                  theme={{ roundness: 12 }}
+                  style={{ flex: 1, height: 50, justifyContent: 'center' }}
+                  labelStyle={{ fontSize: 16, fontWeight: '600' }}
+                  onPress={ async () => await onApprove() }
+              >
+                  Approve
+              </Button>
 
-        <Text className="text-base font-bold mt-2 ml-2">Approve or Reject</Text>
-        <View className='flex-row gap-x-2 justify-center'>
-            <Button
-                mode="contained"
-                buttonColor="#57BA47"
-                textColor="white"
-                theme={{ roundness: 1 }}
-                className='w-[40%]'
-                onPress={ async () => await onApprove() }
-            >
-                Approve
-            </Button>
-
-            <Button
-                mode="contained"
-                buttonColor="red"
-                textColor="white"
-                theme={{ roundness: 1 }}
-                className='w-[40%]'
-                onPress={ async () => await onReject() }
-            >
-                Reject
-            </Button>
+              <Button
+                  mode="contained"
+                  buttonColor="#EF4444"
+                  textColor="white"
+                  theme={{ roundness: 12 }}
+                  style={{ flex: 1, height: 50, justifyContent: 'center' }}
+                  labelStyle={{ fontSize: 16, fontWeight: '600' }}
+                  onPress={ async () => await onReject() }
+              >
+                  Reject
+              </Button>
+          </View>
         </View>
     </ScrollView>
 </View>

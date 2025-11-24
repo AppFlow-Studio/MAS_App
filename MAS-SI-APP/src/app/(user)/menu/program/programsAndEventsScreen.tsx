@@ -128,7 +128,7 @@ const ProgramsAndEventsScreen = () => {
     { key: 'fourth', title : 'Events'},
     { key: 'fifth', title : 'PACE'}
   ]);
-  const renderTabBar = (props : any) => (
+  const renderTabBar = (props : TabBarProps<any>) => (
     <TabBar
       {...props}
       indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "45%", width : "15%", left : "2.5%", borderRadius : 20  }}

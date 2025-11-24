@@ -18,12 +18,9 @@ PODS:
     - ExpoModulesCore
   - EXApplication (7.0.7):
     - ExpoModulesCore
-<<<<<<< HEAD
   - EXAV (16.0.7):
     - ExpoModulesCore
     - ReactCommon/turbomodule/core
-=======
->>>>>>> b168a94e63fe0222fdcc09b9296319e457022e26
   - EXConstants (18.0.10):
     - ExpoModulesCore
   - EXImageLoader (6.0.0):
@@ -263,11 +260,7 @@ PODS:
     - ExpoModulesCore
   - ExpoLiquidGlass (0.1.9):
     - ExpoModulesCore
-<<<<<<< HEAD
-  - ExpoModulesCore (3.0.21):
-=======
   - ExpoModulesCore (3.0.22):
->>>>>>> b168a94e63fe0222fdcc09b9296319e457022e26
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -351,10 +344,9 @@ PODS:
     - AppAuth/Core (~> 2.0)
     - GTMSessionFetcher/Core (< 4.0, >= 3.3)
   - GTMSessionFetcher/Core (3.5.0)
-<<<<<<< HEAD
-  - hermes-engine (0.81.4):
-    - hermes-engine/Pre-built (= 0.81.4)
-  - hermes-engine/Pre-built (0.81.4)
+  - hermes-engine (0.81.5):
+    - hermes-engine/Pre-built (= 0.81.5)
+  - hermes-engine/Pre-built (0.81.5)
   - LiquidGlass (0.6.0):
     - hermes-engine
     - RCTRequired
@@ -377,11 +369,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-=======
-  - hermes-engine (0.81.5):
-    - hermes-engine/Pre-built (= 0.81.5)
-  - hermes-engine/Pre-built (0.81.5)
->>>>>>> b168a94e63fe0222fdcc09b9296319e457022e26
   - lottie-ios (4.5.0)
   - lottie-react-native (7.3.4):
     - hermes-engine
@@ -2645,6 +2632,7 @@ PODS:
 DEPENDENCIES:
   - EASClient (from `../node_modules/expo-eas-client/ios`)
   - EXApplication (from `../node_modules/expo-application/ios`)
+  - EXAV (from `../node_modules/expo-av/ios`)
   - EXConstants (from `../node_modules/expo-constants/ios`)
   - EXImageLoader (from `../node_modules/expo-image-loader/ios`)
   - EXJSONUtils (from `../node_modules/expo-json-utils/ios`)
@@ -2794,6 +2782,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-eas-client/ios"
   EXApplication:
     :path: "../node_modules/expo-application/ios"
+  EXAV:
+    :path: "../node_modules/expo-av/ios"
   EXConstants:
     :path: "../node_modules/expo-constants/ios"
   EXImageLoader:
@@ -3042,20 +3032,13 @@ SPEC CHECKSUMS:
   DGSwiftUtilities: 567f8d5ee618f0b7afb185b17aa45ff356315a0f
   EASClient: 68127f1248d2b25fdc82dbbfb17be95d1c4700be
   EXApplication: 296622817d459f46b6c5fe8691f4aac44d2b79e7
-<<<<<<< HEAD
   EXAV: e3fefaca88f14624bca01d9a128562a5f8e738f8
-=======
->>>>>>> b168a94e63fe0222fdcc09b9296319e457022e26
   EXConstants: fd688cef4e401dcf798a021cfb5d87c890c30ba3
   EXImageLoader: 189e3476581efe3ad4d1d3fb4735b7179eb26f05
   EXJSONUtils: 1d3e4590438c3ee593684186007028a14b3686cd
   EXManifests: 224345a575fca389073c416297b6348163f28d1a
   EXNotifications: 7cff475adb5d7a255a9ea46bbd2589cb3b454506
-<<<<<<< HEAD
-  Expo: 6580dbf21d94626792b38a95cddb2fb369ec6b0c
-=======
   Expo: c524bec66bed697b2140037e2ba110b3a8281b78
->>>>>>> b168a94e63fe0222fdcc09b9296319e457022e26
   expo-dev-client: 974463bca58c100a32f099450e9413893bee3de8
   expo-dev-launcher: adcbbff3464b908458255d0fdf3e8cf79c67d614
   expo-dev-menu: 78e39c8cca65695b7ccb2c70c618043137f6735c
@@ -3075,11 +3058,7 @@ SPEC CHECKSUMS:
   ExpoLinearGradient: a464898cb95153125e3b81894fd479bcb1c7dd27
   ExpoLinking: f051f28e50ea9269ff539317c166adec81d9342d
   ExpoLiquidGlass: 118c039a8314f96d15aabb8b4dd313d0a3af0182
-<<<<<<< HEAD
-  ExpoModulesCore: 3a6eb12a5f4d67b2f5fc7d0bc4777b18348f2d7a
-=======
   ExpoModulesCore: d128da9ae4ec1e5a26eca91f1b7cce9a92be3892
->>>>>>> b168a94e63fe0222fdcc09b9296319e457022e26
   ExpoSplashScreen: cbb839de72110dea1851dd3e85080b7923af2540
   ExpoStoreReview: 15f19e0d6cb6e00330ba1b356485bf47ef19c39a
   ExpoSystemUI: 2761aa6875849af83286364811d46e8ed8ea64c7
@@ -3093,12 +3072,8 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
-<<<<<<< HEAD
-  hermes-engine: 35c763d57c9832d0eef764316ca1c4d043581394
-  LiquidGlass: ba2360d3eb0821228db3d88bee3d30c8792ad32b
-=======
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
->>>>>>> b168a94e63fe0222fdcc09b9296319e457022e26
+  LiquidGlass: ba2360d3eb0821228db3d88bee3d30c8792ad32b
   lottie-ios: a881093fab623c467d3bce374367755c272bdd59
   lottie-react-native: cbe3d931a7c24f7891a8e8032c2bb9b2373c4b9c
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47

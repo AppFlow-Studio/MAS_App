@@ -7,7 +7,7 @@ import { EventsType, Program } from '@/src/types'
 import RenderAddedEvents from "@/src/components/UserProgramComponets/RenderAddedEvents" 
 import ProgramsListProgram from '@/src/components/ProgramsListProgram'
 import RenderAddedPrograms from '@/src/components/UserProgramComponets/RenderAddedPrograms'
-import { TabView, SceneMap, TabBar, TabBarProps } from 'react-native-tab-view';
+// import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { Dialog, Icon, IconButton } from 'react-native-paper'
 import { usePrayer } from '@/src/providers/prayerTimesProvider'
@@ -25,8 +25,12 @@ import { add } from 'date-fns'
             <Icon source={"bell"} color="#007AFF" size={40}/>
           </View>
           <View className='pb-[50%]'/>
-          <View>
-            <Text className='font-bold text-xl text-center'>Add programs and events by tapping the <Icon source={"bell"} color="#007AFF" size={20}/> or sliding right on the flyer name</Text>
+          <View className='items-center px-4'>
+            <View className='flex-row items-center justify-center flex-wrap'>
+              <Text className='font-bold text-xl text-center'>Add programs and events by tapping the </Text>
+              <Icon source={"bell"} color="#007AFF" size={20}/>
+              <Text className='font-bold text-xl text-center'> or sliding right on the flyer name</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -275,16 +279,16 @@ const renderScene = ({ route } : any) => {
     { key : 'fifth', title: 'Events'},
     ]
 
-  const renderTabBar = (props : TabBarProps<any>) => (
-    <TabBar
-      {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "23%", borderRadius : 20  }}
-      style={{ backgroundColor: '#0D509D', alignSelf : "center",  height: '9%'}}
-      labelStyle={{ color : "white", fontWeight : "bold" }}
-      tabStyle={{ width : layout / 3.5 }}
-      scrollEnabled={true}
-    />
-  );
+  // const renderTabBar = (props : any) => (
+  //   <TabBar
+  //     {...props}
+  //     indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "8%", left : "1%", height: "85%", width : "23%", borderRadius : 20  }}
+  //     style={{ backgroundColor: '#0D509D', alignSelf : "center",  height: '9%'}}
+  //     labelStyle={{ color : "white", fontWeight : "bold" }}
+  //     tabStyle={{ width : layout / 3.5 }}
+  //     scrollEnabled={true}
+  //   />
+  // );
  //#0D509D
   const router = useRouter()
   const navigation = useNavigation()
@@ -303,14 +307,32 @@ const renderScene = ({ route } : any) => {
     
     }}/>
     <View className='bg-[#ededed]'/>
-    <TabView
-      navigationState={{ index, routes }}
-      renderScene={renderScene}
-      onIndexChange={setIndex}
-      initialLayout={{ width: layout }}
-      renderTabBar={renderTabBar}
-      style={{ backgroundColor : "#ededed"}}
-    />
+    {/* Custom Tab Bar */}
+    <View style={{ backgroundColor: '#0D509D', paddingVertical: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 8 }}>
+        {routes.map((route, routeIndex) => (
+          <Pressable
+            key={route.key}
+            onPress={() => setIndex(routeIndex)}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              marginHorizontal: 4,
+              borderRadius: 8,
+              backgroundColor: index === routeIndex ? '#57BA47' : 'transparent',
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 14 }}>
+              {route.title}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+    {/* Tab Content */}
+    <View style={{ flex: 1, backgroundColor: '#ededed' }}>
+      {renderScene({ route: routes[index] })}
+    </View>
     </>
   )
 }

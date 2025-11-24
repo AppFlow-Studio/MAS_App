@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { createMaterialTopTabNavigator, MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
 import ProgramsScreen from './allPrograms';
 import Event from './events/Event';
 import Pace from './pace/Pace';
@@ -39,11 +38,16 @@ const renderScene = SceneMap({
 
 
 const ProgramsAndEventsScreen = () => {
-  function MyTabBar({ state, descriptors, navigation, position } : MaterialTopTabBarProps) {
-    const index = useSharedValue(0)
-    const xPosition = useSharedValue(0)
+  function MyTabBar(props : any) {
+    const { state, navigation, jumpTo } = props;
     const TABWIDTH = 100 
     const [ currIndex, setCurrIndex ] = useState(0)
+
+    useEffect(() => {
+      if (state && state.index !== undefined) {
+        setCurrIndex(state.index);
+      }
+    }, [state?.index]);
 
     const selectedTabAnimation = useAnimatedStyle(() => {
       return{
@@ -51,67 +55,43 @@ const ProgramsAndEventsScreen = () => {
       }
     })
     
+    if (!state || !state.routes) {
+      return null;
+    }
+
     return (
-      <ScrollView  contentContainerStyle={{ alignItems : "center",  flex : 1, height : 60 }} style={{ width : "110%"}} horizontal className=''>
-        <Animated.View style={[{ backgroundColor : "#57BA47" , zIndex : -1, position : "absolute", height : 40, borderRadius : 10, width : TABWIDTH}, selectedTabAnimation]}/>
-            {
-            state.routes.map((route : any, index : any) => {
-              const { options } = descriptors[route.key];
-              const label =
-                options.tabBarLabel !== undefined
-                  ? options.tabBarLabel
-                  : options.title !== undefined
-                  ? options.title
-                  : route.name;
-      
-              const isFocused = state.index === index;
+      <View style={{ backgroundColor: '#0D509D', width : "100%", paddingTop : '15%'}}>
+        <ScrollView  contentContainerStyle={{ alignItems : "center",  flex : 1, height : 60 }} style={{ width : "110%"}} horizontal className=''>
+          <Animated.View style={[{ backgroundColor : "#57BA47" , zIndex : -1, position : "absolute", height : 40, borderRadius : 10, width : TABWIDTH}, selectedTabAnimation]}/>
+              {
+              state.routes.map((route : any, index : any) => {
+                const label = route.title || route.key;
+                const isFocused = state.index === index;
 
-
-
-              const onPress = () => {
-                const event = navigation.emit({
-                  type: 'tabPress',
-                  target: route.key,
-                  canPreventDefault: true,
-                });
-      
-                if (!isFocused && !event.defaultPrevented) {
-                  navigation.navigate(route.name, route.params);
-                }
-              };
-              
-                  
-            const inputRange = state.routes.map((_, i) => i);
-
-            const opacity = position.interpolate({
-              inputRange,
-              outputRange: inputRange.map(i => (TABWIDTH * i)),
-            });
-            
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={isFocused ? { selected: true } : {}}
-                  accessibilityLabel={options.tabBarAccessibilityLabel}
-                  testID={options.tabBarTestID}
-                  onPress={onPress}
-                  style={{flex : 1, transform : [{ translateY : isFocused  ? -5 : 0 }], marginHorizontal : 5, width : TABWIDTH}}
-                 
-                >
-                  {/*<View style={{ backgroundColor : isFocused ? "#57BA47" : "#0D509D", zIndex : -1, position : "absolute", height : 40, borderRadius : 10, width : "100%"}}/>*/}
-                  <View style={{ height : 40, alignItems : "center", justifyContent : "center", borderRadius : 10 }} className=''>
-                    <Text className="text-white font-bold shrink-1 flex-wrap">
-                      {label}
-                    </Text>
-                    
-                  </View>                  
-                  <View className='items-center justify-center mt-[3%]' style={{ opacity : isFocused ? 1 : 0 }}>
-                    <View style={{ backgroundColor : "#57BA47", height : 2, width : "60%"}}/>
-                  </View>
-                </Pressable>
-              );
-            })}
-      </ScrollView>
+                const onPress = () => {
+                  jumpTo(route.key);
+                };
+                
+                return (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={isFocused ? { selected: true } : {}}
+                    onPress={onPress}
+                    style={{flex : 1, transform : [{ translateY : isFocused  ? -5 : 0 }], marginHorizontal : 5, width : TABWIDTH}}
+                  >
+                    <View style={{ height : 40, alignItems : "center", justifyContent : "center", borderRadius : 10 }} className=''>
+                      <Text className="text-white font-bold shrink-1 flex-wrap">
+                        {label}
+                      </Text>
+                    </View>                  
+                    <View className='items-center justify-center mt-[3%]' style={{ opacity : isFocused ? 1 : 0 }}>
+                      <View style={{ backgroundColor : "#57BA47", height : 2, width : "60%"}}/>
+                    </View>
+                  </Pressable>
+                );
+              })}
+        </ScrollView>
+      </View>
     );
   }
 
@@ -128,14 +108,17 @@ const ProgramsAndEventsScreen = () => {
     { key: 'fourth', title : 'Events'},
     { key: 'fifth', title : 'PACE'}
   ]);
-  const renderTabBar = (props : TabBarProps<any>) => (
-    <TabBar
-      {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "45%", width : "15%", left : "2.5%", borderRadius : 20  }}
-      style={{ backgroundColor: '#0D509D', width : "100%", alignSelf : "center", paddingTop : '15%'}}
-      labelStyle={{ color : "white", fontWeight : "bold", textAlign :'center' }}
-      scrollEnabled
-    />
+  // const renderTabBar = (props : TabBarProps<any>) => (
+  //   <TabBar
+  //     {...props}
+  //     indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "45%", width : "15%", left : "2.5%", borderRadius : 20  }}
+  //     style={{ backgroundColor: '#0D509D', width : "100%", alignSelf : "center", paddingTop : '15%'}}
+  //     labelStyle={{ color : "white", fontWeight : "bold", textAlign :'center' }}
+  //     scrollEnabled
+  //   />
+  // )
+  const renderTabBar = (props : any) => (
+    <MyTabBar {...props} />
   );
 
   return (

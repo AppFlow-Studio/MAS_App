@@ -89,10 +89,12 @@ export default function ProgramsCircularCarousel(  ) {
           })
           setActive(active + 1);
       } else {
-        flatListRef.current?.scrollToIndex({
-          index : 0,
-          animated : true
-        })
+        // Smooth transition back to beginning using scrollToOffset
+        flatListRef.current?.scrollToOffset({
+          offset: 0,
+          animated: true,
+        });
+        setActive(0);
       }
       }, 5000);
       
@@ -122,7 +124,7 @@ export default function ProgramsCircularCarousel(  ) {
   return (
     
     <View>
-    <Animated.View className='' style={{height: 300}}>
+    <Animated.View className='' style={{height: 300, position: 'relative'}}>
       <Pressable onPress={SignInModalCheck}>
         <Animated.FlatList 
                   data={programsData}

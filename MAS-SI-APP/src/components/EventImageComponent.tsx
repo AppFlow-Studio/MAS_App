@@ -16,7 +16,7 @@ const EventImageComponent = ({item} : {item : EventsType}) => {
             onLoad={() => setImageReady(true)}
             onError={() => setImageReady(false)}
             />
-            <Text className='text-gray-500 font-medium pl-2 text-[10px] w-[150px] text-center' numberOfLines={1}>{item.event_name}</Text>
+            <Text className='text-black font-medium pl-2 text-[10px] w-[150px] text-center' numberOfLines={1}>{item.event_name}</Text>
         </Pressable>
     </Link>
     )

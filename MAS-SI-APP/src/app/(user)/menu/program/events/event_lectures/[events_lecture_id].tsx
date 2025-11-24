@@ -174,14 +174,14 @@ const EventsLectureID = () => {
       { key: 'second', title: 'Key Notes' },
     ];
     
-    const renderTabBar = (props : any) => (
-      <TabBar
-      {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "90%", width : "40%", left : "5%", borderRadius : 20  }}
-      style={{ backgroundColor: '#0D509D', width : "80%", alignSelf : "center", borderRadius : 20}}
-      labelStyle={{ color : "white", fontWeight : "bold" }}
-      />
-    );
+    // const renderTabBar = (props : any) => (
+    //   <TabBar
+    //   {...props}
+    //   indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "90%", width : "40%", left : "5%", borderRadius : 20  }}
+    //   style={{ backgroundColor: '#0D509D', width : "80%", alignSelf : "center", borderRadius : 20}}
+    //   labelStyle={{ color : "white", fontWeight : "bold" }}
+    //   />
+    // );
     const [loading, setLoading] = useState(true);
     const opacity = useSharedValue(1);
   
@@ -242,7 +242,7 @@ const EventsLectureID = () => {
           renderScene={renderScene}
           onIndexChange={setIndex}
           initialLayout={{ width: layout }}
-          renderTabBar={renderTabBar}
+          // renderTabBar={renderTabBar}
           style={{  backgroundColor : "#ededed" }}
         />
           <Portal>

@@ -151,14 +151,14 @@ const AllLikedLectures = () => {
     {key : "second", title : "Event Lectures"},
   ])
 
-  const renderTabBar = (props : any) => (
-    <TabBar
-      {...props}
-      indicatorStyle={{ backgroundColor: 'white' }}
-      style={{ backgroundColor: '#0D509D', }}
-      
-    />
-  );
+  // const renderTabBar = (props : any) => (
+  //   <TabBar
+  //     {...props}
+  //     indicatorStyle={{ backgroundColor: 'white' }}
+  //     style={{ backgroundColor: '#0D509D', }}
+  //     
+  //   />
+  // );
 
   return (
     <>
@@ -168,7 +168,7 @@ const AllLikedLectures = () => {
       renderScene={renderScene}
       onIndexChange={setIndex}
       initialLayout={{ width: layout.width }}
-      renderTabBar={renderTabBar}
+      // renderTabBar={renderTabBar}
     />
     </>
   )

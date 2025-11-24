@@ -45,19 +45,9 @@ export default function RootLayout() {
     Poppins_800ExtraBold: require("../../assets/fonts/Poppins-ExtraBold.ttf"),
   });
 
-  // ✅ Clear AsyncStorage on every launch (for testing)
+  // Check if first launch (without clearing storage)
   useEffect(() => {
-    const clearAsyncStorage = async () => {
-      try {
-        await AsyncStorage.clear();
-        console.log('✅ AsyncStorage cleared!');
-      } catch (e) {
-        console.error('❌ Failed to clear AsyncStorage', e);
-      }
-      setIsFirstLaunchChecked(true); // Set this after clearing AsyncStorage
-    };
-
-    clearAsyncStorage();
+    setIsFirstLaunchChecked(true);
   }, []);
 
   // ✅ Logo fade animation

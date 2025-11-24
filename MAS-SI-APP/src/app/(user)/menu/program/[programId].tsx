@@ -1,5 +1,6 @@
 import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, Easing, Alert, StatusBar, Linking, Platform } from 'react-native'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
 import LecturesListLecture from '@/src/components/LectureListLecture';
 import { Divider, Portal, Modal, IconButton, Icon, Button, Badge } from 'react-native-paper';
@@ -11,15 +12,16 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { UserPlaylistType } from '@/src/types';
 import RenderAddToUserPlaylistsListProgram from '@/src/components/RenderAddToUserPlaylistsList';
-import { SharedTransition, withSpring } from 'react-native-reanimated';
+import { withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import CreatePlaylistBottomSheet from '@/src/components/UserProgramComponets/CreatePlaylistBottomSheet';
 import * as Haptics from "expo-haptics"
 import LottieView from 'lottie-react-native';
 import Toast from 'react-native-toast-message';
-import { isBefore } from 'date-fns';
+import { isBefore, format } from 'date-fns';
 import { FlyerSkeleton } from '@/src/components/FlyerSkeleton';
+import YoutubePlayer from "react-native-youtube-iframe";
 function setTimeToCurrentDate(timeString : string ) {
 
   // Split the time string into hours, minutes, and seconds
@@ -45,6 +47,7 @@ const schedule_notification = async ( user_id : string, push_notification_token 
 }
 const ProgramLectures = () => {
   const { session } = useAuth()
+  const router = useRouter()
   const { programId } = useLocalSearchParams();
   const [ lectures, setLectures ] = useState<Lectures[] | null>(null)
   const [ program, setProgram ] = useState<Program>()
@@ -61,6 +64,10 @@ const ProgramLectures = () => {
   const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>()
   const [ usersPlaylists, setUsersPlaylists ] = useState<UserPlaylistType[]>()
   const [ speakerString, setSpeakerString ] = useState('')
+  const [ selectedLecture, setSelectedLecture ] = useState<Lectures | null>(null)
+  const [ playing, setPlaying ] = useState(false)
+  const [ watchedLectures, setWatchedLectures ] = useState<Set<string>>(new Set())
+  const [ startedLectures, setStartedLectures ] = useState<Set<string>>(new Set())
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const handlePresentModalPress = () => bottomSheetRef.current?.present();
   const hideAddToPlaylist = () => setAddToPlaylistVisible(false)
@@ -73,18 +80,18 @@ const ProgramLectures = () => {
 
   const imageAnimatedStyle = useAnimatedStyle(() => {
     return{
-      transform: [
-        {
-          translateY : interpolate(
-          scrollOffset.value,
-          [-250, 0, 250 ],
-          [-250/2, 0, 250 * 0.75]
-          )
-        },
-        {
-          scale: interpolate(scrollOffset.value, [-250, 0, 250], [2, 1, 1])
-        }
-      ]
+      // transform: [
+      //   {
+      //     translateY : interpolate(
+      //     scrollOffset.value,
+      //     [-250, 0, 250 ],
+      //     [-250/2, 0, 250 * 0.75]
+      //     )
+      //   },
+      //   {
+      //     scale: interpolate(scrollOffset.value, [-250, 0, 250], [2, 1, 1])
+      //   }
+      // ]
     }
   })
  async function getProgram(){
@@ -130,8 +137,47 @@ const ProgramLectures = () => {
   }
   if ( data ) {
     setLectures(data)
+    // Check watched status after lectures are loaded
+    checkWatchedStatus(data)
+    
+    // Count lectures with YouTube links
+    const lecturesWithLinks = data.filter(lecture => lecture.lecture_link && lecture.lecture_link.trim() !== '' && lecture.lecture_link !== 'N/A')
+    console.log(`\n=== Lecture YouTube Links Report ===`)
+    console.log(`Total lectures: ${data.length}`)
+    console.log(`Lectures with YouTube links: ${lecturesWithLinks.length}`)
+    console.log(`Lectures without YouTube links: ${data.length - lecturesWithLinks.length}`)
+    console.log(`Percentage with links: ${data.length > 0 ? ((lecturesWithLinks.length / data.length) * 100).toFixed(1) : 0}%`)
   }
 }
+
+  const checkWatchedStatus = async (lecturesData: Lectures[]) => {
+    try {
+      const watchedKeys = lecturesData.map(lecture => `watched_lecture_${lecture.lecture_id}`);
+      const startedKeys = lecturesData.map(lecture => `started_lecture_${lecture.lecture_id}`);
+      const allKeys = [...watchedKeys, ...startedKeys];
+      const allValues = await AsyncStorage.multiGet(allKeys);
+      const watched = new Set<string>();
+      const started = new Set<string>();
+      allValues.forEach(([key, value]) => {
+        if (value === 'true') {
+          if (key.startsWith('watched_lecture_')) {
+            const lectureId = key.replace('watched_lecture_', '');
+            watched.add(lectureId);
+          } else if (key.startsWith('started_lecture_')) {
+            const lectureId = key.replace('started_lecture_', '');
+            // Only add to started if not already watched
+            if (!watched.has(lectureId)) {
+              started.add(lectureId);
+            }
+          }
+        }
+      });
+      setWatchedLectures(watched);
+      setStartedLectures(started);
+    } catch (error) {
+      console.log('Error checking watched status:', error);
+    }
+  };
 async function getUserPlaylists(){
   const { data, error } = await supabase.from("user_playlist").select("*").eq("user_id", session?.user.id)
   if( error ){
@@ -141,9 +187,60 @@ async function getUserPlaylists(){
     setUsersPlaylists(data)
   }
 }
-const fadeOutNotification = useAnimatedStyle(() => ({
+  const fadeOutNotification = useAnimatedStyle(() => ({
   opacity : notifade.value
 }))
+
+  const getVideoIdFromUrl = (url: string) => {
+    if (!url) return null
+    if (!url.includes('/') && !url.includes('?')) {
+      return url
+    }
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
+    return match ? match[1] : url
+  }
+
+  const onStateChange = useCallback((state: string) => {
+    if (state === "ended") {
+      setPlaying(false);
+      // Mark lecture as watched when video ends
+      if (selectedLecture) {
+        markAsWatched(selectedLecture.lecture_id);
+      }
+    } else if (state === "playing" && selectedLecture) {
+      // Mark lecture as started when video starts playing
+      markAsStarted(selectedLecture.lecture_id);
+    }
+  }, [selectedLecture]);
+
+  const markAsWatched = async (lectureId: string) => {
+    try {
+      const watchedKey = `watched_lecture_${lectureId}`;
+      await AsyncStorage.setItem(watchedKey, 'true');
+      setWatchedLectures(prev => new Set([...prev, lectureId]));
+      // Remove from started if it's now watched
+      setStartedLectures(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(lectureId);
+        return newSet;
+      });
+    } catch (error) {
+      console.log('Error marking lecture as watched:', error);
+    }
+  };
+
+  const markAsStarted = async (lectureId: string) => {
+    try {
+      // Only mark as started if not already watched
+      if (!watchedLectures.has(lectureId)) {
+        const startedKey = `started_lecture_${lectureId}`;
+        await AsyncStorage.setItem(startedKey, 'true');
+        setStartedLectures(prev => new Set([...prev, lectureId]));
+      }
+    } catch (error) {
+      console.log('Error marking lecture as started:', error);
+    }
+  };
   useEffect(() => {
     getProgram()
     getProgramLectures()
@@ -278,18 +375,17 @@ const fadeOutNotification = useAnimatedStyle(() => ({
  
   
    return(
-    <View className='flex-row items-center gap-x-5'>
-      <Animated.View style={fadeOutNotification}>
-        <View style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-center text-center z-[1] rounded-xl p-1 ' >
-          <Text className='text-black text-[10px] font-semibold'>Notifications</Text>
-        </View>
-      </Animated.View>
-      <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
-        {programInNotfications ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }
-      </Pressable>
-      <Pressable onPress={addToPrograms}>
-        { programInPrograms ?  <Icon source={'minus-circle-outline'} color='#007AFF' size={30}/> : <Icon source={"plus-circle-outline"} color='#007AFF' size={30}/>}
-      </Pressable>
+    <View className='flex-row items-center gap-x-3'>
+      <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: 'rgba(128, 128, 128, 0.2)' }}>
+        <Pressable onPress={handlePress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+          {programInNotfications ?  <Icon source={"bell-check"} color='white' size={20}/> : <Icon source={"bell-outline"} color='white' size={20}/> }
+        </Pressable>
+      </BlurView>
+      <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: 'rgba(128, 128, 128, 0.2)' }}>
+        <Pressable onPress={addToPrograms} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+          { programInPrograms ?  <Icon source={'minus-circle-outline'} color='white' size={20}/> : <Icon source={"plus-circle-outline"} color='white' size={20}/>}
+        </Pressable>
+      </BlurView>
     </View>
    )
   }
@@ -324,9 +420,11 @@ const fadeOutNotification = useAnimatedStyle(() => ({
       )
     }
     return(
-      <Pressable onPress={addToPrograms}>
-        { programInPrograms ?  <Icon source={'minus-circle'} color='#007AFF' size={30}/> : <Icon source={"plus-circle-outline"} color='#007AFF' size={30}/>}
-      </Pressable>
+      <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: 'rgba(128, 128, 128, 0.2)' }}>
+        <Pressable onPress={addToPrograms} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+          { programInPrograms ?  <Icon source={'minus-circle'} color='white' size={20}/> : <Icon source={"plus-circle-outline"} color='white' size={20}/>}
+        </Pressable>
+      </BlurView>
     )
   }
   
@@ -374,72 +472,210 @@ const fadeOutNotification = useAnimatedStyle(() => ({
   }, [playlistAddingTo.length > 0])
   const currDate = new Date().toISOString()
   return (
-    <View className='flex-1 bg-white' style={{flexGrow: 1}}>
-     <Stack.Screen options={ { title: "" , headerBackTitleVisible : false, headerRight : () => { if(isBefore(currDate, program?.program_end_date!)){ return ( <NotificationBell /> )} else{ return <AddToProgramsButton />}}, headerStyle : {backgroundColor : "white"} } } />
-     <StatusBar barStyle={"dark-content"}/>
-      <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "center", alignItems: "center", marginTop: "2%" }} >
+    <View className='flex-1' style={{flexGrow: 1, backgroundColor: '#0A1628'}}>
+     <Stack.Screen options={ { 
+       headerShown: false
+     } } />
+     <StatusBar barStyle={"light-content"}/>
+     {/* Custom Header with Liquid Glass Buttons */}
+     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, paddingTop: 50, paddingHorizontal: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+       <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: 'rgba(128, 128, 128, 0.2)' }}>
+         <Pressable onPress={() => navigation.goBack()} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+           <Icon source="chevron-left" size={20} color="white" />
+         </Pressable>
+       </BlurView>
+       <View style={{ flexDirection: 'row', gap: 10 }}>
+         {isBefore(currDate, program?.program_end_date!) ? <NotificationBell /> : <AddToProgramsButton />}
+       </View>
+     </View>
+      <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "flex-start", alignItems: "stretch", backgroundColor: '#0A1628' }} style={{ backgroundColor: '#0A1628' }}>
           
-          <View className=' relative' style={{width: width / 1.2, height: 300, borderRadius: 8 }}>
-            {/* Show the skeleton until the image is loaded or errored */}
-            { !imageReady && 
-              <FlyerSkeleton 
-                width={width / 1.2} 
-                height={300} 
-                style={{ position: 'absolute', top: 0, zIndex: 2 }} 
+          <View className=' relative' style={{width: '100%', height: height * 0.5, borderRadius: 0, overflow: 'hidden', marginTop: 100, alignSelf: 'stretch', backgroundColor: '#0A1628' }}>
+            {selectedLecture ? (
+              <YoutubePlayer 
+                height={height * 0.5}
+                width={width}
+                play={playing}
+                videoId={selectedLecture.lecture_link ? getVideoIdFromUrl(selectedLecture.lecture_link) : undefined}
+                onChangeState={onStateChange}
               />
-            }
-            <Animated.Image 
-              source={
-                // If there's an error or no URL, use the fallback image
-                hasError || !program?.program_img 
-                  ? require("@/assets/images/MASHomeLogo.png")
-                  : { uri: program.program_img }
-              }
-              style={[
-                { width: width / 1.2, height: 300, borderRadius: 8 },
-                imageAnimatedStyle
-              ]}
-              resizeMode="stretch"
-              onLoad={() => setImageReady(true)}
-              onError={() => {
-                // Mark that an error occurred and hide the skeleton
-                setHasError(true);
-                setImageReady(true);
-              }}
-            />
+            ) : (
+              <>
+                {/* Show the skeleton until the image is loaded or errored */}
+                { !imageReady && 
+                  <FlyerSkeleton 
+                    width={width} 
+                    height={height * 0.5} 
+                    style={{ position: 'absolute', top: 0, zIndex: 2 }} 
+                  />
+                }
+                <Animated.Image 
+                  source={
+                    // If there's an error or no URL, use the fallback image
+                    hasError || !program?.program_img 
+                      ? require("@/assets/images/MASHomeLogo.png")
+                      : { uri: program.program_img }
+                  }
+                  style={[
+                    { width: '100%', height: '100%', borderRadius: 0 },
+                    imageAnimatedStyle
+                  ]}
+                  resizeMode="cover"
+                  onLoad={() => setImageReady(true)}
+                  onError={() => {
+                    // Mark that an error occurred and hide the skeleton
+                    setHasError(true);
+                    setImageReady(true);
+                  }}
+                />
+              </>
+            )}
           </View>
        
-          <View className='bg-white w-[100%]' style={{paddingBottom : Tab * 3}}>
-            <Text className='text-center mt-2 text-xl text-black font-bold'>{program?.program_name}</Text>
-            <Text className='text-center mt-2  text-[#0D509D] w-[60%] self-center' onPress={showModal} numberOfLines={1}>{speakerString}</Text>
-              <View>
-                {
-                  program?.has_lectures  || ( lectures && lectures?.length >= 1) ? lectures?.map((item, index) => {
-                    return(
-                      <Animated.View key={index} entering={FadeInLeft.duration(400).delay(100)}>
-                        <LecturesListLecture  lecture={item} index={index} speaker={program?.program_speaker} setAddToPlaylistVisible={setAddToPlaylistVisible} setLectureToBeAddedToPlaylist={setLectureToBeAddedToPlaylist} length={lectures.length}/>
-                        <Divider style={{width: "95%", marginLeft: 8}}/>
-                      </Animated.View>
-                    )
-                  }) : program?.has_lectures == false ? (
-                    <View className=''> 
-                      <View>
-                        <Text className='text-left text-2xl font-bold text-black ml-4'>Description: </Text>
-                      </View>
+          <View className='w-[100%]' style={{paddingBottom : Tab * 3, backgroundColor: '#0A1628'}}>
+            <Text className='text-center mt-4 text-2xl text-white font-bold'>{program?.program_name}</Text>
+            <Pressable onPress={showModal}>
+              <Text className='text-center mt-2 text-[#60A5FA] w-[60%] self-center font-semibold' numberOfLines={1}>{speakerString}</Text>
+            </Pressable>
 
-                      <View className='items-center justify-center'>
-                        <View className='w-[95%] bg-white px-3 flex-wrap py-2' style={[{ borderRadius : 15, height : height / 3.7 , shadowColor : "gray", shadowOffset : { width : 0, height :0}, shadowOpacity : 2, shadowRadius : 1, elevation : 5 }, 
-                          Platform.OS == 'android' ?  {
-                            borderWidth: 1,
-                            borderColor : '#D3D3D3',
-                          } : {}
-                        ]}>
-                          <ScrollView><Text>{program?.program_desc}</Text></ScrollView>
+            {/* About This Series Section */}
+            {program?.program_desc && (
+              <View className='px-4 mt-6 mb-4'>
+                <Text className='text-2xl font-bold text-white mb-3'>About This Series</Text>
+                <Text className='text-base text-gray-300 leading-6'>{program.program_desc}</Text>
+              </View>
+            )}
+
+            {/* Classes Section */}
+            {(program?.has_lectures || (lectures && lectures?.length >= 1)) && lectures && lectures.length > 0 && (
+              <View className='px-4 mt-4 mb-6'>
+                <Text className='text-2xl font-bold text-white mb-4'>Classes</Text>
+                {lectures.map((lecture, idx) => {
+                  const formatLectureDate = (dateString: string) => {
+                    try {
+                      const date = new Date(dateString)
+                      return format(date, 'MMM d, yyyy')
+                    } catch {
+                      return dateString
+                    }
+                  }
+
+                  const videoId = lecture.lecture_link ? getVideoIdFromUrl(lecture.lecture_link) : null
+                  const isSelected = selectedLecture?.lecture_id === lecture.lecture_id
+                  
+                  return (
+                    <Pressable
+                      key={lecture.lecture_id}
+                      onPress={() => {
+                        if (isSelected) {
+                          setSelectedLecture(null)
+                          setPlaying(false)
+                        } else {
+                          setSelectedLecture(lecture)
+                          setPlaying(true)
+                          // Scroll to top to show the video player
+                          scrollRef.current?.scrollTo({ y: 0, animated: true })
+                        }
+                      }}
+                      className='mb-3 rounded-xl overflow-hidden'
+                      style={{
+                        backgroundColor: isSelected ? '#2D4A6E' : '#1A2332',
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                        elevation: 3,
+                        borderWidth: isSelected ? 2 : 0,
+                        borderColor: '#60A5FA',
+                      }}
+                    >
+                      <View className='flex-row'>
+                        {/* Thumbnail */}
+                        <View 
+                          className='bg-gray-700'
+                          style={{ 
+                            width: 140, 
+                            height: 105,
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                          }}
+                        >
+                          {videoId ? (
+                            <Image
+                              source={{ uri: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` }}
+                              style={{ width: 140, height: 105 }}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <Icon source="play-circle-outline" size={40} color="#9CA3AF" />
+                          )}
+                          {!isSelected && (
+                            <View className='absolute inset-0 bg-black/30 items-center justify-center'>
+                              <Icon source="play-circle" size={30} color="white" />
+                            </View>
+                          )}
+                          {isSelected && (
+                            <View className='absolute top-2 left-2 bg-blue-500 px-2 py-1 rounded'>
+                              <Text className='text-white text-xs font-bold'>NOW PLAYING</Text>
+                            </View>
+                          )}
+                          {watchedLectures.has(lecture.lecture_id) && !isSelected && (
+                            <View className='absolute top-2 right-2 bg-green-500 px-2 py-1 rounded-full'>
+                              <Icon source="check" size={14} color="white" />
+                            </View>
+                          )}
+                          {startedLectures.has(lecture.lecture_id) && !watchedLectures.has(lecture.lecture_id) && !isSelected && (
+                            <View className='absolute top-2 right-2 bg-blue-500 px-2 py-1 rounded-full'>
+                              <Icon source="play" size={14} color="white" />
+                            </View>
+                          )}
+                        </View>
+
+                        {/* Content */}
+                        <View className='flex-1 p-3 justify-between'>
+                          <View>
+                            <Text className='text-base font-semibold text-white mb-1' numberOfLines={2}>
+                              {lecture.lecture_name || `${lectures.length - idx} Class ${lectures.length - idx}`}
+                            </Text>
+                            <Text className='text-sm text-gray-400 mt-1'>
+                              {lecture.lecture_date ? formatLectureDate(lecture.lecture_date) : ''}
+                            </Text>
+                            {watchedLectures.has(lecture.lecture_id) ? (
+                              <View className='flex-row items-center mt-2'>
+                                <Icon source="check-circle" size={16} color="#10B981" />
+                                <Text className='text-green-500 text-sm font-semibold ml-1'>Watched</Text>
+                              </View>
+                            ) : startedLectures.has(lecture.lecture_id) ? (
+                              <View className='flex-row items-center mt-2'>
+                                <Icon source="play-circle" size={16} color="#60A5FA" />
+                                <Text className='text-blue-400 text-sm font-semibold ml-1'>Continue</Text>
+                              </View>
+                            ) : null}
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  ) : <></>
-                }
+                    </Pressable>
+                  )
+                })}
+              </View>
+            )}
+
+            {/* Description for non-lecture programs */}
+            {program?.has_lectures == false && program?.program_desc && (
+              <View className='px-4 mt-4 mb-6'>
+                <Text className='text-2xl font-bold text-white mb-3'>Description</Text>
+                <View className='px-4 py-3 rounded-xl' style={{
+                  backgroundColor: '#1A2332',
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}>
+                  <Text className='text-base text-gray-300 leading-6'>{program.program_desc}</Text>
+                </View>
+              </View>
+            )}
                 <View className='items-center justify-center'>
                     {
                       program?.program_is_paid ? 
@@ -454,7 +690,6 @@ const fadeOutNotification = useAnimatedStyle(() => ({
                       ) : <></>
                     }
                 </View>
-              </View>
           </View>
           
           <Portal>

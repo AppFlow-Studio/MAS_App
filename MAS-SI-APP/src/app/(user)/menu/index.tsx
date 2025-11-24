@@ -1,4 +1,4 @@
-import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl } from 'react-native';
+import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef, useContext, useCallback} from 'react';
 import { gettingPrayerData, prayerTimesType, Profile } from '@/src/types';
@@ -12,9 +12,9 @@ import BottomSheet, { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { JummahBottomSheetProp } from '@/src/types';
 import LinkToVolunteersModal from '@/src/components/linkToVolunteersModal';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, useAnimatedScrollHandler, withTiming, Easing, FadeIn } from 'react-native-reanimated';
+import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, useAnimatedScrollHandler, withTiming, Easing, FadeIn, useDerivedValue, runOnJS } from 'react-native-reanimated';
 import { Button, TextInput, Portal, Modal, Icon  } from 'react-native-paper';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import LinkToDonationModal from '@/src/components/LinkToDonationModal';
 import LottieView from 'lottie-react-native';
 import { supabase } from '@/src/lib/supabase';
@@ -24,9 +24,27 @@ import { BlurView } from 'expo-blur';
 import SocialPlatforms from '@/src/components/SocialPlatforms';
 import IconsMarquee from '@/src/components/Marquee';
 import MASQuestionaire from '@/src/components/MASQuestionaire';
+import DailyProgramsWidget from '@/src/components/DailyProgramsWidget';
+import OverlappingWidget from '@/src/components/OverlappingWidget';
+import Spinner from '@/src/components/Spinner';
+import DonationVolunteerCarousel, { DonationVolunteerCarouselRef } from '@/src/components/DonationVolunteerCarousel';
+
+// Color Theme based on Figma design
+const COLORS = {
+  primary: '#214E91',      // Main blue
+  accent: '#57BA47',       // Green accent
+  white: '#FFFFFF',        // Pure white
+  background: '#FFFFFF',   // White background
+  black: '#000000',        // Primary text
+  gray: '#6B7280',         // Secondary text
+  lightGray: '#F3F4F6',    // Light backgrounds
+  border: '#E5E7EB',       // Borders
+  shadow: 'rgba(0, 0, 0, 0.1)', // Shadows
+};
 
 export default function homeScreen() {
   const { onSetPrayerTimesWeek, prayerTimesWeek } = usePrayer()
+  const router = useRouter()
   const { session } = useAuth()
   const [isRendered, setIsRendered ] = useState(false)
   const [ profile, setProfile ] = useState<Profile>()
@@ -35,6 +53,7 @@ export default function homeScreen() {
   const [ profileEmail, setProfileEmail ] = useState('')
   const [ confirmProfile, setConfirmProfile ] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [visible, setVisible] = React.useState(false);
   const [ showQuestionaire, setShowQuestionaire ] = useState(false)
   const showModal = () => setVisible(true);
@@ -45,9 +64,50 @@ export default function homeScreen() {
   const { width } = Dimensions.get("window")
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
   const scrollOffset = useSharedValue(0)
-    const scrollHandler = useAnimatedScrollHandler(event => {
-      scrollOffset.value = interpolate(event.contentOffset.y, [ -1, 1], [-1, 1]);
+  const pullDistance = useSharedValue(0)
+  const donationCarouselRef = useRef<View>(null);
+  const exploreFeaturesRef = useRef<View>(null);
+  const [exploreFeaturesY, setExploreFeaturesY] = useState(0);
+  const [donationCarouselRelativeY, setDonationCarouselRelativeY] = useState(0);
+  const donationVolunteerCarouselRef = useRef<DonationVolunteerCarouselRef>(null);
+  const [activeButton, setActiveButton] = useState<'donate' | 'volunteer' | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(false);
+  
+  const updateBottomState = (isBottom: boolean) => {
+    setIsAtBottom(isBottom);
+  };
+  
+    const scrollHandler = useAnimatedScrollHandler({
+      onScroll: (event) => {
+        scrollOffset.value = interpolate(event.contentOffset.y, [ -1, 1], [-1, 1]);
+        // Track pull distance for custom refresh spinner
+        pullDistance.value = Math.max(0, -event.contentOffset.y);
+        
+        // Check if we're at the bottom - disable bounce well before reaching bottom to prevent background showing
+        const { contentOffset, contentSize, layoutMeasurement } = event;
+        const scrollPosition = contentOffset.y + layoutMeasurement.height;
+        const totalContentHeight = contentSize.height;
+        // Disable bounce when within 200px of bottom to completely prevent blue background from showing
+        const isBottom = scrollPosition >= totalContentHeight - 200;
+        runOnJS(updateBottomState)(isBottom);
+      }
     });
+    
+    const handleScrollEndDrag = (event: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const scrollPosition = contentOffset.y + layoutMeasurement.height;
+      const totalContentHeight = contentSize.height;
+      const isBottom = scrollPosition >= totalContentHeight - 200;
+      setIsAtBottom(isBottom);
+    };
+    
+    const handleMomentumScrollEnd = (event: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const scrollPosition = contentOffset.y + layoutMeasurement.height;
+      const totalContentHeight = contentSize.height;
+      const isBottom = scrollPosition >= totalContentHeight - 200;
+      setIsAtBottom(isBottom);
+    };
     const HeaderRadius = useAnimatedStyle(() => {
       return {
         transform: [
@@ -63,6 +123,40 @@ export default function homeScreen() {
         width: interpolate(scrollOffset.value, [0, (width / 2.2) - (width / 3)], [width / 2.2, width / 3], 'clamp'),
       }
     })
+
+    // Custom refresh spinner animation
+    const showSpinner = useDerivedValue(() => {
+      return pullDistance.value > 30 || refreshing;
+    });
+
+    const refreshSpinnerStyle = useAnimatedStyle(() => {
+      const opacity = interpolate(
+        pullDistance.value,
+        [0, 50, 100],
+        [0, 0.7, 1],
+        'clamp'
+      );
+      const translateY = interpolate(
+        pullDistance.value,
+        [0, 100],
+        [-30, 20],
+        'clamp'
+      );
+      const scale = interpolate(
+        pullDistance.value,
+        [0, 100],
+        [0.5, 1],
+        'clamp'
+      );
+      return {
+        opacity: refreshing ? 1 : opacity,
+        transform: [
+          { translateY: refreshing ? 20 : translateY },
+          { scale: refreshing ? 1 : scale }
+        ]
+      };
+    });
+
 
     const getProfile = async () => {
       if( session?.user.is_anonymous){
@@ -90,11 +184,34 @@ export default function homeScreen() {
     //   }
     // }
     const getPrayer = async () => {
-      const prayerTimesInfo = await supabase.from('prayers').select('*').eq('id', 1).single()
-        const prayerTimes = prayerTimesInfo.data
-        const weekInfo  : gettingPrayerData[] = ThePrayerData({prayerTimes})
-        onSetPrayerTimesWeek(weekInfo)
-        setLoading(false)
+      try {
+        const { data: prayerTimes, error } = await supabase.from('prayers').select('*').eq('id', 1).single()
+        if (error) {
+          console.error('Error fetching prayers:', error)
+          return
+        }
+        if (prayerTimes) {
+          const weekInfo  : gettingPrayerData[] = ThePrayerData({prayerTimes})
+          onSetPrayerTimesWeek(weekInfo)
+        }
+      } catch (error) {
+        console.error('Error in getPrayer:', error)
+      } finally {
+        if (!refreshing) {
+          setLoading(false)
+        }
+      }
+    }
+
+    const onRefresh = async () => {
+      setRefreshing(true)
+      try {
+        await Promise.all([getPrayer(), getProfile()])
+      } catch (error) {
+        console.error('Error refreshing:', error)
+      } finally {
+        setRefreshing(false)
+      }
     }
     useEffect( () => {
       getProfile();
@@ -110,40 +227,167 @@ export default function homeScreen() {
     }, [profileFirstName, profileLastName, profileEmail])
     if (loading){
       return(
-        <View className='justify-center items-center'>
-          <Text>Loading...</Text>
+        <View style={{backgroundColor: COLORS.background}} className='justify-center items-center h-full'>
+          <Text style={{color: COLORS.primary}} className='text-lg font-semibold'>Loading...</Text>
         </View>
       )
     }
     const prayer = prayerTimesWeek
     return (
-           <Animated.ScrollView ref={scrollRef} className="bg-white h-full z-[0]" onScroll={scrollHandler} 
+           <Animated.ScrollView 
+            ref={scrollRef} 
+            style={{backgroundColor: '#214E91'}} 
+            contentContainerStyle={{backgroundColor: COLORS.background, minHeight: '100%', paddingBottom: tabBarHeight + 20}} 
+            className="h-full z-[0]" 
+            bounces={!isAtBottom}
+            alwaysBounceVertical={false}
+            overScrollMode="never"
+            onScroll={scrollHandler}
+            onScrollEndDrag={handleScrollEndDrag}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={onRefresh}
+                tintColor={COLORS.white}
+                colors={[COLORS.white]}
+                progressViewOffset={0}
+                style={{backgroundColor: 'transparent'}}
+              />
+            } 
             >
-                  <StatusBar barStyle={"dark-content"}/>
-                  <Animated.View className='justify-center items-center pt-[14%] bg-white w-full overflow-clip z-[1]' style={HeaderRadius} > 
-                    <Animated.Image 
-                      source={require("@/assets/images/massiLogo2.png")} 
-                      style={[{width: width / 2.2, height: 75, justifyContent: "center", objectFit: 'contain' }, imageAnimatedStyle]}  
-                    />
+                  <StatusBar barStyle={"light-content"}/>
+                  
+                  {/* Custom Refresh Spinner */}
+                  <Animated.View 
+                    style={[
+                      {
+                        position: 'absolute',
+                        top: -40,
+                        left: 0,
+                        right: 0,
+                        alignItems: 'center',
+                        zIndex: 1000,
+                        pointerEvents: 'none',
+                      },
+                      refreshSpinnerStyle
+                    ]}
+                  >
+                    <View style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: 30,
+                      padding: 12,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 5,
+                    }}>
+                      <Spinner size="large" color={COLORS.white} />
+                    </View>
                   </Animated.View>
                   
-                  <View style={{height: 250, overflow: "hidden", justifyContent:"center", borderEndStartRadius: 30 ,borderEndEndRadius: 30}} className=''>
-                    <SalahDisplayWidget prayer={prayer[0]} nextPrayer={prayer[1]}/>
+                  <View style={{height: 350, overflow: "hidden", justifyContent:"center"}} className=''>
+                    {prayer && prayer[0] && prayer[1] && (
+                      <SalahDisplayWidget 
+                        key={`${prayer[0]?.date}-${prayer[0]?.athan_fajr}`}
+                        prayer={prayer[0]} 
+                        nextPrayer={prayer[1]}
+                      />
+                    )}
                   </View>
-                <Link href={'/menu/program'} asChild>
-                  <Pressable className='pt-7 flex-row justify-between w-[100%] px-3'>
-                    <Text className='font-bold text-2xl text-[#0D509D]'>Weekly Programs</Text>
-                    <View className='flex-row items-center'>
-                      <Text className='text-gray-400'>View All</Text>
-                      <Icon source={'chevron-right'} size={20}/>
-                    </View>
-                  </Pressable>
-                </Link>
+                  
+                  {/* Overlapping Widget */}
+                  <OverlappingWidget />
+                  
+                <Pressable 
+                  className='pt-7 flex-row justify-between w-[100%] px-3'
+                  onPress={() => router.push('/menu/program/programsAndEventsScreen')}
+                >
+                  <Text style={{color: COLORS.primary}} className='font-bold text-2xl'>Weekly Programs</Text>
+                  <View className='flex-row items-center'>
+                    <Text style={{color: COLORS.gray}} className=''>View All</Text>
+                    <Icon source={'chevron-right'} size={20} color={COLORS.gray}/>
+                  </View>
+                </Pressable>
                     <View className='pt-3' style={{height: 250}}>
                       <ProgramsCircularCarousel />
                     </View>
+                  
+                  {/* Ads */}
+                  <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
+                  
+                  {/* Explore Features Section */}
+                  <View className='pt-4 px-3'>
+                    <View className='flex-row justify-between items-center mb-2'>
+                      <Pressable onPress={() => router.push('/(user)/more')}>
+                        <Text style={{color: COLORS.primary}} className='font-bold text-lg'>Explore features</Text>
+                      </Pressable>
+                      <Pressable onPress={() => router.push('/(user)/more')}>
+                        <Text style={{color: COLORS.gray}} className='text-xs'>See all</Text>
+                      </Pressable>
+                    </View>
+                    
+                    <View className='flex-row justify-between'>
+                      {/* Donate Button */}
+                      <Pressable 
+                        className='flex-1 mr-2 items-center justify-center py-0.5 px-2.5 rounded-full'
+                        style={{
+                          backgroundColor: activeButton === 'donate' ? COLORS.primary : COLORS.lightGray
+                        }}
+                        onPress={() => {
+                          setActiveButton('donate');
+                          donationVolunteerCarouselRef.current?.scrollToDonation();
+                        }}
+                      >
+                        <Icon 
+                          source={'hand-heart'} 
+                          size={16} 
+                          color={activeButton === 'donate' ? COLORS.white : COLORS.primary} 
+                        />
+                        <Text 
+                          className='font-semibold text-[9px] mt-0.5 text-center' 
+                          numberOfLines={1}
+                          style={{ color: activeButton === 'donate' ? COLORS.white : '#374151' }}
+                        >
+                          Donate
+                        </Text>
+                      </Pressable>
+                      
+                      {/* Volunteers Button */}
+                      <Pressable 
+                        className='flex-1 ml-2 items-center justify-center py-0.5 px-2.5 rounded-full'
+                        style={{
+                          backgroundColor: activeButton === 'volunteer' ? COLORS.primary : COLORS.lightGray
+                        }}
+                        onPress={() => {
+                          setActiveButton('volunteer');
+                          donationVolunteerCarouselRef.current?.scrollToVolunteer();
+                        }}
+                      >
+                        <Icon 
+                          source={'account-group'} 
+                          size={16} 
+                          color={activeButton === 'volunteer' ? COLORS.white : COLORS.primary} 
+                        />
+                        <Text 
+                          className='font-semibold text-[9px] mt-0.5 text-center' 
+                          numberOfLines={1}
+                          style={{ color: activeButton === 'volunteer' ? COLORS.white : '#374151' }}
+                        >
+                          Volunteers
+                        </Text>
+                      </Pressable>
+                    </View>
+                    
+                    {/* Donation and Volunteer Cards Carousel */}
+                    <View className='pt-3 px-3'>
+                      <DonationVolunteerCarousel ref={donationVolunteerCarouselRef} />
+                    </View>
+                  </View>
       
-                    <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
+                  {/* Commented out sections below Explore Features
+                  <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
                       
                     <View className='pl-3 flex-row pt-4'>
                         <Text className='text-[#0D509D] font-bold text-2xl'>Donate</Text>
@@ -166,19 +410,53 @@ export default function homeScreen() {
                     </ImageBackground>
                   </View>
       
-                  <View className='flex-row pl-3 pt-6'>
-                    <Text className='text-[#0D509D] font-bold text-2xl'>Connect With Us</Text>
+                  Programs Carousel
+                  <View className='pt-3' style={{height: 250}}>
+                    <ProgramsCircularCarousel />
                   </View>
-                  <IconsMarquee />
-                  {/* <Portal >
-                    <Modal visible style={{
-                      backgroundColor : 'white'
-                    }}>
-                      <MASQuestionaire onCloseQuestionaire={() => setShowQuestionaire(false)}/>
-                    </Modal>
-                  </Portal> */}
+      
+                  <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true) }/>
+                      
+                  <View className='pl-3 flex-row pt-4'>
+                      <Text style={{color: COLORS.primary}} className='font-bold text-2xl'>Donate</Text>
+                  </View>
+                  <View className='pt-2'>
+                    <LinkToDonationModal />
+                  </View>
+                <View className='flex-row pl-3 pt-5'>
+                  <Text style={{color: COLORS.primary}} className='font-bold text-2xl'>Volunteers</Text>
+                </View>
+                <View className='pt-2'>
+                  <LinkToVolunteersModal />
+                </View>
+                <View className='flex-row pl-3 pt-6'>
+                  <Text style={{color: COLORS.primary}} className='font-bold text-2xl' >Jummah Schedule</Text>
+                </View>
+                <View className='justify-center items-center w-[95%] m-auto pt-2' style={{shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 4}, shadowOpacity: 0.1, shadowRadius: 8}}>
+                  <ImageBackground style={{width:"100%", height: 450, justifyContent: "center"}} source={require("@/assets/images/jummahSheetBackImg.jpeg")} resizeMode='stretch' imageStyle={{ borderRadius: 20 }}>
+                    <JummahTable ref={bottomSheetRef}/>
+                  </ImageBackground>
+                </View>
+                  */}
+    
+                <View className='flex-row pl-3 pt-6'>
+                  <Text style={{color: COLORS.primary}} className='font-bold text-2xl'>Connect With Us</Text>
+                </View>
+                <IconsMarquee />
+                
+                {/* Today's Programs Widget
+                <DailyProgramsWidget />
+                
+                <Portal >
+                  <Modal visible style={{
+                    backgroundColor : COLORS.background
+                  }}>
+                    <MASQuestionaire onCloseQuestionaire={() => setShowQuestionaire(false)}/>
+                  </Modal>
+                </Portal>
+                */}
 
-                  <View style={[{paddingBottom : tabBarHeight}]}></View>
+                <View style={[{paddingBottom : tabBarHeight}]}></View>
            </Animated.ScrollView>
     )
     

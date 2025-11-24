@@ -222,20 +222,20 @@ const ShopCategories = () => {
         {key : "fourth", title: "16 +"}
       ];
       
-      const renderTabBar = (props : any) => (
-        
-        <TabBar
-          {...props}
-          style={{ alignSelf : "center", width : layout  , backgroundColor: 'rgba(0 ,0, 0, 0)' }}
-          labelStyle={{ color : "black", fontWeight : "bold" , alignItems : "center", justifyContent  : 'center', paddingTop : 3 }}
-          renderIcon={(props) => getTabBarIcon(props)}
-          tabStyle={{ flexDirection : 'col', alignItems : 'center', backgroundColor : "white", width : layout / 3.5  }}
-          indicatorStyle={{ backgroundColor: 'rgba(0 ,0, 0, 0)' }}
-          activeColor='#57BA47'
-          scrollEnabled={true}
-          bounces
-        />
-      );
+      // const renderTabBar = (props : any) => (
+      //   
+      //   <TabBar
+      //     {...props}
+      //     style={{ alignSelf : "center", width : layout  , backgroundColor: 'rgba(0 ,0, 0, 0)' }}
+      //     labelStyle={{ color : "black", fontWeight : "bold" , alignItems : "center", justifyContent  : 'center', paddingTop : 3 }}
+      //     renderIcon={(props) => getTabBarIcon(props)}
+      //     tabStyle={{ flexDirection : 'col', alignItems : 'center', backgroundColor : "white", width : layout / 3.5  }}
+      //     indicatorStyle={{ backgroundColor: 'rgba(0 ,0, 0, 0)' }}
+      //     activeColor='#57BA47'
+      //     scrollEnabled={true}
+      //     bounces
+      //   />
+      // );
 
   return (
     <TabView
@@ -243,7 +243,7 @@ const ShopCategories = () => {
         renderScene={renderScene}
         onIndexChange={(index) => onIndexChange(index)}
         initialLayout={{ width: layout }}
-        renderTabBar={renderTabBar}
+        // renderTabBar={renderTabBar}
         swipeEnabled={false}
     />
   )

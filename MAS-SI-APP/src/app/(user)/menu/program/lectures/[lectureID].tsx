@@ -1,26 +1,34 @@
 import { View, Text, useWindowDimensions, ScrollView, StatusBar, Image } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useProgram } from '@/src/providers/programProvider';
 import YoutubePlayer from "react-native-youtube-iframe"
-import { Lectures, SheikDataType } from '@/src/types';
-import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { Lectures, SheikDataType, Program } from '@/src/types';
+// import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { Pressable } from 'react-native';
 import { useAuth } from "@/src/providers/AuthProvider"
 import { supabase } from '@/src/lib/supabase';
-import { setDate } from 'date-fns';
+import { setDate, format } from 'date-fns';
 import LectureKeyNotesCard from '@/src/components/LectureKeyNotesCard';
 import { FlatList } from 'react-native';
 import { Divider, Icon, Modal, Portal } from 'react-native-paper';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
+import * as Haptics from "expo-haptics";
+import Toast from 'react-native-toast-message';
 
 export default function LecturesData() {
   const { session } = useAuth()
+  const router = useRouter()
   const [ playing, setPlaying ] = useState(false)
   const { lectureID } = useLocalSearchParams();
+  const lectureIdString = Array.isArray(lectureID) ? lectureID[0] : lectureID;
   const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>()
   const [ currentLecture, setLecture ] = useState<Lectures>()
+  const [ program, setProgram ] = useState<Program | null>(null)
+  const [ allLectures, setAllLectures ] = useState<Lectures[]>([])
+  const [ programInNotifications, setProgramInNotifications ] = useState(false)
   const layout  = useWindowDimensions().width
   const [index, setIndex] = useState(0)
   const layoutHeight = useWindowDimensions().height
@@ -29,12 +37,13 @@ export default function LecturesData() {
   const tabBarHeight = useBottomTabBarHeight() + 60
   const [ visible, setVisible ] = useState(false);
   const [ speakerString, setSpeakerString ] = useState<string[]>()
+  const notifade = useSharedValue(0)
   
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
   async function getLecture(){
-    const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_id", lectureID).single()
+    const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_id", lectureIdString).single()
     if( error ){
       alert(error)
     }
@@ -43,7 +52,7 @@ export default function LecturesData() {
       setLecture(data)
       let speaker_string : string[] = data.lecture_speaker.map(() => {return ''})
       const speakers  = await Promise.all(
-        data.lecture_speaker.map( async(speaker_id, index) => {
+        data.lecture_speaker.map( async(speaker_id: string, index: number) => {
             const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
             if( speakerInfo ){
               speaker_string[index]=speakerInfo.speaker_name
@@ -54,6 +63,45 @@ export default function LecturesData() {
       )
       setSpeakerData(speakers)
       setSpeakerString(speaker_string)
+      
+      // Get program information
+      if(data.lecture_program) {
+        console.log('Fetching program for:', data.lecture_program)
+        await getProgram(data.lecture_program)
+        await getProgramLectures(data.lecture_program)
+      } else {
+        console.log('No lecture_program found in lecture data')
+      }
+    }
+  }
+
+  async function getProgram(programId: string) {
+    const { data, error } = await supabase.from("programs").select("*").eq("program_id", programId).single()
+    if( error ) {
+      console.log('Error fetching program:', error)
+    }
+    if ( data ) {
+      console.log('Program fetched:', data.program_name)
+      const { data : checkIfExists } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq("program_id", programId).single()
+      if( checkIfExists ){
+        setProgramInNotifications(true)
+      }
+      setProgram(data)
+    } else {
+      console.log('No program data found')
+    }
+  }
+
+  async function getProgramLectures(programId: string) {
+    const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_program", programId).order('lecture_date', { ascending: false })
+    if( error ) {
+      console.log('Error fetching program lectures:', error)
+    }
+    if ( data ) {
+      console.log('Fetched', data.length, 'lectures')
+      setAllLectures(data)
+    } else {
+      console.log('No lectures found')
     }
   }
   
@@ -151,24 +199,24 @@ export default function LecturesData() {
     )
   }
   
-  const renderScene = SceneMap({
-    first: LectureAISummay,
-    second: LectureAIKeyNotes,
-  });
+  // const renderScene = SceneMap({
+  //   first: LectureAISummay,
+  //   second: LectureAIKeyNotes,
+  // });
   
   const routes = [
     { key: 'first', title: 'Summary' },
     { key: 'second', title: 'Key Notes' },
   ];
   
-  const renderTabBar = (props : any) => (
-    <TabBar
-      {...props}
-      indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "90%", width : "40%", left : "5%", borderRadius : 20  }}
-      style={{ backgroundColor: '#0D509D', width : "80%", alignSelf : "center", borderRadius : 20}}
-      labelStyle={{ color : "white", fontWeight : "bold" }}
-    />
-  );
+  // const renderTabBar = (props : any) => (
+  //   <TabBar
+  //     {...props}
+  //     indicatorStyle={{ backgroundColor : "#57BA47", position: "absolute", zIndex : -1, bottom : "5%", height: "90%", width : "40%", left : "5%", borderRadius : 20  }}
+  //     style={{ backgroundColor: '#0D509D', width : "80%", alignSelf : "center", borderRadius : 20}}
+  //     labelStyle={{ color : "white", fontWeight : "bold" }}
+  //   />
+  // );
 
   const [loading, setLoading] = useState(true);
   const opacity = useSharedValue(1);
@@ -189,54 +237,264 @@ export default function LecturesData() {
     });
   }
 
+  const fadeOutNotification = useAnimatedStyle(() => ({
+    opacity : notifade.value
+  }))
+
+  const NotificationBell = () => {
+    const addedToNoti = () => {
+      const goToProgram = () => {
+        router.push(`/myPrograms/notifications/ClassesAndLectures/${program?.program_id}`)
+      }
+      Toast.show({
+        type : 'addProgramToNotificationsToast',
+        props : { props : program, onPress : goToProgram },
+        position : 'top',
+        topOffset : 50,
+      })
+    }
+    
+    const handlePress = async () => {
+      if(!program) return
+      
+      if( programInNotifications ) {
+        const { error } = await supabase.from("added_notifications_programs").delete().eq("user_id" , session?.user.id).eq("program_id", program.program_id)
+        setProgramInNotifications(false)
+      }
+      else{
+        const { error } = await supabase.from("added_notifications_programs").insert({user_id :session?.user.id, program_id : program.program_id, has_lectures : program?.has_lectures})
+        if( error ){
+          console.log(error)
+        }
+        setProgramInNotifications(true)
+        addedToNoti()
+      }
+      Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      )
+    }
+    
+    return(
+      <View className='flex-row items-center gap-x-5'>
+        <Animated.View style={fadeOutNotification}>
+          <View style={{ opacity : 1}} className='left-10 bottom-4 bg-gray-400 text-black h-[23px] w-[75px] text-[10px] items-center justify-center text-center z-[1] rounded-xl p-1 ' >
+            <Text className='text-black text-[10px] font-semibold'>Notifications</Text>
+          </View>
+        </Animated.View>
+        <Pressable onPress={handlePress} className='w-[30] h-[35] items-center justify-center'>
+          {programInNotifications ?  <Icon source={"bell-check"} color='#007AFF' size={30}/> : <Icon source={"bell-outline"} color='#007AFF' size={30}/> }
+        </Pressable>
+      </View>
+    )
+  }
+
+  const formatLectureDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      return format(date, 'MMM d, yyyy')
+    } catch {
+      return dateString
+    }
+  }
+
+  const getVideoIdFromUrl = (url: string) => {
+    if (!url) return null
+    // If it's already just a video ID (no slashes or special chars), return as is
+    if (!url.includes('/') && !url.includes('?')) {
+      return url
+    }
+    // Otherwise, try to extract from URL
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
+    return match ? match[1] : url
+  }
+
   return(
     <View className='flex-1 bg-[#ededed]'>
-        <Stack.Screen options={{ title : currentLecture?.lecture_name, headerTintColor : '#007AFF' , headerTitleStyle: { color : 'black'}, headerStyle : {backgroundColor : 'white',}}} />
+        <Stack.Screen 
+          options={{ 
+            title : program?.program_name || currentLecture?.lecture_name, 
+            headerTintColor : '#007AFF' , 
+            headerTitleStyle: { color : 'black'}, 
+            headerStyle : {backgroundColor : 'white'},
+            headerRight: () => program ? <NotificationBell /> : null
+          }} 
+        />
         <StatusBar barStyle={'dark-content'} />
 
-       <View 
-        style={{ 
-          width : layout * 0.98,
-          height : layoutHeight / 4,
-          borderRadius : 20, marginLeft : '1%', marginTop : 8, backgroundColor : "#ededed", overflow : 'hidden'
-        }}
+        <ScrollView 
+          className='flex-1'
+          contentContainerStyle={{ paddingBottom: tabBarHeight }}
+          showsVerticalScrollIndicator={false}
         >
-         <YoutubePlayer 
-            height={layoutHeight / 4}
-            width={layout * 0.98}
-            play={playing}
-            videoId={currentLecture?.lecture_link}
-            onChangeState={onStateChange}
-          /> 
-       </View>
+          {/* YouTube Video Banner */}
+          <View 
+            style={{ 
+              width : layout * 0.98,
+              height : layoutHeight / 4,
+              borderRadius : 20, 
+              marginLeft : '1%', 
+              marginTop : 8, 
+              backgroundColor : "#ededed", 
+              overflow : 'hidden'
+            }}
+          >
+            <YoutubePlayer 
+              height={layoutHeight / 4}
+              width={layout * 0.98}
+              play={playing}
+              videoId={currentLecture?.lecture_link ? getVideoIdFromUrl(currentLecture.lecture_link) : undefined}
+              onChangeState={onStateChange}
+            /> 
+          </View>
 
-        <View className='mt-[5]'/>
-        { loading && (
-          <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '55%', justifyContent : 'center', top : '36%', backgroundColor : '#ededed', alignItems : 'center' }, playMASAnimation]}>
-            <LottieView
-              autoPlay
-              loop={false}
-              style={{
-                width: '100%',
-                height: '100%',
-              }}
-              source={require('@/assets/lottie/MASLogoAnimation3.json')}
-              onAnimationFinish={() => {
-                fadeOutAnimation();
-              }}
-              speed={3}
-            />
-          </Animated.View>
-        ) }
-        <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderScene}
-          onIndexChange={setIndex}
-          initialLayout={{ width: layout }}
-          renderTabBar={renderTabBar}
-          style={{ backgroundColor : "#ededed"}}
-        />
-          <Portal>
+          { loading && (
+            <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '55%', justifyContent : 'center', top : '36%', backgroundColor : '#ededed', alignItems : 'center' }, playMASAnimation]}>
+              <LottieView
+                autoPlay
+                loop={false}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                }}
+                source={require('@/assets/lottie/MASLogoAnimation3.json')}
+                onAnimationFinish={() => {
+                  fadeOutAnimation();
+                }}
+                speed={3}
+              />
+            </Animated.View>
+          ) }
+
+          {/* About This Series Section */}
+          {program?.program_desc ? (
+            <View className='px-4 mt-6 mb-4'>
+              <Text className='text-2xl font-bold text-black mb-3'>About This Series</Text>
+              <Text className='text-base text-gray-700 leading-6'>{program.program_desc}</Text>
+            </View>
+          ) : program && (
+            <View className='px-4 mt-6 mb-4'>
+              <Text className='text-2xl font-bold text-black mb-3'>About This Series</Text>
+              <Text className='text-base text-gray-700 leading-6'>No description available for this series.</Text>
+            </View>
+          )}
+
+          {/* Classes Section */}
+          {allLectures.length > 0 ? (
+            <View className='px-4 mt-4 mb-6'>
+              <Text className='text-2xl font-bold text-black mb-4'>Classes</Text>
+              {allLectures.map((lecture, idx) => {
+                const isCurrentLecture = lecture.lecture_id === lectureIdString
+                const videoId = lecture.lecture_link ? getVideoIdFromUrl(lecture.lecture_link) : null
+                
+                return (
+                  <Pressable
+                    key={lecture.lecture_id}
+                    onPress={() => {
+                      if (!isCurrentLecture) {
+                        router.push(`/menu/program/lectures/${lecture.lecture_id}`)
+                      }
+                    }}
+                    className='mb-3 bg-white rounded-xl overflow-hidden'
+                    style={{
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 3,
+                    }}
+                  >
+                    <View className='flex-row'>
+                      {/* Thumbnail */}
+                      <View 
+                        className='bg-gray-300'
+                        style={{ 
+                          width: 120, 
+                          height: 90,
+                          justifyContent: 'center',
+                          alignItems: 'center'
+                        }}
+                      >
+                        {videoId ? (
+                          <Image
+                            source={{ uri: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` }}
+                            style={{ width: 120, height: 90 }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Icon source="play-circle-outline" size={40} color="#666" />
+                        )}
+                        {isCurrentLecture && (
+                          <View 
+                            className='absolute bg-blue-500 px-2 py-1 rounded'
+                            style={{ top: 4, left: 4 }}
+                          >
+                            <Text className='text-white text-xs font-bold'>NOW WATCHING</Text>
+                          </View>
+                        )}
+                        {!isCurrentLecture && (
+                          <View className='absolute inset-0 bg-black/20 items-center justify-center'>
+                            <Icon source="play-circle" size={30} color="white" />
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Content */}
+                      <View className='flex-1 p-3 justify-between'>
+                        <View>
+                          <Text className='text-base font-semibold text-black mb-1' numberOfLines={2}>
+                            {idx + 1} {lecture.lecture_name}
+                          </Text>
+                          <Text className='text-sm text-gray-500'>
+                            {lecture.lecture_date ? formatLectureDate(lecture.lecture_date) : ''}
+                          </Text>
+                        </View>
+                        {isCurrentLecture && (
+                          <View className='flex-row items-center mt-2'>
+                            <Icon source="check-circle" size={16} color="#10B981" />
+                            <Text className='text-xs text-green-600 font-semibold ml-1'>Watched</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </Pressable>
+                )
+              })}
+            </View>
+          ) : program && (
+            <View className='px-4 mt-4 mb-6'>
+              <Text className='text-2xl font-bold text-black mb-4'>Classes</Text>
+              <Text className='text-gray-500'>No classes found for this series.</Text>
+            </View>
+          )}
+
+          {/* Custom Tab Bar */}
+          <View className='flex-row bg-[#0D509D] w-[80%] self-center rounded-2xl overflow-hidden mt-2 mb-4' style={{ height: 50 }}>
+            {routes.map((route, i) => (
+              <Pressable
+                key={route.key}
+                onPress={() => setIndex(i)}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: index === i ? '#57BA47' : 'transparent',
+                  borderRadius: 20,
+                  marginHorizontal: 2,
+                }}
+              >
+                <Text style={{ color: 'white', fontWeight: 'bold' }}>{route.title}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Tab Content */}
+          <View style={{ minHeight: 300, backgroundColor: '#ededed' }}>
+            {index === 0 && <LectureAISummay />}
+            {index === 1 && <LectureAIKeyNotes />}
+          </View>
+        </ScrollView>
+
+        <Portal>
           <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{backgroundColor: 'white', padding: 20, height: "70%", width: "95%", borderRadius: 35, alignSelf: "center"}} >
             <ScrollView className='flex-1'
             showsVerticalScrollIndicator={true}

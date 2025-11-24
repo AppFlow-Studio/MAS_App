@@ -13,7 +13,7 @@ import Toast from 'react-native-toast-message'
 import { View, Text, Image } from 'react-native'
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics'
-import TutorialOverlay from "@/src/components/TutorialOverlay";
+// import TutorialOverlay from "@/src/components/TutorialOverlay";
 
 const toastConfig = {
   addProgramToNotificationsToast : ( {props} : any ) => (
@@ -123,6 +123,7 @@ type TabButtonProps = {
   items: TabArrayType
 }
 
+
 const TabButton = ({ props, items }: TabButtonProps) => {
   const { onPress, accessibilityState } = props;
   const focused = accessibilityState?.selected;
@@ -142,7 +143,7 @@ const TabButton = ({ props, items }: TabButtonProps) => {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={{ alignItems: "center", flex: 1, marginTop: 7, height : '200%' }}
+      style={{ alignItems: "center", flex: 1, marginTop: 8, height: '100%', paddingVertical: 6 }}
     >
       <Animatable.View
         className='justify-center items-center'
@@ -150,7 +151,7 @@ const TabButton = ({ props, items }: TabButtonProps) => {
         animation="zoomIn"
         duration={1000}
       >
-        <Icon source={items?.icon} size={20} color={focused ? "#57BA47" : "#0D509D"} />
+        <Icon source={items?.icon} size={28} color={focused ? "#57BA47" : "#0D509D"} />
       </Animatable.View>
       <Animatable.Text
         ref={textRef}
@@ -166,7 +167,7 @@ const TabButton = ({ props, items }: TabButtonProps) => {
 const UserLayout = () => {
   const { session, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [showTutorial, setShowTutorial] = useState(false);
+  // const [showTutorial, setShowTutorial] = useState(false);
   const opacity = useSharedValue(1);
   interface TextWithDefaultProps extends Text {
     defaultProps?: { allowFontScaling?: boolean };
@@ -183,7 +184,7 @@ const UserLayout = () => {
 
   const handleAnimationEnd = () => {
     setLoading(false);
-    setShowTutorial(true); // Show tutorial after logo animation
+    // setShowTutorial(true); // Show tutorial after logo animation
   };
 
   const fadeOutAnimation = () => {
@@ -192,9 +193,10 @@ const UserLayout = () => {
     });
   }
 
-  const handleTutorialFinish = () => {
-    setShowTutorial(false);
-  };
+  // const handleTutorialFinish = () => {
+  //   setShowTutorial(false);
+  // };
+
 
   if (!session) {
     return <Redirect href={'/GreetingScreen'} />;
@@ -228,23 +230,25 @@ const UserLayout = () => {
       <Tabs
         screenOptions={{
           tabBarStyle: {
-            backgroundColor: "white",
-            height: 50,
+            backgroundColor: "rgba(209, 213, 219, 0.8)",
+            height: 55,
             position: "absolute",
-            bottom: 16,
-            right: 16,
-            left: 16,
-            borderRadius: 16,
-            marginBottom: 5,
+            bottom: 30,
+            right: 10,
+            left: 10,
+            borderRadius: 50,
+            marginBottom: 0,
             shadowColor: "black",
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 1,
-            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
             justifyContent: "center",
             alignItems: "center",
-            
+            elevation: 8,
+            borderTopWidth: 0,
+            borderWidth: 0,
           },
-          tabBarItemStyle: { height: 30, },
+          tabBarItemStyle: { height: 45, },
         }}
       >
         <Tabs.Screen name="index" options={{ href: null }} />
@@ -266,7 +270,7 @@ const UserLayout = () => {
         ))}
       </Tabs>
       <Toast config={toastConfig}/>
-      {showTutorial && <TutorialOverlay visible={showTutorial} onClose={handleTutorialFinish} />}
+      {/* {showTutorial && <TutorialOverlay visible={showTutorial} onClose={handleTutorialFinish} />} */}
     </>
   );
 };

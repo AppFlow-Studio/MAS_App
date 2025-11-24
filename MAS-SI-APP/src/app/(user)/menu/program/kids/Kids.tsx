@@ -45,7 +45,7 @@ const Kids = () => {
           {
             kidsPrograms?.map((item) => {
               return(
-                <View style={{ width: "50%"}}>
+                <View key={item.program_id} style={{ width: "50%"}}>
                   <Link  href={ `/menu/program/${item.program_id}`}
                       asChild >
                       <TouchableOpacity className='items-center'>

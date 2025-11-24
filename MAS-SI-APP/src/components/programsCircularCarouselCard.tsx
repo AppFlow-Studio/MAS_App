@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity,  Image, useWindowDimensions, Pressable} from 'react-native'
-import React, {useRef, useState}from 'react';
+import React, {useRef, useState, useEffect}from 'react';
 import { Program } from '../types';
 import { Link } from 'expo-router';
-import Animated, {interpolate, Extrapolation, useSharedValue, useAnimatedStyle} from "react-native-reanimated";
+import Animated, {interpolate, Extrapolation, useSharedValue, useAnimatedStyle, withTiming} from "react-native-reanimated";
 import { transform } from '@babel/core';
 import { FlyerSkeleton } from './FlyerSkeleton';
 type ProgramsCircularCarouselCardProp = {
@@ -18,8 +18,9 @@ type ProgramsCircularCarouselCardProp = {
 
 export default function ProgramsCircularCarouselCard( {program, index, listItemWidth, scrollX, itemSpacer, spacing, lastIndex, disabled}: ProgramsCircularCarouselCardProp) {
     const {width : windowWidth} = useWindowDimensions();
-    const size = useSharedValue(0.6);
     const [ imageReady, setImageReady ] = useState(false)
+    const scrollXShared = useSharedValue(scrollX);
+    const opacity = useSharedValue(0);
 
     const inputRange = [
       (index - 1) * listItemWidth,
@@ -27,16 +28,30 @@ export default function ProgramsCircularCarouselCard( {program, index, listItemW
       (index  + 1) * listItemWidth
     ]
   
-    size.value = interpolate(
-      scrollX,
-      inputRange,
-      [0.6, 1, 0.6],
-      Extrapolation.CLAMP
-    )
+    useEffect(() => {
+      scrollXShared.value = scrollX;
+      // Fade in when component mounts
+      opacity.value = withTiming(1, { duration: 500 });
+    }, [scrollX]);
 
     const cardStyle = useAnimatedStyle(() =>{
+      const scale = interpolate(
+        scrollXShared.value,
+        inputRange,
+        [0.6, 1, 0.6],
+        Extrapolation.CLAMP
+      );
+      
+      const opacityValue = interpolate(
+        scrollXShared.value,
+        inputRange,
+        [0.3, 1, 0.3],
+        Extrapolation.CLAMP
+      );
+      
       return{
-        transform : [{scaleY : size.value}]
+        transform : [{scaleY : scale}],
+        opacity: opacityValue * opacity.value
       }
     })
 

@@ -5,7 +5,7 @@ import { number } from "zod";
 import ArrowRightIcon from "../components/ArrowRightIcon";
 import ArrowLeftIcon from "../components/ArrowLeftIcon";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from "react-native-reanimated";
-import { Video } from 'expo-av';
+//import { Video } from 'expo-av';
 
 const tutorialImages = [
   require("../app/images/MyRecording.mov"),
@@ -88,14 +88,7 @@ const TutorialOverlay = ({ visible, onClose }: { visible: boolean; onClose: () =
         </View>
 
         <Animated.View style={[styles.videoContainer, slideAnimation]}>
-        <Video
-            source={tutorialImages[step]}
-            resizeMode="cover"
-            shouldPlay
-            isLooping
-            useNativeControls={false}
-            style={styles.image}
-        />
+       
 
         </Animated.View>
 

@@ -13,7 +13,7 @@ import { PaperProvider } from 'react-native-paper';
 import { MenuProvider } from "react-native-popup-menu";
 import AuthProvider from '../providers/AuthProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
-//import NotificationProvider from '../providers/NotificationProvider';
+// import NotificationProvider from '../providers/NotificationProvider';
 import { Text } from 'react-native';
 import LottieView from 'lottie-react-native';
 import Animated, { useSharedValue, withTiming, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
@@ -45,19 +45,9 @@ export default function RootLayout() {
     Poppins_800ExtraBold: require("../../assets/fonts/Poppins-ExtraBold.ttf"),
   });
 
-  // ✅ Clear AsyncStorage on every launch (for testing)
+  // Check if first launch (without clearing storage)
   useEffect(() => {
-    const clearAsyncStorage = async () => {
-      try {
-        await AsyncStorage.clear();
-        console.log('✅ AsyncStorage cleared!');
-      } catch (e) {
-        console.error('❌ Failed to clear AsyncStorage', e);
-      }
-      setIsFirstLaunchChecked(true); // Set this after clearing AsyncStorage
-    };
-
-    clearAsyncStorage();
+    setIsFirstLaunchChecked(true);
   }, []);
 
   // ✅ Logo fade animation

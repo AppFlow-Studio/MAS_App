@@ -1,6 +1,6 @@
 import { Tabs, Redirect } from "expo-router";
 import * as Animatable from 'react-native-animatable';
-import { Pressable, TouchableOpacity } from "react-native";
+import { Pressable, TouchableOpacity, Modal, StyleSheet } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import TabArray from './tabArray';
 import { TabArrayType } from '@/src/types';
@@ -13,7 +13,8 @@ import Toast from 'react-native-toast-message'
 import { View, Text, Image } from 'react-native'
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics'
-import TutorialOverlay from "@/src/components/TutorialOverlay";
+import AccountModal from '../../components/AccountModal';
+// import TutorialOverlay from "@/src/components/TutorialOverlay";
 
 const toastConfig = {
   addProgramToNotificationsToast : ( {props} : any ) => (
@@ -124,7 +125,7 @@ type TabButtonProps = {
 }
 
 const TabButton = ({ props, items }: TabButtonProps) => {
-  const { onPress, accessibilityState } = props;
+  const { onPress, accessibilityState, ...restProps } = props;
   const focused = accessibilityState?.selected;
   const textRef = useRef<any>(null);
 
@@ -141,7 +142,9 @@ const TabButton = ({ props, items }: TabButtonProps) => {
 
   return (
     <TouchableOpacity
+      {...restProps}
       onPress={onPress}
+      accessibilityState={accessibilityState}
       style={{ alignItems: "center", flex: 1, marginTop: 7, height : '200%' }}
     >
       <Animatable.View
@@ -167,6 +170,7 @@ const UserLayout = () => {
   const { session, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [accountModalVisible, setAccountModalVisible] = useState(false);
   const opacity = useSharedValue(1);
   interface TextWithDefaultProps extends Text {
     defaultProps?: { allowFontScaling?: boolean };
@@ -265,8 +269,39 @@ const UserLayout = () => {
           />
         ))}
       </Tabs>
+      
+      {/* Floating Account Button */}
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setAccountModalVisible(true);
+        }}
+        style={{
+          position: 'absolute',
+          top: 60,
+          right: 20,
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: '#3B82F6',
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 8,
+          zIndex: 999,
+        }}
+      >
+        <Icon source="account-circle" size={28} color="white" />
+      </Pressable>
+
+      {/* Account Modal */}
+      <AccountModal visible={accountModalVisible} onClose={() => setAccountModalVisible(false)} />
+      
       <Toast config={toastConfig}/>
-      {showTutorial && <TutorialOverlay visible={showTutorial} onClose={handleTutorialFinish} />}
+      {/* {showTutorial && <TutorialOverlay visible={showTutorial} onClose={handleTutorialFinish} />} */}
     </>
   );
 };

@@ -66,36 +66,21 @@ const EventsNotificationScreen = () => {
    
     <View
        style={{
-        paddingTop : 220,
         paddingHorizontal : 10,
-        backgroundColor : 'white'
+        backgroundColor : '#F9FAFB'
       }}
     >
       <Stack.Screen
         options={{
-          headerTransparent : true,
-          header : () => (
-            <View className="relative">
-              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#6077F5] items-start justify-end pb-[5%] z-[1]">
-                <Pressable className="flex flex-row items-center justify-between w-[50%]" onPress={() => router.back()}>
-                  <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#FFFFFF" stroke-width="2"/>
-                  </Svg>
-                  <Text className=" text-[20px] text-white">Push Notifications</Text>
-                </Pressable>
-              </View>
-              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-               <View className="w-[67%] items-center"> 
-                <Text className=" text-[15px] text-black ">Create A Event Notification</Text>
-              </View>
-              </View>
-              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
-               <View className="w-[100%] self-start pl-[10%]"> 
-                <Text className=" text-[15px] text-black ">{event_name}</Text>
-              </View>
-              </View>
-            </View>
-          )
+          title: "Create Event Notification",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
         }}
       />
      <ScrollView contentContainerStyle={{ paddingBottom : tabBar + 30 }} className="h-[100%] "
@@ -107,35 +92,38 @@ const EventsNotificationScreen = () => {
           src={event_img}
           className="w-[250px] h-[250px] rounded-[15px] self-center my-4"
         />
-        <Text className="text-center text-gray-600">Only Users With This Event Added to their Notification Center Will Get The Notification</Text>
-        <Text className="text-xl mt-4">Notification Message</Text>
-        <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={keyboardOffset} className="w-[100%] h-[200]">
-          <TextInput
-            mode="outlined"
-            value={notificationMessage}
-            onChangeText={(text) => {
-              if (text.length <= characterLimit) setNotificationMessage(text);
-            }}
-            theme={{ roundness: 5 }}
-            style={{
-              height: 150,
-              width: "100%",
-              backgroundColor: "#F0F0F0",
-              marginTop: "2%",
-            }}
-            activeOutlineColor="#0D509D"
-            placeholder="Enter Your Message Here"
-            textColor="black"
-            multiline
-          />
-          <Text className="text-right text-gray-500 mt-1 bg-white rounded-[15px]">{`${notificationMessage.length}/${characterLimit} characters`}</Text>
-    
-       </KeyboardAvoidingView>
+        <Text className="text-center text-gray-600 mb-2">Only Users With This Event Added to their Notification Center Will Get The Notification</Text>
+        
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Notification Message</Text>
+          <KeyboardAvoidingView behavior="position" keyboardVerticalOffset={keyboardOffset}>
+            <TextInput
+              mode="outlined"
+              value={notificationMessage}
+              onChangeText={(text) => {
+                if (text.length <= characterLimit) setNotificationMessage(text);
+              }}
+              theme={{ roundness: 12 }}
+              style={{
+                height: 150,
+                width: "100%",
+                backgroundColor: "white",
+              }}
+              activeOutlineColor="#6077F5"
+              outlineColor="#E2E8F0"
+              placeholder="Enter your message here"
+              textColor="black"
+              multiline
+            />
+            <Text className="text-right text-gray-500 text-xs mt-2">{`${notificationMessage.length}/${characterLimit} characters`}</Text>
+          </KeyboardAvoidingView>
+        </View>
+        
         <Pressable
           onPress={() => setPreviewModal(true)}
-          className="h-[37px] items-center mt-6 w-[156px] bg-[#57BA47]  rounded-[15px] justify-center self-start"          
+          className="h-[45px] items-center justify-center mb-6 bg-[#6077F5] rounded-xl self-center w-[50%]"          
         >
-          <Text className=" text-white font-[600]">Preview</Text>
+          <Text className="text-white font-semibold text-base">Preview</Text>
         </Pressable>
         
   
@@ -192,7 +180,7 @@ const EventsNotificationScreen = () => {
               <View className="self-center">
                 <Button
                   mode="contained"
-                  buttonColor="#57BA47"
+                  buttonColor="#6077F5"
                   textColor="white"
                   className="w-[300] h-15 mt-8"
                   onPress={sendNotification}

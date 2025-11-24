@@ -31,7 +31,7 @@ type RenderAyahProp = {
                 <MenuTrigger>
                     <Icon source={"dots-horizontal"} color='black' size={20}/>
                 </MenuTrigger>
-                <MenuOptions optionsContainerStyle={{ borderRadius: 10 }}>
+                <MenuOptions customStyles={{ optionsContainer: { borderRadius: 10 } }}>
                     <MenuOption>
                         <TouchableOpacity className='flex-row' onPress={addToLikedAyahs}>
                             <Icon source="cards-heart" color='red' size={20} />

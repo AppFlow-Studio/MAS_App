@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/massicliquidglassicon.png",
       "resizeMode": "contain",
-      "backgroundColor": "white"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
@@ -32,13 +32,13 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
+      "expo-font",
       [
         "@react-native-google-signin/google-signin",
         {
           "iosUrlScheme": "com.googleusercontent.apps.991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf"
         }
-      ],
-      "expo-font"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

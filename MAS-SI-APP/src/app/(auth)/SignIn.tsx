@@ -13,6 +13,15 @@ import {
   GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+
+// Configure Google Sign-In once
+GoogleSignin.configure({
+  iosClientId: '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com',
+  webClientId: '991344123272-p3p68bb5kk77j6f36fij21t42ovhcr93.apps.googleusercontent.com', // Web client ID for Supabase
+  scopes: ['profile', 'email'],
+  offlineAccess: false,
+});
+
 const SignIn = () => {
     const [loading, setLoading] = useState(false);
     const [ email, setEmail ] = useState("")
@@ -21,11 +30,77 @@ const SignIn = () => {
     const logoAnime = useSharedValue(0)
     const logoBounce = useSharedValue(-200)
 
+    const handleGoogleSignIn = async () => {
+      console.log('🔵 Google Sign-In button pressed!');
+      try {
+        console.log('🔵 Checking Play Services...');
+        await GoogleSignin.hasPlayServices();
+        console.log('🔵 Calling GoogleSignin.signIn()...');
+        const response = await GoogleSignin.signIn();
+        console.log('✅ Google Sign-In SUCCESS!');
+        console.log('✅ Full response object:', JSON.stringify(response, null, 2));
+        
+        // For newer versions of the library, the structure is different
+        const idToken = (response as any).data?.idToken || (response as any).idToken;
+        const user = (response as any).data?.user || (response as any).user;
+        
+        console.log('✅ Extracted idToken:', idToken);
+        console.log('✅ Extracted user:', user);
+        
+        if (idToken) {
+          console.log('🔵 Calling Supabase signInWithIdToken...');
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: idToken,
+          });
+          
+          console.log('Supabase response - data:', data);
+          console.log('Supabase response - error:', error);
+          
+          if (!error && data?.user) {
+            console.log('✅ Supabase sign-in successful! User:', data.user.id);
+            // Update profile with Google info
+            const { data: Profile, error: ProfileError } = await supabase
+              .from('profiles')
+              .update({ 
+                first_name: user?.name || user?.givenName, 
+                profile_email: user?.email 
+              })
+              .eq('id', data.user.id);
+            
+            if (ProfileError) {
+              console.error('❌ Profile update error:', ProfileError);
+            } else {
+              console.log('✅ Profile updated successfully');
+            }
+          } else {
+            console.error('❌ Supabase sign-in error:', error);
+            alert(`Supabase Error: ${error?.message || 'Unknown error'}`);
+          }
+        } else {
+          console.error('❌ No ID token found in response!');
+          alert('No ID token received from Google. Please try again.');
+          throw new Error('No ID token present!');
+        }
+      } catch (error: any) {
+        console.error('❌ Google Sign-In Error:', error);
+        console.error('❌ Error code:', error.code);
+        console.error('❌ Error message:', error.message);
+        
+        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+          console.log('⚠️ User cancelled the login flow');
+        } else if (error.code === statusCodes.IN_PROGRESS) {
+          console.log('⚠️ Sign in is in progress already');
+        } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+          console.log('⚠️ Play services not available or outdated');
+        } else {
+          console.error('❌ Unknown error occurred');
+          alert(`Sign-in error: ${error.message || 'Unknown error'}`);
+        }
+      }
+    };
+
     const GoogleButtonSignUp = () => {
-      GoogleSignin.configure({
-        iosClientId : '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
-      })
-    
       return (
         <GoogleSigninButton
           size={GoogleSigninButton.Size.Wide}
@@ -35,35 +110,7 @@ const SignIn = () => {
             } : {height: 48}
           ]}
           color={GoogleSigninButton.Color.Dark}
-          onPress={async () => {
-            try {
-              await GoogleSignin.hasPlayServices()
-              const userInfo = await GoogleSignin.signIn()
-              if (userInfo.idToken) {
-                const { data, error } = await supabase.auth.signInWithIdToken({
-                  provider: 'google',
-                  token: userInfo.idToken,
-                })
-                console.log(userInfo)
-                if( !error ){
-                  const {data : Profile , error : ProfileError } = await supabase.from('profiles').update({ first_name : userInfo?.user.name, profile_email : userInfo?.user.email }).eq('id', data?.user.id)
-                  console.log(Profile, ProfileError)
-                }
-              } else {
-                throw new Error('no ID token present!')
-              }
-            } catch (error: any) {
-              if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-                // user cancelled the login flow
-              } else if (error.code === statusCodes.IN_PROGRESS) {
-                // operation (e.g. sign in) is in progress already
-              } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                // play services not available or outdated
-              } else {
-                // some other error happened
-              }
-            }
-          }}
+          onPress={handleGoogleSignIn}
         />
       )
     }
@@ -79,7 +126,7 @@ const SignIn = () => {
     }  
   return (
     <View className='bg-white h-[100%]'>
-      <Stack.Screen options={{ headerTransparent : true, headerTitle : '', headerBackTitleVisible : false }} />
+      <Stack.Screen options={{ headerTransparent : true, headerTitle : '' }} />
       <StatusBar barStyle={"dark-content"}/>
       <View className='h-[25%] bg-gray-300 justify-end px-8' style={{ borderBottomRightRadius : 40, borderBottomLeftRadius : 40}}>
         <View className='pt-8'>
@@ -172,11 +219,12 @@ const SignIn = () => {
               } else {
                 throw new Error('No identityToken.')
               }
-            } catch (e) {
+            } catch (e: any) {
               if (e.code === 'ERR_REQUEST_CANCELED') {
                 // handle that the user canceled the sign-in flow
               } else {
                 // handle other errors
+                console.error('Apple Sign-In Error:', e);
               }
             }
           }}

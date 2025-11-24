@@ -75,117 +75,168 @@ const AddNewSpeaker = () => {
         }
       }  
   return (
-     <View className='flex-1 grow bg-white pt-[175px]' style={{ paddingBottom : tabHeight }}>
+     <View className='flex-1 bg-gray-50'>
         <Stack.Screen 
         options={{
-            headerTransparent : true,
-            header : () => (
-            <View className="relative">
-                <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-                <Pressable className="flex flex-row items-center justify-between w-[65%]" onPress={() => router.back()}>
-                    <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
-                    </Svg>
-                    <Text className=" text-[25px] text-white">Speakers & Sheiks</Text>
-                </Pressable>
-                </View>
-                <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-                <View className="w-[75%] items-center"> 
-                <Text className=" text-[15px] text-black ">Add New Speaker & Sheik Info</Text>
-                </View>
-                </View>
-            </View>
-            )
+          title: "Add New Speaker & Sheik Info",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
         }}
         />
-           <View className='px-4'>
-           <Text className='font-bold text-black text-lg my-1'>Upload Speaker Image </Text>
-                <Pressable className={`max-h-[20%] w-[90%] ${!speakerImg ? 'border-2 border-dotted border-[#6077F5]' : ' my-3' } items-center justify-center self-center rounded-[15px]`} onPress={pickImage}>
-                    {
-                    speakerImg ? 
-                        <Image src={speakerImg.uri} style={{width: 110, height: 110, borderRadius: 50}}/>
-                    :
-                    <Svg width="55" height="55" viewBox="0 0 55 55" fill="none">
-                        <Path d="M27.5 18.3333L27.5 36.6666" stroke="#6077F5" stroke-linejoin="round"/>
-                        <Path d="M36.668 27.5L18.3346 27.5" stroke="#6077F5" stroke-linejoin="round"/>
-                    </Svg>
-                    }
-                </Pressable>
+        <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false} style={{ paddingBottom: tabHeight }}>
+          {/* Upload Image Card */}
+          <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+            <Text className='text-base font-bold mb-3 text-gray-800'>Upload Speaker Image</Text>
+            <Pressable 
+              className={`${!speakerImg ? 'border-2 border-dotted border-blue-300 bg-blue-50' : 'bg-gray-50'} items-center justify-center self-center rounded-xl py-8`} 
+              style={{ width: '100%' }}
+              onPress={pickImage}
+            >
+              {speakerImg ? (
+                <View className='items-center'>
+                  <Image src={speakerImg.uri} style={{width: 120, height: 120, borderRadius: 60}}/>
+                  <View className="bg-blue-50 px-3 py-1 rounded-lg mt-3">
+                    <Text className="text-blue-600 text-sm font-medium">Tap to change</Text>
+                  </View>
+                </View>
+              ) : (
+                <View className='items-center'>
+                  <Svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                    <Path d="M30 20L30 40" stroke="#6077F5" strokeWidth="2" strokeLinecap="round"/>
+                    <Path d="M40 30L20 30" stroke="#6077F5" strokeWidth="2" strokeLinecap="round"/>
+                  </Svg>
+                  <Text className='text-blue-600 font-medium mt-2'>Tap to upload photo</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
 
-                <Text className='font-bold text-black text-md my-1'>Title & Full Name</Text>
-                <TextInput
-                mode="outlined"
-                theme={{ roundness: 10 }}
-                style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-                activeOutlineColor="#0D509D"
-                value={speakerName}
-                onChangeText={setSpeakerName}
-                placeholder="Enter The Name..."
-                textColor="black"
-                />
+          {/* Name Card */}
+          <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+            <Text className='text-base font-bold mb-3 text-gray-800'>Title & Full Name</Text>
+            <TextInput
+              mode="outlined"
+              theme={{ roundness: 12 }}
+              style={{ width: "100%", height: 50, backgroundColor: 'white' }}
+              activeOutlineColor="#6077F5"
+              outlineColor="#E2E8F0"
+              value={speakerName}
+              onChangeText={setSpeakerName}
+              placeholder="Enter the name..."
+              textColor="black"
+            />
+          </View>
 
-                <Text className='font-bold text-black text-md my-1'>Credentials</Text>
-               <View className='max-h-[35%] border border-gray-400 border-solid rounded-[15px] p-4'>
-                    <ScrollView contentContainerStyle={{  }}>
-                        {
-                            creds.map((item, index) => (
-                                <Pressable onPress={ () => {
-                                    const removeFromCred = creds.filter(cred => cred != item)
-                                    setCreds(removeFromCred)
-                                } }
-                                key={index}
-                                >
-                                    <Text numberOfLines={3}>* {item}</Text>
-                                    <View className='h-[0.5] bg-black w-[70%] self-center my-2 '/>
-                                </Pressable>
-                            ))
+          {/* Credentials Card */}
+          <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+            <Text className='text-base font-bold mb-3 text-gray-800'>Credentials</Text>
+            
+            {/* Current Credentials */}
+            {creds.length > 0 ? (
+              <View className='mb-3'>
+                <Text className="text-xs text-gray-500 mb-2">{creds.length} Credential(s) Added:</Text>
+                <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                  {creds.map((item, index) => (
+                    <Pressable 
+                      key={index}
+                      onPress={() => {
+                        const removeFromCred = creds.filter(cred => cred !== item)
+                        setCreds(removeFromCred)
+                      }}
+                      className='bg-blue-50 px-3 py-3 rounded-lg flex-row items-center justify-between mb-2'
+                    >
+                      <Text className='text-blue-800 font-medium flex-1 mr-2'>{item}</Text>
+                      <View className='bg-red-100 w-6 h-6 rounded-full items-center justify-center'>
+                        <Text className='text-red-600 font-bold text-sm'>×</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : (
+              <View className='bg-gray-50 border border-gray-200 rounded-xl p-4 mb-3'>
+                <Text className="text-gray-400 text-center">No credentials added yet</Text>
+              </View>
+            )}
+            {/* Add Credential Form */}
+            {pressAddCred ? (
+              <KeyboardAvoidingView behavior='position' keyboardVerticalOffset={layoutHeight * .25}>
+                <View className='bg-gray-50 rounded-xl p-4'>
+                  <Text className="text-sm font-semibold text-gray-700 mb-3">Add New Credential</Text>
+                  <TextInput
+                    mode="outlined"
+                    theme={{ roundness: 12 }}
+                    style={{ width: "100%", height: 50, marginBottom: 12, backgroundColor: 'white' }}
+                    activeOutlineColor="#6077F5"
+                    outlineColor="#E2E8F0"
+                    value={newCred}
+                    onChangeText={setNewCred}
+                    placeholder="Enter new credential..."
+                    textColor="black"
+                  />
+                  <View className='flex-row gap-3'>
+                    <Pressable 
+                      className='bg-gray-200 px-4 py-3 rounded-xl flex-1'
+                      onPress={() => { setPressAddCred(false); setNewCred('') }}
+                    >
+                      <Text className='text-gray-700 font-semibold text-center'>Cancel</Text>
+                    </Pressable>
+                    <Pressable 
+                      className='bg-blue-500 px-4 py-3 rounded-xl flex-1'
+                      onPress={() => {
+                        if (newCred.trim()) {
+                          setCreds(prev => [...prev, newCred.trim()])
+                          setNewCred('')
                         }
-                    </ScrollView>
-               </View>
-                {
-                    pressAddCred && (
-                        <KeyboardAvoidingView behavior='position' keyboardVerticalOffset={layoutHeight * .25} className='bg-white'>
-                            <View className='bg-white h-[100]'>
-                              <TextInput
-                              mode="outlined"
-                              theme={{ roundness: 10 }}
-                              style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor  : 'white' }}
-                              activeOutlineColor="#0D509D"
-                              value={newCred}
-                              onChangeText={setNewCred}
-                              placeholder="Enter New Credential..."
-                              textColor="black"
-                              />
-  
-                              <View className='flex flex-row items-center justify-between w-[100%]'>
-                                  <Pressable className='bg-gray-400 w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => { setPressAddCred(false); setNewCred('')}}>
-                                      <Text className='text-white font-bold'>Cancel</Text>
-                                  </Pressable>
-                                  <Pressable className='bg-[#57BA49] w-[40%] h-[30px] p-1 items-center justify-center rounded-[15px]' onPress={() => {setPressAddCred(false); setCreds(prev => [...prev, newCred]); setNewCred('')}}>
-                                      <Text className='font-bold text-white '>Confirm</Text>
-                                  </Pressable>
-                              </View>
-                            </View>
-                        </KeyboardAvoidingView>
-                    )
-                }
-                <Text className='text-blue-600 underline self-center' onPress={() => { pressAddCred != true && setPressAddCred(true) }}>
-                  {
-                    pressAddCred ? '' : 'Add Credentials'
-                  }
-                </Text>
+                        setPressAddCred(false)
+                      }}
+                    >
+                      <Text className='text-white font-semibold text-center'>Add</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </KeyboardAvoidingView>
+            ) : (
+              <Pressable 
+                className='bg-blue-50 border-2 border-dashed border-blue-300 rounded-xl p-4 items-center'
+                onPress={() => setPressAddCred(true)}
+              >
+                <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <Path d="M12 5V19M5 12H19" stroke="#6077F5" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+                <Text className='text-blue-600 font-medium mt-2'>Add Credential</Text>
+              </Pressable>
+            )}
+          </View>
 
-
-               { 
-               !pressAddCred &&
-                <Pressable className='bg-[#57BA49] w-[60%] h-[35px] p-1 items-center justify-center rounded-[15px] self-end my-10' 
+          {/* Submit Button */}
+          {!pressAddCred && (
+            <View className='px-0 mb-8'>
+              <Pressable 
+                className={`px-6 py-4 rounded-xl ${submitDisabled ? 'bg-blue-500' : 'bg-gray-300'}`}
                 disabled={!submitDisabled}
-                onPress={async () => await UploadNewSpeaker() }>
-                    <Text className='font-bold text-white '>Confirm New Speaker</Text>
-                </Pressable>
-                }
+                onPress={async () => await UploadNewSpeaker()}
+                style={{
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2
+                }}
+              >
+                <Text className={`font-semibold text-center text-lg ${submitDisabled ? 'text-white' : 'text-gray-500'}`}>
+                  Confirm New Speaker
+                </Text>
+              </Pressable>
             </View>
-
+          )}
+        </ScrollView>
     </View>
   )
 }

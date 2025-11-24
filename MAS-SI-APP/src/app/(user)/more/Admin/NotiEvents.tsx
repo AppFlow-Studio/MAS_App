@@ -26,28 +26,19 @@ const NotiEvents = () => {
   }, [])
 
   return (
-    <View className='flex-1 bg-white' style={{ paddingBottom : tabBar + 30, paddingTop : 170 }}>
+    <View className='flex-1 bg-gray-50' style={{ paddingBottom : tabBar + 30 }}>
       <Stack.Screen 
          options={{
-            headerTransparent : true,
-            header : () => (
-              <View className="relative">
-                <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#6077F5] items-start justify-end pb-[5%] z-[1]">
-                  <Pressable className="flex flex-row items-center justify-between w-[55%]" onPress={() => router.back()}>
-                    <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                      <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#FFFFFF" stroke-width="2"/>
-                    </Svg>
-                    <Text className=" text-[20px] text-white">Push Notifications</Text>
-                  </Pressable>
-                </View>
-                <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-                 <View className="w-[76%] items-center"> 
-                  <Text className=" text-[15px] text-black ">Create A Event Notification</Text>
-                </View>
-                </View>
-              </View>
-            )
-          }}
+          title: "Create Event Notification",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
+        }}
     />
     <View className='flex-1 grow' >
       <Text className='my-5 ml-3 text-black font-bold text-xl'>Select A Event  </Text>

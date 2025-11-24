@@ -1,0 +1,412 @@
+        {/* MY ACTIVITY */}
+        <Text className='text-xs font-semibold text-gray-500 uppercase tracking-wider px-1 mb-2'>My Activity</Text>
+        <BlurView intensity={95} tint="extraLight" style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        }}>
+          <View className='rounded-2xl' style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+            backgroundColor: 'transparent',
+          }}>
+            <Pressable 
+              onPress={() => {}}
+              className='flex-row items-center px-4 py-3'
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+              })}
+            >
+              <Text className='text-sm text-gray-700 flex-1'>Saved Programs/Events</Text>
+              <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </Pressable>
+            
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Playlist</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        </BlurView>
+
+        {/* DONATION */}
+        <Text className='text-xs font-semibold text-gray-500 uppercase tracking-wider px-1 mb-2'>Donation</Text>
+        <BlurView intensity={95} tint="extraLight" style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        }}>
+          <View className='rounded-2xl' style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+            backgroundColor: 'transparent',
+          }}>
+            <Pressable 
+              onPress={() => {}}
+              className='flex-row items-center px-4 py-3'
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+              })}
+            >
+              <Text className='text-sm text-gray-700 flex-1'>Phase 1</Text>
+              <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </Pressable>
+            
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Phase 2</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>View Full Project</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        </BlurView>
+
+        {/* NOTIFICATIONS */}
+        <Text className='text-xs font-semibold text-gray-500 uppercase tracking-wider px-1 mb-2'>Notifications</Text>
+        <BlurView intensity={95} tint="extraLight" style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        }}>
+          <View className='rounded-2xl' style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+            backgroundColor: 'transparent',
+          }}>
+            <Pressable 
+              onPress={() => {}}
+              className='flex-row items-center px-4 py-3'
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+              })}
+            >
+              <Text className='text-sm text-gray-700 flex-1'>Prayer</Text>
+              <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </Pressable>
+            
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Program</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Event</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Settings (Preferences)</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        </BlurView>
+
+        {/* MAS SHOP */}
+        <Text className='text-xs font-semibold text-gray-500 uppercase tracking-wider px-1 mb-2'>MAS Shop</Text>
+        <BlurView intensity={95} tint="extraLight" style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        }}>
+          <View className='rounded-2xl' style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+            backgroundColor: 'transparent',
+          }}>
+            <Pressable 
+              onPress={() => {}}
+              className='flex-row items-center px-4 py-3'
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+              })}
+            >
+              <Text className='text-sm text-gray-700 flex-1'>Merch</Text>
+              <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </Pressable>
+            
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Programs/Events</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Classes</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        </BlurView>
+
+        {/* BUSINESS ADS */}
+        <Text className='text-xs font-semibold text-gray-500 uppercase tracking-wider px-1 mb-2'>Business Ads</Text>
+        <BlurView intensity={95} tint="extraLight" style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        }}>
+          <View className='rounded-2xl' style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+            backgroundColor: 'transparent',
+          }}>
+            <Pressable 
+              onPress={() => {}}
+              className='flex-row items-center px-4 py-3'
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+              })}
+            >
+              <Text className='text-sm text-gray-700 flex-1'>Start an Application</Text>
+              <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </Pressable>
+            
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Check the Status</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        </BlurView>
+
+        {/* EDIT PROFILE */}
+        <Text className='text-xs font-semibold text-gray-500 uppercase tracking-wider px-1 mb-2'>Edit Profile</Text>
+        <BlurView intensity={95} tint="extraLight" style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        }}>
+          <View className='rounded-2xl' style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+            backgroundColor: 'transparent',
+          }}>
+            <Pressable 
+              onPress={() => {}}
+              className='flex-row items-center px-4 py-3'
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+              })}
+            >
+              <Text className='text-sm text-gray-700 flex-1'>Profile Page</Text>
+              <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </Pressable>
+            
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Username and Password</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Change Password</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        </BlurView>
+
+        {/* LEAVE A COMMENT */}
+        <Text className='text-xs font-semibold text-gray-500 uppercase tracking-wider px-1 mb-2'>Leave a Comment</Text>
+        <BlurView intensity={95} tint="extraLight" style={{
+          borderRadius: 20,
+          overflow: 'hidden',
+          marginBottom: 20,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        }}>
+          <View className='rounded-2xl' style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+            backgroundColor: 'transparent',
+          }}>
+            <Pressable 
+              onPress={() => {}}
+              className='flex-row items-center px-4 py-3'
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+              })}
+            >
+              <Text className='text-sm text-gray-700 flex-1'>Feature Request</Text>
+              <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+              </Svg>
+            </Pressable>
+            
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Report a Bug</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+
+            <View className='border-t border-gray-100/50'>
+              <Pressable 
+                onPress={() => {}}
+                className='flex-row items-center px-4 py-3'
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? 'rgba(249, 250, 251, 0.5)' : 'transparent',
+                })}
+              >
+                <Text className='text-sm text-gray-700 flex-1'>Other Comments</Text>
+                <Svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <Path d="M7.5 15L12.5 10L7.5 5" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+                </Svg>
+              </Pressable>
+            </View>
+          </View>
+        </BlurView>
+

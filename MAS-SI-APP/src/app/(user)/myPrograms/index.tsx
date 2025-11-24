@@ -56,15 +56,17 @@ export default function userPrograms() {
             onPress={async () => {
               try {
                 await GoogleSignin.hasPlayServices()
-                const userInfo = await GoogleSignin.signIn()
-                if (userInfo.idToken) {
+                const response = await GoogleSignin.signIn()
+                const idToken = (response as any).data?.idToken || (response as any).idToken;
+                const user = (response as any).data?.user || (response as any).user;
+                if (idToken) {
                   const { data, error } = await supabase.auth.signInWithIdToken({
                     provider: 'google',
-                    token: userInfo.idToken,
+                    token: idToken,
                   })
-                  console.log(userInfo)
+                  console.log(response)
                   if( !error ){
-                    const {data : Profile , error : ProfileError } = await supabase.from('profiles').update({ first_name : userInfo?.user.name, profile_email : userInfo?.user.email }).eq('id', data?.user.id)
+                    const {data : Profile , error : ProfileError } = await supabase.from('profiles').update({ first_name : user?.name, profile_email : user?.email }).eq('id', data?.user.id)
                     console.log(Profile, ProfileError)
                   }
                 } else {

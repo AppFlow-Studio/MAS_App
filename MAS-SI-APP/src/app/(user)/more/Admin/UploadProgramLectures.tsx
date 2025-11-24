@@ -14,6 +14,7 @@ import {
   MenuOption,
   MenuTrigger,
 } from 'react-native-popup-menu';
+import SelectSpeakerBottomSheet from "@/src/components/AdminComponents/SelectSpeakerBottomSheet";
 const UploadProgramLectures = () => {
   const { program_id, program_name, program_img } = useLocalSearchParams();
   const [lectureProgram, setLectureProgram] = useState<string | null>(null);
@@ -30,14 +31,15 @@ const UploadProgramLectures = () => {
   const [ keyNoteInput, setKeyNoteInput ] = useState<string>("");
   const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const [ speakers, setSpeakers ] = useState<any[]>([])
+  const [ speakerBottomSheetOpen, setSpeakerBottomSheetOpen ] = useState(false)
   const [showStartDatePicker, setShowStartDatePicker] =
       useState<boolean>(false);
   const tabBar = useBottomTabBarHeight()
-  const scrollViewRef = useRef<ScrollView>()
-  const youtubeRef = useRef<View>()
-  const titleRef = useRef<View>()
-  const descriptionRef = useRef<View>()
-  const keynoteRef = useRef()
+  const scrollViewRef = useRef<ScrollView>(null)
+  const youtubeRef = useRef<View>(null)
+  const titleRef = useRef<View>(null)
+  const descriptionRef = useRef<View>(null)
+  const keynoteRef = useRef<any>(null)
 
   const handleSubmit = () => {
     Toast.show({
@@ -58,12 +60,12 @@ const UploadProgramLectures = () => {
     setKeyNoteInput("")
   };
 
-  const getSpeakers = async () => {
-    const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
-    if( data ){
-      setSpeakers(data)
+    const getSpeakers = async () => {
+      const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name, speaker_img, speaker_creds')
+      if( data ){
+        setSpeakers(data)
+      }
     }
-  }
   const handleSpeakerPress = (speaker_id : string) => {
     if( speakerSelected.includes(speaker_id)){
       const removeSpeaker = speakerSelected.filter(id => id != speaker_id)
@@ -77,41 +79,24 @@ const UploadProgramLectures = () => {
   }
 const SpeakersData = (speakers  : any ) => {
   return(
-    <Menu>
-      <MenuTrigger style={{ marginLeft  : 10 }}>
-        { speakerSelected.length == 0 ? <Text className="text-blue-600">Update Speakers</Text> : <Text>{speakerSelected.length} Speaker(s) Chosen</Text>}
-      </MenuTrigger>
-      <MenuOptions 
-        optionsContainerStyle={{  
-          borderRadius: 10, 
-          paddingHorizontal: 4, 
-          paddingVertical: 4,
-          maxHeight: 250,
-          backgroundColor: 'white',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5
-        }}
-      >
-        <ScrollView 
-          nestedScrollEnabled={true}
-          showsVerticalScrollIndicator={true}
-          style={{ maxHeight: 250 }}
-        >
-          {
-            speakers.speakers && speakers.speakers.length > 0 ? speakers.speakers.map(( speaker:any ) =>{
-              return(
-                <MenuOption key={speaker.speaker_id} onSelect={() => handleSpeakerPress(speaker.speaker_id)}>
-                  <Text className="text-black ">{speaker.speaker_name} { speakerSelected.includes(speaker.speaker_id) ? <Icon source={'check'} color="green" size={15}/> : <></>}</Text>
-                </MenuOption>
-              )
-            }) : <></>
-          }
-        </ScrollView>
-      </MenuOptions>
-    </Menu>
+    <Pressable
+      onPress={() => setSpeakerBottomSheetOpen(true)}
+      className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between"
+    >
+      <View className="flex-1">
+        <Text className={`text-base ${speakerSelected.length > 0 ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
+          {speakerSelected.length == 0 ? 'Select Speakers' : `${speakerSelected.length} Speaker(s) Selected`}
+        </Text>
+        {speakerSelected.length > 0 && (
+          <Text className="text-sm text-gray-500 mt-1">
+            {speakers.speakers.filter((s: any) => speakerSelected.includes(s.speaker_id)).map((s: any) => s.speaker_name).join(', ')}
+          </Text>
+        )}
+      </View>
+      <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <Path d="M7.5 15L12.5 10L7.5 5" stroke="#6077F5" strokeWidth="2"/>
+      </Svg>
+    </Pressable>
   )
 }
 
@@ -142,43 +127,18 @@ const SpeakersData = (speakers  : any ) => {
     <>
     <Stack.Screen
        options={{
-        headerTransparent : true,
-        header : () => (
-        <View className="relative">
-          <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-            <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => { router.dismiss(3) }}>
-              <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
-              </Svg>
-              <Text className=" text-[25px] text-white">Programs</Text>
-            </Pressable>
-          </View>
-
-          <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-            <View className="w-[65%] items-center"> 
-              <Text className=" text-[15px] text-black ">Edit Existing Programs</Text>
-            </View>
-          </View>
-
-          <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#E3E3E3] items-start justify-end pb-[5%] absolute top-[100] z-[-1]">
-            <View className='w-[100%]'>
-              <Pressable className="w-[50%] items-center justify-between flex flex-row px-2" onPress={() => router.back()}> 
-                  <View className='w-[23%] '>
-                    <Svg  width="16" height="9" viewBox="0 0 16 9" fill="none">
-                      <Path d="M4.5 8.22607L1 4.61303M1 4.61303L4.5 0.999987M1 4.61303H15" stroke="#6077F5" stroke-linecap="round"/>
-                    </Svg>
-                  </View>
-                  <View className='w-[80%] items-start'>
-                    <Text className=" text-[15px] text-black " numberOfLines={1} adjustsFontSizeToFit>{program_name}</Text>
-                  </View>                
-                  </Pressable>
-            </View>
-          </View>
-        </View>
-          )
+          title: "Add New Lecture",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
         }}
     />
-    <View style={{ padding: 16, backgroundColor : 'white', flex : 1, paddingTop : 220, paddingBottom : tabBar + 30 }}>
+    <View style={{ padding: 16, backgroundColor : '#F9FAFB', flex : 1, paddingBottom : tabBar + 30 }}>
       <ScrollView
         contentContainerStyle={{  }}
         showsVerticalScrollIndicator={false}
@@ -186,19 +146,20 @@ const SpeakersData = (speakers  : any ) => {
       >
         
         <Image 
-          src={program_img}
-          className="self-center w-[200px] h-[200px] rounded-[15px]"
+          src={Array.isArray(program_img) ? program_img[0] : program_img}
+          className="self-center w-[200px] h-[200px] rounded-[15px] my-4"
         />
-        <Text className="self-center font-bold text-lg my-2">{program_name}</Text>
+        <Text className="self-center font-bold text-lg mb-4 text-gray-800">{program_name}</Text>
 
-       <View ref={youtubeRef}>
-          <Text className="text-base font-bold mb-1 ml-2">Add A New YouTube Link: </Text>
-          <Text className="ml-2 text-[12px] my-1">Example: https://www.youtube.com/watch?v=<Text className="bg-[#FFD465] font-bold rounded-[2px]">qdbPaFQxSUI</Text></Text>
+       <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm' ref={youtubeRef}>
+          <Text className="text-base font-bold mb-2 text-gray-800">Add A New YouTube Link</Text>
+          <Text className="text-xs text-gray-600 mb-3">Example: https://www.youtube.com/watch?v=<Text className="bg-[#FFD465] font-bold rounded-[2px]">qdbPaFQxSUI</Text></Text>
           <TextInput
             mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10 , backgroundColor : 'white'}}
-            activeOutlineColor="#0D509D"
+            theme={{ roundness: 12 }}
+            style={{ width: "100%", height: 50, backgroundColor : 'white'}}
+            activeOutlineColor="#6077F5"
+            outlineColor="#E2E8F0"
             value={lectureLink}
             onChangeText={setLectureLink}
             placeholder="Enter Link ID ONLY..."
@@ -217,13 +178,14 @@ const SpeakersData = (speakers  : any ) => {
           />
        </View>
 
-        <View ref={titleRef}>
-          <Text className="text-base font-bold mb-1 ml-2">Lecture Title</Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm' ref={titleRef}>
+          <Text className="text-base font-bold mb-3 text-gray-800">Lecture Title</Text>
           <TextInput
             mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 45, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
+            theme={{ roundness: 12 }}
+            style={{ width: "100%", height: 50, backgroundColor : 'white' }}
+            activeOutlineColor="#6077F5"
+            outlineColor="#E2E8F0"
             value={lectureName}
             onChangeText={setLectureName}
             placeholder="Enter Lecture Title"
@@ -242,16 +204,19 @@ const SpeakersData = (speakers  : any ) => {
           />
         </View>
 
-        <Text className="text-base font-bold mb-1 ml-2">Lecture Speaker</Text>
-       { speakers ? <SpeakersData speakers={speakers} /> : <Text>Fetching Speakers</Text>}
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Lecture Speaker</Text>
+          { speakers ? <SpeakersData speakers={speakers} /> : <Text className="text-gray-500">Fetching Speakers...</Text>}
+        </View>
 
-        <View ref={descriptionRef}>
-          <Text className="text-base font-bold mb-1 ml-2">Lecture Summary</Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm' ref={descriptionRef}>
+          <Text className="text-base font-bold mb-3 text-gray-800">Lecture Summary</Text>
           <TextInput
             mode="outlined"
-            theme={{ roundness: 10 }}
-            style={{ width: "100%", height: 100, marginBottom: 10, backgroundColor : 'white' }}
-            activeOutlineColor="#0D509D"
+            theme={{ roundness: 12 }}
+            style={{ width: "100%", height: 120, backgroundColor : 'white' }}
+            activeOutlineColor="#6077F5"
+            outlineColor="#E2E8F0"
             multiline
             value={lectureAI}
             onChangeText={setLectureAI}
@@ -272,30 +237,42 @@ const SpeakersData = (speakers  : any ) => {
           />
         </View>
 
-
-      <Text className="text-base font-bold mb-1 ml-2 flex-wrap">Lecture KeyNotes</Text>
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Lecture KeyNotes</Text>
           {
-            keyNotes?.map((note, index) => {
+            keyNotes && keyNotes.length > 0 ? keyNotes.map((note, index) => {
               return(
-                <View className="items-center flex-row " key={index}>
-                  <IconButton icon={'window-minimize'} size={15} iconColor="red" onPress={() => {
-                  const filtered = keyNotes.filter(notes => notes != note )
-                  setKeyNotes(filtered)
-                  }}/>
-                  <Text key={index} className="items-center ml-4 p-1 justify-center">{note}</Text>
+                <View className="flex-row items-center mb-2 bg-gray-50 rounded-lg p-2" key={index}>
+                  <Text className="flex-1 text-gray-700">• {note}</Text>
+                  <Pressable 
+                    onPress={() => {
+                      const filtered = keyNotes.filter(notes => notes != note)
+                      setKeyNotes(filtered)
+                    }}
+                    className='ml-2 bg-red-100 w-6 h-6 rounded-full items-center justify-center'
+                  >
+                    <Text className='text-red-600 font-bold text-sm'>×</Text>
+                  </Pressable>
                 </View>
               )
-            })
+            }) : <Text className="text-gray-500 text-sm mb-2">No keynotes added yet</Text>
           }
-          <Button onPress={() => setKeyNoteModal(true)} >
-            Add KeyNotes
-          </Button>
+          <Pressable 
+            onPress={() => setKeyNoteModal(true)}
+            className='bg-gray-100 rounded-lg py-2 px-4 items-center mt-2'
+          >
+            <Text className='text-[#6077F5] font-medium'>+ Add KeyNote</Text>
+          </Pressable>
+        </View>
 
-        {/* Lecture Date */}
-        <Text className="text-base font-bold ml-2">Lecture Date</Text>
-        <Pressable className="flex flex-col bg-[#EDEDED] w-[40%] rounded-[10px] items-center py-3 px-3 my-2" onPress={() => setShowStartDatePicker(true)}>
-            <Text className="text-black text-[11px]">
-            { lectureDate ? lectureDate.toLocaleDateString() : '__'}
+        <View className='bg-white rounded-2xl p-4 mb-4 shadow-sm'>
+          <Text className="text-base font-bold mb-3 text-gray-800">Lecture Date</Text>
+          <Pressable 
+            className="bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 items-center" 
+            onPress={() => setShowStartDatePicker(true)}
+          >
+            <Text className="text-gray-700 font-medium">
+              { lectureDate ? lectureDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Select Date'}
             </Text>
             {showStartDatePicker && (
               <DateTimePicker
@@ -309,30 +286,31 @@ const SpeakersData = (speakers  : any ) => {
               />
             )}
           </Pressable>
-
-        {/* Buttons */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <Button
-            mode="contained"
-            buttonColor="#57BA47"
-            textColor="white"
-            theme={{ roundness: 1 }}
-            onPress={() => onUploadLecture()}
-            style={{ width: "48%" }}
-          >
-            Update Lecture
-          </Button>
         </View>
+
+        <Button
+          mode="contained"
+          buttonColor="#6077F5"
+          textColor="white"
+          theme={{ roundness: 12 }}
+          style={{ marginTop: 8, marginBottom: 24, height: 50, justifyContent: 'center' }}
+          labelStyle={{ fontSize: 16, fontWeight: '600' }}
+          onPress={() => onUploadLecture()}
+        >
+          Update Lecture
+        </Button>
       </ScrollView>
 
-      <Modal visible={keyNoteModal} onDismiss={() => setKeyNoteModal(false)} contentContainerStyle={{backgroundColor : 'white' , borderRadius : 8, width : '90%', height : '50%', alignSelf : 'center' }}>
+      <Modal visible={keyNoteModal} onDismiss={() => setKeyNoteModal(false)} contentContainerStyle={{backgroundColor : 'white' , borderRadius : 12, width : '90%', height : '50%', alignSelf : 'center' }}>
             <View className="w-[100%] self-center p-5 flex-1">
+              <Text className="text-lg font-bold text-gray-800 mb-4">Add KeyNote</Text>
               <TextInput
               mode="outlined"
               ref={keynoteRef}
-              theme={{ roundness: 10 }}
+              theme={{ roundness: 12 }}
               style={{ width: "100%", height: 200, marginBottom: 10, backgroundColor : 'white' }}
-              activeOutlineColor="#0D509D"
+              activeOutlineColor="#6077F5"
+              outlineColor="#E2E8F0"
               multiline
               value={keyNoteInput}
               onChangeText={setKeyNoteInput}
@@ -347,9 +325,9 @@ const SpeakersData = (speakers  : any ) => {
             <View className="flex-1 justify-end pb-8">
               <Button
                     mode="contained"
-                    buttonColor="#57BA47"
+                    buttonColor="#6077F5"
                     textColor="white"
-                    theme={{ roundness: 1 }}
+                    theme={{ roundness: 12 }}
                     onPress={ () => {
                       if( keyNotes.length < 1 && keyNoteInput){
                         setKeyNotes([keyNoteInput.trim()])
@@ -360,13 +338,22 @@ const SpeakersData = (speakers  : any ) => {
                       setKeyNoteInput("")
                       setKeyNoteModal(false)
                     } }
-                    style={{ width: "48%", alignSelf : 'center'}}
+                    style={{ width: "60%", alignSelf : 'center', height: 50, justifyContent: 'center'}}
+                    labelStyle={{ fontSize: 16, fontWeight: '600' }}
                 >
                   Confirm
                 </Button>
             </View>
           </Modal>
-          
+          <SelectSpeakerBottomSheet
+            isOpen={speakerBottomSheetOpen}
+            setIsOpen={setSpeakerBottomSheetOpen}
+            speakers={speakers}
+            selectedSpeakers={speakerSelected}
+            onSelectSpeaker={handleSpeakerPress}
+            multiSelect={true}
+            title="Select Speakers"
+          />
     </View>
   </>
 );

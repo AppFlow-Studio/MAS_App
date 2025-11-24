@@ -19,6 +19,7 @@ import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import Svg, { Circle, Path } from "react-native-svg";
 import AddSpeakerModal from "@/src/components/AdminComponents/AddSpeakerModal";
+import SelectSpeakerBottomSheet from "@/src/components/AdminComponents/SelectSpeakerBottomSheet";
 
 
 const AddNewProgramScreen = () => {
@@ -39,7 +40,8 @@ const AddNewProgramScreen = () => {
   const [isForKids, setIsForKids] = useState<boolean>(false);
   const [ speakerSelected, setSpeakerSelected ] = useState<any[]>([])
   const [ hasLectures, sethasLectures ] = useState(false)
-  const [ addSpeaker, setOpenAddSpeaker ] = useState(false) 
+  const [ addSpeaker, setOpenAddSpeaker ] = useState(false)
+  const [ speakerBottomSheetOpen, setSpeakerBottomSheetOpen ] = useState(false) 
   const [ programPaidLink, setProgramPaidLink ] = useState<string>('')
   const tabHeight = useBottomTabBarHeight() + 20
   const scrollViewRef = useRef<ScrollView>(null)
@@ -51,7 +53,7 @@ const AddNewProgramScreen = () => {
 
 
   const getSpeakers = async () => {
-    const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name')
+    const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name, speaker_img, speaker_creds')
     if( data ){
       setSpeakers(data)
     }
@@ -128,66 +130,41 @@ const AddNewProgramScreen = () => {
   }
   const SpeakersData = (speakers  : any ) => {
     return(
-      <Menu>
-        <MenuTrigger style={{ marginHorizontal: 10 }}>
-          <View className="flex-row items-center justify-between w-full">
-            <View className="flex-row items-center flex-1">
-              <Text className="text-blue-600 underline mr-2">
-                Select Speakers 
+      <View className="space-y-3">
+        <Pressable
+          onPress={() => setSpeakerBottomSheetOpen(true)}
+          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between"
+        >
+          <View className="flex-1">
+            <Text className={`text-base ${speakerSelected.length > 0 ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
+              {speakerSelected.length == 0 ? 'Select Speakers' : `${speakerSelected.length} Speaker(s) Selected`}
+            </Text>
+            {speakerSelected.length > 0 && (
+              <Text className="text-sm text-gray-500 mt-1">
+                {speakers.speakers.filter((s: any) => speakerSelected.includes(s.speaker_id)).map((s: any) => s.speaker_name).join(', ')}
               </Text>
-              <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#6077F5" strokeWidth="2"/>
-              </Svg>
-            </View> 
-            {speakerSelected.length == 0 ? (
-              <Pressable 
-                className="flex-row items-center px-3 py-2 bg-blue-50 rounded-lg"
-                onPress={() => setOpenAddSpeaker(true)}
-              >
-                <Text className="text-blue-600 font-medium mr-2">Add Speaker</Text>
-                <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <Circle cx="10" cy="6" r="3" stroke="#6077F5" strokeLinecap="round"/>
-                  <Path fillRule="evenodd" clipRule="evenodd" d="M12.5 12C11.5 11.7 10.4 11.6 9.3 11.7C8.1 11.8 7.0 12.2 6.1 12.8C5.2 13.4 4.5 14.2 4.1 15.1C4.0 15.3 4.1 15.5 4.3 15.6C4.5 15.7 4.7 15.6 4.8 15.4C5.1 14.7 5.7 14.1 6.5 13.7C7.3 13.3 8.2 13.1 9.1 13.1C9.5 13.1 9.9 13.1 10.3 13.2C10.6 12.9 10.9 12.8 11.2 12.8L12.5 12Z" fill="#6077F5"/>
-                  <Path d="M15 10L15 16" stroke="#6077F5" strokeLinecap="round"/>
-                  <Path d="M18 13L12 13" stroke="#6077F5" strokeLinecap="round"/>
-                </Svg>
-              </Pressable>
-            ) : (
-              <Text className="text-green-600 font-medium">{speakerSelected.length} Speaker(s) Chosen</Text>
             )}
           </View>
-        </MenuTrigger>
-        <MenuOptions 
-          optionsContainerStyle={{  
-            borderRadius: 10, 
-            paddingHorizontal: 4, 
-            paddingVertical: 4,
-            maxHeight: 250,
-            backgroundColor: 'white',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5
-          }}
-        >
-          <ScrollView 
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={true}
-            style={{ maxHeight: 250 }}
+          <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <Path d="M7.5 15L12.5 10L7.5 5" stroke="#6077F5" strokeWidth="2"/>
+          </Svg>
+        </Pressable>
+        
+        {speakerSelected.length == 0 && (
+          <Pressable 
+            className="flex-row items-center justify-center px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl"
+            onPress={() => setOpenAddSpeaker(true)}
           >
-            {
-              speakers.speakers && speakers.speakers.length > 0 ? speakers.speakers.map(( speaker ) =>{
-                return(
-                  <MenuOption key={speaker.speaker_id} onSelect={() => handleSpeakerPress(speaker.speaker_id)}>
-                    <Text className="text-black ">{speaker.speaker_name} { speakerSelected.includes(speaker.speaker_id) ? <Icon source={'check'} color="green" size={15}/> : <></>}</Text>
-                  </MenuOption>
-                )
-              }) : <></>
-            }
-          </ScrollView>
-        </MenuOptions>
-      </Menu>
+            <Svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ marginRight: 8 }}>
+              <Circle cx="10" cy="6" r="3" stroke="#6077F5" strokeLinecap="round"/>
+              <Path fillRule="evenodd" clipRule="evenodd" d="M12.5 12C11.5 11.7 10.4 11.6 9.3 11.7C8.1 11.8 7.0 12.2 6.1 12.8C5.2 13.4 4.5 14.2 4.1 15.1C4.0 15.3 4.1 15.5 4.3 15.6C4.5 15.7 4.7 15.6 4.8 15.4C5.1 14.7 5.7 14.1 6.5 13.7C7.3 13.3 8.2 13.1 9.1 13.1C9.5 13.1 9.9 13.1 10.3 13.2C10.6 12.9 10.9 12.8 11.2 12.8L12.5 12Z" fill="#6077F5"/>
+              <Path d="M15 10L15 16" stroke="#6077F5" strokeLinecap="round"/>
+              <Path d="M18 13L12 13" stroke="#6077F5" strokeLinecap="round"/>
+            </Svg>
+            <Text className="text-blue-600 font-semibold">Add New Speaker</Text>
+          </Pressable>
+        )}
+      </View>
     )
   }
 
@@ -236,29 +213,20 @@ const AddNewProgramScreen = () => {
     <>
       <Stack.Screen
         options={{
-          headerTransparent : true,
-          header : () => (
-            <View className="relative">
-              <View className="h-[110px] w-[100%] rounded-br-[65px] bg-[#5E636B] items-start justify-end pb-[5%] z-[1]">
-                <Pressable className="flex flex-row items-center justify-between w-[40%]" onPress={() => router.back()}>
-                  <Svg width="29" height="29" viewBox="0 0 29 29" fill="none">
-                    <Path d="M18.125 7.25L10.875 14.5L18.125 21.75" stroke="#1B85FF" stroke-width="2"/>
-                  </Svg>
-                  <Text className=" text-[25px] text-white">Programs</Text>
-                </Pressable>
-              </View>
-              <View className="h-[120px] w-[100%] rounded-br-[65px] bg-[#BBBEC6] items-start justify-end pb-[5%] absolute top-[50]">
-               <View className="w-[65%] items-center"> 
-                <Text className=" text-[15px] text-black ">Create A New Program</Text>
-              </View>
-              </View>
-            </View>
-          )
+          title: "Create New Program",
+          headerStyle: { backgroundColor: "#F9FAFB" },
+          headerTitleStyle: { 
+            fontSize: 22,
+            fontWeight: '600',
+            color: '#1F2937'
+          },
+          headerTintColor: '#4A5568',
+          headerShadowVisible: false,
         }}
       />
       <View className="flex-1 bg-gray-50">
         <ScrollView
-          contentContainerStyle={{ paddingBottom: tabHeight + 20, paddingTop: 180 }}
+          contentContainerStyle={{ paddingBottom: tabHeight + 20 }}
           showsVerticalScrollIndicator={false}
           ref={scrollViewRef}
           onScroll={(e) => {
@@ -632,7 +600,9 @@ const AddNewProgramScreen = () => {
               onPress={async() => await onSubmit()}
               disabled={!submitDisabled}
               style={{ 
-                paddingVertical: 12,
+                paddingVertical: 12
+              }}
+              labelStyle={{ 
                 fontSize: 16,
                 fontWeight: '600'
               }}
@@ -643,6 +613,15 @@ const AddNewProgramScreen = () => {
 
         </ScrollView>
         <AddSpeakerModal setIsOpen={setOpenAddSpeaker} isOpen={addSpeaker}/>
+        <SelectSpeakerBottomSheet
+          isOpen={speakerBottomSheetOpen}
+          setIsOpen={setSpeakerBottomSheetOpen}
+          speakers={speakers}
+          selectedSpeakers={speakerSelected}
+          onSelectSpeaker={handleSpeakerPress}
+          multiSelect={true}
+          title="Select Speakers"
+        />
       </View>
     </>
   );

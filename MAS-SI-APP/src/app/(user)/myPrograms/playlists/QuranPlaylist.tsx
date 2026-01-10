@@ -214,9 +214,10 @@ const QuranPlaylist = () => {
 
   return (
     <LinearGradient
-      colors={['#064AA3', '#053D8A', '#043070']}
+      colors={['#0D509D', '#064AA3', '#021B3D']}
+      locations={[0, 0.15, 0.4]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
+      end={{ x: 1, y: 1 }}
       style={styles.container}
     >
       <Stack.Screen 

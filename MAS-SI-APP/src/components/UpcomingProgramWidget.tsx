@@ -1,4 +1,9 @@
-import { View, Text, Pressable, ImageBackground, ScrollView, Animated, Image, Dimensions, Linking, PanResponder } from 'react-native';
+import { View, Text, Pressable, ImageBackground, ScrollView, Animated, Image, Dimensions, Linking, PanResponder, LayoutAnimation, Platform, UIManager, Modal as RNModal } from 'react-native';
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Program, EventsType, Lectures, SheikDataType } from '../types';
 import moment from 'moment';
@@ -12,97 +17,93 @@ import Toast from 'react-native-toast-message';
 import { FlyerSkeleton } from './FlyerSkeleton';
 import YoutubePlayer from "react-native-youtube-iframe";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 
 // Toast configuration
 const toastConfig = {
   addProgramToNotificationsToast: ({ props }: any) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]'
-        experimentalBlurMethod={'dimezisBlurView'}
-        style={{ width: '100%', maxWidth: '100%' }}
+      <View className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]'
+        style={{ width: '100%', maxWidth: '100%', backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
       >
         <View>
           <Image source={props.props.program_img ? { uri: props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
         </View>
         <View className='flex-col pl-2'>
           <View>
-            <Text>1 Program Added To Notifications</Text>
+            <Text className='text-white'>1 Program Added To Notifications</Text>
           </View>
           <View className='flex-row'>
-            <Text className='text-sm'>{props.props.program_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
+            <Text className='text-sm text-white'>{props.props.program_name}</Text>
+            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
           </View>
         </View>
-      </BlurView>
+      </View>
     </Pressable>
   ),
   LectureAddedToPlaylist: ({ props }: any) => (
     <Pressable className='rounded-xl overflow-hidden' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-3 p-1 max-w-[85%] max-h-[60]'
-        experimentalBlurMethod={'dimezisBlurView'}
+      <View className='flex-row items-center justify-between px-3 p-1 max-w-[85%] max-h-[60]'
+        style={{ backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
       >
         <View className=''>
           <Image source={props.props?.playlist_img ? { uri: props.props.playlist_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
         </View>
         <View className='flex-col pl-2'>
           <View>
-            <Text numberOfLines={1} allowFontScaling adjustsFontSizeToFit>1 lecture added</Text>
+            <Text className='text-white' numberOfLines={1} allowFontScaling adjustsFontSizeToFit>1 lecture added</Text>
           </View>
           <View className='flex-row'>
-            <Text>{props.props?.playlist_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
+            <Text className='text-white'>{props.props?.playlist_name}</Text>
+            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
           </View>
         </View>
-      </BlurView>
+      </View>
     </Pressable>
   ),
   ProgramAddedToPrograms: ({ props }: any) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]'
-        experimentalBlurMethod={'dimezisBlurView'}
+      <View className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]'
+        style={{ backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
       >
         <View>
           <Image source={props.props.program_img ? { uri: props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
         </View>
         <View className='flex-col pl-2'>
           <View>
-            <Text>1 Program Added to Library</Text>
+            <Text className='text-white'>1 Program Added to Library</Text>
           </View>
           <View className='flex-row'>
-            <Text className='text-sm'>{props.props.program_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
+            <Text className='text-sm text-white'>{props.props.program_name}</Text>
+            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
           </View>
         </View>
-      </BlurView>
+      </View>
     </Pressable>
   ),
   addEventToNotificationsToast: ({ props }: any) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]'
-        experimentalBlurMethod={'dimezisBlurView'}
-        style={{ width: '100%', maxWidth: '100%' }}
+      <View className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]'
+        style={{ width: '100%', maxWidth: '100%', backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
       >
         <View>
           <Image source={props.props.event_img ? { uri: props.props.event_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
         </View>
         <View className='flex-col pl-2'>
           <View>
-            <Text>1 Program Added To Notifications</Text>
+            <Text className='text-white'>1 Program Added To Notifications</Text>
           </View>
           <View className='flex-row'>
-            <Text className='text-sm'>{props.props.event_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
+            <Text className='text-sm text-white'>{props.props.event_name}</Text>
+            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
           </View>
         </View>
-      </BlurView>
+      </View>
     </Pressable>
   ),
   ConfirmNotificationOption: ({ props }: any) => (
     <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-2 max-w-[90%] max-h-[60]'
-        experimentalBlurMethod={'dimezisBlurView'}
+      <View className='flex-row items-center justify-between px-4 rounded-xl p-2 max-w-[90%] max-h-[60]'
+        style={{ backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
       >
         <View className='flex-col pl-2'>
           <View>
@@ -116,7 +117,7 @@ const toastConfig = {
         <View className="bg-white p-1 rounded-full">
           <Icon source={'check'} size={20} color="green" />
         </View>
-      </BlurView>
+      </View>
     </Pressable>
   )
 }
@@ -205,6 +206,7 @@ export default function UpcomingProgramWidget() {
   const [notificationOptionsVisible, setNotificationOptionsVisible] = useState(false);
   const [selectedNotificationTime, setSelectedNotificationTime] = useState<number | null>(null);
   const notificationSlideAnim = useRef(new Animated.Value(0)).current;
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const { width, height } = Dimensions.get("window");
 
   // Get current day of the week
@@ -1067,6 +1069,7 @@ export default function UpcomingProgramWidget() {
     if (skipAnimation) {
       setModalVisible(false);
       setModalVisibleState(false);
+      setIsSheetExpanded(false);
       slideAnim.setValue(0);
       panY.setValue(0);
       panYValue.current = 0;
@@ -1099,6 +1102,7 @@ export default function UpcomingProgramWidget() {
     ]).start(() => {
       setModalVisible(false);
       setModalVisibleState(false);
+      setIsSheetExpanded(false);
       setModalSpeakerData([]);
       setModalSpeakerString('');
       setModalImageReady(false);
@@ -1110,6 +1114,26 @@ export default function UpcomingProgramWidget() {
       isClosing.current = false;
     });
   }, []);
+
+  // Toggle sheet expansion
+  const toggleSheetExpand = useCallback(() => {
+    LayoutAnimation.configureNext({
+      duration: 350,
+      update: {
+        type: LayoutAnimation.Types.spring,
+        springDamping: 0.85,
+      },
+      create: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+      delete: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+    });
+    setIsSheetExpanded(!isSheetExpanded);
+  }, [isSheetExpanded]);
 
   const checkWatchedStatus = async (lecturesData: Lectures[]) => {
     try {
@@ -1215,12 +1239,10 @@ export default function UpcomingProgramWidget() {
     return (
       <View className='flex-1'>
         {modalSpeakerData?.map((speakerData, index) => (
-          <BlurView
+          <View
             key={index}
-            intensity={80}
-            tint="dark"
             style={{
-              borderRadius: 50,
+              borderRadius: 24,
               padding: 16,
               marginVertical: 8,
               shadowColor: '#000',
@@ -1228,7 +1250,7 @@ export default function UpcomingProgramWidget() {
               shadowOpacity: 0.15,
               shadowRadius: 8,
               elevation: 4,
-              backgroundColor: 'rgba(107, 114, 128, 0.6)',
+              backgroundColor: '#374151',
               overflow: 'hidden',
             }}
           >
@@ -1255,7 +1277,7 @@ export default function UpcomingProgramWidget() {
                 </Text>
               </View>
             </View>
-            <View className='border-t border-gray-400 pt-4'>
+            <View className='border-t border-gray-500 pt-4'>
               {speakerData?.speaker_name === "MAS" ? (
                 <Text className='text-sm font-bold text-white mb-3'>Impact</Text>
               ) : (
@@ -1272,7 +1294,7 @@ export default function UpcomingProgramWidget() {
                 ))}
               </View>
             </View>
-          </BlurView>
+          </View>
         ))}
       </View>
     );
@@ -1472,412 +1494,393 @@ export default function UpcomingProgramWidget() {
       )}
 
       {/* Full Description Modal - Program Detail Page Style */}
-      {upcomingItem && (modalVisible || isClosing.current) && (
-        <Portal>
-          <Modal
-            visible={modalVisible || isClosing.current}
-            onDismiss={() => { }}
-            dismissable={false}
-            contentContainerStyle={{
-              backgroundColor: 'transparent',
-              margin: 0,
-              padding: 0,
-              height: '100%',
-              width: '100%',
-              borderWidth: 0,
+      {upcomingItem && (
+        <RNModal
+          visible={modalVisible || isClosing.current}
+          transparent={true}
+          animationType="none"
+          statusBarTranslucent
+          onRequestClose={() => closeModal()}
+        >
+          <Animated.View 
+            style={{ 
+              flex: 1, 
+              justifyContent: 'flex-end',
             }}
-            style={{ justifyContent: 'flex-end', margin: 0, padding: 0 }}
           >
             <Animated.View
               style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.15)',
                 opacity: slideAnim,
-                flex: 1,
-                backgroundColor: 'transparent',
               }}
             >
               <Pressable
-                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
+                style={{ flex: 1 }}
                 onPress={() => closeModal()}
               />
-              <Animated.View
+            </Animated.View>
+            <Animated.View
+              style={{
+                transform: [{
+                  translateY: Animated.add(
+                    slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [400, 0],
+                    }),
+                    panY
+                  )
+                }],
+                marginHorizontal: 28,
+                marginBottom: 32,
+              }}
+            >
+              <View
                 style={{
-                  height: height * 0.95,
-                  borderTopLeftRadius: 20,
-                  borderTopRightRadius: 20,
-                  borderBottomLeftRadius: 0,
-                  borderBottomRightRadius: 0,
-                  borderBottomWidth: 0,
-                  overflow: 'hidden',
                   backgroundColor: '#FFFFFF',
+                  borderRadius: 32,
+                  paddingTop: 16,
+                  paddingBottom: 34,
                   shadowColor: '#000',
-                  shadowOffset: { width: 0, height: -8 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 16,
                   elevation: 20,
-                                    transform: [{
-                                      translateY: Animated.add(
-                                        slideAnim.interpolate({
-                                          inputRange: [0, 1],
-                                          outputRange: [height, 0],
-                                        }),
-                                        panY
-                                      )
-                                    }]
-                                  }}
-                                >
-                                <LinearGradient
-                                    colors={['#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 0, y: 1 }}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                    }}
-                                />
-                                {/* Drag Handle - Separate view with pan responder */}
-                <Animated.View
-                  {...panResponder.panHandlers}
+                  minHeight: isSheetExpanded ? 550 : 250,
+                  maxHeight: isSheetExpanded ? height * 0.85 : 250,
+                }}
+              >
+                {/* Drag Handle */}
+                <Pressable
+                  onPress={toggleSheetExpand}
                   style={{
                     width: '100%',
-                    paddingTop: 2,
-                    paddingBottom: 2,
+                    paddingBottom: 8,
                     alignItems: 'center',
                   }}
                 >
                   <View style={{
-                    width: 40,
+                    width: 36,
                     height: 4,
                     borderRadius: 2,
-                    backgroundColor: '#000000',
+                    backgroundColor: '#D1D5DB',
                   }} />
-                </Animated.View>
+                </Pressable>
 
-                <ScrollView
-                  ref={modalScrollRef}
-                  showsVerticalScrollIndicator={true}
-                  scrollEnabled={true}
-                  scrollEventThrottle={16}
-                  onScrollBeginDrag={(event) => {
-                    isScrolling.current = true;
-                    const offset = event.nativeEvent.contentOffset.y;
-                    previousScrollOffset.current = offset;
-                    // Reset pan if user starts scrolling down from content
-                    if (offset > 0) {
-                      panY.setValue(0);
-                      panYValue.current = 0;
-                    }
-                  }}
-                  onScrollEndDrag={(event) => {
-                    const offset = event.nativeEvent.contentOffset.y;
-                    
-                    // If at the top and we have a panY value, check if we should close
-                    if (offset <= 0 && panYValue.current > 20) {
-                      const threshold = -10;
-                      
-                      if (panYValue.current > threshold) {
-                        // Close the sheet
-                        isClosing.current = true;
-                        slideAnim.stopAnimation();
-                        panY.stopAnimation();
-                        
-                        const currentPanY = panYValue.current;
-                        const remainingDistance = height - currentPanY;
-                        
-                        Animated.timing(panY, {
-                          toValue: height,
-                          duration: Math.max(150, Math.min(300, 300 * (remainingDistance / height))),
-                          useNativeDriver: true,
-                        }).start((finished) => {
-                          if (finished) {
-                            closeModal(true);
-                          }
-                        });
-                      } else {
-                        // Snap back to open position
-                        Animated.spring(panY, {
-                          toValue: 0,
-                          useNativeDriver: true,
-                          tension: 50,
-                          friction: 9,
-                        }).start(() => {
-                          panYValue.current = 0;
-                        });
-                      }
-                    } else if (panYValue.current > 0 && offset > 0) {
-                      panY.setValue(0);
-                      panYValue.current = 0;
-                    }
-                    
-                    setTimeout(() => {
-                      isScrolling.current = false;
-                    }, 100);
-                  }}
-                  onMomentumScrollBegin={() => {
-                    isScrolling.current = true;
-                  }}
-                  onMomentumScrollEnd={(event) => {
-                    const offset = event.nativeEvent.contentOffset.y;
-                    
-                    if (offset <= 0 && panYValue.current > 20) {
-                      const threshold = -10;
-                      
-                      if (panYValue.current > threshold) {
-                        isClosing.current = true;
-                        slideAnim.stopAnimation();
-                        panY.stopAnimation();
-                        
-                        const currentPanY = panYValue.current;
-                        const remainingDistance = height - currentPanY;
-                        
-                        Animated.timing(panY, {
-                          toValue: height,
-                          duration: Math.max(150, Math.min(300, 300 * (remainingDistance / height))),
-                          useNativeDriver: true,
-                        }).start((finished) => {
-                          if (finished) {
-                            closeModal(true);
-                          }
-                        });
-                      } else {
-                        Animated.spring(panY, {
-                          toValue: 0,
-                          useNativeDriver: true,
-                          tension: 50,
-                          friction: 9,
-                        }).start(() => {
-                          panYValue.current = 0;
-                        });
-                      }
-                    }
-                    
-                    setTimeout(() => {
-                      isScrolling.current = false;
-                    }, 100);
-                  }}
-                  onScroll={(event) => {
-                    const offset = event.nativeEvent.contentOffset.y;
-                    const previousOffset = previousScrollOffset.current;
-                    
-                    // When at or past the top (negative offset from bounce)
-                    if (offset <= 0) {
-                      // User is pulling down - move sheet down
-                      if (offset < previousOffset) {
-                        const scrollUpAmount = Math.abs(offset);
-                        const resistance = scrollUpAmount < 100 ? 0.6 : (scrollUpAmount < 200 ? 0.8 : 1);
-                        const newValue = Math.min(scrollUpAmount * resistance, height * 0.5);
-                        panY.setValue(newValue);
-                        panYValue.current = newValue;
-                      } else if (offset > previousOffset && panYValue.current > 0) {
-                        // Scrolling back, reduce pan value
-                        const reduction = previousOffset - offset;
-                        const newValue = Math.max(0, panYValue.current - Math.abs(reduction));
-                        panY.setValue(newValue);
-                        panYValue.current = newValue;
-                      }
-                    } else {
-                      // User has scrolled into content, reset pan
-                      if (panYValue.current > 0) {
-                        panY.setValue(0);
-                        panYValue.current = 0;
-                      }
-                    }
-                    
-                    scrollOffset.current = offset;
-                    previousScrollOffset.current = offset;
-                  }}
-                  bounces={true}
-                  alwaysBounceVertical={true}
-                  overScrollMode="always"
-                  contentContainerStyle={{
-                    justifyContent: "flex-start",
-                    alignItems: "stretch",
-                    paddingBottom: 40
-                  }}
+                <ScrollView 
                   style={{ flex: 1 }}
+                  contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 34 }}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={isSheetExpanded}
                 >
-                  {/* Custom Header with Notification and Playlist Buttons */}
-                  <View style={{ 
-                    position: 'absolute', 
-                    top: 0, 
-                    left: 0, 
-                    right: 0, 
-                    zIndex: 100, 
-                    paddingTop: 12, 
-                    paddingHorizontal: 10, 
-                    flexDirection: 'row', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center' 
-                  }}>
-                    <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', width: 36, height: 36 }}>
-                      <Pressable onPress={() => closeModal()} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon source="chevron-left" size={20} color="#0D509D" />
-                      </Pressable>
-                    </BlurView>
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                      {((upcomingItem.type === 'program' && programData && isBefore(new Date().toISOString(), programData.program_end_date || '')) ||
-                        (upcomingItem.type === 'event' && eventData && isBefore(new Date().toISOString(), eventData.event_end_date || ''))) ? (
-                        <>
-                          <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', width: 36, height: 36 }}>
-                            <Pressable onPress={handleNotificationPress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                              {itemInNotifications ? <Icon source={"bell-check"} color='#0D509D' size={20} /> : <Icon source={"bell-outline"} color='#0D509D' size={20} />}
-                            </Pressable>
-                          </BlurView>
-                          <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', width: 36, height: 36 }}>
-                            <Pressable onPress={handleAddToProgramsPress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                              {itemInPrograms ? <Icon source={'minus-circle-outline'} color='#0D509D' size={20} /> : <Icon source={"plus-circle-outline"} color='#0D509D' size={20} />}
-                            </Pressable>
-                          </BlurView>
-                        </>
-                      ) : (
-                        <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', width: 36, height: 36 }}>
-                          <Pressable onPress={handleAddToProgramsPress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                            {itemInPrograms ? <Icon source={'minus-circle'} color='#0D509D' size={20} /> : <Icon source={"plus-circle-outline"} color='#0D509D' size={20} />}
-                          </Pressable>
-                        </BlurView>
+                  {/* Card Header: Image + Title/Time */}
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    {/* Thumbnail Image */}
+                    <View style={{
+                      width: isSheetExpanded ? 80 : 60,
+                      height: isSheetExpanded ? 80 : 60,
+                      borderRadius: 12,
+                      overflow: 'hidden',
+                      backgroundColor: '#F3F4F6',
+                    }}>
+                      <Image
+                        source={upcomingItem.image ? { uri: upcomingItem.image } : require("@/assets/images/MASHomeLogo.png")}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                        onLoad={() => setModalImageReady(true)}
+                      />
+                    </View>
+
+                    {/* Title and Time */}
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Text style={{
+                          fontSize: 16,
+                          fontWeight: '700',
+                          color: '#111827',
+                          flex: 1,
+                          marginRight: 8,
+                        }} numberOfLines={2}>
+                          {upcomingItem.type === 'program' && programData ? programData.program_name : upcomingItem.name}
+                        </Text>
+                        <View style={{
+                          backgroundColor: 'rgba(98, 224, 144, 0.15)',
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 12,
+                        }}>
+                          <Text style={{
+                            fontSize: 12,
+                            fontWeight: '600',
+                            color: '#2D8B5F',
+                          }}>
+                            {formatTime12Hour(upcomingItem.time)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Speaker with green dot */}
+                      {modalSpeakerString && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                          <View style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: 8,
+                            backgroundColor: '#62E090',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: 6,
+                          }}>
+                            <Icon source="account" size={10} color="#FFFFFF" />
+                          </View>
+                          <Text style={{
+                            fontSize: 13,
+                            color: '#6B7280',
+                            fontWeight: '500',
+                          }} numberOfLines={1}>
+                            {modalSpeakerString}
+                          </Text>
+                        </View>
                       )}
                     </View>
                   </View>
 
-                  {/* Program Image */}
-                  <View style={{
-                    width: '100%',
-                    height: height * 0.5,
-                    borderRadius: 0,
-                    overflow: 'hidden',
-                    alignSelf: 'stretch',
-                    backgroundColor: '#FFFFFF',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                    {!modalImageReady && (
-                      <FlyerSkeleton
-                        width={width}
-                        height={height * 0.5}
-                        style={{ position: 'absolute', top: 0, zIndex: 2 }}
-                      />
-                    )}
-                    <Image
-                      source={upcomingItem.image ? { uri: upcomingItem.image } : require("@/assets/images/MASHomeLogo.png")}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: 0,
-                      }}
-                      resizeMode="contain"
-                      onLoad={() => setModalImageReady(true)}
-                    />
-
-                    {/* Sign Up Button - Bottom Right of Flyer */}
-                    {((upcomingItem.type === 'program' && programData && programData.program_is_paid) ||
-                      (upcomingItem.type === 'event' && eventData && eventData.is_paid)) && (
-                        <View
-                          style={{
-                            position: 'absolute',
-                            bottom: 16,
-                            right: 16,
-                            zIndex: 100,
-                            elevation: 10,
-                          }}
-                        >
-                          <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden' }}>
-                            <Pressable
-                              onPress={() => {
-                                const paidLink = (upcomingItem.type === 'program' && programData?.paid_link) ||
-                                  (upcomingItem.type === 'event' && eventData?.paid_link);
-                                if (paidLink) {
-                                  Linking.canOpenURL(paidLink).then(() => {
-                                    Linking.openURL(paidLink);
-                                  });
-                                }
-                              }}
-                              style={{ paddingHorizontal: 12, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                            >
-                              <Icon source={"cart-variant"} color='#0D509D' size={16} />
-                              <Text style={{ fontSize: 12, fontWeight: '600', color: '#0D509D' }}>Sign Up Now</Text>
-                            </Pressable>
-                          </BlurView>
-                        </View>
-                      )}
-                  </View>
-
-                  {/* Content Section */}
-                  <View className='w-[100%]' style={{ paddingBottom: 0 }}>
-                    <Text className='text-center mt-4 text-2xl text-black font-bold'>
-                      {upcomingItem.type === 'program' && programData ? programData.program_name : upcomingItem.name}
+                  {/* Short description when collapsed */}
+                  {!isSheetExpanded && upcomingItem.description && (
+                    <Text style={{
+                      fontSize: 13,
+                      color: '#6B7280',
+                      lineHeight: 18,
+                      marginTop: 10,
+                    }} numberOfLines={2}>
+                      {upcomingItem.description}
                     </Text>
+                  )}
 
-                    {modalSpeakerString && (
-                      <Pressable onPress={() => setModalVisibleState(true)} style={{ alignSelf: 'center', marginTop: 8 }}>
-                        <Text style={{ textAlign: 'center', color: '#0D509D', fontWeight: '600', fontSize: 14 }} numberOfLines={1}>
-                          {modalSpeakerString}
-                        </Text>
-                      </Pressable>
-                    )}
-
-                    {/* Description Content */}
-                    <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16, width: '100%' }}>
-                      <Text className='text-2xl font-bold text-black mb-2' style={{ paddingHorizontal: 4 }}>
-                        Description
+                  {/* View Full Details Button - Only when collapsed */}
+                  {!isSheetExpanded && (
+                    <Pressable
+                      onPress={toggleSheetExpand}
+                      style={{
+                        backgroundColor: '#224F92',
+                        borderRadius: 12,
+                        paddingVertical: 12,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: 12,
+                      }}
+                    >
+                      <Text style={{
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: '#FFFFFF',
+                      }}>
+                        View Full Details
                       </Text>
-                      {upcomingItem.description ? (
-                        <View className='px-4 py-3 rounded-xl' style={{
-                          backgroundColor: '#2A2A2A',
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.4,
-                          shadowRadius: 8,
-                          elevation: 8,
-                        }}>
-                          <Text className='text-base text-gray-300 leading-6'>
+                    </Pressable>
+                  )}
+
+                  {/* Expanded Content */}
+                  {isSheetExpanded && (
+                    <>
+                      {/* Full Description Section */}
+                      {upcomingItem.description && (
+                        <View style={{ marginTop: 16 }}>
+                          <Text style={{
+                            fontSize: 15,
+                            fontWeight: '600',
+                            color: '#111827',
+                            marginBottom: 8,
+                          }}>
+                            About This Program
+                          </Text>
+                          <Text style={{
+                            fontSize: 14,
+                            color: '#6B7280',
+                            lineHeight: 22,
+                          }}>
                             {upcomingItem.description}
                           </Text>
                         </View>
-                      ) : (
-                        <View className='px-4 py-3 rounded-xl' style={{
-                          backgroundColor: '#2A2A2A',
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 4 },
-                          shadowOpacity: 0.4,
-                          shadowRadius: 8,
-                          elevation: 8,
+                      )}
+
+                      {/* Speaker Section */}
+                      {modalSpeakerData && modalSpeakerData.length > 0 && (
+                        <View style={{
+                          marginTop: 20,
+                          backgroundColor: '#F9FAFB',
+                          borderRadius: 16,
+                          padding: 16,
                         }}>
-                          <Text className='text-base text-gray-400 leading-6 text-center'>
-                            No description available
+                          <Text style={{
+                            fontSize: 15,
+                            fontWeight: '600',
+                            color: '#111827',
+                            marginBottom: 12,
+                          }}>
+                            Speaker
                           </Text>
+                          {modalSpeakerData.map((speaker, index) => (
+                            <View key={index} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                              <View style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 24,
+                                backgroundColor: '#224F92',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                              }}>
+                                {speaker.speaker_img ? (
+                                  <Image 
+                                    source={{ uri: speaker.speaker_img }} 
+                                    style={{ width: '100%', height: '100%' }}
+                                    resizeMode="cover"
+                                  />
+                                ) : (
+                                  <Icon source="account" size={24} color="#FFFFFF" />
+                                )}
+                              </View>
+                              <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={{
+                                  fontSize: 14,
+                                  fontWeight: '600',
+                                  color: '#111827',
+                                }}>
+                                  {speaker.speaker_name}
+                                </Text>
+                                {speaker.speaker_creds && speaker.speaker_creds.length > 0 && (
+                                  <Text style={{
+                                    fontSize: 12,
+                                    color: '#224F92',
+                                    fontWeight: '500',
+                                    marginTop: 2,
+                                  }}>
+                                    {speaker.speaker_creds[0]}
+                                  </Text>
+                                )}
+                              </View>
+                            </View>
+                          ))}
                         </View>
                       )}
-                    </View>
-                  </View>
+
+                      {/* Action Buttons */}
+                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 20 }}>
+                        {/* Set Reminder / Notification Button */}
+                        <Pressable
+                          onPress={handleNotificationPress}
+                          style={{
+                            flex: 1,
+                            backgroundColor: '#62E090',
+                            borderRadius: 12,
+                            paddingVertical: 14,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'row',
+                            gap: 6,
+                          }}
+                        >
+                          <Icon 
+                            source={itemInNotifications ? "bell-check" : "bell-outline"} 
+                            size={18} 
+                            color="#FFFFFF" 
+                          />
+                          <Text style={{
+                            fontSize: 14,
+                            fontWeight: '600',
+                            color: '#FFFFFF',
+                          }}>
+                            {itemInNotifications ? 'Reminder Set' : 'Set Reminder'}
+                          </Text>
+                        </Pressable>
+
+                        {/* Save Button */}
+                        <Pressable
+                          onPress={handleAddToProgramsPress}
+                          style={{
+                            width: 48,
+                            height: 48,
+                            backgroundColor: '#F3F4F6',
+                            borderRadius: 12,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Icon 
+                            source={itemInPrograms ? "heart" : "heart-outline"} 
+                            size={22} 
+                            color={itemInPrograms ? '#62E090' : '#6B7280'} 
+                          />
+                        </Pressable>
+                      </View>
+
+                      {/* Register Button for paid programs */}
+                      {((upcomingItem.type === 'program' && programData && programData.program_is_paid) ||
+                        (upcomingItem.type === 'event' && eventData && eventData.is_paid)) && (
+                        <Pressable
+                          onPress={() => {
+                            const paidLink = (upcomingItem.type === 'program' && programData?.paid_link) ||
+                              (upcomingItem.type === 'event' && eventData?.paid_link);
+                            if (paidLink) {
+                              Linking.canOpenURL(paidLink).then(() => {
+                                Linking.openURL(paidLink);
+                              });
+                            }
+                          }}
+                          style={{
+                            backgroundColor: '#224F92',
+                            borderRadius: 12,
+                            paddingVertical: 14,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexDirection: 'row',
+                            gap: 6,
+                            marginTop: 8,
+                          }}
+                        >
+                          <Icon source="cart-outline" size={18} color="#FFFFFF" />
+                          <Text style={{
+                            fontSize: 14,
+                            fontWeight: '600',
+                            color: '#FFFFFF',
+                          }}>
+                            Register Now
+                          </Text>
+                        </Pressable>
+                      )}
+                    </>
+                  )}
                 </ScrollView>
-              </Animated.View>
+              </View>
             </Animated.View>
+          </Animated.View>
 
-            {/* Speaker Modal */}
-            <Portal>
-              <Modal
-                visible={modalVisibleState}
-                onDismiss={() => setModalVisibleState(false)}
-                contentContainerStyle={{
-                  backgroundColor: 'transparent',
-                  padding: 20,
-                  minHeight: 400,
-                  maxHeight: "70%",
-                  width: "95%",
-                  borderRadius: 35,
-                  alignSelf: "center"
-                }}
-              >
-                <View className='flex-1'>
-                  <GetSheikData />
-                </View>
-              </Modal>
-            </Portal>
-          </Modal>
-
-          {/* Custom Toast Notification - Renders inside modal Portal to appear on top */}
+          {/* Speaker Modal */}
+          <Portal>
+            <Modal
+              visible={modalVisibleState}
+              onDismiss={() => setModalVisibleState(false)}
+              contentContainerStyle={{
+                backgroundColor: 'transparent',
+                padding: 20,
+                minHeight: 400,
+                maxHeight: "70%",
+                width: "95%",
+                borderRadius: 35,
+                alignSelf: "center"
+              }}
+            >
+              <View className='flex-1'>
+                <GetSheikData />
+              </View>
+            </Modal>
+          </Portal>
+          {/* Custom Toast Notification - Renders inside modal to appear on top */}
           {modalToast && (
             <View
               style={{
@@ -1911,7 +1914,7 @@ export default function UpcomingProgramWidget() {
               </View>
             </View>
           )}
-        </Portal>
+        </RNModal>
       )}
 
       {/* Notification Options Slide-up Modal */}
@@ -1924,7 +1927,7 @@ export default function UpcomingProgramWidget() {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
+              backgroundColor: 'transparent',
               opacity: notificationSlideAnim,
             }}
           >

@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react'
 import { gettingPrayerData } from '../types';
 import { format } from 'date-fns';
 import moment from 'moment';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
 type salahDisplayWidgetProp = {
     prayer: gettingPrayerData,
     nextPrayer: gettingPrayerData
@@ -19,8 +21,31 @@ type currentSalahProp = {
     athan: string,
     iqamah: string
 }
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function SalahDisplayWidget({ prayer, nextPrayer }: salahDisplayWidgetProp) {
     const insets = useSafeAreaInsets();
+    const router = useRouter();
+    const buttonScale = useSharedValue(1);
+    
+    const animatedButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: buttonScale.value }]
+    }));
+
+    const handleViewAllPress = () => {
+        // Haptic feedback for better feel
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        
+        // Button press animation
+        buttonScale.value = withSequence(
+            withTiming(0.95, { duration: 50 }),
+            withSpring(1, { damping: 15, stiffness: 400 })
+        );
+        
+        // Navigate to prayer times tab (using navigate for smooth tab switch)
+        router.navigate('/prayersTable');
+    };
+
     if (!prayer) {
         return
     }
@@ -264,22 +289,26 @@ export default function SalahDisplayWidget({ prayer, nextPrayer }: salahDisplayW
                             {/* Date and View All */}
                             <View className='flex-col items-end'>
                                 <Text className='text-white font-bold text-base mb-1' numberOfLines={1}>{prayer.hijri_month} {prayer.hijri_date}</Text>
-                                <Pressable
-                                    style={{
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                        paddingHorizontal: 12,
-                                        paddingVertical: 6,
-                                        borderRadius: 16,
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        marginTop: 4,
-                                    }}
+                                <AnimatedPressable
+                                    onPress={handleViewAllPress}
+                                    style={[
+                                        {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                            paddingHorizontal: 12,
+                                            paddingVertical: 6,
+                                            borderRadius: 16,
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            marginTop: 4,
+                                        },
+                                        animatedButtonStyle
+                                    ]}
                                 >
                                     <Text className='text-white text-xs font-medium'>View all prayer times</Text>
                                     <View style={{ marginLeft: 4 }}>
                                         <Icon source="chevron-right" size={14} color="#FFFFFF" />
                                     </View>
-                                </Pressable>
+                                </AnimatedPressable>
                             </View>
                         </View>
 

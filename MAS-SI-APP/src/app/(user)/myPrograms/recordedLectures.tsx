@@ -1,11 +1,11 @@
 import { View, Text, ScrollView, StatusBar, RefreshControl, ActivityIndicator, FlatList, Pressable, Dimensions, useWindowDimensions, Image, TextInput, Platform } from 'react-native'
-import React, { useEffect, useState, useRef, useMemo } from 'react'
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { Stack, useRouter, useNavigation } from 'expo-router'
 import { Icon } from 'react-native-paper'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '@/src/lib/supabase'
 import { Program, EventsType } from '@/src/types'
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeIn } from 'react-native-reanimated'
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeIn, withSpring, interpolate, useAnimatedScrollHandler, runOnJS } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // Program Card Component
@@ -143,7 +143,9 @@ const RecordedLectures = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchActive, setIsSearchActive] = useState(false)
   const searchInputRef = useRef<TextInput>(null)
+  const pagerRef = useRef<Animated.ScrollView>(null)
   const tabPosition = useSharedValue(0)
+  const scrollX = useSharedValue(0)
 
   const fetchAllLectures = async () => {
     try {
@@ -230,12 +232,24 @@ const RecordedLectures = () => {
 
   const handleTabChange = (tab: 'programs' | 'events') => {
     setActiveTab(tab)
-    tabPosition.value = withTiming(tab === 'programs' ? 0 : 1, { duration: 200 })
+    const targetX = tab === 'programs' ? 0 : width
+    pagerRef.current?.scrollTo({ x: targetX, animated: true })
   }
 
-  useEffect(() => {
-    tabPosition.value = activeTab === 'programs' ? 0 : 1
-  }, [activeTab])
+  const updateActiveTab = useCallback((index: number) => {
+    setActiveTab(index === 0 ? 'programs' : 'events')
+  }, [])
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollX.value = event.contentOffset.x
+      tabPosition.value = event.contentOffset.x / width
+    },
+    onMomentumEnd: (event) => {
+      const index = Math.round(event.contentOffset.x / width)
+      runOnJS(updateActiveTab)(index)
+    },
+  })
 
   const containerPadding = 32 // 16px padding on each side
   const tabWidth = (width - containerPadding) / 2
@@ -434,7 +448,7 @@ const RecordedLectures = () => {
                 style={[
                   {
                     position: 'absolute',
-                    backgroundColor: '#214E91',
+                    backgroundColor: 'rgba(33, 78, 145, 0.15)',
                     borderRadius: 18,
                     height: '100%',
                     width: '50%',
@@ -450,18 +464,18 @@ const RecordedLectures = () => {
                   <Icon 
                     source="book-open-variant" 
                     size={18} 
-                    color={activeTab === 'programs' ? '#FFFFFF' : '#6B7280'} 
+                    color={activeTab === 'programs' ? '#214E91' : '#6B7280'} 
                   />
                   <Text 
                     className="font-semibold ml-2"
-                    style={{ color: activeTab === 'programs' ? '#FFFFFF' : '#6B7280', fontSize: 14 }}
+                    style={{ color: activeTab === 'programs' ? '#214E91' : '#6B7280', fontSize: 14 }}
                   >
                     Programs
                   </Text>
                   {filteredPrograms.length > 0 && (
                     <View style={{ 
                       marginLeft: 6, 
-                      backgroundColor: activeTab === 'programs' ? 'rgba(255,255,255,0.3)' : '#D1D5DB',
+                      backgroundColor: activeTab === 'programs' ? 'rgba(33, 78, 145, 0.2)' : '#D1D5DB',
                       borderRadius: 10,
                       paddingHorizontal: 6,
                       paddingVertical: 2,
@@ -469,7 +483,7 @@ const RecordedLectures = () => {
                       alignItems: 'center'
                     }}>
                       <Text style={{ 
-                        color: activeTab === 'programs' ? '#FFFFFF' : '#6B7280',
+                        color: activeTab === 'programs' ? '#214E91' : '#6B7280',
                         fontSize: 11,
                         fontWeight: 'bold'
                       }}>
@@ -487,18 +501,18 @@ const RecordedLectures = () => {
                   <Icon 
                     source="calendar-star" 
                     size={18} 
-                    color={activeTab === 'events' ? '#FFFFFF' : '#6B7280'} 
+                    color={activeTab === 'events' ? '#214E91' : '#6B7280'} 
                   />
                   <Text 
                     className="font-semibold ml-2"
-                    style={{ color: activeTab === 'events' ? '#FFFFFF' : '#6B7280', fontSize: 14 }}
+                    style={{ color: activeTab === 'events' ? '#214E91' : '#6B7280', fontSize: 14 }}
                   >
                     Events
                   </Text>
                   {filteredEvents.length > 0 && (
                     <View style={{ 
                       marginLeft: 6, 
-                      backgroundColor: activeTab === 'events' ? 'rgba(255,255,255,0.3)' : '#D1D5DB',
+                      backgroundColor: activeTab === 'events' ? 'rgba(33, 78, 145, 0.2)' : '#D1D5DB',
                       borderRadius: 10,
                       paddingHorizontal: 6,
                       paddingVertical: 2,
@@ -506,7 +520,7 @@ const RecordedLectures = () => {
                       alignItems: 'center'
                     }}>
                       <Text style={{ 
-                        color: activeTab === 'events' ? '#FFFFFF' : '#6B7280',
+                        color: activeTab === 'events' ? '#214E91' : '#6B7280',
                         fontSize: 11,
                         fontWeight: 'bold'
                       }}>
@@ -519,76 +533,91 @@ const RecordedLectures = () => {
             </View>
           </View>
 
-          {/* Tab Content */}
-          {activeTab === 'programs' ? (
-            filteredPrograms.length > 0 ? (
-              <FlatList 
-                data={filteredPrograms}
-                renderItem={renderProgramCard}
-                keyExtractor={(item) => item.program_id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingTop: 16, paddingBottom: 100 }}
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-              />
-            ) : (
-              <ScrollView 
-                contentContainerStyle={{ paddingBottom: 100, paddingTop: 40, flexGrow: 1 }}
-                className="bg-white flex-1"
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-                showsVerticalScrollIndicator={false}
-              >
-                <View className="items-center justify-center" style={{ minHeight: 400 }}>
-                  <Icon source="book-open-variant" size={64} color="#9CA3AF" />
-                  <Text className="text-xl font-bold mt-4 text-center text-gray-700">
-                    {searchQuery.trim() ? 'No Programs Found' : 'No Programs'}
-                  </Text>
-                  <Text className="text-gray-500 text-center mt-2">
-                    {searchQuery.trim() 
-                      ? 'Try adjusting your search terms.'
-                      : 'There are no programs with YouTube videos at this time.'}
-                  </Text>
-                </View>
-              </ScrollView>
-            )
-          ) : (
-            filteredEvents.length > 0 ? (
-              <FlatList 
-                data={filteredEvents}
-                renderItem={renderEventCard}
-                keyExtractor={(item) => item.event_id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingTop: 16, paddingBottom: 100 }}
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-              />
-            ) : (
-              <ScrollView 
-                contentContainerStyle={{ paddingBottom: 100, paddingTop: 40, flexGrow: 1 }}
-                className="bg-white flex-1"
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-                showsVerticalScrollIndicator={false}
-              >
-                <View className="items-center justify-center" style={{ minHeight: 400 }}>
-                  <Icon source="calendar-star" size={64} color="#9CA3AF" />
-                  <Text className="text-xl font-bold mt-4 text-center text-gray-700">
-                    {searchQuery.trim() ? 'No Events Found' : 'No Events'}
-                  </Text>
-                  <Text className="text-gray-500 text-center mt-2">
-                    {searchQuery.trim() 
-                      ? 'Try adjusting your search terms.'
-                      : 'There are no events with YouTube videos at this time.'}
-                  </Text>
-                </View>
-              </ScrollView>
-            )
-          )}
+          {/* Tab Content - Horizontal Pager */}
+          <Animated.ScrollView
+            ref={pagerRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
+            bounces={false}
+            style={{ flex: 1 }}
+          >
+            {/* Programs Page */}
+            <View style={{ width, flex: 1 }}>
+              {filteredPrograms.length > 0 ? (
+                <FlatList 
+                  data={filteredPrograms}
+                  renderItem={renderProgramCard}
+                  keyExtractor={(item) => item.program_id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingTop: 16, paddingBottom: 100 }}
+                  refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                  }
+                />
+              ) : (
+                <ScrollView 
+                  contentContainerStyle={{ paddingBottom: 100, paddingTop: 40, flexGrow: 1 }}
+                  style={{ flex: 1, backgroundColor: 'white' }}
+                  refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                  }
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+                    <Icon source="book-open-variant" size={64} color="#9CA3AF" />
+                    <Text className="text-xl font-bold mt-4 text-center text-gray-700">
+                      {searchQuery.trim() ? 'No Programs Found' : 'No Programs'}
+                    </Text>
+                    <Text className="text-gray-500 text-center mt-2">
+                      {searchQuery.trim() 
+                        ? 'Try adjusting your search terms.'
+                        : 'There are no programs with YouTube videos at this time.'}
+                    </Text>
+                  </View>
+                </ScrollView>
+              )}
+            </View>
+
+            {/* Events Page */}
+            <View style={{ width, flex: 1 }}>
+              {filteredEvents.length > 0 ? (
+                <FlatList 
+                  data={filteredEvents}
+                  renderItem={renderEventCard}
+                  keyExtractor={(item) => item.event_id}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingTop: 16, paddingBottom: 100 }}
+                  refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                  }
+                />
+              ) : (
+                <ScrollView 
+                  contentContainerStyle={{ paddingBottom: 100, paddingTop: 40, flexGrow: 1 }}
+                  style={{ flex: 1, backgroundColor: 'white' }}
+                  refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                  }
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+                    <Icon source="calendar-star" size={64} color="#9CA3AF" />
+                    <Text className="text-xl font-bold mt-4 text-center text-gray-700">
+                      {searchQuery.trim() ? 'No Events Found' : 'No Events'}
+                    </Text>
+                    <Text className="text-gray-500 text-center mt-2">
+                      {searchQuery.trim() 
+                        ? 'Try adjusting your search terms.'
+                        : 'There are no events with YouTube videos at this time.'}
+                    </Text>
+                  </View>
+                </ScrollView>
+              )}
+            </View>
+          </Animated.ScrollView>
         </View>
       )}
 

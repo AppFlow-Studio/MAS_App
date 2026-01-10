@@ -166,11 +166,6 @@ export const JummahBottomSheet = forwardRef<JummahBottomSheetRef, JummahBottomSh
                 </View>
               </View>
 
-              {/* Footer */}
-              <View style={styles.footer}>
-                <Icon source="mosque" size={16} color={COLORS.gray} />
-                <Text style={styles.footerText}>MAS Staten Island</Text>
-              </View>
             </ScrollView>
             </Animated.View>
           </GestureDetector>
@@ -278,6 +273,7 @@ const styles = StyleSheet.create({
   speakerNamePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 8,
     backgroundColor: COLORS.white,
     paddingVertical: 8,
@@ -306,16 +302,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#374151',
     lineHeight: 24,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 20,
-  },
-  footerText: {
-    fontSize: 12,
-    color: COLORS.gray,
   },
 });

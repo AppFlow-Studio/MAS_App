@@ -69,6 +69,7 @@ export default function MoreScreen() {
   const { isOnboardingIncomplete, showOnboardingSheet } = useOnboarding();
   const [visible, setVisible] = useState(false);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
+  const [guestAuthModalVisible, setGuestAuthModalVisible] = useState(false);
 
   const getProfile = async () => {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single();
@@ -112,6 +113,15 @@ export default function MoreScreen() {
     checkIfAnon();
   }, [session]);
 
+  // Show guest auth modal when anonymous user visits
+  useEffect(() => {
+    if (session?.user.is_anonymous) {
+      setGuestAuthModalVisible(true);
+    } else {
+      setGuestAuthModalVisible(false);
+    }
+  }, [session]);
+
   const getMemberSinceYear = () => {
     if (profile?.created_at) {
       return new Date(profile.created_at).getFullYear();
@@ -125,12 +135,6 @@ export default function MoreScreen() {
       'Are you sure you want to logout?',
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => { }
-        },
-        { text: 'Cancel', style: 'cancel' },
-        {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
@@ -142,7 +146,8 @@ export default function MoreScreen() {
             }
             await supabase.auth.signOut();
           }
-        }
+        },
+        { text: 'Cancel', style: 'cancel' }
       ]
     );
   };
@@ -178,14 +183,7 @@ export default function MoreScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Account</Text>
-          {anonStatus ? (
-            <TouchableOpacity
-              style={styles.signInButton}
-              onPress={() => setSignInModalVisible(true)}
-            >
-              <Text style={styles.signInButtonText}>Sign In</Text>
-            </TouchableOpacity>
-          ) : (
+          {!anonStatus && (
             <TouchableOpacity style={styles.logoutButtonSmall} onPress={handleLogout}>
               <LogOut color="white" size={16} strokeWidth={2.5} />
             </TouchableOpacity>
@@ -238,22 +236,21 @@ export default function MoreScreen() {
 
             {/* Sign In & Sign Up Buttons for Anonymous Users */}
             {anonStatus ? (
-              <View style={styles.authButtonsRow}>
-                <View style={[styles.inviteButtonContainer, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.inviteButton} onPress={() => setVisible(true)}>
-                    <Text style={styles.inviteButtonText}>Sign In</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={{ width: 12 }} />
-                <View style={[styles.inviteButtonContainer, { flex: 1 }]}>
-                  <TouchableOpacity style={styles.inviteButton} onPress={() => router.push('/(auth)/SignUp')}>
-                    <Text style={styles.inviteButtonText}>Sign Up</Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.guestAuthContainer}>
+                {/* Large Sign Up Button */}
+                <TouchableOpacity 
+                  style={styles.signUpButton} 
+                  onPress={() => router.push('/(auth)/SignUp')}
+                >
+                  <Text style={styles.signUpButtonText}>Sign Up</Text>
+                </TouchableOpacity>
+                
+                {/* Sign In Link */}
+                <TouchableOpacity onPress={() => setVisible(true)}>
+                  <Text style={styles.signInLink}>Sign In</Text>
+                </TouchableOpacity>
               </View>
-            ) :
-              `${profile?.first_name || ''}${profile?.last_name ? ' ' + profile.last_name : ''}`.trim() || 'User'
-            }
+            ) : null}
 
             {/* {!anonStatus && profile?.profile_email && (
               <Text style={styles.memberEmail}>{profile.profile_email}</Text>
@@ -529,6 +526,18 @@ export default function MoreScreen() {
       </ScrollView>
 
       <SignInAnonModal visible={visible} setVisible={() => setVisible(false)} />
+      
+      {/* Guest Auth Modal - blocks access for anonymous users */}
+      <SignInAnonModal 
+        visible={guestAuthModalVisible} 
+        setVisible={() => setGuestAuthModalVisible(false)}
+        dismissable={false}
+        showLanding={true}
+        onSignUpPress={() => {
+          setGuestAuthModalVisible(false);
+          router.push('/(auth)/SignUp');
+        }}
+      />
     </LinearGradient>
   );
 };
@@ -893,6 +902,31 @@ const styles = StyleSheet.create({
   authButtonsRow: {
     flexDirection: 'row',
     width: '100%',
+  },
+  guestAuthContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  signUpButton: {
+    width: '100%',
+    backgroundColor: 'rgba(160, 170, 190, 0.55)',
+    paddingVertical: 8,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  signUpButtonText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  signInLink: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
   header: {
     paddingTop: 60,

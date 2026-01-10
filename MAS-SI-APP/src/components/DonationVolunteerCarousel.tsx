@@ -332,11 +332,23 @@ function CardItem({ item, cardWidth, spacing, isFirst, isLast }: CardItemProps) 
     );
   } else {
     const volunteer = item as VolunteerOpportunity;
-    const handlePress = () => {
+    const handlePress = async () => {
       if (volunteer.link) {
-        Linking.canOpenURL(volunteer.link).then(() => {
-          Linking.openURL(volunteer.link!);
-        });
+        try {
+          // Ensure URL has proper protocol
+          let url = volunteer.link.trim();
+          if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+          }
+          const supported = await Linking.canOpenURL(url);
+          if (supported) {
+            await Linking.openURL(url);
+          } else {
+            console.log('Cannot open URL:', url);
+          }
+        } catch (err) {
+          console.log('Error opening URL:', err);
+        }
       }
     };
 

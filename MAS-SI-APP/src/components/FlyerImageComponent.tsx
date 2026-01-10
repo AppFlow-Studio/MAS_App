@@ -364,6 +364,9 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         // Don't close if already closing via drag
         if (isClosing.current) return;
         
+        // Haptic feedback for closing
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        
         // Stop all ongoing animations
         slideAnim.stopAnimation();
         panY.stopAnimation();
@@ -380,14 +383,14 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                 Animated.spring(slideAnim, {
                     toValue: 0,
                     useNativeDriver: true,
-                    tension: 40,
-                    friction: 8,
+                    tension: 65,
+                    friction: 11,
                 }),
                 Animated.spring(panY, {
                     toValue: 0,
                     useNativeDriver: true,
-                    tension: 40,
-                    friction: 8,
+                    tension: 65,
+                    friction: 11,
                 })
             ]).start(() => {
                 setModalVisible(false);
@@ -761,6 +764,9 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         // Reset closing state
         isClosing.current = false;
         
+        // Haptic feedback for opening
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
         setModalVisible(true);
         setModalImageReady(false);
         setHasError(false);
@@ -777,11 +783,12 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         slideAnim.stopAnimation();
         panY.stopAnimation();
         
+        // Enhanced spring animation for smoother feel
         Animated.spring(slideAnim, {
             toValue: 1,
             useNativeDriver: true,
-            tension: 40,
-            friction: 8,
+            tension: 65,
+            friction: 11,
         }).start();
         
         // Fetch full program data
@@ -936,7 +943,6 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                         stackSize={3}
                         stackSeparation={0}
                         animateCardOpacity
-                        animateOverlayLabels
                         disableTopSwipe
                         disableBottomSwipe
                         swipeBackCard
@@ -1127,23 +1133,25 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                 backgroundColor: 'transparent',
                             }}
                         >
+                            {/* Full screen backdrop (tap to close) */}
                             <Pressable 
-                                style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+                                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'transparent' }}
                                 onPress={() => closeModal()}
                             />
+                            {/* Bottom sheet positioned at bottom */}
+                            <View style={{ flex: 1, justifyContent: 'flex-end' }}>
                             <Animated.View
                                 style={{
-                                    height: height * 0.95,
-                                    borderTopLeftRadius: 20,
-                                    borderTopRightRadius: 20,
-                                    borderBottomLeftRadius: 0,
-                                    borderBottomRightRadius: 0,
-                                    borderBottomWidth: 0,
+                                    height: height * 0.90,
+                                    backgroundColor: '#FFFFFF',
+                                    borderRadius: 40,
+                                    marginHorizontal: 10,
+                                    marginBottom: -20,
                                     overflow: 'hidden',
                                     shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: -8 },
-                                    shadowOpacity: 0.3,
-                                    shadowRadius: 12,
+                                    shadowOffset: { width: 0, height: -4 },
+                                    shadowOpacity: 0.2,
+                                    shadowRadius: 20,
                                     elevation: 20,
                                     transform: [
                                         {
@@ -1158,269 +1166,57 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                     ]
                                 }}
                             >
-                                <LinearGradient
-                                    colors={['#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 0, y: 1 }}
-                                    style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                    }}
-                                />
-                                {/* Drag Handle - Separate view with pan responder */}
+                                {/* Drag Handle */}
                                 <Animated.View
                                     {...panResponder.panHandlers}
                                     style={{
                                         width: '100%',
-                                        paddingTop: 2,
-                                        paddingBottom: 2,
+                                        paddingTop: 12,
+                                        paddingBottom: 8,
                                         alignItems: 'center',
+                                        backgroundColor: '#FFFFFF',
+                                        zIndex: 10,
                                     }}
                                 >
                                     <View style={{
                                         width: 40,
                                         height: 4,
                                         borderRadius: 2,
-                                        backgroundColor: '#000000',
+                                        backgroundColor: '#D1D5DB',
                                     }} />
                                 </Animated.View>
                                 
+                                {/* Main Content */}
                                 <ScrollView 
                                     ref={modalScrollRef}
-                                    scrollEnabled={true}
-                                    scrollEventThrottle={16}
-                                    onScrollBeginDrag={(event) => {
-                                        isScrolling.current = true;
-                                        const offset = event.nativeEvent.contentOffset.y;
-                                        previousScrollOffset.current = offset;
-                                        // Reset pan if user starts scrolling down
-                                        if (offset > 0) {
-                                            panY.setValue(0);
-                                            panYValue.current = 0;
-                                        }
-                                    }}
-                                    onScrollEndDrag={(event) => {
-                                        const offset = event.nativeEvent.contentOffset.y;
-                                        
-                                        // If at the top and we have a panY value, check if we should close
-                                        if (offset <= 0 && panYValue.current > 20) {
-                                            const threshold = -10; // Dismiss immediately on any downward drag
-                                            
-                                            if (panYValue.current > threshold) {
-                                                // Close the sheet
-                                                isClosing.current = true;
-                                                slideAnim.stopAnimation();
-                                                panY.stopAnimation();
-                                                
-                                                const currentPanY = panYValue.current;
-                                                const remainingDistance = height - currentPanY;
-                                                
-                                                Animated.timing(panY, {
-                                                    toValue: height,
-                                                    duration: Math.max(150, Math.min(300, 300 * (remainingDistance / height))),
-                                                    useNativeDriver: true,
-                                                }).start((finished) => {
-                                                    if (finished) {
-                                                        setModalVisible(false);
-                                                        setSelectedLecture(null);
-                                                        setPlaying(false);
-                                                        panY.setValue(0);
-                                                        panYValue.current = 0;
-                                                        slideAnim.setValue(0);
-                                                        scrollOffset.current = 0;
-                                                        previousScrollOffset.current = 0;
-                                                        isScrolling.current = false;
-                                                        isClosing.current = false;
-                                                    }
-                                                });
-                                            } else {
-                                                // Snap back to open position
-                                                Animated.spring(panY, {
-                                                    toValue: 0,
-                                                    useNativeDriver: true,
-                                                    tension: 50,
-                                                    friction: 9,
-                                                }).start(() => {
-                                                    panYValue.current = 0;
-                                                });
-                                            }
-                                        } else if (panYValue.current > 0 && offset > 0) {
-                                            // If user scrolled away from top, reset pan
-                                            panY.setValue(0);
-                                            panYValue.current = 0;
-                                        }
-                                        
-                                        // Small delay to ensure scroll has ended
-                                        setTimeout(() => {
-                                            isScrolling.current = false;
-                                        }, 100);
-                                    }}
-                                    onMomentumScrollBegin={() => {
-                                        isScrolling.current = true;
-                                    }}
-                                    onMomentumScrollEnd={(event) => {
-                                        const offset = event.nativeEvent.contentOffset.y;
-                                        
-                                        // If at the top and we have a panY value, check if we should close
-                                        if (offset <= 0 && panYValue.current > 20) {
-                                            const threshold = -10;
-                                            
-                                            if (panYValue.current > threshold) {
-                                                // Close the sheet
-                                                isClosing.current = true;
-                                                slideAnim.stopAnimation();
-                                                panY.stopAnimation();
-                                                
-                                                const currentPanY = panYValue.current;
-                                                const remainingDistance = height - currentPanY;
-                                                
-                                                Animated.timing(panY, {
-                                                    toValue: height,
-                                                    duration: Math.max(150, Math.min(300, 300 * (remainingDistance / height))),
-                                                    useNativeDriver: true,
-                                                }).start((finished) => {
-                                                    if (finished) {
-                                                        setModalVisible(false);
-                                                        setSelectedLecture(null);
-                                                        setPlaying(false);
-                                                        panY.setValue(0);
-                                                        panYValue.current = 0;
-                                                        slideAnim.setValue(0);
-                                                        scrollOffset.current = 0;
-                                                        previousScrollOffset.current = 0;
-                                                        isScrolling.current = false;
-                                                        isClosing.current = false;
-                                                    }
-                                                });
-                                            } else {
-                                                // Snap back to open position
-                                                Animated.spring(panY, {
-                                                    toValue: 0,
-                                                    useNativeDriver: true,
-                                                    tension: 50,
-                                                    friction: 9,
-                                                }).start(() => {
-                                                    panYValue.current = 0;
-                                                });
-                                            }
-                                        } else if (panYValue.current > 0 && offset > 0) {
-                                            // If user scrolled away from top, reset pan
-                                            panY.setValue(0);
-                                            panYValue.current = 0;
-                                        }
-                                        
-                                        setTimeout(() => {
-                                            isScrolling.current = false;
-                                        }, 100);
-                                    }}
-                                    onScroll={(event) => {
-                                        const offset = event.nativeEvent.contentOffset.y;
-                                        const previousOffset = previousScrollOffset.current;
-                                        
-                                        // Only process if we're actually at or past the top
-                                        if (offset <= 0) {
-                                            // If scrolling further up (offset becoming more negative)
-                                            if (offset < previousOffset) {
-                                                // User is trying to scroll up at the top - trigger close gesture
-                                                const scrollUpAmount = Math.abs(offset);
-                                                // Add resistance for smoother feel - less resistance at the start
-                                                const resistance = scrollUpAmount < 100 ? 0.6 : (scrollUpAmount < 200 ? 0.8 : 1);
-                                                const newValue = Math.min(scrollUpAmount * resistance, height * 0.5); // Cap at 50% of screen
-                                                panY.setValue(newValue);
-                                                panYValue.current = newValue;
-                                            } else if (offset > previousOffset && panYValue.current > 0) {
-                                                // Scrolling back towards top, reduce pan value proportionally
-                                                const reduction = previousOffset - offset;
-                                                const newValue = Math.max(0, panYValue.current - Math.abs(reduction));
-                                                panY.setValue(newValue);
-                                                panYValue.current = newValue;
-                                            }
-                                        } else {
-                                            // User has scrolled down from top, reset pan
-                                            if (panYValue.current > 0) {
-                                                panY.setValue(0);
-                                                panYValue.current = 0;
-                                            }
-                                        }
-                                        
-                                        scrollOffset.current = offset;
-                                        previousScrollOffset.current = offset;
-                                    }}
-                                    showsVerticalScrollIndicator={true}
+                                    showsVerticalScrollIndicator={false}
                                     bounces={true}
-                                    alwaysBounceVertical={true}
-                                    overScrollMode="always"
-                                    contentContainerStyle={{
-                                        justifyContent: "flex-start",
-                                        alignItems: "stretch",
-                                        paddingBottom: 40
-                                    }}
+                                    contentContainerStyle={{ paddingBottom: 120 }}
                                     style={{ flex: 1 }}
                                 >
-                                    
-                                    {/* Custom Header with Notification and Playlist Buttons */}
+                                    {/* Image/Video Section with overlayed buttons */}
                                     <View style={{ 
-                                        position: 'absolute', 
-                                        top: 0, 
-                                        left: 0, 
-                                        right: 0, 
-                                        zIndex: 100, 
-                                        paddingTop: 12, 
-                                        paddingHorizontal: 10, 
-                                        flexDirection: 'row', 
-                                        justifyContent: 'space-between', 
-                                        alignItems: 'center' 
-                                    }}>
-                                        <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', width: 36, height: 36 }}>
-                                            <Pressable onPress={() => closeModal()} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                                                <Icon source="chevron-left" size={20} color="#0D509D" />
-                                            </Pressable>
-                                        </BlurView>
-                                        <View style={{ flexDirection: 'row', gap: 10 }}>
-                                            {program && isBefore(new Date().toISOString(), program.program_end_date || '') && (
-                                                <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', width: 36, height: 36 }}>
-                                                    <Pressable onPress={handleNotificationPress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                                                        {programInNotifications ? <Icon source={"bell-check"} color='#0D509D' size={20}/> : <Icon source={"bell-outline"} color='#0D509D' size={20}/>}
-                                                    </Pressable>
-                                                </BlurView>
-                                            )}
-                                            <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden', width: 36, height: 36 }}>
-                                                <Pressable onPress={handleAddToProgramsPress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
-                                                    <Icon source={programInPrograms ? 'heart' : 'heart-outline'} color={programInPrograms ? '#E53935' : '#0D509D'} size={20}/>
-                                                </Pressable>
-                                            </BlurView>
-                                        </View>
-                                    </View>
-                                    
-                                    {/* Program Image or Video Player */}
-                                    <View style={{
-                                        width: '100%',
-                                        height: height * 0.5,
-                                        borderRadius: 0,
+                                        marginHorizontal: 16, 
+                                        borderRadius: 16, 
                                         overflow: 'hidden',
-                                        alignSelf: 'stretch',
-                                        backgroundColor: '#FFFFFF',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
+                                        marginBottom: 20,
+                                        position: 'relative',
                                     }}>
                                         {selectedLecture ? (
                                             <YoutubePlayer 
-                                                height={height * 0.5}
-                                                width={width}
+                                                height={height * 0.3}
+                                                width={width - 32}
                                                 play={playing}
                                                 videoId={selectedLecture.lecture_link ? getVideoIdFromUrl(selectedLecture.lecture_link) : undefined}
                                                 onChangeState={onStateChange}
                                             />
                                         ) : (
-                                            <>
+                                            <View>
                                                 {!modalImageReady && (
                                                     <FlyerSkeleton 
-                                                        width={width} 
-                                                        height={height * 0.5} 
-                                                        style={{ position: 'absolute', top: 0, zIndex: 2 }} 
+                                                        width={width - 32} 
+                                                        height={height * 0.55} 
+                                                        style={{ position: 'absolute', top: 0, zIndex: 2, borderRadius: 16 }} 
                                                     />
                                                 )}
                                                 <Image
@@ -1429,100 +1225,221 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                                         : { uri: item.program_img }}
                                                     style={{
                                                         width: '100%',
-                                                        height: '100%',
-                                                        borderRadius: 0,
+                                                        height: undefined,
+                                                        aspectRatio: 0.7,
                                                     }}
-                                                    resizeMode="contain"
+                                                    resizeMode="cover"
                                                     onLoad={() => setModalImageReady(true)}
                                                     onError={() => {
                                                         setHasError(true);
                                                         setModalImageReady(true);
                                                     }}
                                                 />
-                                            </>
-                                        )}
-                                        
-                                        {/* Sign Up Button - Bottom Right of Flyer */}
-                                        {!selectedLecture && (program?.program_is_paid || item.program_is_paid) && (
-                                            <View
-                                                style={{
-                                                    position: 'absolute',
-                                                    bottom: 16,
-                                                    right: 16,
-                                                    zIndex: 100,
-                                                    elevation: 10,
-                                                }}
-                                            >
-                                                <BlurView intensity={20} tint="dark" style={{ borderRadius: 16, overflow: 'hidden' }}>
-                                                    <Pressable
-                                                        onPress={() => {
-                                                            const paidLink = program?.paid_link || item.paid_link;
-                                                            if (paidLink) {
-                                                                Linking.canOpenURL(paidLink).then(() => {
-                                                                    Linking.openURL(paidLink);
-                                                                });
-                                                            }
-                                                        }}
-                                                        style={{ paddingHorizontal: 12, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                                                    >
-                                                        <Icon source={"cart-variant"} color='#0D509D' size={16}/>
-                                                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#0D509D' }}>Sign Up Now</Text>
-                                                    </Pressable>
-                                                </BlurView>
                                             </View>
                                         )}
+                                        
+                                        {/* Overlayed buttons on image */}
+                                        <View style={{ 
+                                                    position: 'absolute',
+                                            top: 12,
+                                            left: 12,
+                                            right: 12,
+                                            flexDirection: 'row', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center',
+                                            zIndex: 10,
+                                        }}>
+                                            <Pressable 
+                                                onPress={() => closeModal()} 
+                                                style={{ 
+                                                    width: 36, 
+                                                    height: 36, 
+                                                    borderRadius: 18,
+                                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    shadowColor: '#000',
+                                                    shadowOffset: { width: 0, height: 2 },
+                                                    shadowOpacity: 0.1,
+                                                    shadowRadius: 4,
+                                                    elevation: 3,
+                                                }}
+                                            >
+                                                <Icon source="close" size={20} color="#374151" />
+                                            </Pressable>
+                                            
+                                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                                                {program && isBefore(new Date().toISOString(), program.program_end_date || '') && (
+                                                    <Pressable
+                                                        onPress={handleNotificationPress} 
+                                                        style={{ 
+                                                            width: 36, 
+                                                            height: 36, 
+                                                            borderRadius: 18,
+                                                            backgroundColor: programInNotifications ? '#0D509D' : 'rgba(255,255,255,0.9)',
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center',
+                                                            shadowColor: '#000',
+                                                            shadowOffset: { width: 0, height: 2 },
+                                                            shadowOpacity: 0.1,
+                                                            shadowRadius: 4,
+                                                            elevation: 3,
+                                                        }}
+                                                    >
+                                                        <Icon source={programInNotifications ? "bell-check" : "bell-outline"} size={18} color={programInNotifications ? '#FFFFFF' : '#374151'}/>
+                                                    </Pressable>
+                                        )}
+                                            </View>
+                                        </View>
                                     </View>
                                     
-                                    {/* Content Section - Dark Background */}
-                                    <View className='w-[100%]' style={{ paddingBottom: 0 }}>
-                                        <Text className='text-center mt-4 text-2xl text-black font-bold'>
+                                    {/* Program Info Section */}
+                                    <View style={{ paddingHorizontal: 16 }}>
+                                        {/* Program Name */}
+                                        <Text style={{ 
+                                            color: '#111827', 
+                                            fontSize: 24, 
+                                            fontWeight: '700',
+                                            marginBottom: 8,
+                                        }}>
                                             {program?.program_name || item.program_name}
                                         </Text>
                                         
+                                        {/* Speaker Pill */}
                                         {speakerString && (
-                                            <Pressable onPress={() => setSpeakerModalVisible(true)} style={{ alignSelf: 'center', marginTop: 8 }}>
-                                                <Text style={{ textAlign: 'center', color: '#0D509D', fontWeight: '600', fontSize: 14 }} numberOfLines={1}>
+                                            <Pressable 
+                                                onPress={() => setSpeakerModalVisible(true)} 
+                                                style={{ 
+                                                    alignSelf: 'flex-start',
+                                                    marginBottom: 16,
+                                                }}
+                                            >
+                                                <View style={{
+                                                    backgroundColor: 'rgba(13, 80, 157, 0.1)',
+                                                    paddingHorizontal: 12,
+                                                    paddingVertical: 8,
+                                                    borderRadius: 20,
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    borderWidth: 1,
+                                                    borderColor: 'rgba(13, 80, 157, 0.2)',
+                                                }}>
+                                                    <Icon source="account" size={16} color="#0D509D" />
+                                                    <Text style={{ color: '#0D509D', fontWeight: '600', fontSize: 14, marginLeft: 6, marginRight: 4 }}>
                                                     {speakerString}
                                                 </Text>
+                                                    <Icon source="chevron-right" size={14} color="#0D509D" />
+                                                </View>
                                             </Pressable>
                                         )}
 
-                                        {/* Description Content */}
-                                        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16, width: '100%' }}>
-                                            <Text className='text-2xl font-bold text-black mb-2' style={{ paddingHorizontal: 4 }}>
-                                                Description
-                                            </Text>
-                                            {(program || item) && (program?.program_desc || item.program_desc) ? (
-                                                <View className='px-4 py-3 rounded-xl' style={{
-                                                    backgroundColor: '#2A2A2A',
-                                                    shadowColor: "#000",
-                                                    shadowOffset: { width: 0, height: 4 },
-                                                    shadowOpacity: 0.4,
-                                                    shadowRadius: 8,
-                                                    elevation: 8,
+                                        {/* Description */}
+                                        {(program?.program_desc || item.program_desc) && (
+                                            <View style={{
+                                                backgroundColor: '#F9FAFB',
+                                                borderRadius: 16,
+                                                padding: 16,
+                                                marginBottom: 20,
+                                                borderWidth: 1,
+                                                borderColor: '#E5E7EB',
+                                            }}>
+                                                <Text style={{ 
+                                                    color: '#6B7280', 
+                                                    fontSize: 11, 
+                                                    fontWeight: '600',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: 1,
+                                                    marginBottom: 10,
                                                 }}>
-                                                    <Text className='text-base text-gray-300 leading-6'>
+                                                    About
+                                            </Text>
+                                                <Text style={{ 
+                                                    color: '#374151', 
+                                                    fontSize: 15, 
+                                                    lineHeight: 24,
+                                                }}>
                                                         {program?.program_desc || item.program_desc}
                                                     </Text>
                                                 </View>
-                                            ) : (
-                                                <View className='px-4 py-3 rounded-xl' style={{
-                                                    backgroundColor: '#2A2A2A',
-                                                    shadowColor: "#000",
-                                                    shadowOffset: { width: 0, height: 4 },
-                                                    shadowOpacity: 0.4,
-                                                    shadowRadius: 8,
-                                                    elevation: 8,
-                                                }}>
-                                                    <Text className='text-base text-gray-400 leading-6 text-center'>
-                                                        No description available
-                                                    </Text>
-                                                </View>
-                                            )}
-                                        </View>
+                                        )}
                                     </View>
                                 </ScrollView>
+
+                                {/* Fixed Bottom Action Bar */}
+                                <View style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    paddingHorizontal: 16,
+                                    paddingTop: 16,
+                                    paddingBottom: 20,
+                                    backgroundColor: '#FFFFFF',
+                                    borderTopWidth: 1,
+                                    borderTopColor: '#E5E7EB',
+                                    borderBottomLeftRadius: 32,
+                                    borderBottomRightRadius: 32,
+                                }}>
+                                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                                        {(program?.program_is_paid || item.program_is_paid) && (
+                                            <Pressable
+                                                onPress={() => {
+                                                    const paidLink = program?.paid_link || item.paid_link;
+                                                    if (paidLink) {
+                                                        Linking.canOpenURL(paidLink).then(() => {
+                                                            Linking.openURL(paidLink);
+                                                        });
+                                                    }
+                                                }}
+                                                style={{
+                                                    flex: 1,
+                                                    backgroundColor: '#0D509D',
+                                                    paddingVertical: 16,
+                                                    borderRadius: 14,
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: 8,
+                                                }}
+                                            >
+                                                <Icon source="cart-outline" size={20} color="#FFFFFF"/>
+                                                <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
+                                                    Register Now
+                                                    </Text>
+                                            </Pressable>
+                                        )}
+                                        
+                                        <Pressable
+                                            onPress={handleAddToProgramsPress}
+                                            style={{
+                                                width: (program?.program_is_paid || item.program_is_paid) ? 56 : undefined,
+                                                flex: (program?.program_is_paid || item.program_is_paid) ? undefined : 1,
+                                                backgroundColor: programInPrograms ? 'rgba(16,185,129,0.15)' : '#F3F4F6',
+                                                paddingVertical: 16,
+                                                borderRadius: 14,
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: 8,
+                                                borderWidth: 1,
+                                                borderColor: programInPrograms ? 'rgba(16,185,129,0.3)' : '#E5E7EB',
+                                            }}
+                                        >
+                                            <Icon 
+                                                source={programInPrograms ? 'heart' : 'heart-outline'} 
+                                                size={22} 
+                                                color={programInPrograms ? '#10B981' : '#374151'}
+                                            />
+                                            {!(program?.program_is_paid || item.program_is_paid) && (
+                                                <Text style={{ color: programInPrograms ? '#10B981' : '#374151', fontWeight: '700', fontSize: 16 }}>
+                                                    {programInPrograms ? 'Saved' : 'Save to Library'}
+                                                </Text>
+                                            )}
+                                        </Pressable>
+                                        </View>
+                                    </View>
                             </Animated.View>
+                            </View>
                         </Animated.View>
                         
                         {/* Speaker Modal */}

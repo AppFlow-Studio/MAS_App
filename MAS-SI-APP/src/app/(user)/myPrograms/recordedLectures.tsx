@@ -7,6 +7,7 @@ import { supabase } from '@/src/lib/supabase'
 import { Program, EventsType } from '@/src/types'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeIn, withSpring, interpolate, useAnimatedScrollHandler, runOnJS } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass'
 
 // Program Card Component
 const ProgramCard = ({ item, onPress }: { item: Program, onPress: () => void }) => {
@@ -146,6 +147,7 @@ const RecordedLectures = () => {
   const pagerRef = useRef<Animated.ScrollView>(null)
   const tabPosition = useSharedValue(0)
   const scrollX = useSharedValue(0)
+  const searchBarWidth = useSharedValue(0)
 
   const fetchAllLectures = async () => {
     try {
@@ -305,14 +307,42 @@ const RecordedLectures = () => {
 
   const activateSearch = () => {
     setIsSearchActive(true)
-    setTimeout(() => searchInputRef.current?.focus(), 100)
+    searchBarWidth.value = withSpring(1, { damping: 20, stiffness: 90, mass: 0.8 })
+    setTimeout(() => searchInputRef.current?.focus(), 250)
   }
 
   const deactivateSearch = () => {
     searchInputRef.current?.blur()
-    setIsSearchActive(false)
-    setSearchQuery('')
+    searchBarWidth.value = withSpring(0, { damping: 22, stiffness: 100, mass: 0.8 })
+    setTimeout(() => {
+      setIsSearchActive(false)
+      setSearchQuery('')
+    }, 300)
   }
+
+  const searchBarAnimatedStyle = useAnimatedStyle(() => ({
+    width: interpolate(searchBarWidth.value, [0, 1], [40, width - 32]),
+  }))
+
+  const searchIconAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0, 0.3], [1, 0]),
+    transform: [{ scale: interpolate(searchBarWidth.value, [0, 0.3], [1, 0.8]) }],
+  }))
+
+  const searchContentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0.4, 0.7], [0, 1]),
+  }))
+
+  const backButtonAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0, 0.5], [1, 0]),
+    transform: [{ 
+      translateX: interpolate(searchBarWidth.value, [0, 1], [0, -60]) 
+    }],
+  }))
+
+  const titleAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0, 0.3], [1, 0]),
+  }))
 
   return (
     <>
@@ -323,70 +353,55 @@ const RecordedLectures = () => {
       />
       <StatusBar barStyle="light-content" />
       
-      {/* Custom Header with integrated search */}
+      {/* Custom Header with Liquid Glass morphing search */}
       <View style={{ backgroundColor: '#214E91', paddingTop: insets.top }}>
         <View style={{ 
           height: 56, 
           flexDirection: 'row', 
           alignItems: 'center', 
           paddingHorizontal: 16,
+          position: 'relative',
         }}>
-          {isSearchActive ? (
-            // Search Mode
-            <Animated.View 
-              entering={FadeIn.duration(150)}
-              style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-            >
-              <View style={{
-                flex: 1,
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                height: 40,
-              }}>
-                <Ionicons name="search" size={18} color="rgba(255, 255, 255, 0.6)" />
-                <TextInput
-                  ref={searchInputRef}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Search..."
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                  style={{
-                    flex: 1,
-                    color: 'white',
-                    fontSize: 16,
-                    marginLeft: 8,
-                    paddingVertical: 0,
-                  }}
-                  autoFocus
-                  returnKeyType="search"
-                />
-                {searchQuery.length > 0 && (
-                  <Pressable onPress={() => setSearchQuery('')}>
-                    <Ionicons name="close-circle" size={18} color="rgba(255, 255, 255, 0.5)" />
-                  </Pressable>
-                )}
-              </View>
-              <Pressable 
-                onPress={deactivateSearch}
-                style={{ paddingLeft: 12 }}
+          {/* Liquid Glass Back Button - slides out when searching */}
+          <Animated.View style={[{ zIndex: 1, position: 'absolute', left: 16 }, backButtonAnimatedStyle]}>
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                }}
+                interactive
+                effect="clear"
               >
-                <Text style={{ color: 'white', fontSize: 15, fontWeight: '500' }}>Cancel</Text>
-              </Pressable>
-            </Animated.View>
-          ) : (
-            // Normal Header
-            <>
+                <Pressable 
+                  onPress={() => {
+                    if (!isSearchActive) {
+                      navigation.getParent()?.getState().index == 0 ? router.replace('/myPrograms') : router.back()
+                    }
+                  }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="chevron-back" size={22} color="white" />
+                </Pressable>
+              </LiquidGlassView>
+            ) : (
               <Pressable 
                 onPress={() => {
-                  navigation.getParent()?.getState().index == 0 ? router.replace('/myPrograms') : router.back()
+                  if (!isSearchActive) {
+                    navigation.getParent()?.getState().index == 0 ? router.replace('/myPrograms') : router.back()
+                  }
                 }}
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
                   backgroundColor: 'rgba(255, 255, 255, 0.15)',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -394,32 +409,195 @@ const RecordedLectures = () => {
               >
                 <Ionicons name="chevron-back" size={22} color="white" />
               </Pressable>
-              
-              <Text style={{ 
-                flex: 1,
-                color: 'white', 
-                fontSize: 17, 
-                fontWeight: '600',
-                textAlign: 'center',
-              }}>
-                Recorded Lectures
-              </Text>
-              
-              <Pressable 
-                onPress={activateSearch}
+            )}
+          </Animated.View>
+          
+          {/* Title - fades out when searching */}
+          <Animated.Text style={[{ 
+            flex: 1,
+            color: 'white', 
+            fontSize: 17, 
+            fontWeight: '600',
+            textAlign: 'center',
+          }, titleAnimatedStyle]}>
+            Recorded Lectures
+          </Animated.Text>
+          
+          {/* Morphing Liquid Glass Search Button → Search Bar */}
+          <Animated.View 
+            style={[
+              {
+                position: 'absolute',
+                right: 16,
+                height: 40,
+                borderRadius: 20,
+                overflow: 'hidden',
+              },
+              searchBarAnimatedStyle
+            ]}
+          >
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView 
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  flex: 1,
+                  borderRadius: 20,
+                  overflow: 'hidden',
                 }}
+                interactive
+                effect="clear"
               >
-                <Ionicons name="search" size={18} color="white" />
-              </Pressable>
-            </>
-          )}
+                <View style={{ flex: 1, position: 'relative' }}>
+                  {/* Centered search icon (visible when collapsed) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      },
+                      searchIconAnimatedStyle
+                    ]}
+                  >
+                    <Pressable 
+                      onPress={activateSearch}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="search" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                  
+                  {/* Search bar content (visible when expanded) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingLeft: 12,
+                        paddingRight: 4,
+                      },
+                      searchContentAnimatedStyle
+                    ]}
+                  >
+                    <Ionicons name="search" size={17} color="rgba(255, 255, 255, 0.8)" />
+                    <TextInput
+                      ref={searchInputRef}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Search..."
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      style={{
+                        flex: 1,
+                        color: 'white',
+                        fontSize: 15,
+                        marginLeft: 6,
+                        paddingVertical: 0,
+                      }}
+                      returnKeyType="search"
+                    />
+                    {searchQuery.length > 0 && (
+                      <Pressable onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+                        <Ionicons name="close-circle" size={17} color="rgba(255, 255, 255, 0.6)" />
+                      </Pressable>
+                    )}
+                    <Pressable 
+                      onPress={deactivateSearch}
+                      style={{ paddingLeft: 6, paddingRight: 10, paddingVertical: 6 }}
+                    >
+                      <Ionicons name="close" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                </View>
+              </LiquidGlassView>
+            ) : (
+              <View style={{
+                flex: 1,
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                borderRadius: 20,
+              }}>
+                <View style={{ flex: 1, position: 'relative' }}>
+                  {/* Centered search icon (visible when collapsed) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      },
+                      searchIconAnimatedStyle
+                    ]}
+                  >
+                    <Pressable 
+                      onPress={activateSearch}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="search" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                  
+                  {/* Search bar content (visible when expanded) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingLeft: 12,
+                        paddingRight: 4,
+                      },
+                      searchContentAnimatedStyle
+                    ]}
+                  >
+                    <Ionicons name="search" size={17} color="rgba(255, 255, 255, 0.7)" />
+                    <TextInput
+                      ref={searchInputRef}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Search..."
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      style={{
+                        flex: 1,
+                        color: 'white',
+                        fontSize: 15,
+                        marginLeft: 6,
+                        paddingVertical: 0,
+                      }}
+                      returnKeyType="search"
+                    />
+                    {searchQuery.length > 0 && (
+                      <Pressable onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+                        <Ionicons name="close-circle" size={17} color="rgba(255, 255, 255, 0.6)" />
+                      </Pressable>
+                    )}
+                    <Pressable 
+                      onPress={deactivateSearch}
+                      style={{ paddingLeft: 6, paddingRight: 10, paddingVertical: 6 }}
+                    >
+                      <Ionicons name="close" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                </View>
+              </View>
+            )}
+          </Animated.View>
         </View>
       </View>
       {loading ? (

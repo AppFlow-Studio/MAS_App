@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, useWindowDimensions, Dimensions } from "react-native";
 import { router, Stack } from "expo-router";
 import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
@@ -19,6 +19,16 @@ import { supabase } from "@/src/lib/supabase";
 import Svg, { Circle, Path } from "react-native-svg";
 import AddSpeakerModal from "@/src/components/AdminComponents/AddSpeakerModal";
 import SelectSpeakerBottomSheet from "@/src/components/AdminComponents/SelectSpeakerBottomSheet";
+import SelectPreferencesBottomSheet, { 
+  type SelectedPreferences, 
+  DEFAULT_SELECTED_PREFERENCES 
+} from "@/src/components/AdminComponents/SelectPreferencesBottomSheet";
+import { 
+  useIslamicInterestCategories,
+  LIFE_STAGE_OPTIONS,
+  GENDER_OPTIONS,
+  KNOWLEDGE_LEVEL_OPTIONS,
+} from "@/src/hooks/useProgramTags";
 
 const AddNewEventScreen = () => {
   const [eventName, setEventName] = useState<string>("");
@@ -63,6 +73,56 @@ const AddNewEventScreen = () => {
   const layoutHeight = Dimensions.get('screen').height
   const [keyboardOffset, setKeyboardOffset] = useState(0)
   const [submitDisabled, setSubmitDisabled] = useState(true)
+  
+  // Preferences state
+  const [preferencesBottomSheetOpen, setPreferencesBottomSheetOpen] = useState(false)
+  const [selectedPreferences, setSelectedPreferences] = useState<SelectedPreferences>(DEFAULT_SELECTED_PREFERENCES)
+  
+  // Fetch islamic interests for display
+  const { data: islamicInterests } = useIslamicInterestCategories()
+  
+  // Count total preferences selected for display
+  const totalPreferencesSelected = useMemo(() => {
+    let count = 0
+    if (selectedPreferences.gender && selectedPreferences.gender !== 'all') count++
+    count += selectedPreferences.targetAudience.length
+    count += selectedPreferences.topicInterests.length
+    if (selectedPreferences.knowledgeLevel) count++
+    count += selectedPreferences.lifeStages.length
+    return count
+  }, [selectedPreferences])
+  
+  // Get display labels for selected preferences
+  const getPreferenceDisplayChips = useMemo(() => {
+    const chips: { key: string; label: string; color: string }[] = []
+    
+    if (selectedPreferences.gender && selectedPreferences.gender !== 'all') {
+      const genderLabel = GENDER_OPTIONS.find(g => g.value === selectedPreferences.gender)?.label
+      if (genderLabel) chips.push({ key: 'gender', label: genderLabel, color: 'purple' })
+    }
+    
+    if (selectedPreferences.knowledgeLevel) {
+      const levelLabel = KNOWLEDGE_LEVEL_OPTIONS.find(k => k.value === selectedPreferences.knowledgeLevel)?.label
+      if (levelLabel) chips.push({ key: 'level', label: levelLabel, color: 'green' })
+    }
+    
+    selectedPreferences.lifeStages.forEach(stage => {
+      const stageLabel = LIFE_STAGE_OPTIONS.find(s => s.value === stage)?.label
+      if (stageLabel) chips.push({ key: `stage-${stage}`, label: stageLabel, color: 'orange' })
+    })
+    
+    selectedPreferences.targetAudience.forEach(audience => {
+      chips.push({ key: `audience-${audience}`, label: audience.charAt(0).toUpperCase() + audience.slice(1), color: 'blue' })
+    })
+    
+    selectedPreferences.topicInterests.forEach(interestId => {
+      const interest = islamicInterests?.find(i => i.id === interestId)
+      if (interest) chips.push({ key: `topic-${interestId}`, label: interest.category_name, color: 'teal' })
+    })
+    
+    return chips
+  }, [selectedPreferences, islamicInterests])
+  
   const getSpeakers = async () => {
     const { data, error } = await supabase.from('speaker_data').select('speaker_id, speaker_name, speaker_img, speaker_creds')
     if (data) {
@@ -152,6 +212,7 @@ const AddNewEventScreen = () => {
 
     setSpeakerSelected([])
     sethasLectures(false)
+    setSelectedPreferences(DEFAULT_SELECTED_PREFERENCES)
 
     Toast.show({
       type: "success",
@@ -224,29 +285,104 @@ const AddNewEventScreen = () => {
       if (image) {
         const { data: event_img_url } = await supabase.storage.from('event_flyers').getPublicUrl(image?.path)
         const time = format(eventStartTime!, 'p').trim()
-        const { error } = await supabase.from('events').insert({
-          event_name: eventName,
-          event_img: event_img_url.publicUrl,
-          event_desc: eventDescription,
-          event_speaker: speakerSelected,
-          has_lecture: hasLectures,
-          event_start_date: eventStartDate,
-          event_end_date: eventEndDate,
-          is_paid: isPaid,
-          event_price: Number(EventPrice),
-          event_start_time: time,
-          event_days: eventDays,
-          is_outreach: isOutreach,
-          is_social: isSocialService,
-          is_reverts: isReverts,
-          is_fundraiser: isFundraiser,
-          is_breakfast: isBreakfast,
-          paid_link: eventPaidLink,
-          pace: isPace
-        })
+        
+        // Insert event and get the event_id
+        const { data: createdEvent, error } = await supabase
+          .from('events')
+          .insert({
+            event_name: eventName,
+            event_img: event_img_url.publicUrl,
+            event_desc: eventDescription,
+            event_speaker: speakerSelected,
+            has_lecture: hasLectures,
+            event_start_date: eventStartDate,
+            event_end_date: eventEndDate,
+            is_paid: isPaid,
+            event_price: Number(EventPrice),
+            event_start_time: time,
+            event_days: eventDays,
+            is_outreach: isOutreach,
+            is_social: isSocialService,
+            is_reverts: isReverts,
+            is_fundraiser: isFundraiser,
+            is_breakfast: isBreakfast,
+            paid_link: eventPaidLink,
+            pace: isPace
+          })
+          .select('event_id')
+          .single()
+          
         if (error) {
           console.log(error)
+          Alert.alert('Error creating event')
+          setSubmitDisabled(true)
+          return
         }
+        
+        // Save selected islamic interests to junction table
+        if (createdEvent?.event_id && selectedPreferences.topicInterests.length > 0) {
+          const interestInserts = selectedPreferences.topicInterests.map(interestId => ({
+            event_id: createdEvent.event_id,
+            interest_id: interestId
+          }))
+          
+          const { error: interestError } = await supabase
+            .from('event_islamic_interests')
+            .insert(interestInserts)
+          
+          if (interestError) {
+            console.log('Error saving event interests:', interestError)
+          }
+        }
+        
+        // Save tag assignments (audience, difficulty, life stages, gender)
+        if (createdEvent?.event_id) {
+          // Collect all tag keys to look up
+          const tagKeysToFind: string[] = []
+          
+          // Gender (e.g., 'brothers', 'sisters')
+          if (selectedPreferences.gender && selectedPreferences.gender !== 'all') {
+            tagKeysToFind.push(selectedPreferences.gender)
+          }
+          
+          // Knowledge level (e.g., 'beginner', 'intermediate', 'advanced')
+          if (selectedPreferences.knowledgeLevel) {
+            tagKeysToFind.push(selectedPreferences.knowledgeLevel)
+          }
+          
+          // Target audience (e.g., 'youth', 'families', 'reverts')
+          tagKeysToFind.push(...selectedPreferences.targetAudience)
+          
+          // Life stages (e.g., 'student_college', 'young_professional')
+          tagKeysToFind.push(...selectedPreferences.lifeStages)
+          
+          if (tagKeysToFind.length > 0) {
+            // Query program_tags to get tag IDs
+            const { data: matchingTags, error: tagsError } = await supabase
+              .from('program_tags')
+              .select('id, tag_key')
+              .in('tag_key', tagKeysToFind)
+            
+            if (matchingTags && matchingTags.length > 0 && !tagsError) {
+              const tagAssignments = matchingTags.map(tag => ({
+                event_id: createdEvent.event_id,
+                tag_id: tag.id,
+                relevance_weight: 1.0
+              }))
+              
+              const { error: assignmentError } = await supabase
+                .from('program_tag_assignments')
+                .insert(tagAssignments)
+              
+              if (assignmentError) {
+                console.log('Error saving event tag assignments:', assignmentError)
+              }
+            } else if (tagsError) {
+              console.log('Error fetching program tags:', tagsError)
+            }
+          }
+        }
+        
         handleSubmit()
         setSubmitDisabled(true)
       } else {
@@ -732,6 +868,84 @@ const AddNewEventScreen = () => {
             </View>
           </View>
 
+          {/* Target Audience & Preferences Section */}
+          <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 3
+          }}>
+            <View className="flex-row items-center justify-between mb-4">
+              <View>
+                <Text className="text-xl font-bold text-gray-900">Target Audience</Text>
+                <Text className="text-sm text-gray-500 mt-1">Define who this event is for</Text>
+              </View>
+              <View className="bg-blue-100 px-3 py-1 rounded-full">
+                <Text className="text-blue-700 font-semibold text-sm">
+                  {totalPreferencesSelected > 0 ? `${totalPreferencesSelected} selected` : 'Optional'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Select Preferences Button */}
+            <Pressable
+              onPress={() => setPreferencesBottomSheetOpen(true)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 flex-row items-center justify-between mb-4"
+            >
+              <View className="flex-1 flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center mr-3">
+                  <Icon source="account-group" size={22} color="#6077F5" />
+                </View>
+                <View>
+                  <Text className={`text-base ${totalPreferencesSelected > 0 ? 'text-blue-600 font-semibold' : 'text-gray-600'}`}>
+                    {totalPreferencesSelected === 0 ? 'Select Target Preferences' : 'Edit Preferences'}
+                  </Text>
+                  <Text className="text-sm text-gray-400">
+                    Gender, topics, level, life stage
+                  </Text>
+                </View>
+              </View>
+              <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <Path d="M7.5 15L12.5 10L7.5 5" stroke="#6077F5" strokeWidth="2" />
+              </Svg>
+            </Pressable>
+
+            {/* Display Selected Preferences as Chips */}
+            {getPreferenceDisplayChips.length > 0 && (
+              <View className="flex-row flex-wrap gap-2">
+                {getPreferenceDisplayChips.map((chip) => {
+                  const colorStyles: Record<string, { bg: string; text: string }> = {
+                    purple: { bg: 'bg-purple-100', text: 'text-purple-700' },
+                    green: { bg: 'bg-green-100', text: 'text-green-700' },
+                    orange: { bg: 'bg-orange-100', text: 'text-orange-700' },
+                    blue: { bg: 'bg-blue-100', text: 'text-blue-700' },
+                    teal: { bg: 'bg-teal-100', text: 'text-teal-700' },
+                  }
+                  const colors = colorStyles[chip.color] || colorStyles.blue
+                  return (
+                    <View 
+                      key={chip.key} 
+                      className={`${colors.bg} px-3 py-1.5 rounded-full flex-row items-center`}
+                    >
+                      <Text className={`${colors.text} text-sm font-medium`}>{chip.label}</Text>
+                    </View>
+                  )
+                })}
+              </View>
+            )}
+
+            {/* Help text when no preferences selected */}
+            {totalPreferencesSelected === 0 && (
+              <View className="bg-blue-50 rounded-xl p-4 flex-row items-start">
+                <Icon source="information-outline" size={20} color="#6077F5" />
+                <Text className="text-blue-700 text-sm flex-1 ml-3">
+                  Adding target preferences helps recommend this event to the right users based on their interests and profile.
+                </Text>
+              </View>
+            )}
+          </View>
+
           {/* Submit Button */}
           <Button
             mode="contained"
@@ -759,6 +973,12 @@ const AddNewEventScreen = () => {
           onSelectSpeaker={handleSpeakerPress}
           multiSelect={true}
           title="Select Speakers"
+        />
+        <SelectPreferencesBottomSheet
+          isOpen={preferencesBottomSheetOpen}
+          setIsOpen={setPreferencesBottomSheetOpen}
+          selectedPreferences={selectedPreferences}
+          onPreferencesChange={setSelectedPreferences}
         />
       </View>
     </>

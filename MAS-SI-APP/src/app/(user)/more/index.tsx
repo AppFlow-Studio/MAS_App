@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Share, Platform, Linking, StatusBar } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Share, Platform, Linking, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, Link } from 'expo-router';
 import {
@@ -24,13 +24,15 @@ import {
   User,
   Lock,
   Store,
-  Briefcase
+  Briefcase,
+  Camera
 } from 'lucide-react-native';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
 import { Profile } from '@/src/types';
 import SignInAnonModal from '@/src/components/SignInAnonModal';
 import { useOnboarding } from '@/src/providers/OnboardingProvider';
+import ProfilePictureBottomSheet from '@/src/components/ProfilePictureBottomSheet';
 
 // const Index = () => {
 //   const router = useRouter();
@@ -70,16 +72,30 @@ export default function MoreScreen() {
   const [visible, setVisible] = useState(false);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
   const [guestAuthModalVisible, setGuestAuthModalVisible] = useState(false);
+  const profilePictureSheetRef = useRef<{ present: () => void; dismiss: () => void }>(null);
+
+  const handleProfilePicUpdated = (newUrl: string | null) => {
+    setProfile(prev => prev ? { ...prev, profile_pic: newUrl || undefined } : prev);
+  };
 
   const getProfile = async () => {
+    if (!session?.user?.id) return;
+    
     const { data, error } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single();
     if (data) {
       setProfile(data);
-      // Check if user has completed personalization preferences
-      // If interests array is empty or null, preferences are not completed
-      const hasCompletedPreferences = data.interests && data.interests.length > 0;
-      setPreferencesCompleted(hasCompletedPreferences);
     }
+    
+    // Check if user has completed personalization preferences using new tables
+    const { data: userInterests } = await supabase
+      .from('user_islamic_interests')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .limit(1);
+    
+    // User has completed preferences if they have at least one interest selected
+    const hasCompletedPreferences = !!(userInterests && userInterests.length > 0);
+    setPreferencesCompleted(hasCompletedPreferences);
   };
 
   // const checkIfAnon = async () => {
@@ -193,14 +209,35 @@ export default function MoreScreen() {
         {/* Profile Section */}
         <View style={styles.profileSection} className='w-full flex flex-col items-center justify-center'>
           <View className='flex w-full '>
-            {/* <View style={styles.avatarContainer}>
-              <User color="#87CEEB" size={40} strokeWidth={1.5} />
-            </View> */}
-            {/* Notification badge on avatar for incomplete profile or preferences */}
+            {/* Profile Picture - Tappable to edit */}
             <View className='flex flex-row items-center justify-center relative w-fit'>
-              <View style={styles.avatarContainer} className=''>
-                <Text style={styles.avatarIcon}>👤</Text>
-              </View>
+              <TouchableOpacity 
+                onPress={() => !anonStatus && profilePictureSheetRef.current?.present()}
+                activeOpacity={anonStatus ? 1 : 0.8}
+                style={styles.avatarContainer}
+              >
+                {profile?.profile_pic ? (
+                  <Image 
+                    source={{ uri: profile.profile_pic }} 
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <User color="#ffffff" size={40} strokeWidth={1.5} />
+                )}
+              </TouchableOpacity>
+              
+              {/* Camera badge for non-anonymous users */}
+              {!anonStatus && (
+                <TouchableOpacity 
+                  onPress={() => profilePictureSheetRef.current?.present()}
+                  style={styles.cameraBadge}
+                >
+                  <Camera color="#ffffff" size={12} strokeWidth={2.5} />
+                </TouchableOpacity>
+              )}
+              
+              {/* Notification badge for incomplete profile or preferences */}
               {((isOnboardingIncomplete || !preferencesCompleted) && !anonStatus) && (
                 <View style={[
                   styles.avatarBadge,
@@ -268,85 +305,136 @@ export default function MoreScreen() {
             )}
           </View>
 
-          {/* Setup Cards - Profile & Preferences */}
-          {!anonStatus && (
-            <View className='pt-4'>
-              <View style={styles.setupCardsRow}>
-                {/* Complete Profile Card */}
-                <TouchableOpacity
-                  style={[
-                    styles.setupCard,
-                    isOnboardingIncomplete && styles.setupCardIncomplete,
-                    !isOnboardingIncomplete && styles.setupCardComplete
-                  ]}
+          {/* Setup Cards - Profile & Preferences - Only show if something is incomplete */}
+          {!anonStatus && (isOnboardingIncomplete || !preferencesCompleted) && (
+            <View style={{ paddingTop: 8, width: '100%' }}>
+              {/* Show pill-style buttons when only one item, cards when both */}
+              {isOnboardingIncomplete && preferencesCompleted ? (
+                // Single full-width button for Complete Profile with subtitle
+                <TouchableOpacity 
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'rgba(160, 170, 190, 0.55)',
+                    borderRadius: 999,
+                    paddingVertical: 14,
+                    paddingHorizontal: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    position: 'relative',
+                  }}
                   onPress={() => showOnboardingSheet()}
-                  disabled={!isOnboardingIncomplete}
                 >
-                  <View style={[
-                    styles.setupCardIcon,
-                    isOnboardingIncomplete && styles.setupCardIconIncomplete,
-                    !isOnboardingIncomplete && styles.setupCardIconComplete
-                  ]}>
-                    {isOnboardingIncomplete ? (
-                      <User color="#ffffff" size={20} strokeWidth={2} />
-                    ) : (
-                      <Target color="#ffffff" size={20} strokeWidth={2} />
-                    )}
+                  {/* Icon container */}
+                  <View style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 10,
+                  }}>
+                    <User color="#ffffff" size={14} strokeWidth={2} />
                   </View>
-                  {isOnboardingIncomplete && <View style={styles.setupCardBadge} />}
-                  <Text style={[
-                    styles.setupCardTitle,
-                    !isOnboardingIncomplete && styles.setupCardTitleComplete
-                  ]}>
-                    {isOnboardingIncomplete ? 'Complete Profile' : 'Profile Complete'}
-                  </Text>
-                  <Text style={[
-                    styles.setupCardSubtitle,
-                    !isOnboardingIncomplete && styles.setupCardSubtitleComplete
-                  ]}>
-                    {isOnboardingIncomplete ? 'Phone & details' : 'All set!'}
-                  </Text>
-                  {!isOnboardingIncomplete && (
-                    <View style={styles.checkmarkBadge}>
-                      <Target color="#fff" size={10} strokeWidth={3} />
-                    </View>
-                  )}
+                  {/* Text container */}
+                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: 'white', fontWeight: '700', fontSize: 17 }}>Complete Profile</Text>
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 13, marginLeft: 8 }}>Phone & details</Text>
+                  </View>
+                  {/* Red notification dot */}
+                  <View style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: '#EF4444',
+                  }} />
                 </TouchableOpacity>
-
-                {/* Personalize Experience Card */}
-                <TouchableOpacity
-                  style={[
-                    styles.setupCard,
-                    preferencesCompleted && styles.setupCardComplete
-                  ]}
+              ) : !isOnboardingIncomplete && !preferencesCompleted ? (
+                // Single full-width button for Personalize with subtitle
+                <TouchableOpacity 
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'rgba(160, 170, 190, 0.55)',
+                    borderRadius: 20,
+                    paddingVertical: 18,
+                    paddingHorizontal: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    position: 'relative',
+                  }}
                   onPress={() => router.push('/more/PreferencesOnboarding')}
                 >
-                  <View style={[
-                    styles.setupCardIcon,
-                    preferencesCompleted && styles.setupCardIconComplete
-                  ]}>
-                    <Sparkles color="#ffffff" size={20} strokeWidth={2} />
+                  {/* Icon container */}
+                  <View style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 14,
+                  }}>
+                    <Sparkles color="#ffffff" size={24} strokeWidth={2} />
                   </View>
-                  {!preferencesCompleted && <View style={styles.setupCardBadge} />}
-                  <Text style={[
-                    styles.setupCardTitle,
-                    preferencesCompleted && styles.setupCardTitleComplete
-                  ]}>
-                    {!preferencesCompleted ? 'Personalize' : 'Personalized'}
-                  </Text>
-                  <Text style={[
-                    styles.setupCardSubtitle,
-                    preferencesCompleted && styles.setupCardSubtitleComplete
-                  ]}>
-                    {!preferencesCompleted ? 'Interests & times' : 'Tap to edit'}
-                  </Text>
-                  {preferencesCompleted && (
-                    <View style={styles.checkmarkBadge}>
-                      <Sparkles color="#fff" size={10} strokeWidth={3} />
-                    </View>
-                  )}
+                  {/* Text container */}
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: 'white', fontWeight: '700', fontSize: 17 }}>Personalize Experience</Text>
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 14, marginTop: 3 }}>Interests & times</Text>
+                  </View>
+                  {/* Red notification dot */}
+                  <View style={{
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                    width: 12,
+                    height: 12,
+                    borderRadius: 6,
+                    backgroundColor: '#EF4444',
+                  }} />
                 </TouchableOpacity>
-              </View>
+              ) : (
+                // Both cards when both are incomplete
+                <View style={styles.setupCardsRow}>
+                  {isOnboardingIncomplete && (
+                    <TouchableOpacity
+                      style={styles.setupCard}
+                      onPress={() => showOnboardingSheet()}
+                    >
+                      <View style={styles.setupCardIcon}>
+                        <User color="#ffffff" size={20} strokeWidth={2} />
+                      </View>
+                      <View style={styles.setupCardBadge} />
+                      <Text style={styles.setupCardTitle}>
+                        Complete Profile
+                      </Text>
+                      <Text style={styles.setupCardSubtitle}>
+                        Phone & details
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {!preferencesCompleted && (
+                    <TouchableOpacity
+                      style={styles.setupCard}
+                      onPress={() => router.push('/more/PreferencesOnboarding')}
+                    >
+                      <View style={styles.setupCardIcon}>
+                        <Sparkles color="#ffffff" size={20} strokeWidth={2} />
+                      </View>
+                      <View style={styles.setupCardBadge} />
+                      <Text style={styles.setupCardTitle}>
+                        Personalize
+                      </Text>
+                      <Text style={styles.setupCardSubtitle}>
+                        Interests & times
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -484,7 +572,16 @@ export default function MoreScreen() {
           {/* EDIT PROFILE */}
           <Text style={styles.sectionLabel}>EDIT PROFILE</Text>
           <View style={styles.menuCard}>
-            <MenuButton icon={User} label="Profile Page" />
+            <MenuButton 
+              icon={User} 
+              label="Profile Page" 
+              onPress={() => router.push('/more/ProfilePage')}
+            />
+            <MenuButton 
+              icon={Sparkles} 
+              label="Personalize Preferences" 
+              onPress={() => router.push('/more/PreferencesOnboarding')} 
+            />
             <MenuButton icon={Lock} label="Username and Password" />
             <MenuButton icon={Lock} label="Change Password" />
           </View>
@@ -537,6 +634,13 @@ export default function MoreScreen() {
           setGuestAuthModalVisible(false);
           router.push('/(auth)/SignUp');
         }}
+      />
+
+      {/* Profile Picture Bottom Sheet */}
+      <ProfilePictureBottomSheet 
+        ref={profilePictureSheetRef}
+        currentProfilePic={profile?.profile_pic}
+        onProfilePicUpdated={handleProfilePicUpdated}
       />
     </LinearGradient>
   );
@@ -961,6 +1065,19 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '700',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: '35%',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#0E519F',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffffff',
   },
   signInButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

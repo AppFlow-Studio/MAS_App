@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import Animated, { FadeInUp } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Bookmark } from 'lucide-react-native'
@@ -17,7 +17,7 @@ export const NewEmptyState: React.FC<NewEmptyStateProps> = ({ onExplorePress }) 
     if (onExplorePress) {
       onExplorePress()
     } else {
-      router.push('/(user)/menu')
+      router.push('/menu/program/upcomingEvents')
     }
   }
 
@@ -106,7 +106,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     marginBottom: 8,
     textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
   },
   subtitle: {
     fontSize: 14,

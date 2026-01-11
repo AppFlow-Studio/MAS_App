@@ -1211,11 +1211,15 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                                 onChangeState={onStateChange}
                                             />
                                         ) : (
-                                            <View>
+                                            <View style={{ 
+                                                backgroundColor: '#F3F4F6',
+                                                borderRadius: 16,
+                                                overflow: 'hidden',
+                                            }}>
                                                 {!modalImageReady && (
                                                     <FlyerSkeleton 
                                                         width={width - 32} 
-                                                        height={height * 0.55} 
+                                                        height={height * 0.5} 
                                                         style={{ position: 'absolute', top: 0, zIndex: 2, borderRadius: 16 }} 
                                                     />
                                                 )}
@@ -1226,9 +1230,11 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                                     style={{
                                                         width: '100%',
                                                         height: undefined,
-                                                        aspectRatio: 0.7,
+                                                        aspectRatio: 0.75,
+                                                        minHeight: height * 0.4,
+                                                        maxHeight: height * 0.55,
                                                     }}
-                                                    resizeMode="cover"
+                                                    resizeMode="contain"
                                                     onLoad={() => setModalImageReady(true)}
                                                     onError={() => {
                                                         setHasError(true);

@@ -1115,13 +1115,14 @@ export default function UpcomingProgramWidget() {
     });
   }, []);
 
-  // Toggle sheet expansion
+  // Toggle sheet expansion with smooth rise animation
   const toggleSheetExpand = useCallback(() => {
+    // Use LayoutAnimation for content-based height changes
     LayoutAnimation.configureNext({
       duration: 350,
       update: {
         type: LayoutAnimation.Types.spring,
-        springDamping: 0.85,
+        springDamping: 0.8,
       },
       create: {
         type: LayoutAnimation.Types.easeInEaseOut,
@@ -1535,8 +1536,8 @@ export default function UpcomingProgramWidget() {
                     panY
                   )
                 }],
-                marginHorizontal: 28,
-                marginBottom: 32,
+                marginHorizontal: 12,
+                marginBottom: 12,
               }}
             >
               <View
@@ -1550,8 +1551,8 @@ export default function UpcomingProgramWidget() {
                   shadowOpacity: 0.25,
                   shadowRadius: 16,
                   elevation: 20,
-                  minHeight: isSheetExpanded ? 550 : 250,
-                  maxHeight: isSheetExpanded ? height * 0.85 : 250,
+                  minHeight: 220,
+                  maxHeight: height * 0.8,
                 }}
               >
                 {/* Drag Handle */}
@@ -1572,8 +1573,7 @@ export default function UpcomingProgramWidget() {
                 </Pressable>
 
                 <ScrollView 
-                  style={{ flex: 1 }}
-                  contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 34 }}
+                  contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
                   showsVerticalScrollIndicator={false}
                   scrollEnabled={isSheetExpanded}
                 >
@@ -1667,16 +1667,16 @@ export default function UpcomingProgramWidget() {
                       onPress={toggleSheetExpand}
                       style={{
                         backgroundColor: '#224F92',
-                        borderRadius: 12,
-                        paddingVertical: 12,
+                        borderRadius: 14,
+                        paddingVertical: 16,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        marginTop: 12,
+                        marginTop: 24,
                       }}
                     >
                       <Text style={{
-                        fontSize: 14,
-                        fontWeight: '600',
+                        fontSize: 16,
+                        fontWeight: '700',
                         color: '#FFFFFF',
                       }}>
                         View Full Details
@@ -1705,67 +1705,6 @@ export default function UpcomingProgramWidget() {
                           }}>
                             {upcomingItem.description}
                           </Text>
-                        </View>
-                      )}
-
-                      {/* Speaker Section */}
-                      {modalSpeakerData && modalSpeakerData.length > 0 && (
-                        <View style={{
-                          marginTop: 20,
-                          backgroundColor: '#F9FAFB',
-                          borderRadius: 16,
-                          padding: 16,
-                        }}>
-                          <Text style={{
-                            fontSize: 15,
-                            fontWeight: '600',
-                            color: '#111827',
-                            marginBottom: 12,
-                          }}>
-                            Speaker
-                          </Text>
-                          {modalSpeakerData.map((speaker, index) => (
-                            <View key={index} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                              <View style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: 24,
-                                backgroundColor: '#224F92',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                overflow: 'hidden',
-                              }}>
-                                {speaker.speaker_img ? (
-                                  <Image 
-                                    source={{ uri: speaker.speaker_img }} 
-                                    style={{ width: '100%', height: '100%' }}
-                                    resizeMode="cover"
-                                  />
-                                ) : (
-                                  <Icon source="account" size={24} color="#FFFFFF" />
-                                )}
-                              </View>
-                              <View style={{ flex: 1, marginLeft: 12 }}>
-                                <Text style={{
-                                  fontSize: 14,
-                                  fontWeight: '600',
-                                  color: '#111827',
-                                }}>
-                                  {speaker.speaker_name}
-                                </Text>
-                                {speaker.speaker_creds && speaker.speaker_creds.length > 0 && (
-                                  <Text style={{
-                                    fontSize: 12,
-                                    color: '#224F92',
-                                    fontWeight: '500',
-                                    marginTop: 2,
-                                  }}>
-                                    {speaker.speaker_creds[0]}
-                                  </Text>
-                                )}
-                              </View>
-                            </View>
-                          ))}
                         </View>
                       )}
 

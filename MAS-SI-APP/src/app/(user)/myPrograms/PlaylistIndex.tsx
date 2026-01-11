@@ -277,7 +277,7 @@ const PlaylistIndex = () => {
         {/* Featured Playlists Grid */}
         <View style={styles.grid}>
           <FeaturedCard 
-            title="Quran"
+            title=""
             subtitle="Recitations"
             icon={BookOpen}
             iconColor="#fff"

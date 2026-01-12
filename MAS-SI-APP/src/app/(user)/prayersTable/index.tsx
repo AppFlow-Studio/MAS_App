@@ -128,36 +128,17 @@ export default function Index() {
   const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2, FirstTaraweehTime.getMinutes() + 20)
   return (
     <LinearGradient
-      colors={['#1d4681', '#3183bf']}
+      colors={['#e8f4fc', '#f5fafd']}
       style={{ flex: 1 }}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
     >
-      <StatusBar barStyle={"light-content"} />
+      <StatusBar barStyle={"dark-content"} />
       
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 150 }} bounces={false}>
-        {/* Header with Logo */}
-        <View style={{ position: 'relative' }}>
-          <View
-            style={{ paddingTop: 5, paddingBottom: 100, alignItems: 'center' }}
-          >
-            <Text style={{ color: 'white', fontSize: 24, fontWeight: '700' }}>Prayer Times</Text>
-          </View>
-          <Image
-            source={require("@/assets/images/LogoClear.png")}
-            style={{ 
-            width: 150, 
-            height: 150,
-              opacity: 0.3,
-              position: 'absolute',
-              bottom: -35,
-              alignSelf: 'center',
-              left: '50%',
-              marginLeft: -75,
-              zIndex: 100,
-            }}
-            resizeMode="contain"
-          />
+        {/* Header */}
+        <View style={{ paddingTop: 10, paddingBottom: 8, alignItems: 'center' }}>
+          <Text style={{ color: '#1d4681', fontSize: 24, fontWeight: '700' }}>Prayer Times</Text>
         </View>
 
         <View style={{ flex: 1 }}

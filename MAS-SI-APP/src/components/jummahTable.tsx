@@ -76,9 +76,10 @@ interface JummahCardProps {
   card: JummahCardData;
   index: number;
   onPress: () => void;
+  speakerName?: string;
 }
 
-const JummahCard = ({ card, index, onPress }: JummahCardProps) => {
+const JummahCard = ({ card, index, onPress, speakerName }: JummahCardProps) => {
   const scale = useSharedValue(1);
   
   const animatedStyle = useAnimatedStyle(() => ({
@@ -120,6 +121,12 @@ const JummahCard = ({ card, index, onPress }: JummahCardProps) => {
         <View style={styles.cardContent}>
           <Text style={styles.timeText}>{card.time}</Text>
           <Text style={styles.labelText}>{card.label}</Text>
+          {speakerName && (
+            <View style={styles.speakerContainer}>
+              <Icon source="account" size={12} color={COLORS.gold} />
+              <Text style={styles.speakerText}>{speakerName}</Text>
+            </View>
+          )}
           {card.subtitle && (
             <Text style={styles.subtitleText}>{card.subtitle}</Text>
           )}
@@ -222,6 +229,7 @@ export const JummahTable = forwardRef<Ref, {}>((_, ref) => {
                 card={card}
                 index={index}
                 onPress={() => handlePresentModalPress(index)}
+                speakerName={speakerInfo[index]?.speaker_name}
               />
             ))}
           </View>
@@ -342,6 +350,17 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 2,
     fontStyle: 'italic',
+  },
+  speakerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
+  speakerText: {
+    fontSize: 12,
+    color: COLORS.gold,
+    fontWeight: '500',
   },
   arrowContainer: {
     width: 32,

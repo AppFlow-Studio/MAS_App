@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     marginBottom: 8,
     textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
   },
   subtitle: {
     fontSize: 14,

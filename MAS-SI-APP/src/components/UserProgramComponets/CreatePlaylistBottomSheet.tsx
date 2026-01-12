@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image, Alert, Modal, Animated, Dimensions, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { View, Text, Pressable, Image, Alert, Modal, Animated, Dimensions, Platform, ScrollView, Keyboard } from 'react-native'
 import React, { forwardRef, useImperativeHandle, useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
@@ -7,7 +7,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Icon, TextInput } from 'react-native-paper';
 import { decode } from 'base64-arraybuffer';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Camera, Image as ImageIcon, Check, X, Sparkles } from 'lucide-react-native';
+import { Camera, Image as ImageIcon, Check, X } from 'lucide-react-native';
 
 const { height, width } = Dimensions.get('window')
 
@@ -28,6 +28,7 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
     
     const slideAnim = useRef(new Animated.Value(height)).current
     const fadeAnim = useRef(new Animated.Value(0)).current
+    const keyboardOffset = useRef(new Animated.Value(0)).current
 
     // Darker, richer color palette
     const colors = [
@@ -76,6 +77,35 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
             fadeAnim.setValue(0)
         }
     }, [visible])
+
+    // Keyboard handling
+    useEffect(() => {
+        const keyboardWillShow = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            (e) => {
+                Animated.timing(keyboardOffset, {
+                    toValue: -e.endCoordinates.height * 0.4,
+                    duration: 250,
+                    useNativeDriver: true,
+                }).start()
+            }
+        )
+        const keyboardWillHide = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => {
+                Animated.timing(keyboardOffset, {
+                    toValue: 0,
+                    duration: 250,
+                    useNativeDriver: true,
+                }).start()
+            }
+        )
+
+        return () => {
+            keyboardWillShow.remove()
+            keyboardWillHide.remove()
+        }
+    }, [])
 
     const handleClose = () => {
         Animated.parallel([
@@ -143,7 +173,7 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
     }
 
     useEffect(() => {
-        if (playlistName && playlistName.length >= 4) {
+        if (playlistName && playlistName.trim().length > 0) {
             setIsReady(true)
         } else {
             setIsReady(false)
@@ -162,104 +192,97 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
             statusBarTranslucent
             onRequestClose={handleClose}
         >
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
+            <Animated.View
+                style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    justifyContent: 'flex-end',
+                    opacity: fadeAnim
+                }}
             >
+                <Pressable
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                    onPress={handleClose}
+                />
+
                 <Animated.View
                     style={{
-                        flex: 1,
-                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                        justifyContent: 'flex-end',
-                        opacity: fadeAnim
+                        backgroundColor: '#ffffff',
+                        borderTopLeftRadius: 28,
+                        borderTopRightRadius: 28,
+                        maxHeight: height * 0.85,
+                        transform: [
+                            { translateY: slideAnim },
+                            { translateY: keyboardOffset }
+                        ],
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: -10 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 25,
+                        elevation: 25,
                     }}
                 >
-                    <Pressable
-                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                        onPress={handleClose}
-                    />
-
-                    <Animated.View
-                        style={{
-                            backgroundColor: '#ffffff',
-                            borderTopLeftRadius: 28,
-                            borderTopRightRadius: 28,
-                            maxHeight: height * 0.88,
-                            transform: [{ translateY: slideAnim }],
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: -10 },
-                            shadowOpacity: 0.3,
-                            shadowRadius: 25,
-                            elevation: 25,
-                        }}
-                    >
                         {/* Handle */}
-                        <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 6 }}>
+                        <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 8 }}>
                             <View style={{
-                                width: 44,
-                                height: 5,
-                                backgroundColor: '#d1d5db',
-                                borderRadius: 3,
+                                width: 36,
+                                height: 4,
+                                backgroundColor: '#e5e7eb',
+                                borderRadius: 2,
                             }} />
                         </View>
 
                         {/* Header */}
                         <View style={{ 
                             flexDirection: 'row', 
-                            justifyContent: 'space-between', 
                             alignItems: 'center', 
                             paddingHorizontal: 20, 
-                            paddingBottom: 16,
-                            paddingTop: 8
+                            paddingBottom: 20,
+                            paddingTop: 4,
+                            borderBottomWidth: 1,
+                            borderBottomColor: '#f1f5f9',
                         }}>
+                            {/* Cancel */}
                             <Pressable 
                                 onPress={handleClose}
-                                style={({ pressed }) => ({
-                                    padding: 8,
-                                    borderRadius: 20,
-                                    backgroundColor: pressed ? '#f3f4f6' : 'transparent',
-                                })}
+                                hitSlop={8}
                             >
-                                <X color="#6b7280" size={24} />
+                                <Text style={{ fontSize: 16, color: '#6b7280' }}>
+                                    Cancel
+                                </Text>
                             </Pressable>
                             
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Sparkles color="#0E519F" size={18} />
-                                <Text style={{ fontSize: 18, fontWeight: '700', color: '#1f2937' }}>
+                            {/* Title - centered */}
+                            <View style={{ flex: 1, alignItems: 'center' }}>
+                                <Text style={{ fontSize: 17, fontWeight: '600', color: '#1f2937' }}>
                                     New Playlist
                                 </Text>
                             </View>
-                            
-                            <Pressable 
-                                onPress={async () => {
-                                    if (playlistName.length < 4) {
-                                        Alert.alert('Name Required', 'Playlist name should be at least 4 characters')
+
+                            {/* Create Button */}
+                            <Pressable
+                                onPress={() => {
+                                    if (playlistName.trim().length === 0) {
+                                        Alert.alert('Name Required', 'Please enter a playlist name')
                                     } else {
-                                        await uploadImage()
+                                        uploadImage()
                                     }
                                 }}
-                                disabled={!isReady || isLoading}
-                                style={({ pressed }) => ({
-                                    paddingVertical: 10,
-                                    paddingHorizontal: 18,
-                                    borderRadius: 20,
-                                    backgroundColor: isReady && !isLoading 
-                                        ? (pressed ? '#0a4080' : '#0E519F')
-                                        : '#e5e7eb',
-                                })}
+                                disabled={isLoading}
+                                hitSlop={8}
                             >
-                                <Text style={{ 
-                                    fontSize: 15, 
-                                    fontWeight: '600', 
-                                    color: isReady && !isLoading ? '#ffffff' : '#9ca3af' 
+                                <Text style={{
+                                    fontSize: 16,
+                                    fontWeight: '600',
+                                    color: '#007AFF',
                                 }}>
-                                    {isLoading ? 'Creating...' : 'Create'}
+                                    {isLoading ? '...' : 'Create'}
                                 </Text>
                             </Pressable>
                         </View>
 
                         <ScrollView 
-                            contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 50 : 30 }}
+                            contentContainerStyle={{ paddingBottom: 40 }}
                             showsVerticalScrollIndicator={false}
                             keyboardShouldPersistTaps="handled"
                         >
@@ -397,18 +420,6 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
                                     contentStyle={{ paddingVertical: 16 }}
                                 />
                             </View>
-                            
-                            {playlistName.length > 0 && playlistName.length < 4 && (
-                                <Text style={{ 
-                                    color: '#ef4444', 
-                                    fontSize: 12, 
-                                    marginTop: 8, 
-                                    marginLeft: 28,
-                                    fontWeight: '500'
-                                }}>
-                                    Name must be at least 4 characters
-                                </Text>
-                            )}
 
                             {/* Color Selection Section */}
                             <View style={{ marginTop: 32, paddingHorizontal: 24 }}>
@@ -465,8 +476,7 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
 
                         </ScrollView>
                     </Animated.View>
-                </Animated.View>
-            </KeyboardAvoidingView>
+            </Animated.View>
         </Modal>
     )
 })

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Dimensions, Modal, KeyboardAvoidingView, Platform, Image, TextInput } from 'react-native'
+import { View, Text, ScrollView, Pressable, Dimensions, Modal, KeyboardAvoidingView, Platform, Image, TextInput, Alert } from 'react-native'
 import React, { forwardRef, useState, useImperativeHandle, useEffect, useRef } from 'react'
 import { Icon, TextInput as PaperTextInput, ActivityIndicator } from 'react-native-paper'
 import { supabase } from '@/src/lib/supabase'
@@ -266,12 +266,11 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
           }
           
           const updateData: any = {
-            onboarding_completed: true,
             phone_number: phoneNumber.trim(),
           }
 
           if (profileImageUrl) {
-            updateData.profile_image = profileImageUrl
+            updateData.profile_pic = profileImageUrl
           }
 
           const { error } = await supabase
@@ -280,9 +279,12 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
             .eq('id', user.id)
 
           if (error) {
-            console.error('Error saving onboarding data:', error)
+            console.error('Error saving profile data:', error)
+            Alert.alert('Error', 'Failed to save profile. Please try again.')
+            return
           }
           
+          console.log('Profile saved successfully:', updateData)
           onComplete?.()
           slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
           backdropOpacity.value = withTiming(0, { duration: 300 }, () => {

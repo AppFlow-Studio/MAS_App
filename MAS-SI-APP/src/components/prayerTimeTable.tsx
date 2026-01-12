@@ -95,84 +95,66 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
   }
 
   const icons = [
-    <FajrIcon color="white" size={20} />, 
-    <DhuhrIcon color="white" size={20} />, 
-    <AsrIcon color="white" size={20} />, 
-    <MaghribIcon color="white" size={20} />, 
-    <IshaIcon color="white" size={20} />
+    <FajrIcon color="#1d4681" size={20} />, 
+    <DhuhrIcon color="#1d4681" size={20} />, 
+    <AsrIcon color="#1d4681" size={20} />, 
+    <MaghribIcon color="#1d4681" size={20} />, 
+    <IshaIcon color="#1d4681" size={20} />
   ]
   return (
     <>
-    <View style={{ width: width }} className='items-center pt-8 pb-2' >
+    <View style={{ width: width }} className='items-center pt-2 pb-0' >
       <View className='items-center justify-center  w-[95%]' >
         {/* Date Selector - Premium Design */}
         <View className='flex-row justify-between items-center px-3 py-2 rounded-2xl h-[70] w-[85%]'
           style={[{ 
-            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+            backgroundColor: 'rgba(29, 70, 129, 0.08)',
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-            shadowColor: '#000',
+            borderColor: 'rgba(29, 70, 129, 0.15)',
+            shadowColor: '#1d4681',
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.15,
+            shadowOpacity: 0.1,
             shadowRadius: 8,
             elevation: 5,
           },
           Platform.OS == 'android' ? {
             borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.15)',
+            borderColor: 'rgba(29, 70, 129, 0.15)',
           } : {}
           ]}>
           <Pressable 
             onPress={backPress}
             style={{ padding: 8 }}
           >
-            <Icon source="chevron-left" size={26} color='white' />
+            <Icon source="chevron-left" size={26} color='#1d4681' />
           </Pressable>
           <View className='flex-col items-center justify-center'>
-            <Text style={{ color: 'white', fontWeight: '700', fontSize: 17, letterSpacing: 0.3 }}>{prayerData.date}</Text>
+            <Text style={{ color: '#1d4681', fontWeight: '700', fontSize: 17, letterSpacing: 0.3 }}>{prayerData.date}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
               <View style={{ 
                 width: 6, 
                 height: 6, 
                 borderRadius: 3, 
-                backgroundColor: '#6EE7B7',
+                backgroundColor: '#10b981',
                 marginRight: 6,
               }} />
-              <Text style={{ color: '#6EE7B7', fontWeight: '500', fontSize: 13 }}>{prayerData.hijri_month} {prayerData.hijri_date}</Text>
+              <Text style={{ color: '#10b981', fontWeight: '500', fontSize: 13 }}>{prayerData.hijri_month} {prayerData.hijri_date}</Text>
             </View>
           </View>
           <Pressable 
             onPress={nextPress}
             style={{ padding: 8 }}
           >
-            <Icon source="chevron-right" size={26} color='white' />
+            <Icon source="chevron-right" size={26} color='#1d4681' />
           </Pressable>
         </View>
 
-        {/* Table Header - Aligned with Date Selector */}
-        <View className='rounded-xl w-[85%]' style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          marginTop: 12,
-          marginBottom: 8,
-          flexDirection: 'row',
-          alignItems: 'center',
-          height: 32,
-          paddingHorizontal: 16,
-          borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.2)',
-        }}>
-          <View style={{ width: '35%', paddingLeft: 10 }}><Text style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase' }}>Prayer</Text></View>
-          <View style={{ width: '28%', alignItems: 'center' }}><Text style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase' }}>Athan</Text></View>
-          <View style={{ width: '33%', alignItems: 'flex-end' }}><Text style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase' }}>Iqamah</Text></View>
-          <View style={{ width: '15%' }} />
-        </View>
-
-        <View className='mt-1 w-[100%]'>
+        <View className='mt-3 w-[100%]'>
           <View style={
             [{ width: '100%' },
             Platform.OS == 'android' ? {
               borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderColor: 'rgba(29, 70, 129, 0.1)',
             } : {}
 
             ]} className='flex-col px-2'>
@@ -181,28 +163,30 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((salah, prayerIndex) => {
                   const prayerSetting = userSettings?.filter(setting => setting.prayer == salah.toLowerCase())
                   const isCurrentPrayer = currentPrayer == salah && index == 0;
+                  const isFajr = prayerIndex === 0;
                   return (
                     <React.Fragment key={prayerIndex}>
                       <View style={{
-                        backgroundColor: isCurrentPrayer ? 'rgba(110, 231, 183, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.12)' : 'rgba(29, 70, 129, 0.06)',
                         borderWidth: isCurrentPrayer ? 1.5 : 1,
-                        borderColor: isCurrentPrayer ? 'rgba(110, 231, 183, 0.5)' : 'rgba(255, 255, 255, 0.15)',
+                        borderColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.4)' : 'rgba(29, 70, 129, 0.12)',
                         borderRadius: 16,
                         marginBottom: 8,
-                        shadowColor: isCurrentPrayer ? '#6EE7B7' : '#000',
+                        shadowColor: isCurrentPrayer ? '#10b981' : '#1d4681',
                         shadowOffset: { width: 0, height: isCurrentPrayer ? 4 : 2 },
-                        shadowOpacity: isCurrentPrayer ? 0.3 : 0.1,
+                        shadowOpacity: isCurrentPrayer ? 0.2 : 0.08,
                         shadowRadius: isCurrentPrayer ? 8 : 4,
                         elevation: isCurrentPrayer ? 8 : 3,
                         flexDirection: 'row',
                         alignItems: 'center',
-                        height: 68,
+                        height: isFajr ? 78 : 68,
                         paddingHorizontal: 16,
                       }}>
                         <View style={{ flex: 1.4, justifyContent: 'center' }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -2, left: 36 }}>Prayer</Text>}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: isFajr ? 14 : 0 }}>
                             <View style={{
-                              backgroundColor: isCurrentPrayer ? 'rgba(110, 231, 183, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                              backgroundColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.15)' : 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 6,
                               marginRight: 10,
@@ -210,37 +194,41 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                               {icons[prayerIndex]}
                             </View>
                             <Text style={{ 
-                              color: isCurrentPrayer ? '#6EE7B7' : 'white', 
+                              color: isCurrentPrayer ? '#10b981' : '#1d4681', 
                               fontWeight: '600', 
                               fontSize: 15,
                             }}>{salah}</Text>
                           </View>
                         </View>
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Athan</Text>}
                           <Text style={{ 
-                            color: "rgba(255,255,255,0.8)", 
+                            color: "rgba(29,70,129,0.7)", 
                             fontSize: 15,
                             fontWeight: '500',
-                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text>
+                            marginTop: isFajr ? 14 : 0,
+                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]}</Text>
                         </View>
-                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Iqamah</Text>}
                           <Text style={{ 
-                            color: '#6EE7B7', 
+                            color: '#10b981', 
                             fontWeight: '700',
                             fontSize: 15,
-                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text>
+                            marginTop: isFajr ? 14 : 0,
+                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]}</Text>
                         </View>
                         <View style={{ width: 44, justifyContent: 'center', alignItems: 'center' }}>
                           <Pressable 
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: isCurrentPrayer ? 'rgba(255, 217, 61, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                              backgroundColor: isCurrentPrayer ? 'rgba(128, 128, 128, 0.15)' : 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source="bell-outline" size={20} color={isCurrentPrayer ? "#FFD93D" : "rgba(255,255,255,0.6)"} />
+                            <Icon source="bell-outline" size={20} color={isCurrentPrayer ? "#facc15" : "rgba(29,70,129,0.5)"} />
                           </Pressable>
                         </View>
                       </View>
@@ -249,62 +237,68 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 })
                 :
                 ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((salah, prayerIndex) => {
+                  const isFajr = prayerIndex === 0;
                   return (
                     <React.Fragment key={prayerIndex}>
                       <View style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'rgba(29, 70, 129, 0.06)',
                         borderWidth: 1,
-                        borderColor: 'rgba(255, 255, 255, 0.15)',
+                        borderColor: 'rgba(29, 70, 129, 0.12)',
                         borderRadius: 16,
                         marginBottom: 8,
-                        shadowColor: '#000',
+                        shadowColor: '#1d4681',
                         shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
+                        shadowOpacity: 0.08,
                         shadowRadius: 4,
                         elevation: 3,
                         flexDirection: 'row',
                         alignItems: 'center',
-                        height: 68,
+                        height: isFajr ? 78 : 68,
                         paddingHorizontal: 16,
                       }}>
                         <View style={{ flex: 1.4, justifyContent: 'center' }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -2, left: 36 }}>Prayer</Text>}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: isFajr ? 14 : 0 }}>
                             <View style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              backgroundColor: 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 6,
                               marginRight: 10,
                             }}>
                               {icons[prayerIndex]}
                             </View>
-                            <Text style={{ color: 'white', fontWeight: '600', fontSize: 15 }}>{salah}</Text>
+                            <Text style={{ color: '#1d4681', fontWeight: '600', fontSize: 15 }}>{salah}</Text>
                           </View>
                         </View>
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Athan</Text>}
                           <Text style={{ 
-                            color: "rgba(255,255,255,0.8)", 
+                            color: "rgba(29,70,129,0.7)", 
                             fontSize: 15,
                             fontWeight: '500',
-                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text>
+                            marginTop: isFajr ? 14 : 0,
+                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]}</Text>
                         </View>
-                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'flex-end' }}>
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Iqamah</Text>}
                           <Text style={{ 
-                            color: '#6EE7B7', 
+                            color: '#10b981', 
                             fontWeight: '700',
                             fontSize: 15,
-                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]}</Text>
+                            marginTop: isFajr ? 14 : 0,
+                          }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`iqa_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]}</Text>
                         </View>
                         <View style={{ width: 44, justifyContent: 'center', alignItems: 'center' }}>
                           <Pressable 
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                              backgroundColor: 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source="bell-outline" size={20} color="rgba(255,255,255,0.6)" />
+                            <Icon source="bell-outline" size={20} color="rgba(29,70,129,0.5)" />
                           </Pressable>
                         </View>
                       </View>
@@ -314,37 +308,10 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
             }
 
             <Link href={'/myPrograms/notifications'} asChild>
-              <Pressable className='flex flex-row items-center justify-center space-x-2 py-4 px-6 rounded-2xl mt-4 mb-2'
-                style={{
-                  backgroundColor: 'rgba(110, 231, 183, 0.15)',
-                  borderWidth: 1.5,
-                  borderColor: 'rgba(110, 231, 183, 0.4)',
-                  shadowColor: '#6EE7B7',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 8,
-                  elevation: 4,
-                }}
-
-              >
-                <View style={{
-                  backgroundColor: 'rgba(110, 231, 183, 0.25)',
-                  borderRadius: 8,
-                  padding: 6,
-                  marginRight: 8,
-                }}>
-                  <Icon
-                    source="bell-ring-outline"
-                    color="#6EE7B7"
-                    size={18}
-                  />
-                </View>
-                <Text style={{ color: '#6EE7B7', fontSize: 14, fontWeight: '600', letterSpacing: 0.3 }}>Customize Salah Notifications</Text>
-                <Icon
-                  source="chevron-right"
-                  color="rgba(110, 231, 183, 0.7)"
-                  size={20}
-                />
+              <Pressable style={{ paddingVertical: 6, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                <Text style={{ color: '#10b981', fontSize: 14, fontWeight: '600', textDecorationLine: 'underline' }}>
+                  Customize Salah Notifications
+                </Text>
               </Pressable>
             </Link>
 
@@ -528,8 +495,8 @@ export default Table
 }
 
 {/* <AlertBell salah={salah} 
-athan={prayerData[`athan_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]} 
-iqamah={prayerData[`iqa_${ salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}`]} 
+athan={prayerData[`athan_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]} 
+iqamah={prayerData[`iqa_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]} 
 nextPrayerAthan={ salah == 'Fajr' ? prayerData.athan_zuhr : salah == 'Dhuhr' ? prayerData.athan_asr : salah == 'Asr' ? prayerData.athan_maghrib : salah == 'Maghrib' ? prayerData.athan_isha  : prayerData.athan_fajr }
 salahSettings={prayerSetting ? prayerSetting[0] : undefined}
 /> */}

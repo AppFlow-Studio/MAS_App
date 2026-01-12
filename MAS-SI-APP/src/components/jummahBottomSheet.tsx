@@ -166,11 +166,6 @@ export const JummahBottomSheet = forwardRef<JummahBottomSheetRef, JummahBottomSh
                 </View>
               </View>
 
-              {/* Footer */}
-              <View style={styles.footer}>
-                <Icon source="mosque" size={16} color={COLORS.gray} />
-                <Text style={styles.footerText}>MAS Staten Island</Text>
-              </View>
             </ScrollView>
             </Animated.View>
           </GestureDetector>
@@ -187,14 +182,18 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 12,
+    left: 12,
+    right: 12,
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: SCREEN_HEIGHT * 0.75,
+    borderRadius: 32,
+    maxHeight: SCREEN_HEIGHT * 0.7,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 20,
   },
   handleContainer: {
     alignItems: 'center',
@@ -210,8 +209,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 14,
     paddingBottom: 24,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
   },
   headerContent: {
     gap: 8,
@@ -278,6 +277,7 @@ const styles = StyleSheet.create({
   speakerNamePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 8,
     backgroundColor: COLORS.white,
     paddingVertical: 8,
@@ -306,16 +306,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#374151',
     lineHeight: 24,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 20,
-  },
-  footerText: {
-    fontSize: 12,
-    color: COLORS.gray,
   },
 });

@@ -68,7 +68,11 @@ const PlaylistIndex = () => {
     gradientColors, 
     href,
     delay = 0,
-    backgroundImage
+    backgroundImage,
+    titleColor = '#fff',
+    subtitleColor = 'rgba(255,255,255,0.8)',
+    playButtonColor = '#fff',
+    playButtonBgColor = 'rgba(255,255,255,0.25)'
   }: { 
     title: string
     subtitle: string
@@ -78,6 +82,10 @@ const PlaylistIndex = () => {
     href: string
     delay?: number
     backgroundImage?: any
+    titleColor?: string
+    subtitleColor?: string
+    playButtonColor?: string
+    playButtonBgColor?: string
   }) => (
     <Animated.View 
       entering={FadeInDown.delay(delay).springify()}
@@ -100,11 +108,11 @@ const PlaylistIndex = () => {
                     <IconComponent color={iconColor} size={32} strokeWidth={1.5} />
                   </View>
                   <View style={styles.featuredCardContent}>
-                    <Text style={styles.featuredCardTitle}>{title}</Text>
-                    <Text style={styles.featuredCardSubtitle}>{subtitle}</Text>
+                    <Text style={[styles.featuredCardTitle, { color: titleColor }]}>{title}</Text>
+                    <Text style={[styles.featuredCardSubtitle, { color: subtitleColor }]}>{subtitle}</Text>
                   </View>
-                  <View style={styles.playButton}>
-                    <Play color="#fff" size={16} fill="#fff" />
+                  <View style={[styles.playButton, { backgroundColor: playButtonBgColor }]}>
+                    <Play color={playButtonColor} size={16} fill={playButtonColor} />
                   </View>
                 </View>
               ) : (
@@ -118,11 +126,11 @@ const PlaylistIndex = () => {
                     <IconComponent color={iconColor} size={32} strokeWidth={1.5} />
                   </View>
                   <View style={styles.featuredCardContent}>
-                    <Text style={styles.featuredCardTitle}>{title}</Text>
-                    <Text style={styles.featuredCardSubtitle}>{subtitle}</Text>
+                    <Text style={[styles.featuredCardTitle, { color: titleColor }]}>{title}</Text>
+                    <Text style={[styles.featuredCardSubtitle, { color: subtitleColor }]}>{subtitle}</Text>
                   </View>
-                  <View style={styles.playButton}>
-                    <Play color="#fff" size={16} fill="#fff" />
+                  <View style={[styles.playButton, { backgroundColor: playButtonBgColor }]}>
+                    <Play color={playButtonColor} size={16} fill={playButtonColor} />
                   </View>
                 </LinearGradient>
               )}
@@ -269,7 +277,7 @@ const PlaylistIndex = () => {
         {/* Featured Playlists Grid */}
         <View style={styles.grid}>
           <FeaturedCard 
-            title="Quran"
+            title=""
             subtitle="Recitations"
             icon={BookOpen}
             iconColor="#fff"
@@ -277,6 +285,10 @@ const PlaylistIndex = () => {
             href="/myPrograms/playlists/QuranPlaylist"
             delay={300}
             backgroundImage={require('@/assets/images/Sheikh.png')}
+            titleColor="#064AA3"
+            subtitleColor="#064AA3"
+            playButtonColor="#fff"
+            playButtonBgColor="#064AA3"
           />
           <FeaturedCard 
             title="Athkar"
@@ -465,7 +477,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   featuredCardTitle: {
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: '700',
     color: '#fff',
   },

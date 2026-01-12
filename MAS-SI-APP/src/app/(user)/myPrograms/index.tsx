@@ -256,7 +256,7 @@ async function signUpWithEmail() {
 
       {/* Header */}
       <View style={{ 
-        paddingTop: Platform.OS === 'ios' ? 50 : 30, 
+        paddingTop: Platform.OS === 'ios' ? 30 : 30, 
         paddingBottom: 8,
         paddingHorizontal: 18,
         backgroundColor: '#F8F9FA',

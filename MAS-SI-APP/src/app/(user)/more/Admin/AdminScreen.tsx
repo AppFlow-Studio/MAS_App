@@ -59,6 +59,11 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
     title: 'Ramdan Quran Tracker', screens : [
       { buttonTitle : 'Update Information', link : '/more/Admin/RamadanQuranTracker'}
     ]
+  },
+  {
+    title: 'Preferences & Tags', screens : [
+      { buttonTitle : 'Manage Tags, Interests & Goals', link : '/more/Admin/ManagePreferencesScreen'}
+    ]
   }
 ]
 // Dropdown Component

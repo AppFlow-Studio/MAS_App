@@ -116,70 +116,63 @@ const AthkarPlaylist = () => {
     speaker: { speaker_id: string, speaker_name: string, speaker_img: string }[]
   }) => (
     <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-      <View style={styles.videoItemWrapper}>
-        <Link 
-          href={{
-            pathname: '/myPrograms/athkar/AthkarVideo',
-            params: {
-              youtube_id: vid.youtube_id,
-              quran_id: vid.id,
-              surah: vid.surah,
-              speaker_name: speaker[0]?.speaker_name,
-              speaker_img: speaker[0]?.speaker_img,
-              speaker_id: speaker[0]?.speaker_id
-            }
-          }} 
-          asChild
-        >
-          <Pressable style={{ flex: 1 }}>
-            {({ pressed }) => (
-              <View style={[styles.videoItemFallback, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
-                <View style={styles.videoItemContent}>
-                  <View style={styles.indexBadgeFallback}>
-                    <Text style={styles.indexTextFallback}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.videoInfo}>
-                    <Text style={styles.surahTitleFallback} numberOfLines={1}>{vid.surah}</Text>
-                    <View style={styles.reciterRow}>
-                      {speaker[0]?.speaker_img ? (
-                        <Image source={{ uri: speaker[0].speaker_img }} style={styles.reciterAvatar} />
-                      ) : (
-                        <View style={styles.reciterAvatarPlaceholder}>
-                          <User color="#888" size={12} />
-                        </View>
-                      )}
-                      <Text style={styles.reciterNameFallback} numberOfLines={1}>{speaker[0]?.speaker_name || 'Unknown Speaker'}</Text>
-                    </View>
-                  </View>
+      <Link 
+        href={{
+          pathname: '/myPrograms/athkar/AthkarVideo',
+          params: {
+            youtube_id: vid.youtube_id,
+            quran_id: vid.id,
+            surah: vid.surah,
+            speaker_name: speaker[0]?.speaker_name,
+            speaker_img: speaker[0]?.speaker_img,
+            speaker_id: speaker[0]?.speaker_id
+          }
+        }} 
+        asChild
+      >
+        <Pressable style={styles.trackItem}>
+          <View style={styles.trackNumberContainer}>
+            <Text style={styles.trackNumber}>{index + 1}</Text>
+          </View>
+          <View style={styles.trackInfo}>
+            <Text style={styles.trackTitle} numberOfLines={1}>{vid.surah}</Text>
+            <View style={styles.reciterRow}>
+              {speaker[0]?.speaker_img ? (
+                <Image source={{ uri: speaker[0].speaker_img }} style={styles.reciterAvatar} />
+              ) : (
+                <View style={styles.reciterAvatarPlaceholder}>
+                  <User color="#888" size={12} />
                 </View>
-              </View>
-            )}
-          </Pressable>
-        </Link>
-        <View style={styles.menuContainer}>
-          <Menu>
-            <MenuTrigger>
-              <MoreVertical color="#888" size={20} />
-            </MenuTrigger>
-            <MenuOptions customStyles={{optionsContainer: {width: 180, borderRadius: 12, marginTop: 20, padding: 8}}}>
-              <MenuOption onSelect={() => openAddToPlaylist(vid.id)}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}>
-                  <Text style={{ fontSize: 15 }}>Add to Playlist</Text>
-                  <Icon source="playlist-plus" color="#8B5CF6" size={18} />
-                </View>
-              </MenuOption>
-            </MenuOptions>
-          </Menu>
-        </View>
-      </View>
+              )}
+              <Text style={styles.trackArtist} numberOfLines={1}>{speaker[0]?.speaker_name || 'Unknown Speaker'}</Text>
+            </View>
+          </View>
+          <View style={styles.trackActions}>
+            <Menu>
+              <MenuTrigger>
+                <MoreVertical color="#888" size={20} />
+              </MenuTrigger>
+              <MenuOptions customStyles={{optionsContainer: {width: 180, borderRadius: 12, marginTop: 20, padding: 8}}}>
+                <MenuOption onSelect={() => openAddToPlaylist(vid.id)}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 }}>
+                    <Text style={{ fontSize: 15 }}>Add to Playlist</Text>
+                    <Icon source="playlist-plus" color="#8B5CF6" size={18} />
+                  </View>
+                </MenuOption>
+              </MenuOptions>
+            </Menu>
+          </View>
+        </Pressable>
+      </Link>
     </Animated.View>
   )
 
   return (
     <LinearGradient
-      colors={['#8B5CF6', '#7C3AED', '#6D28D9']}
+      colors={['#A854DA', '#4a2a6a', '#100D1D']}
+      locations={[0, 0.3, 0.7]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 0.5, y: 0.5 }}
+      end={{ x: 1, y: 1 }}
       style={styles.container}
     >
       <Stack.Screen 
@@ -425,7 +418,6 @@ const styles = StyleSheet.create({
     height: 240,
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: '#8B5CF6',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -480,73 +472,43 @@ const styles = StyleSheet.create({
   videoList: {
     gap: 12,
   },
-  videoItemWrapper: {
+  trackItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  menuContainer: {
-    paddingLeft: 12,
-    paddingRight: 4,
-  },
-  videoItemGlass: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  videoItemFallback: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  videoItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-  },
-  indexBadge: {
+  trackNumberContainer: {
     width: 40,
     height: 40,
+    marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
   },
-  indexBadgeFallback: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  indexText: {
+  trackNumber: {
     fontSize: 16,
     fontWeight: '700',
     color: '#8B5CF6',
   },
-  indexTextFallback: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#8B5CF6',
-  },
-  videoInfo: {
+  trackInfo: {
     flex: 1,
   },
-  surahTitle: {
+  trackTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#000',
     marginBottom: 4,
   },
-  surahTitleFallback: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 4,
+  trackArtist: {
+    fontSize: 14,
+    color: '#888',
+  },
+  trackActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   reciterRow: {
     flexDirection: 'row',
@@ -566,14 +528,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
-  },
-  reciterName: {
-    fontSize: 14,
-    color: '#666',
-  },
-  reciterNameFallback: {
-    fontSize: 14,
-    color: '#888',
   },
 })
 

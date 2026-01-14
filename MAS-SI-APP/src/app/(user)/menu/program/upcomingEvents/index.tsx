@@ -1,14 +1,16 @@
-import { View, Text, ScrollView, FlatList, RefreshControl, Pressable, Dimensions, TouchableOpacity, StatusBar, Animated as RNAnimated, Modal } from 'react-native'
+import { View, Text, ScrollView, FlatList, RefreshControl, Pressable, Dimensions, TouchableOpacity, StatusBar, Animated as RNAnimated, Modal, PanResponder } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, interpolate, runOnJS } from 'react-native-reanimated'
 import { supabase } from '@/src/lib/supabase'
 import { EventsType, Program } from '@/src/types'
-import { Stack, useRouter } from 'expo-router'
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router'
 import { Icon } from 'react-native-paper'
 import { Ionicons } from '@expo/vector-icons'
 import FlyerImageComponent from '@/src/components/FlyerImageComponent'
 import EventImageComponent from '@/src/components/EventImageComponent'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as Haptics from 'expo-haptics'
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -34,9 +36,12 @@ const formatTimeDisplay = (timeString: string) => {
 const UpcomingEvents = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { openProgramId } = useLocalSearchParams<{ openProgramId?: string }>()
   const [upcoming, setUpcoming] = useState<Program[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<EventsType[]>([])
   const [refreshing, setRefreshing] = useState(false)
+  const [autoOpenProgram, setAutoOpenProgram] = useState<Program | null>(null)
+  const hasAutoOpened = useRef(false)
   
   // Calendar state
   const [calendarVisible, setCalendarVisible] = useState(false)
@@ -44,9 +49,14 @@ const UpcomingEvents = () => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [selectedProgramFromCalendar, setSelectedProgramFromCalendar] = useState<Program | null>(null)
   const [selectedEventFromCalendar, setSelectedEventFromCalendar] = useState<EventsType | null>(null)
+  const [monthPickerVisible, setMonthPickerVisible] = useState(false)
   
   // Animation
   const progress = useSharedValue(0)
+  
+  // Month picker animation
+  const pickerHeight = useSharedValue(0)
+  const pickerOpacity = useSharedValue(0)
   
   // Button position (top-right of header)
   const BUTTON_SIZE = 36
@@ -94,6 +104,13 @@ const UpcomingEvents = () => {
     }
   })
 
+  // Month picker animated style
+  const pickerAnimatedStyle = useAnimatedStyle(() => ({
+    height: pickerHeight.value,
+    opacity: pickerOpacity.value,
+    overflow: 'hidden',
+  }))
+
   // Month animation
   const fadeAnim = useRef(new RNAnimated.Value(1)).current
   const isAnimating = useRef(false)
@@ -119,6 +136,27 @@ const UpcomingEvents = () => {
     })
   }
 
+  // Swipe gesture for month navigation
+  const calendarPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const swipeThreshold = 50
+        if (gestureState.dx > swipeThreshold) {
+          // Swiped right - go to previous month
+          animateMonthChange(() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)))
+        } else if (gestureState.dx < -swipeThreshold) {
+          // Swiped left - go to next month
+          animateMonthChange(() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)))
+        }
+      },
+    })
+  ).current
+
   const GetUpcomingEvents = async () => {
     setRefreshing(true)
     const date = new Date()
@@ -134,6 +172,31 @@ const UpcomingEvents = () => {
   useEffect(() => {
     GetUpcomingEvents()
   }, [])
+
+  // Auto-open program from carousel navigation
+  useEffect(() => {
+    if (openProgramId && upcoming.length > 0 && !hasAutoOpened.current) {
+      const programToOpen = upcoming.find(p => p.program_id === openProgramId)
+      if (programToOpen) {
+        hasAutoOpened.current = true
+        // Small delay to let the page render first
+        setTimeout(() => {
+          setAutoOpenProgram(programToOpen)
+        }, 300)
+      }
+    }
+  }, [openProgramId, upcoming])
+
+  // Animate month picker visibility
+  useEffect(() => {
+    if (monthPickerVisible) {
+      pickerHeight.value = withTiming(130, { duration: 250 })
+      pickerOpacity.value = withTiming(1, { duration: 200 })
+    } else {
+      pickerOpacity.value = withTiming(0, { duration: 150 })
+      pickerHeight.value = withTiming(0, { duration: 200 })
+    }
+  }, [monthPickerVisible])
 
   // Calendar helpers
   const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -223,20 +286,31 @@ const UpcomingEvents = () => {
         options={{ 
           title: 'Upcoming Events',
           headerTitleAlign: 'center',
-          headerBackVisible: true,
-          headerRight: () => (
+          headerBackVisible: false,
+          headerLeft: () => (
             <Pressable 
+              onPress={() => router.back()} 
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={{ 
-                marginRight: 2,
-                marginTop: -4,
                 width: 36,
                 height: 36,
-                borderRadius: 10,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
+            >
+              <Ionicons name="chevron-back" size={24} color="white" />
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable 
+              onPress={openCalendar} 
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              onPress={openCalendar}
+              style={{ 
+                width: 36,
+                height: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
               <Ionicons name="calendar-outline" size={22} color="white" />
             </Pressable>
@@ -341,18 +415,59 @@ const UpcomingEvents = () => {
                 <Ionicons name="close" size={22} color="#1F2937" />
               </Pressable>
               
-              <RNAnimated.Text style={{ color: '#1F2937', fontSize: 18, fontWeight: '600', opacity: fadeAnim }}>
-                {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </RNAnimated.Text>
+              {/* Month Selector Button */}
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                  setMonthPickerVisible(!monthPickerVisible)
+                }}
+                style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  paddingHorizontal: 12, 
+                  paddingVertical: 6, 
+                  borderRadius: 12, 
+                  backgroundColor: monthPickerVisible ? '#E5E7EB' : '#F3F4F6' 
+                }}
+              >
+                <RNAnimated.Text style={{ color: '#1F2937', fontSize: 18, fontWeight: '600', opacity: fadeAnim }}>
+                  {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </RNAnimated.Text>
+                <Ionicons name={monthPickerVisible ? "chevron-up" : "chevron-down"} size={18} color="#6B7280" style={{ marginLeft: 4 }} />
+              </Pressable>
               
               <Pressable onPress={handleTodayPress} hitSlop={12} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#F3F4F6' }}>
                 <Text style={{ color: '#1F2937', fontSize: 14, fontWeight: '600' }}>Today</Text>
               </Pressable>
             </View>
+            
+            {/* Native iOS Month Picker - Animated */}
+            <Animated.View style={[
+              { 
+                backgroundColor: '#F9FAFB', 
+                borderTopWidth: monthPickerVisible ? 1 : 0,
+                borderTopColor: '#E5E7EB',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+              pickerAnimatedStyle
+            ]}>
+              <DateTimePicker
+                value={currentMonth}
+                mode="date"
+                display="spinner"
+                onChange={(event, date) => {
+                  if (date) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                    setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1))
+                  }
+                }}
+                style={{ height: 140, marginTop: -10 }}
+              />
+            </Animated.View>
           </View>
           
           <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-
             <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={true}>
               {/* Days of Week */}
               <View style={{ flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
@@ -363,8 +478,11 @@ const UpcomingEvents = () => {
                 ))}
               </View>
 
-              {/* Calendar Grid */}
-              <RNAnimated.View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, opacity: fadeAnim }}>
+              {/* Calendar Grid - Swipeable */}
+              <RNAnimated.View 
+                {...calendarPanResponder.panHandlers}
+                style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16, opacity: fadeAnim }}
+              >
                 {[0, 1, 2, 3, 4, 5].map((weekIndex) => (
                   <View key={weekIndex} style={{ flexDirection: 'row' }}>
                     {generateCalendarDays().slice(weekIndex * 7, weekIndex * 7 + 7).map((day, dayIndex) => {
@@ -503,6 +621,16 @@ const UpcomingEvents = () => {
           item={selectedEventFromCalendar} 
           autoOpen={true}
           onModalClose={() => setSelectedEventFromCalendar(null)}
+        />
+      )}
+
+      {/* Auto-open Program from Carousel Navigation */}
+      {autoOpenProgram && (
+        <FlyerImageComponent 
+          key={`auto-open-program-${autoOpenProgram.program_id}`}
+          item={autoOpenProgram} 
+          autoOpen={true}
+          onModalClose={() => setAutoOpenProgram(null)}
         />
       )}
     </View>

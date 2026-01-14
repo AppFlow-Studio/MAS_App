@@ -2,10 +2,8 @@ import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, E
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
-import LecturesListLecture from '@/src/components/LectureListLecture';
 import { Divider, Portal, Modal, IconButton, Icon, Button, Badge } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
-import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass';
 import { Lectures, SheikDataType, Program } from '@/src/types';
 import { ScrollView } from 'react-native-gesture-handler';
 import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
@@ -610,30 +608,18 @@ async function getUserPlaylists(){
  
   
    return(
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      {isLiquidGlassSupported ? (
-        <LiquidGlassView style={{ borderRadius: 18, width: 36, height: 36, overflow: 'hidden' }} interactive effect="clear">
-          <Pressable onPress={handlePress} style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            {programInNotfications ? <Ionicons name="notifications" color="white" size={20} style={{ marginRight: -12 }}/> : <Ionicons name="notifications-outline" color="white" size={20} style={{ marginRight: -12 }}/> }
-          </Pressable>
-        </LiquidGlassView>
-      ) : (
-        <Pressable onPress={handlePress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, overflow: 'hidden' }}>
-          {programInNotfications ? <Ionicons name="notifications" color="white" size={20} style={{ marginRight: -12 }}/> : <Ionicons name="notifications-outline" color="white" size={20} style={{ marginRight: -12 }}/> }
-        </Pressable>
-      )}
-      {isLiquidGlassSupported ? (
-        <LiquidGlassView style={{ borderRadius: 18, width: 36, height: 36, overflow: 'hidden' }} interactive effect="clear">
-          <Pressable onPress={addToPrograms} style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            { programInPrograms ? <Ionicons name="remove-circle" color="white" size={20} style={{ marginRight: -12 }}/> : <Ionicons name="add-circle-outline" color="white" size={20} style={{ marginRight: -12 }}/>}
-          </Pressable>
-        </LiquidGlassView>
-      ) : (
-        <Pressable onPress={addToPrograms} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, overflow: 'hidden' }}>
-          { programInPrograms ? <Ionicons name="remove-circle" color="white" size={20} style={{ marginRight: -12 }}/> : <Ionicons name="add-circle-outline" color="white" size={20} style={{ marginRight: -12 }}/>}
-        </Pressable>
-      )}
-    </View>
+      <Pressable 
+        onPress={addToPrograms} 
+        style={{ 
+          marginRight: 8,
+          width: 36, 
+          height: 36, 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+        }}
+      >
+        { programInPrograms ? <Ionicons name="remove-circle" color="white" size={24} /> : <Ionicons name="add-circle-outline" color="white" size={24} />}
+      </Pressable>
    )
   }
 
@@ -667,17 +653,17 @@ async function getUserPlaylists(){
       )
     }
     return(
-      isLiquidGlassSupported ? (
-        <LiquidGlassView style={{ borderRadius: 18, width: 36, height: 36, overflow: 'hidden' }} interactive effect="clear">
-          <Pressable onPress={addToPrograms} style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            { programInPrograms ? <Ionicons name="remove-circle" color="white" size={20} style={{ marginRight: -12 }}/> : <Ionicons name="add-circle-outline" color="white" size={20} style={{ marginRight: -12 }}/>}
-          </Pressable>
-        </LiquidGlassView>
-      ) : (
-        <Pressable onPress={addToPrograms} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, overflow: 'hidden' }}>
-          { programInPrograms ? <Ionicons name="remove-circle" color="white" size={20} style={{ marginRight: -8 }}/> : <Ionicons name="add-circle-outline" color="white" size={25} style={{ marginRight: -8 }}/>}
-        </Pressable>
-      )
+      <Pressable 
+        onPress={addToPrograms} 
+        style={{ 
+          width: 36, 
+          height: 36, 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+        }}
+      >
+        { programInPrograms ? <Ionicons name="remove-circle" color="white" size={24} /> : <Ionicons name="add-circle-outline" color="white" size={24} />}
+      </Pressable>
     )
   }
   
@@ -709,7 +695,7 @@ async function getUserPlaylists(){
                   type : 'LectureAddedToPlaylist',
                   props: { props : getPlaylistAddedTo[0], onPress : goToPlaylist},
                   position : 'bottom',
-                  bottomOffset : Tab * 2
+                  bottomOffset : 100
                 })
               }
           }})
@@ -729,82 +715,42 @@ async function getUserPlaylists(){
      <Stack.Screen 
        options={{ 
          title: '',
-         headerTintColor: 'white',
          headerStyle: { backgroundColor: '#214E91' },
+         headerTintColor: 'white',
+         headerBackVisible: false,
+         headerShadowVisible: false,
          headerLeft: () => (
-           isLiquidGlassSupported ? (
-             <LiquidGlassView 
-               style={{ 
-                 marginLeft: 8,
-                 width: 36,
-                 height: 36,
-                 borderRadius: 18,
-                 overflow: 'hidden',
-               }}
-               interactive
-               effect="clear"
-             >
-               <Pressable 
-                 style={{ 
-                   width: '100%',
-                   height: '100%',
-                   alignItems: 'center', 
-                   justifyContent: 'center'
-                 }}
-                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                 onPress={() => {
-                   if (selectedLecture && selectedLecture.lecture_link && selectedLecture.lecture_link.trim() !== '' && selectedLecture.lecture_link !== 'N/A') {
-                     setSelectedLecture(null);
-                     setPlaying(false);
-                     scrollRef.current?.scrollTo({ y: 0, animated: true });
-                   } else {
-                     router.back();
-                   }
-                 }}
-               >
-                 <Ionicons 
-                   name="chevron-back" 
-                   size={24} 
-                   color="white"
-                   style={{ marginLeft: -12 }}
-                 />
-               </Pressable>
-             </LiquidGlassView>
-           ) : (
-             <Pressable 
-               style={{ 
-                 marginLeft: 8,
-                 width: 36,
-                 height: 36,
-                 borderRadius: 18,
-                 overflow: 'hidden',
-                 alignItems: 'center', 
-                 justifyContent: 'center'
-               }}
-               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-               onPress={() => {
-                 if (selectedLecture && selectedLecture.lecture_link && selectedLecture.lecture_link.trim() !== '' && selectedLecture.lecture_link !== 'N/A') {
-                   setSelectedLecture(null);
-                   setPlaying(false);
-                   scrollRef.current?.scrollTo({ y: 0, animated: true });
-                 } else {
-                   router.back();
-                 }
-               }}
-             >
-               <Ionicons 
-                 name="chevron-back" 
-                 size={24} 
-                 color="white"
-                 style={{ marginLeft: -12 }}
-               />
-             </Pressable>
-           )
+           <Pressable 
+             style={{ alignItems: 'center', justifyContent: 'center', padding: 4 }}
+             onPress={() => {
+               if (selectedLecture && selectedLecture.lecture_link && selectedLecture.lecture_link.trim() !== '' && selectedLecture.lecture_link !== 'N/A') {
+                 setSelectedLecture(null);
+                 setPlaying(false);
+                 scrollRef.current?.scrollTo({ y: 0, animated: true });
+               } else {
+                 router.back();
+               }
+             }}
+           >
+             <Ionicons name="chevron-back" size={24} color="white" />
+           </Pressable>
          ),
          headerRight: () => (
-           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', marginRight: 8 }}>
-             {isBefore(currDate, program?.program_end_date!) ? <NotificationBell /> : <AddToProgramsButton />}
-           </View>
+           <Pressable 
+             style={{ alignItems: 'center', justifyContent: 'center', padding: 4, marginLeft: 2 }}
+             onPress={async () => {
+               if (programInPrograms) {
+                 await supabase.from("added_programs").delete().eq("user_id", session?.user.id).eq("program_id", programId);
+                 setProgramInPrograms(false);
+               } else {
+                 await supabase.from("added_programs").insert({ user_id: session?.user.id, program_id: programId });
+                 setProgramInPrograms(true);
+               }
+               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+             }}
+           >
+             {programInPrograms ? <Ionicons name="remove-circle" color="white" size={24} /> : <Ionicons name="add-circle-outline" color="white" size={24} />}
+           </Pressable>
          ),
        }} 
      />

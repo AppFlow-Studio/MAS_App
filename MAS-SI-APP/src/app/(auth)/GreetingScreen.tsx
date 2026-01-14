@@ -5,7 +5,6 @@ import Animated, {
   useSharedValue, 
   withRepeat, 
   withTiming,
-  withSpring,
   withDelay,
   withSequence,
   Easing,
@@ -152,14 +151,13 @@ const GreetingScreen = () => {
   // Logo animation values - start hidden and above screen for drop-down effect
   const logoScale = useSharedValue(0.3)
   const logoOpacity = useSharedValue(0)
-  const logoFloat = useSharedValue(0)
   const logoTranslateY = useSharedValue(-100) // Start above screen
   
   // Buttons animation
   const buttonsTranslate = useSharedValue(100)
   const buttonsOpacity = useSharedValue(0)
 
-  // Handle video end - transition to blue gradient and animate logo
+  // Handle video end - just transition to blue gradient
   const handleVideoEnd = useCallback(() => {
     setVideoEnded(true)
     // Smooth fade to blue gradient over 1.5 seconds
@@ -167,21 +165,6 @@ const GreetingScreen = () => {
       duration: 1500, 
       easing: Easing.inOut(Easing.ease) 
     })
-    
-    // Animate logo dropping down after video ends
-    logoOpacity.value = withDelay(500, withTiming(1, { duration: 800 }))
-    logoScale.value = withDelay(500, withSpring(1, { damping: 12, stiffness: 80 }))
-    logoTranslateY.value = withDelay(500, withSpring(0, { damping: 14, stiffness: 90 }))
-    
-    // Start floating animation after drop-in completes
-    logoFloat.value = withDelay(1500, withRepeat(
-      withSequence(
-        withTiming(-15, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    ))
   }, [])
 
   // Create video player with expo-video
@@ -212,32 +195,21 @@ const GreetingScreen = () => {
   }))
 
   useEffect(() => {
-    // If video is disabled, animate logo immediately
-    if (!ENABLE_VIDEO_BACKGROUND) {
-      logoOpacity.value = withDelay(300, withTiming(1, { duration: 800 }))
-      logoScale.value = withDelay(300, withSpring(1, { damping: 12, stiffness: 80 }))
-      logoTranslateY.value = withDelay(300, withSpring(0, { damping: 14, stiffness: 90 }))
-      
-      logoFloat.value = withDelay(1300, withRepeat(
-        withSequence(
-          withTiming(-15, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1,
-        true
-      ))
-    }
-    
-    // Buttons entrance (always animate)
-    buttonsOpacity.value = withDelay(ENABLE_VIDEO_BACKGROUND ? 1800 : 1500, withTiming(1, { duration: 600 }))
-    buttonsTranslate.value = withDelay(ENABLE_VIDEO_BACKGROUND ? 1800 : 1500, withSpring(0, { damping: 15, stiffness: 80 }))
+    // Animate logo immediately while video plays - smooth without bounce
+    const logoDelay = 500
+    const buttonsDelay = 1200 // Buttons come in a bit later
+    logoOpacity.value = withDelay(logoDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
+    logoScale.value = withDelay(logoDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
+    logoTranslateY.value = withDelay(logoDelay, withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) }))
+    buttonsOpacity.value = withDelay(buttonsDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
+    buttonsTranslate.value = withDelay(buttonsDelay, withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) }))
   }, [])
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
     transform: [
       { scale: logoScale.value },
-      { translateY: logoTranslateY.value + logoFloat.value }, // Combine drop-down and float
+      { translateY: logoTranslateY.value },
     ],
   }))
 
@@ -329,8 +301,8 @@ const GreetingScreen = () => {
           <Image
             source={require('@/assets/images/glowingTree.png')}
             style={{
-              width: 320,
-              height: 320,
+              width: 380,
+              height: 380,
               resizeMode: 'contain',
             }}
           />
@@ -338,19 +310,19 @@ const GreetingScreen = () => {
           {/* MAS text below logo */}
           <Text style={{
             fontFamily: 'Poppins_700Bold',
-            fontSize: 32,
+            fontSize: 42,
             color: '#ffffff',
-            letterSpacing: 8,
-            marginTop: -10,
+            letterSpacing: 10,
+            marginTop: -15,
           }}>
             MAS
           </Text>
           <Text style={{
             fontFamily: 'Poppins_400Regular',
-            fontSize: 13,
+            fontSize: 16,
             color: 'rgba(255, 255, 255, 0.6)',
-            letterSpacing: 4,
-            marginTop: 2,
+            letterSpacing: 5,
+            marginTop: 4,
           }}>
             STATEN ISLAND
           </Text>

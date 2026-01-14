@@ -963,9 +963,9 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                         <Pressable
                                             onPress={handleAddToProgramsPress}
                                             style={{
-                                                width: (event?.is_paid || item.is_paid) ? 56 : undefined,
+                                                width: (event?.is_paid || item.is_paid) ? 56 : '100%',
                                                 flex: (event?.is_paid || item.is_paid) ? undefined : 1,
-                                                backgroundColor: eventInPrograms ? 'rgba(16,185,129,0.1)' : '#F3F4F6',
+                                                backgroundColor: eventInPrograms ? 'rgba(16,185,129,0.15)' : '#F3F4F6',
                                                 paddingVertical: 16,
                                                 borderRadius: 14,
                                                 flexDirection: 'row',
@@ -977,13 +977,13 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                             }}
                                         >
                                             <Icon 
-                                                source={eventInPrograms ? 'check' : 'plus'} 
+                                                source={eventInPrograms ? 'heart' : 'heart-outline'} 
                                                 size={22} 
                                                 color={eventInPrograms ? '#10B981' : '#374151'}
                                             />
                                             {!(event?.is_paid || item.is_paid) && (
                                                 <Text style={{ color: eventInPrograms ? '#10B981' : '#374151', fontWeight: '700', fontSize: 16 }}>
-                                                    {eventInPrograms ? 'Added' : 'Add to Library'}
+                                                    {eventInPrograms ? 'Saved' : 'Save to Library'}
                                                 </Text>
                                             )}
                                         </Pressable>

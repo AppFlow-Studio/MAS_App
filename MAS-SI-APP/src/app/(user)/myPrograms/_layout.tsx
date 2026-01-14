@@ -7,6 +7,15 @@ export default function MyProgramsStack(){
             <Stack.Screen name="index" options={{headerShown: false}}/>
             <Stack.Screen name="notifications" options={{ headerShown : false}}/>
             <Stack.Screen name="recordedLectures" options={{ headerShown: true }}/>
+            <Stack.Screen name="RecommendedForYou" options={{ headerShown: false }}/>
+            <Stack.Screen 
+              name="PreferencesOnboardingModal" 
+              options={{ 
+                headerShown: false,
+                presentation: 'fullScreenModal',
+                animation: 'slide_from_bottom',
+              }} 
+            />
        </Stack>
     )
 }

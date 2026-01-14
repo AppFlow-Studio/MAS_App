@@ -1,12 +1,19 @@
 import { Tabs, Redirect, useSegments } from "expo-router";
 import * as Animatable from 'react-native-animatable';
-import { Pressable, TouchableOpacity, Modal, StyleSheet, Platform } from "react-native";
+import { Pressable, TouchableOpacity, Modal, StyleSheet, Platform, useWindowDimensions } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import TabArray from '@/src/lib/tabs';
 
 import { useAuth } from "@/src/providers/AuthProvider";
 import LottieView from 'lottie-react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, runOnJS, FadeIn } from 'react-native-reanimated';
+import Animated, { 
+  Easing, 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withTiming, 
+  runOnJS, 
+  FadeIn
+} from 'react-native-reanimated';
 import Toast from 'react-native-toast-message'
 import { View, Text, Image } from 'react-native'
 import { BlurView } from 'expo-blur';
@@ -173,6 +180,65 @@ import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingPro
 //   );
 // }
 
+// Notification Badge Component with count (no animation)
+const NotificationBadge = ({ count = 1 }: { count?: number }) => {
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Calculate position to be on top of the "More" tab (4th tab out of 4)
+  // Tab bar has 4 tabs, "More" is the last one
+  const tabWidth = screenWidth / 4;
+  const moreTabCenterX = tabWidth * 3.5; // Center of the 4th tab
+  const badgeOffsetX = -8; // Offset to position closer to center of icon
+
+  // Determine badge size based on count digits
+  const displayCount = count > 99 ? '99+' : count.toString();
+  const badgeWidth = displayCount.length > 1 ? (displayCount.length > 2 ? 26 : 20) : 18;
+
+  return (
+    <Animated.View
+      entering={FadeIn.delay(300).duration(200)}
+      style={{
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 62 : 52, // Closer to the icon
+        left: moreTabCenterX + badgeOffsetX - (badgeWidth / 2),
+        zIndex: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* Main badge with count */}
+      <View
+        style={{
+          minWidth: badgeWidth,
+          height: 18,
+          borderRadius: 9,
+          backgroundColor: '#EF4444',
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 3,
+          elevation: 4,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 4,
+        }}
+      >
+        <Text style={{
+          color: '#ffffff',
+          fontSize: 10,
+          fontWeight: '700',
+          textAlign: 'center',
+          includeFontPadding: false,
+        }}>
+          {displayCount}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+};
+
 const UserLayoutContent = () => {
   const { session, loading: authLoading } = useAuth();
   const { isOnboardingIncomplete, setOnboardingIncomplete, onboardingSheetRef } = useOnboarding();
@@ -184,6 +250,58 @@ const UserLayoutContent = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestPopup, setShowGuestPopup] = useState(false);
   const guestPopupRef = useRef<{ present: () => void; dismiss: () => void }>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [preferencesCompleted, setPreferencesCompleted] = useState(true);
+
+  // Check for incomplete items in More screen (profile + preferences)
+  useEffect(() => {
+    const checkIncompleteItems = async () => {
+      // Anonymous users or not logged in - don't show badge
+      if (!session?.user?.id || session.user.is_anonymous) {
+        setNotificationCount(0);
+        return;
+      }
+
+      try {
+        // Check if user has completed personalization preferences
+        const { data: userInterests } = await supabase
+          .from('user_islamic_interests')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .limit(1);
+        
+        const hasCompletedPreferences = !!(userInterests && userInterests.length > 0);
+        setPreferencesCompleted(hasCompletedPreferences);
+        
+        // Count incomplete items: profile onboarding + preferences
+        let count = 0;
+        if (isOnboardingIncomplete) count += 1;
+        if (!hasCompletedPreferences) count += 1;
+        
+        setNotificationCount(count);
+      } catch (error) {
+        // On error, just check onboarding status
+        setNotificationCount(isOnboardingIncomplete ? 1 : 0);
+      }
+    };
+
+    checkIncompleteItems();
+
+    // Subscribe to changes in user interests
+    const interestsChannel = supabase
+      .channel('user-interests-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_islamic_interests',
+        filter: `user_id=eq.${session?.user?.id}`
+      }, () => checkIncompleteItems())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(interestsChannel);
+    };
+  }, [session?.user?.id, isOnboardingIncomplete]);
   
   // Show account button only on home page (menu tab)
   // segments will be ['(user)', 'menu'] when on home page
@@ -369,22 +487,9 @@ const UserLayoutContent = () => {
         />
       )}
 
-      {/* Badge indicator for incomplete onboarding */}
-      {isOnboardingIncomplete && (
-        <View
-          style={{
-            position: 'absolute',
-            bottom: Platform.OS === 'ios' ? 28 : 18,
-            right: 28,
-            width: 10,
-            height: 10,
-            borderRadius: 5,
-            backgroundColor: '#EF4444',
-            borderWidth: 2,
-            borderColor: '#ffffff',
-            zIndex: 999,
-          }}
-        />
+      {/* Enhanced Badge indicator with notification count */}
+      {notificationCount > 0 && (
+        <NotificationBadge count={notificationCount} />
       )}
     </BottomSheetModalProvider>
   )

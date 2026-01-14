@@ -716,17 +716,42 @@ const NotificationEvents = () => {
         >
           {/* Custom Header */}
           <View style={{ paddingTop: 10, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center' }}>
-            <Pressable
-              onPress={() => router.back()}
-              style={{
-                width: 40,
-                height: 40,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon source="chevron-left" color="white" size={28} />
-            </Pressable>
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                }}
+                interactive
+                effect="clear"
+              >
+                <Pressable
+                  onPress={() => router.back()}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon source="chevron-left" color="white" size={28} />
+                </Pressable>
+              </LiquidGlassView>
+            ) : (
+              <Pressable
+                onPress={() => router.back()}
+                style={{
+                  width: 40,
+                  height: 40,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon source="chevron-left" color="white" size={28} />
+              </Pressable>
+            )}
             <Text style={{ 
               color: 'white', 
               fontSize: 20, 

@@ -35,7 +35,7 @@ type NotificationOption = 'prayer_time' | 'iqamah_time' | '30_min_before' | 'mut
 type PrayerNotificationSettings = {
   [key: string]: {
     enabled: boolean;
-    option: NotificationOption;
+    options: NotificationOption[]; // Changed to array for multiple selections
   };
 };
 
@@ -82,11 +82,11 @@ const NotificationPrayerTable = ({
   
   // Prayer notification settings state
   const [prayerSettings, setPrayerSettings] = useState<PrayerNotificationSettings>({
-    'Fajr': { enabled: false, option: 'prayer_time' },
-    'Dhuhr': { enabled: false, option: 'prayer_time' },
-    'Asr': { enabled: false, option: 'prayer_time' },
-    'Maghrib': { enabled: false, option: 'prayer_time' },
-    'Isha': { enabled: false, option: 'prayer_time' },
+    'Fajr': { enabled: false, options: [] },
+    'Dhuhr': { enabled: false, options: [] },
+    'Asr': { enabled: false, options: [] },
+    'Maghrib': { enabled: false, options: [] },
+    'Isha': { enabled: false, options: [] },
   });
 
   const handleToggle = (prayerName: string) => {
@@ -110,13 +110,38 @@ const NotificationPrayerTable = ({
 
   const handleOptionSelect = (option: NotificationOption) => {
     if (selectedPrayer) {
-      setPrayerSettings(prev => ({
-        ...prev,
-        [selectedPrayer]: {
-          ...prev[selectedPrayer],
-          option: option,
+      setPrayerSettings(prev => {
+        const currentOptions = prev[selectedPrayer].options;
+        
+        // If selecting 'mute', clear all other options and only set mute
+        if (option === 'mute') {
+          return {
+            ...prev,
+            [selectedPrayer]: {
+              ...prev[selectedPrayer],
+              options: currentOptions.includes('mute') ? [] : ['mute'],
+            }
+          };
         }
-      }));
+        
+        // If selecting a non-mute option, remove 'mute' if it exists and toggle the option
+        let newOptions: NotificationOption[];
+        if (currentOptions.includes(option)) {
+          // Remove the option if already selected
+          newOptions = currentOptions.filter(o => o !== option);
+        } else {
+          // Add the option and remove 'mute' if present
+          newOptions = [...currentOptions.filter(o => o !== 'mute'), option];
+        }
+        
+        return {
+          ...prev,
+          [selectedPrayer]: {
+            ...prev[selectedPrayer],
+            options: newOptions,
+          }
+        };
+      });
     }
   };
 
@@ -129,6 +154,19 @@ const NotificationPrayerTable = ({
     // Here you would save to your backend/storage
     console.log('Saving settings for:', selectedPrayer, prayerSettings[selectedPrayer!]);
     handleCloseModal();
+  };
+
+  const handleApplyToAll = () => {
+    if (selectedPrayer) {
+      const currentOptions = [...prayerSettings[selectedPrayer].options];
+      setPrayerSettings({
+        'Fajr': { enabled: true, options: currentOptions },
+        'Dhuhr': { enabled: true, options: currentOptions },
+        'Asr': { enabled: true, options: currentOptions },
+        'Maghrib': { enabled: true, options: currentOptions },
+        'Isha': { enabled: true, options: currentOptions },
+      });
+    }
   };
 
   const nextPress = () => {
@@ -217,11 +255,11 @@ const NotificationPrayerTable = ({
                       <Text style={styles.prayerName}>{prayer.PrayerCap}</Text>
                       <View style={styles.timeRow}>
                         <Text style={styles.timeLabel}>Athan</Text>
-                        <Text style={styles.timeValue}>{prayerData[prayer.athan]}</Text>
+                        <Text style={styles.timeValue}>{prayerData[prayer.athan as keyof gettingPrayerData]}</Text>
                       </View>
                       <View style={styles.timeRow}>
                         <Text style={styles.timeLabel}>Iqamah</Text>
-                        <Text style={styles.timeValue}>{prayerData[prayer.iqamah]}</Text>
+                        <Text style={styles.timeValue}>{prayerData[prayer.iqamah as keyof gettingPrayerData]}</Text>
                       </View>
                     </View>
 
@@ -447,15 +485,15 @@ const NotificationPrayerTable = ({
                 onPress={() => handleOptionSelect('prayer_time')}
               >
                 <View style={[
-                  styles.radioOuter,
-                  prayerSettings[selectedPrayer || '']?.option === 'prayer_time' && styles.radioOuterSelected
+                  styles.checkboxOuter,
+                  prayerSettings[selectedPrayer || '']?.options?.includes('prayer_time') && styles.checkboxSelected
                 ]}>
-                  {prayerSettings[selectedPrayer || '']?.option === 'prayer_time' && (
-                    <View style={styles.radioInner} />
+                  {prayerSettings[selectedPrayer || '']?.options?.includes('prayer_time') && (
+                    <Check color="#1a3a5c" size={14} strokeWidth={3} />
                   )}
                 </View>
                 <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>Notify at Prayer Time:</Text>
+                  <Text style={styles.optionTitle}>Notify at Prayer Time</Text>
                   <Text style={styles.optionDescription}>Get notified exactly when it's time to pray</Text>
                 </View>
               </Pressable>
@@ -466,15 +504,15 @@ const NotificationPrayerTable = ({
                 onPress={() => handleOptionSelect('iqamah_time')}
               >
                 <View style={[
-                  styles.radioOuter,
-                  prayerSettings[selectedPrayer || '']?.option === 'iqamah_time' && styles.radioOuterSelected
+                  styles.checkboxOuter,
+                  prayerSettings[selectedPrayer || '']?.options?.includes('iqamah_time') && styles.checkboxSelected
                 ]}>
-                  {prayerSettings[selectedPrayer || '']?.option === 'iqamah_time' && (
-                    <View style={styles.radioInner} />
+                  {prayerSettings[selectedPrayer || '']?.options?.includes('iqamah_time') && (
+                    <Check color="#1a3a5c" size={14} strokeWidth={3} />
                   )}
                 </View>
                 <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>Notify at Iqamah Time:</Text>
+                  <Text style={styles.optionTitle}>Notify at Iqamah Time</Text>
                   <Text style={styles.optionDescription}>Get notified when it's time to gather at the masjid</Text>
                 </View>
               </Pressable>
@@ -485,15 +523,15 @@ const NotificationPrayerTable = ({
                 onPress={() => handleOptionSelect('30_min_before')}
               >
                 <View style={[
-                  styles.radioOuter,
-                  prayerSettings[selectedPrayer || '']?.option === '30_min_before' && styles.radioOuterSelected
+                  styles.checkboxOuter,
+                  prayerSettings[selectedPrayer || '']?.options?.includes('30_min_before') && styles.checkboxSelected
                 ]}>
-                  {prayerSettings[selectedPrayer || '']?.option === '30_min_before' && (
-                    <View style={styles.radioInner} />
+                  {prayerSettings[selectedPrayer || '']?.options?.includes('30_min_before') && (
+                    <Check color="#1a3a5c" size={14} strokeWidth={3} />
                   )}
                 </View>
                 <View style={styles.optionTextContainer}>
-                  <Text style={styles.optionTitle}>30-Minute Reminder Before Next Prayer:</Text>
+                  <Text style={styles.optionTitle}>30-Minute Reminder</Text>
                   <Text style={styles.optionDescription}>Get reminded 30 minutes before the next prayer time</Text>
                 </View>
               </Pressable>
@@ -504,18 +542,24 @@ const NotificationPrayerTable = ({
                 onPress={() => handleOptionSelect('mute')}
               >
                 <View style={[
-                  styles.radioOuter,
-                  prayerSettings[selectedPrayer || '']?.option === 'mute' && styles.radioOuterSelected
+                  styles.checkboxOuter,
+                  prayerSettings[selectedPrayer || '']?.options?.includes('mute') && styles.checkboxSelected
                 ]}>
-                  {prayerSettings[selectedPrayer || '']?.option === 'mute' && (
-                    <View style={styles.radioInner} />
+                  {prayerSettings[selectedPrayer || '']?.options?.includes('mute') && (
+                    <Check color="#1a3a5c" size={14} strokeWidth={3} />
                   )}
                 </View>
                 <View style={styles.optionTextContainer}>
                   <Text style={styles.optionTitle}>Mute</Text>
+                  <Text style={styles.optionDescription}>Disable all notifications for this prayer</Text>
                 </View>
               </Pressable>
             </View>
+
+            {/* Apply to All Prayers Button */}
+            <Pressable style={styles.applyAllButton} onPress={handleApplyToAll}>
+              <Text style={styles.applyAllButtonText}>Apply to All Prayers</Text>
+            </Pressable>
 
             {/* Save Button */}
             {isLiquidGlassSupported ? (
@@ -801,18 +845,24 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   blurContainer: {
     ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
     backgroundColor: '#1a3a5c',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 40,
-    maxHeight: '60%',
+    paddingBottom: 30,
+    maxHeight: '70%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 20,
   },
   modalIndicator: {
     width: 40,
@@ -844,24 +894,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 14,
   },
-  radioOuter: {
+  checkboxOuter: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: '#6EE7B7',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
-  radioOuterSelected: {
+  checkboxSelected: {
     backgroundColor: '#6EE7B7',
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#1a3a5c',
   },
   optionTextContainer: {
     flex: 1,
@@ -884,7 +928,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    marginTop: 32,
+    marginTop: 0,
     marginBottom: 20,
     borderWidth: 1.5,
     borderColor: 'rgba(110, 231, 183, 0.5)',
@@ -894,9 +938,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  applyAllButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(59, 130, 246, 0.6)',
+  },
+  applyAllButtonText: {
+    color: '#3B82F6',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   saveButtonGlass: {
     borderRadius: 12,
-    marginTop: 32,
+    marginTop: 0,
     marginBottom: 20,
     overflow: 'hidden',
     backgroundColor: 'rgba(0, 122, 255, 0.8)',

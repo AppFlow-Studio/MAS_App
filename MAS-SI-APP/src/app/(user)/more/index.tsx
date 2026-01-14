@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Share, Platform, Linking, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, Link } from 'expo-router';
@@ -129,14 +130,16 @@ export default function MoreScreen() {
     checkIfAnon();
   }, [session]);
 
-  // Show guest auth modal when anonymous user visits
-  useEffect(() => {
-    if (session?.user.is_anonymous) {
-      setGuestAuthModalVisible(true);
-    } else {
-      setGuestAuthModalVisible(false);
-    }
-  }, [session]);
+  // Show guest auth modal every time anonymous user enters/focuses on this screen
+  useFocusEffect(
+    useCallback(() => {
+      if (session?.user.is_anonymous) {
+        setGuestAuthModalVisible(true);
+      } else {
+        setGuestAuthModalVisible(false);
+      }
+    }, [session])
+  );
 
   const getMemberSinceYear = () => {
     if (profile?.created_at) {
@@ -171,7 +174,8 @@ export default function MoreScreen() {
   const handleInviteFriends = async () => {
     try {
       await Share.share({
-        message: '🕌 Join me at MAS Staten Island! Download the app to stay connected with our community, prayer times, events, and more!\n\nhttps://massic.org',
+        message: '🕌 Join me at MAS Staten Island! Download the app to stay connected with our community, prayer times, events, and more!',
+        url: 'https://massic.org',
         title: 'Join MAS Staten Island'
       });
     } catch (error) {
@@ -237,21 +241,6 @@ export default function MoreScreen() {
                 </TouchableOpacity>
               )}
               
-              {/* Notification badge for incomplete profile or preferences */}
-              {((isOnboardingIncomplete || !preferencesCompleted) && !anonStatus) && (
-                <View style={[
-                  styles.avatarBadge,
-                  !isOnboardingIncomplete && !preferencesCompleted && styles.avatarBadgeBlue
-                ]}
-                  className='border'
-                >
-                  {isOnboardingIncomplete ? (
-                    <Text style={styles.avatarBadgeText}>!</Text>
-                  ) : (
-                    <Sparkles color="#ffffff" size={12} strokeWidth={2.5} />
-                  )}
-                </View>
-              )}
             </View>
 
             <Text style={styles.profileName} className=' text-center'>
@@ -633,6 +622,9 @@ export default function MoreScreen() {
         onSignUpPress={() => {
           setGuestAuthModalVisible(false);
           router.push('/(auth)/SignUp');
+        }}
+        onContinueAsGuest={() => {
+          router.push('/menu');
         }}
       />
 

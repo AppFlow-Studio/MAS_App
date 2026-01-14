@@ -1,4 +1,4 @@
-import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, Linking } from 'react-native';
+import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import { gettingPrayerData, prayerTimesType, Profile } from '@/src/types';
@@ -65,7 +65,14 @@ export default function homeScreen() {
   const [exploreFeaturesY, setExploreFeaturesY] = useState(0);
   const [donationCarouselRelativeY, setDonationCarouselRelativeY] = useState(0);
   const donationVolunteerCarouselRef = useRef<DonationVolunteerCarouselRef>(null);
-  const [activeButton, setActiveButton] = useState<'donate' | 'volunteer' | null>(null);
+  const [activeButton, setActiveButton] = useState<'donate' | 'volunteer'>('donate');
+  const tabPosition = useSharedValue(0);
+  
+  const tabAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: tabPosition.value * ((width - 38) / 2) }]
+    }
+  });
   const [isAtBottom, setIsAtBottom] = useState(false);
 
   const updateBottomState = (isBottom: boolean) => {
@@ -182,27 +189,41 @@ export default function homeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
       {/* Blue area for top over-scroll */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 500, backgroundColor: '#214E91' }} />
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 500, backgroundColor: '#214E91', zIndex: 0 }} />
+      
+      {/* Refresh indicator */}
+      {refreshing && (
+        <View style={{ 
+          position: 'absolute', 
+          top: 100, 
+          left: 0, 
+          right: 0, 
+          alignItems: 'center', 
+          zIndex: 100 
+        }}>
+          <ActivityIndicator size="large" color={COLORS.white} />
+        </View>
+      )}
       
       <Animated.ScrollView
         ref={scrollRef}
-        style={{ backgroundColor: 'transparent' }}
+        style={{ backgroundColor: 'transparent', zIndex: 1 }}
         contentContainerStyle={{ backgroundColor: COLORS.background, minHeight: '100%', paddingBottom: 100 + 20 }}
-        className="h-full z-[0]"
+        className="h-full"
         bounces={true}
         alwaysBounceVertical={true}
         overScrollMode="never"
         onScroll={scrollHandler}
         onScrollEndDrag={handleScrollEndDrag}
         onMomentumScrollEnd={handleMomentumScrollEnd}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.white}
-            colors={[COLORS.white]}
+            tintColor={'transparent'}
+            colors={['transparent']}
             progressViewOffset={0}
-            style={{ backgroundColor: 'transparent' }}
           />
         }
       >
@@ -240,69 +261,77 @@ export default function homeScreen() {
 
       {/* Explore Features Section */}
       <View className='pt-4 px-3'>
-        <View className='flex-row justify-between items-center mb-2'>
+        <View className='flex-row items-center mb-2'>
           <Pressable onPress={() => router.push('/(user)/more')}>
             <Text style={{ color: COLORS.primary }} className='font-bold text-lg'>Explore features</Text>
           </Pressable>
-          <Pressable onPress={() => router.push('/(user)/more')}>
-            <Text style={{ color: COLORS.gray }} className='text-xs'>See all</Text>
-          </Pressable>
         </View>
 
-        <View className='flex-row justify-between'>
+        {/* Tab Bar - matching Recorded Lectures style */}
+        <View className="flex-row relative" style={{ backgroundColor: '#F3F4F6', borderRadius: 20, padding: 2 }}>
+          <Animated.View 
+            style={[
+              {
+                position: 'absolute',
+                backgroundColor: 'rgba(33, 78, 145, 0.15)',
+                borderRadius: 18,
+                height: '100%',
+                width: '50%',
+              },
+              tabAnimatedStyle
+            ]}
+          />
           {/* Donate Button */}
-          <Pressable
-            className='flex-1 mr-2 items-center justify-center py-0.5 px-2.5 rounded-full'
-            style={{
-              backgroundColor: activeButton === 'donate' ? COLORS.primary : COLORS.lightGray
-            }}
+          <Pressable 
             onPress={() => {
               setActiveButton('donate');
+              tabPosition.value = withTiming(0, { duration: 200 });
               donationVolunteerCarouselRef.current?.scrollToDonation();
             }}
+            style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
           >
-            <Icon
-              source={'hand-heart'}
-              size={16}
-              color={activeButton === 'donate' ? COLORS.white : COLORS.primary}
-            />
-            <Text
-              className='font-semibold text-[9px] mt-0.5 text-center'
-              numberOfLines={1}
-              style={{ color: activeButton === 'donate' ? COLORS.white : '#374151' }}
-            >
-              Donate
-            </Text>
+            <View className="flex-row items-center">
+              <Icon 
+                source="hand-heart" 
+                size={18} 
+                color={activeButton === 'donate' ? '#214E91' : '#6B7280'} 
+              />
+              <Text 
+                className="font-semibold ml-2"
+                style={{ color: activeButton === 'donate' ? '#214E91' : '#6B7280', fontSize: 14 }}
+              >
+                Donate
+              </Text>
+            </View>
           </Pressable>
-
+          
           {/* Volunteers Button */}
-          <Pressable
-            className='flex-1 ml-2 items-center justify-center py-0.5 px-2.5 rounded-full'
-            style={{
-              backgroundColor: activeButton === 'volunteer' ? COLORS.primary : COLORS.lightGray
-            }}
+          <Pressable 
             onPress={() => {
               setActiveButton('volunteer');
+              tabPosition.value = withTiming(1, { duration: 200 });
               donationVolunteerCarouselRef.current?.scrollToVolunteer();
             }}
+            style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
           >
-            <Icon
-              source={'account-group'}
-              size={16}
-              color={activeButton === 'volunteer' ? COLORS.white : COLORS.primary}
-            />
-            <Text
-              className='font-semibold text-[9px] mt-0.5 text-center'
-              numberOfLines={1}
-              style={{ color: activeButton === 'volunteer' ? COLORS.white : '#374151' }}
-            >
-              Volunteers
-            </Text>
+            <View className="flex-row items-center">
+              <Icon 
+                source="account-group" 
+                size={18} 
+                color={activeButton === 'volunteer' ? '#214E91' : '#6B7280'} 
+              />
+              <Text 
+                className="font-semibold ml-2"
+                style={{ color: activeButton === 'volunteer' ? '#214E91' : '#6B7280', fontSize: 14 }}
+              >
+                Volunteers
+              </Text>
+            </View>
           </Pressable>
         </View>
 
         {/* Donation and Volunteer Cards Carousel */}
-        <View className='pt-3 px-3'>
+        <View className='pt-3'>
           <DonationVolunteerCarousel ref={donationVolunteerCarouselRef} />
         </View>
       </View>

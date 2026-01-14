@@ -1,7 +1,7 @@
 import { View, Text, Dimensions, StatusBar, Pressable, Platform, KeyboardAvoidingView, ScrollView } from 'react-native'
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import { Icon, TextInput, ActivityIndicator } from 'react-native-paper'
-import { Link, Stack } from "expo-router"
+import { Link, Stack, router } from "expo-router"
 import { supabase } from '@/src/lib/supabase'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import Animated, { 
@@ -9,13 +9,9 @@ import Animated, {
   useAnimatedStyle, 
   withTiming, 
   withSpring,
-  withDelay,
   withSequence,
   FadeIn,
-  FadeInUp,
-  interpolateColor,
 } from 'react-native-reanimated'
-import { LinearGradient } from 'expo-linear-gradient'
 import {
   GoogleSignin,
   statusCodes,
@@ -31,66 +27,6 @@ GoogleSignin.configure({
 
 const { width, height } = Dimensions.get('window')
 
-// Animated geometric pattern component
-const GeometricPattern = () => {
-  const rotation = useSharedValue(0)
-  const scale = useSharedValue(0.8)
-
-  useEffect(() => {
-    rotation.value = withTiming(360, { duration: 60000 })
-    scale.value = withSequence(
-      withTiming(1, { duration: 2000 }),
-      withTiming(0.95, { duration: 3000 }),
-    )
-  }, [])
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${rotation.value}deg` },
-      { scale: scale.value }
-    ],
-    opacity: 0.08,
-  }))
-
-  return (
-    <Animated.View style={[{
-      position: 'absolute',
-      bottom: -150,
-      left: -100,
-      width: 400,
-      height: 400,
-    }, animatedStyle]}>
-      <View style={{
-        width: '100%',
-        height: '100%',
-        borderWidth: 2,
-        borderColor: '#0F4184',
-        borderRadius: 200,
-      }} />
-      <View style={{
-        position: 'absolute',
-        top: 50,
-        left: 50,
-        width: 300,
-        height: 300,
-        borderWidth: 2,
-        borderColor: '#6FA66C',
-        borderRadius: 150,
-      }} />
-      <View style={{
-        position: 'absolute',
-        top: 100,
-        left: 100,
-        width: 200,
-        height: 200,
-        borderWidth: 2,
-        borderColor: '#0F4184',
-        borderRadius: 100,
-      }} />
-    </Animated.View>
-  )
-}
-
 const SignIn = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -101,30 +37,15 @@ const SignIn = () => {
   const [passwordFocused, setPasswordFocused] = useState(false)
 
   // Animation values
-  const headerTranslate = useSharedValue(-100)
-  const formOpacity = useSharedValue(0)
-  const formTranslate = useSharedValue(50)
   const buttonScale = useSharedValue(1)
-
-  useEffect(() => {
-    // Staggered entrance animations
-    headerTranslate.value = withSpring(0, { damping: 15, stiffness: 80 })
-    formOpacity.value = withDelay(300, withTiming(1, { duration: 600 }))
-    formTranslate.value = withDelay(300, withSpring(0, { damping: 15, stiffness: 80 }))
-  }, [])
-
-  const headerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: headerTranslate.value }],
-  }))
-
-  const formStyle = useAnimatedStyle(() => ({
-    opacity: formOpacity.value,
-    transform: [{ translateY: formTranslate.value }],
-  }))
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }))
+
+  const canSignIn = () => {
+    return email.trim().length > 0 && password.length > 0
+  }
 
   const validateForm = () => {
     let valid = true
@@ -253,341 +174,329 @@ const SignIn = () => {
     }
   }
 
-
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
       
-      <LinearGradient
-        colors={['#ffffff', '#f8fafc', '#f1f5f9']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <GeometricPattern />
-        
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
+        {/* Floating Card Container */}
+        <View style={{ 
+          flex: 1,
+          marginHorizontal: 10,
+          marginTop: Platform.OS === 'ios' ? 60 : 40,
+          marginBottom: Platform.OS === 'ios' ? 12 : 10,
+          backgroundColor: '#ffffff',
+          borderRadius: 40,
+          overflow: 'hidden',
+          shadowColor: '#0E519F',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          elevation: 20,
+        }}>
+          {/* Handle */}
+          <View style={{
+            width: 36,
+            height: 4,
+            backgroundColor: 'rgba(14, 81, 159, 0.3)',
+            borderRadius: 2,
+            alignSelf: 'center',
+            marginTop: 10,
+            marginBottom: 10,
+          }} />
+
           <ScrollView 
             contentContainerStyle={{ flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Header Section */}
-            <Animated.View style={[{ paddingTop: height * 0.1, paddingHorizontal: 24 }, headerStyle]}>
-              <Text style={{ 
-                fontFamily: 'Poppins_700Bold',
-                fontSize: 42,
-                color: '#0f172a',
-                letterSpacing: -1,
-              }}>
-                Welcome
-              </Text>
-              <Text style={{ 
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 42,
-                color: '#0F4184',
-                marginTop: -10,
-                letterSpacing: -1,
-              }}>
-                Back
-              </Text>
-              <Text style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 16,
-                color: 'rgba(15, 23, 42, 0.6)',
-                marginTop: 8,
-              }}>
-                Sign in to continue
-              </Text>
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
+              {/* Title Section */}
+              <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 24 }}>
+                <Text style={{
+                  fontSize: 28,
+                  color: '#0E519F',
+                  fontWeight: '700',
+                  textAlign: 'center',
+                  marginBottom: 8,
+                }}>
+                  Welcome Back
+                </Text>
+                <Text style={{
+                  fontSize: 14,
+                  color: 'rgba(14, 81, 159, 0.6)',
+                  textAlign: 'center',
+                }}>
+                  Sign in to continue
+                </Text>
+              </View>
 
-              {/* New member link */}
+              {/* New Member Link */}
               <Link href='/SignUp' asChild>
                 <Pressable style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  marginTop: 20,
-                  backgroundColor: 'rgba(15, 65, 132, 0.08)',
-                  paddingVertical: 12,
+                  alignSelf: 'center',
+                  backgroundColor: 'rgba(14, 81, 159, 0.1)',
+                  paddingVertical: 10,
                   paddingHorizontal: 20,
-                  borderRadius: 30,
-                  alignSelf: 'flex-start',
-                  borderWidth: 1,
-                  borderColor: 'rgba(15, 65, 132, 0.15)',
+                  borderRadius: 20,
+                  marginBottom: 24,
                 }}>
                   <Text style={{ 
-                    color: '#0f172a', 
-                    fontFamily: 'Poppins_500Medium',
+                    color: '#0E519F', 
+                    fontWeight: '500',
                     marginRight: 8,
                   }}>
                     New member?
                   </Text>
-                  <Icon source='arrow-right' size={18} color='#0F4184' />
+                  <Icon source='arrow-right' size={18} color='#0E519F' />
                 </Pressable>
               </Link>
-            </Animated.View>
 
-            {/* Form Section */}
-            <Animated.View style={[{ 
-              flex: 1, 
-              paddingHorizontal: 24, 
-              paddingTop: 50,
-            }, formStyle]}>
-              
-              {/* Email Input */}
-              <View style={{ marginBottom: 16 }}>
-                <View style={{
-                  backgroundColor: 'rgba(15, 65, 132, 0.06)',
-                  borderRadius: 16,
-                  borderWidth: 2,
-                  borderColor: errors.email ? '#EF4444' : emailFocused ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 16,
-                }}>
-                  <Icon 
-                    source="email-outline" 
-                    size={22} 
-                    color={errors.email ? '#EF4444' : emailFocused ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'} 
-                  />
-                  <TextInput
-                    mode='flat'
-                    value={email}
-                    onChangeText={(text) => {
-                      setEmail(text)
-                      if (errors.email) {
-                        setErrors(prev => ({ ...prev, email: '' }))
-                      }
-                    }}
-                    onFocus={() => setEmailFocused(true)}
-                    onBlur={() => setEmailFocused(false)}
-                    style={{ 
-                      flex: 1,
-                      backgroundColor: 'transparent',
-                      fontSize: 16,
-                      fontFamily: 'Poppins_400Regular',
-                    }}
-                    placeholder="Email Address"
-                    placeholderTextColor='rgba(15, 65, 132, 0.4)'
-                    textColor='#0f172a'
-                    underlineColor='transparent'
-                    activeUnderlineColor='transparent'
-                    selectionColor='#0F4184'
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-                {errors.email && (
-                  <Text style={{ 
-                    color: '#EF4444', 
-                    fontSize: 12, 
-                    marginTop: 4, 
-                    marginLeft: 16,
-                    fontFamily: 'Poppins_400Regular',
+              {/* Form Section */}
+              <View style={{ flex: 1 }}>
+                {/* Email Input */}
+                <View style={{ marginBottom: 16 }}>
+                  <View style={{
+                    backgroundColor: 'rgba(14, 81, 159, 0.08)',
+                    borderRadius: 16,
+                    borderWidth: 2,
+                    borderColor: errors.email ? '#EF4444' : emailFocused ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
                   }}>
-                    {errors.email}
-                  </Text>
-                )}
-              </View>
-
-              {/* Password Input */}
-              <View style={{ marginBottom: 16 }}>
-                <View style={{
-                  backgroundColor: 'rgba(15, 65, 132, 0.06)',
-                  borderRadius: 16,
-                  borderWidth: 2,
-                  borderColor: errors.password ? '#EF4444' : passwordFocused ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 16,
-                }}>
-                  <Icon 
-                    source="lock-outline" 
-                    size={22} 
-                    color={errors.password ? '#EF4444' : passwordFocused ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'} 
-                  />
-                  <TextInput
-                    mode='flat'
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text)
-                      if (errors.password) {
-                        setErrors(prev => ({ ...prev, password: '' }))
-                      }
-                    }}
-                    onFocus={() => setPasswordFocused(true)}
-                    onBlur={() => setPasswordFocused(false)}
-                    style={{ 
-                      flex: 1,
-                      backgroundColor: 'transparent',
-                      fontSize: 16,
-                      fontFamily: 'Poppins_400Regular',
-                    }}
-                    placeholder="Password"
-                    placeholderTextColor='rgba(15, 65, 132, 0.4)'
-                    textColor='#0f172a'
-                    underlineColor='transparent'
-                    activeUnderlineColor='transparent'
-                    secureTextEntry={!showPassword}
-                    selectionColor='#0F4184'
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <Pressable onPress={() => setShowPassword(!showPassword)}>
                     <Icon 
-                      source={showPassword ? 'eye-off-outline' : 'eye-outline'} 
+                      source="email-outline" 
                       size={22} 
-                      color='rgba(15, 65, 132, 0.5)' 
+                      color={errors.email ? '#EF4444' : emailFocused ? '#0E519F' : 'rgba(14, 81, 159, 0.5)'} 
                     />
-                  </Pressable>
+                    <TextInput
+                      mode='flat'
+                      value={email}
+                      onChangeText={(text) => {
+                        setEmail(text)
+                        if (errors.email) {
+                          setErrors(prev => ({ ...prev, email: '' }))
+                        }
+                      }}
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(false)}
+                      style={{ 
+                        flex: 1,
+                        backgroundColor: 'transparent',
+                        fontSize: 16,
+                      }}
+                      placeholder="Email Address"
+                      placeholderTextColor='rgba(14, 81, 159, 0.4)'
+                      textColor='#0f172a'
+                      underlineColor='transparent'
+                      activeUnderlineColor='transparent'
+                      selectionColor='#0E519F'
+                      cursorColor='#0E519F'
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+                  {errors.email && (
+                    <Text style={{ 
+                      color: '#EF4444', 
+                      fontSize: 12, 
+                      marginTop: 4, 
+                      marginLeft: 16,
+                    }}>
+                      {errors.email}
+                    </Text>
+                  )}
                 </View>
-                {errors.password && (
-                  <Text style={{ 
-                    color: '#EF4444', 
-                    fontSize: 12, 
-                    marginTop: 4, 
-                    marginLeft: 16,
-                    fontFamily: 'Poppins_400Regular',
-                  }}>
-                    {errors.password}
-                  </Text>
-                )}
-              </View>
 
-              {/* Forgot Password */}
-              <Animated.View entering={FadeInUp.delay(600).duration(400)}>
-                <Pressable style={{ alignSelf: 'flex-end', marginBottom: 24 }}>
+                {/* Password Input */}
+                <View style={{ marginBottom: 12 }}>
+                  <View style={{
+                    backgroundColor: 'rgba(14, 81, 159, 0.08)',
+                    borderRadius: 16,
+                    borderWidth: 2,
+                    borderColor: errors.password ? '#EF4444' : passwordFocused ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                  }}>
+                    <Icon 
+                      source="lock-outline" 
+                      size={22} 
+                      color={errors.password ? '#EF4444' : passwordFocused ? '#0E519F' : 'rgba(14, 81, 159, 0.5)'} 
+                    />
+                    <TextInput
+                      mode='flat'
+                      value={password}
+                      onChangeText={(text) => {
+                        setPassword(text)
+                        if (errors.password) {
+                          setErrors(prev => ({ ...prev, password: '' }))
+                        }
+                      }}
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(false)}
+                      style={{ 
+                        flex: 1,
+                        backgroundColor: 'transparent',
+                        fontSize: 16,
+                      }}
+                      placeholder="Password"
+                      placeholderTextColor='rgba(14, 81, 159, 0.4)'
+                      textColor='#0f172a'
+                      underlineColor='transparent'
+                      activeUnderlineColor='transparent'
+                      secureTextEntry={!showPassword}
+                      selectionColor='#0E519F'
+                      cursorColor='#0E519F'
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <Pressable onPress={() => setShowPassword(!showPassword)}>
+                      <Icon 
+                        source={showPassword ? 'eye-off-outline' : 'eye-outline'} 
+                        size={22} 
+                        color='rgba(14, 81, 159, 0.5)' 
+                      />
+                    </Pressable>
+                  </View>
+                  {errors.password && (
+                    <Text style={{ 
+                      color: '#EF4444', 
+                      fontSize: 12, 
+                      marginTop: 4, 
+                      marginLeft: 16,
+                    }}>
+                      {errors.password}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Forgot Password */}
+                <Pressable style={{ alignSelf: 'flex-end', marginBottom: 20 }}>
                   <Text style={{
-                    color: '#0F4184',
-                    fontFamily: 'Poppins_500Medium',
+                    color: '#0E519F',
+                    fontWeight: '500',
                     fontSize: 14,
                   }}>
                     Forgot Password?
                   </Text>
                 </Pressable>
-              </Animated.View>
+              </View>
 
-              {/* Sign In Button */}
-              <Animated.View 
-                entering={FadeInUp.delay(700).duration(400)}
-                style={[buttonAnimatedStyle]}
-              >
-                <Pressable
-                  onPress={signInWithEmail}
-                  disabled={loading}
-                  style={{
-                    backgroundColor: '#0F4184',
-                    paddingVertical: 16,
-                    borderRadius: 16,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: '#0F4184',
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 16,
-                    elevation: 8,
-                  }}
-                >
-                  {loading ? (
-                    <ActivityIndicator color='#fff' size={24} />
-                  ) : (
-                    <>
-                      <Text style={{
-                        color: '#fff',
-                        fontFamily: 'Poppins_600SemiBold',
-                        fontSize: 18,
-                        marginRight: 8,
-                      }}>
-                        Sign In
-                      </Text>
-                      <Icon source='arrow-right' size={20} color='#fff' />
-                    </>
-                  )}
-                </Pressable>
-              </Animated.View>
-
-              {/* Divider */}
-              <Animated.View 
-                entering={FadeIn.delay(800).duration(400)}
-                style={{ 
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
-                  marginVertical: 32,
-                }}
-              >
-                <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15, 65, 132, 0.15)' }} />
-                <Text style={{ 
-                  color: 'rgba(15, 23, 42, 0.5)', 
-                  marginHorizontal: 16,
-                  fontFamily: 'Poppins_400Regular',
-                }}>
-                  or continue with
-                </Text>
-                <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15, 65, 132, 0.15)' }} />
-              </Animated.View>
-
-              {/* Social Sign In Buttons */}
-              <Animated.View 
-                entering={FadeInUp.delay(900).duration(400)}
-                style={{ gap: 12, paddingBottom: 40 }}
-              >
-                {Platform.OS === 'ios' && (
+              {/* Bottom Section */}
+              <View style={{ paddingBottom: 20 }}>
+                {/* Sign In Button */}
+                <Animated.View style={[{ marginBottom: 16 }, buttonAnimatedStyle]}>
                   <Pressable
-                    onPress={handleAppleSignIn}
+                    onPress={signInWithEmail}
+                    disabled={loading}
                     style={{
-                      backgroundColor: '#0f172a',
-                      paddingVertical: 14,
-                      borderRadius: 16,
+                      height: 50,
+                      backgroundColor: canSignIn() ? '#0E519F' : 'rgba(14, 81, 159, 0.3)',
+                      borderRadius: 25,
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      gap: 8,
                     }}
                   >
-                    <Icon source='apple' size={24} color='#fff' />
+                    {loading ? (
+                      <ActivityIndicator color='#ffffff' size="small" />
+                    ) : (
+                      <>
+                        <Text style={{
+                          color: '#ffffff',
+                          fontWeight: '600',
+                          fontSize: 16,
+                        }}>
+                          Sign In
+                        </Text>
+                        <Icon source='arrow-right' size={20} color='#ffffff' />
+                      </>
+                    )}
+                  </Pressable>
+                </Animated.View>
+
+                {/* Divider */}
+                <View style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  marginVertical: 20,
+                }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(14, 81, 159, 0.15)' }} />
+                  <Text style={{ 
+                    color: 'rgba(14, 81, 159, 0.5)', 
+                    marginHorizontal: 16,
+                    fontSize: 13,
+                  }}>
+                    or continue with
+                  </Text>
+                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(14, 81, 159, 0.15)' }} />
+                </View>
+
+                {/* Social Sign In Buttons */}
+                <View style={{ gap: 12 }}>
+                  {Platform.OS === 'ios' && (
+                    <Pressable
+                      onPress={handleAppleSignIn}
+                      style={{
+                        backgroundColor: '#0f172a',
+                        paddingVertical: 14,
+                        borderRadius: 25,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon source='apple' size={22} color='#fff' />
+                      <Text style={{
+                        color: '#fff',
+                        fontWeight: '600',
+                        fontSize: 15,
+                        marginLeft: 10,
+                      }}>
+                        Continue with Apple
+                      </Text>
+                    </Pressable>
+                  )}
+
+                  <Pressable
+                    onPress={handleGoogleSignIn}
+                    style={{
+                      backgroundColor: 'rgba(14, 81, 159, 0.08)',
+                      paddingVertical: 14,
+                      borderRadius: 25,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: 1,
+                      borderColor: 'rgba(14, 81, 159, 0.15)',
+                    }}
+                  >
+                    <Icon source='google' size={22} color='#0f172a' />
                     <Text style={{
-                      color: '#fff',
-                      fontFamily: 'Poppins_600SemiBold',
-                      fontSize: 16,
-                      marginLeft: 12,
+                      color: '#0f172a',
+                      fontWeight: '600',
+                      fontSize: 15,
+                      marginLeft: 10,
                     }}>
-                      Continue with Apple
+                      Continue with Google
                     </Text>
                   </Pressable>
-                )}
-
-                <Pressable
-                  onPress={handleGoogleSignIn}
-                  style={{
-                    backgroundColor: 'rgba(15, 65, 132, 0.08)',
-                    paddingVertical: 14,
-                    borderRadius: 16,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderWidth: 1,
-                    borderColor: 'rgba(15, 65, 132, 0.15)',
-                  }}
-                >
-                  <Icon source='google' size={24} color='#0f172a' />
-                  <Text style={{
-                    color: '#0f172a',
-                    fontFamily: 'Poppins_600SemiBold',
-                    fontSize: 16,
-                    marginLeft: 12,
-                  }}>
-                    Continue with Google
-                  </Text>
-                </Pressable>
-              </Animated.View>
-            </Animated.View>
+                </View>
+              </View>
+            </View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </LinearGradient>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   )
 }

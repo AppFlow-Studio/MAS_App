@@ -757,7 +757,8 @@ export default function RecommendedForYou() {
   }, [])
 
   const handleSetPreferences = () => {
-    router.push('/more/PreferencesOnboarding')
+    // Navigate to the modal version that presents on top of this screen
+    router.push('/myPrograms/PreferencesOnboardingModal')
   }
 
   const interestsMap = DEMO_MODE ? DEMO_INTERESTS : (allInterests?.map(i => ({ id: i.id, category_name: i.category_name })) ?? [])

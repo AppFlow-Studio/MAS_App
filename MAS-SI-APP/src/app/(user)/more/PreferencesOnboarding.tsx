@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Icon, ActivityIndicator } from 'react-native-paper'
 import { Stack, router } from "expo-router"
 import { LinearGradient } from 'expo-linear-gradient'
+import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass'
 import { useAuth } from '@/src/providers/AuthProvider'
 import {
   useGroupedInterests,
@@ -1170,42 +1171,56 @@ const PreferencesOnboarding = () => {
   const isSaving = savePreferencesMutation.isPending
 
   return (
-    <LinearGradient colors={['#ffffff', '#f8fafc', '#f1f5f9']} style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false, presentation: 'fullScreenModal' }} />
       
-      <SafeAreaView style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingVertical: 16 }}>
+      {/* Blue Header Area - extends to top of screen */}
+      <View style={{ backgroundColor: '#0F4184' }}>
+        <SafeAreaView>
+          {/* Header - Blue Background */}
+          <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Pressable onPress={handleBack} style={{ padding: 8 }}>
-              <Icon source="arrow-left" size={24} color="#0f172a" />
+            <Pressable onPress={handleBack}>
+              <LiquidGlassView 
+                style={{ 
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                interactive
+                effect="clear"
+              >
+                <Icon source="arrow-left" size={22} color="#ffffff" />
+              </LiquidGlassView>
             </Pressable>
             
             {/* Percentage */}
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#0F4184' }}>
+              <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#ffffff' }}>
                 {calculateCompletionPercentage}%
               </Text>
-              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 11, color: 'rgba(15, 23, 42, 0.5)' }}>
+              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 11, color: 'rgba(255, 255, 255, 0.7)' }}>
                 Complete
               </Text>
             </View>
             
             {/* Skip button */}
-            <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
-              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: 'rgba(15, 23, 42, 0.5)' }}>
+            <Pressable onPress={() => router.back()} style={{ padding: 10 }}>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: 'rgba(255, 255, 255, 0.9)' }}>
                 Skip
               </Text>
             </Pressable>
           </View>
           
           {/* Progress bar */}
-          <View style={{ marginTop: 16, height: 6, backgroundColor: 'rgba(15, 65, 132, 0.1)', borderRadius: 3 }}>
+          <View style={{ marginTop: 16, height: 6, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 3 }}>
             <View 
               style={{ 
                 width: `${calculateCompletionPercentage}%`, 
                 height: '100%', 
-                backgroundColor: '#0F4184', 
+                backgroundColor: '#ffffff', 
                 borderRadius: 3 
               }} 
             />
@@ -1220,15 +1235,15 @@ const PreferencesOnboarding = () => {
                     width: 24,
                     height: 24,
                     borderRadius: 12,
-                    backgroundColor: i <= currentStep ? '#0F4184' : 'rgba(15, 65, 132, 0.1)',
+                    backgroundColor: i <= currentStep ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
                   {i < currentStep ? (
-                    <Icon source="check" size={14} color="#fff" />
+                    <Icon source="check" size={14} color="#0F4184" />
                   ) : (
-                    <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: i === currentStep ? '#fff' : 'rgba(15, 65, 132, 0.4)' }}>
+                    <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: i === currentStep ? '#0F4184' : 'rgba(255, 255, 255, 0.5)' }}>
                       {i + 1}
                     </Text>
                   )}
@@ -1236,15 +1251,26 @@ const PreferencesOnboarding = () => {
               </View>
             ))}
           </View>
+        </View>
+        </SafeAreaView>
+      </View>
 
+      {/* Content Area - Light Background */}
+      <LinearGradient colors={['#ffffff', '#f8fafc', '#f1f5f9']} style={{ flex: 1 }}>
+        {/* Content */}
+        <ScrollView 
+          style={{ flex: 1 }} 
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Step Label */}
           <View style={{ 
-            marginTop: 16, 
             backgroundColor: 'rgba(15, 65, 132, 0.06)', 
             borderRadius: 12, 
             padding: 12,
             flexDirection: 'row',
             alignItems: 'center',
+            marginBottom: 16,
           }}>
             <View style={{
               width: 36,
@@ -1285,14 +1311,6 @@ const PreferencesOnboarding = () => {
               </View>
             )}
           </View>
-        </View>
-
-        {/* Content */}
-        <ScrollView 
-          style={{ flex: 1 }} 
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
           {renderStepContent()}
         </ScrollView>
 
@@ -1353,8 +1371,8 @@ const PreferencesOnboarding = () => {
             )}
           </Pressable>
         </View>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </View>
   )
 }
 

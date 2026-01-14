@@ -44,21 +44,50 @@ export default function NotificationsIndex() {
         >
           {/* Custom Header */}
           <View style={{ paddingTop: 30, paddingHorizontal: 0, flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-            <Pressable
-              style={{ 
-                width: 40, 
-                height: 40, 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}
-              onPress={() => {
-                navigation.getParent()?.getState().index == 0 
-                  ? router.replace('/myPrograms') 
-                  : router.back();
-              }}
-            >
-              <Icon source={'chevron-left'} color='white' size={28} />
-            </Pressable>
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                }}
+                interactive
+                effect="clear"
+              >
+                <Pressable
+                  style={{ 
+                    width: 40, 
+                    height: 40, 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}
+                  onPress={() => {
+                    navigation.getParent()?.getState().index == 0 
+                      ? router.replace('/myPrograms') 
+                      : router.back();
+                  }}
+                >
+                  <Icon source={'chevron-left'} color='white' size={28} />
+                </Pressable>
+              </LiquidGlassView>
+            ) : (
+              <Pressable
+                style={{ 
+                  width: 40, 
+                  height: 40, 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}
+                onPress={() => {
+                  navigation.getParent()?.getState().index == 0 
+                    ? router.replace('/myPrograms') 
+                    : router.back();
+                }}
+              >
+                <Icon source={'chevron-left'} color='white' size={28} />
+              </Pressable>
+            )}
             <Text style={{ 
               color: 'white', 
               fontSize: 20, 
@@ -157,7 +186,7 @@ export default function NotificationsIndex() {
                 style={styles.enableButtonInner}
                 onPress={handleEnableNotifications}
               >
-                <Bell color="#1a1a1a" size={20} strokeWidth={2.5} style={{ marginRight: 10 }} />
+                <Bell color="white" size={20} strokeWidth={2.5} style={{ marginRight: 10 }} />
                 <Text style={styles.enableButtonTextGlass}>Enable Push Notifications</Text>
               </TouchableOpacity>
             </LiquidGlassView>
@@ -342,7 +371,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   enableButtonTextGlass: {
-    color: '#1a1a1a',
+    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

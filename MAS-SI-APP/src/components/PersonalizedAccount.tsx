@@ -209,6 +209,13 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
       }
     }
 
+    // Check if verification code is correct
+    const isCodeCorrect = () => {
+      if (currentStep !== 2) return false
+      const enteredCode = verificationCode.join('')
+      return enteredCode.length === 6 && enteredCode === generatedCode
+    }
+
     const handleNext = () => {
       if (!canProceed()) return
 
@@ -368,19 +375,43 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                     mode='flat'
                     value={phoneNumber}
                     onChangeText={(text) => {
+                      // Get current digits and new digits
+                      const currentDigits = phoneNumber.replace(/\D/g, '')
+                      const newDigits = text.replace(/\D/g, '').slice(0, 10)
+                      
+                      // Allow empty/full deletion
+                      if (newDigits.length === 0) {
+                        setPhoneNumber('')
+                        return
+                      }
+                      
+                      // Detect if user is deleting (fewer digits than before)
+                      // If text is shorter but digit count is same, user deleted a formatting char
+                      // In that case, also remove a digit to make deletion feel natural
+                      const isDeleting = text.length < phoneNumber.length
+                      const sameDigitCount = newDigits.length === currentDigits.length
+                      
+                      let digitsToFormat = newDigits
+                      if (isDeleting && sameDigitCount && currentDigits.length > 0) {
+                        // User deleted a formatting character, remove the last digit too
+                        digitsToFormat = newDigits.slice(0, -1)
+                      }
+                      
+                      // Allow empty after adjustment
+                      if (digitsToFormat.length === 0) {
+                        setPhoneNumber('')
+                        return
+                      }
+                      
                       // Format as (XXX) XXX-XXXX
-                      const cleaned = text.replace(/\D/g, '').slice(0, 10)
-                      let formatted = ''
-                      if (cleaned.length > 0) {
-                        formatted = '(' + cleaned.slice(0, 3)
+                      let formatted = '(' + digitsToFormat.slice(0, 3)
+                      if (digitsToFormat.length >= 3) {
+                        formatted += ') ' + digitsToFormat.slice(3, 6)
                       }
-                      if (cleaned.length >= 3) {
-                        formatted += ') ' + cleaned.slice(3, 6)
+                      if (digitsToFormat.length >= 6) {
+                        formatted += '-' + digitsToFormat.slice(6, 10)
                       }
-                      if (cleaned.length >= 6) {
-                        formatted += '-' + cleaned.slice(6, 10)
-                      }
-                      setPhoneNumber(formatted || cleaned)
+                      setPhoneNumber(formatted)
                     }}
                     placeholder="(555) 123-4567"
                     keyboardType="phone-pad"
@@ -718,7 +749,11 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                     style={{
                       flex: 1,
                       height: 50,
-                      backgroundColor: canProceed() ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.3)',
+                      backgroundColor: isCodeCorrect() 
+                        ? '#22C55E' 
+                        : canProceed() 
+                          ? 'rgba(255, 255, 255, 0.95)' 
+                          : 'rgba(255, 255, 255, 0.3)',
                       borderRadius: 25,
                       alignItems: 'center',
                       flexDirection: 'row',
@@ -727,25 +762,25 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                     }}
                   >
                     {loading ? (
-                      <ActivityIndicator size="small" color="#0E519F" />
+                      <ActivityIndicator size="small" color={isCodeCorrect() ? '#ffffff' : '#0E519F'} />
                     ) : (
                       <>
                         <Text style={{
                           fontSize: 16,
-                          color: '#0E519F',
+                          color: isCodeCorrect() ? '#ffffff' : '#0E519F',
                           fontWeight: '600',
                         }}>
                           {currentStep === totalSteps 
                             ? 'Complete Setup' 
                             : currentStep === 2 
-                              ? 'Verify' 
+                              ? (isCodeCorrect() ? 'Verified!' : 'Verify')
                               : 'Continue'}
                         </Text>
                         {currentStep < totalSteps && currentStep !== 2 && (
                           <Icon source="arrow-right" size={20} color="#0E519F" />
                         )}
                         {currentStep === 2 && (
-                          <Icon source="shield-check" size={20} color="#0E519F" />
+                          <Icon source={isCodeCorrect() ? "check-circle" : "shield-check"} size={20} color={isCodeCorrect() ? '#ffffff' : '#0E519F'} />
                         )}
                       </>
                     )}

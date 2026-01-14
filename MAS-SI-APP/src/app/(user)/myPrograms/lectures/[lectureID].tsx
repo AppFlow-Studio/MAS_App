@@ -40,7 +40,7 @@ export default function LecturesData() {
       setLecture(data)
       let speaker_string: string[] = data.lecture_speaker.map(() => { return '' })
       const speakers = await Promise.all(
-        data.lecture_speaker.map(async (speaker_id, index) => {
+        data.lecture_speaker.map(async (speaker_id: string, index: number) => {
           const { data: speakerInfo, error: speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
           if (speakerInfo) {
             speaker_string[index] = speakerInfo.speaker_name

@@ -1,5 +1,6 @@
 import { View, Text, FlatList, Pressable, ScrollView, StatusBar, Image, Dimensions, RefreshControl, ActivityIndicator, Platform } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import RenderMyLibraryProgram from '@/src/components/UserProgramComponets/renderMyLibraryProgram';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
@@ -39,6 +40,7 @@ export default function userPrograms() {
   const [ userNotis, setUserNotis ] = useState()
   const [ refreshing, setRefreshing ] = useState(false)
   const [ signIn, setSignIn ] = useState(true)
+  const [ guestAuthModalVisible, setGuestAuthModalVisible ] = useState(false)
   const GoogleButtonSignUp = () => {
         GoogleSignin.configure({
           iosClientId : '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
@@ -111,6 +113,17 @@ export default function userPrograms() {
   useEffect(() => {
     checkIfAnon()
   }, [ session ])
+
+  // Show guest auth modal every time anonymous user enters/focuses on this screen
+  useFocusEffect(
+    useCallback(() => {
+      if (session?.user.is_anonymous) {
+        setGuestAuthModalVisible(true);
+      } else {
+        setGuestAuthModalVisible(false);
+      }
+    }, [session])
+  );
 
   useEffect(() => {
     getUserProgramLibrary()
@@ -247,11 +260,17 @@ async function signUpWithEmail() {
       
       {/* Auth Modal - uses the same SignInAnonModal as More screen */}
       <SignInAnonModal 
-        visible={anonStatus} 
-        setVisible={() => {}}
+        visible={guestAuthModalVisible} 
+        setVisible={() => setGuestAuthModalVisible(false)}
         dismissable={false}
         showLanding={true}
-        onSignUpPress={() => router.push('/(auth)/SignUp')}
+        onSignUpPress={() => {
+          setGuestAuthModalVisible(false);
+          router.push('/(auth)/SignUp');
+        }}
+        onContinueAsGuest={() => {
+          router.push('/menu');
+        }}
       />
 
       {/* Header */}

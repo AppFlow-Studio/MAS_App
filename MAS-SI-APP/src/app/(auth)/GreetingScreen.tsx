@@ -140,7 +140,7 @@ const GlowEffect = () => {
   )
 }
 
-const GreetingScreen = () => {
+export default function GreetingScreen() {
   // Video state - starts as ended if video is disabled
   const [videoEnded, setVideoEnded] = useState(!ENABLE_VIDEO_BACKGROUND)
   
@@ -407,4 +407,3 @@ const GreetingScreen = () => {
   )
 }
 
-export default GreetingScreen

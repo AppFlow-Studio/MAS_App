@@ -25,112 +25,10 @@ import type { NavigationProp } from '@react-navigation/native'
 import Toast from 'react-native-toast-message'
 import * as Haptics from 'expo-haptics'
 import DeckSwiper from 'react-native-deck-swiper'
+import { glassyToastConfig } from '@/src/lib/toastConfig'
 
-// Toast configuration
-const toastConfig = {
-  addProgramToNotificationsToast: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]' 
-        experimentalBlurMethod={'dimezisBlurView'}
-        style={{ width: '100%', maxWidth: '100%' }}
-      >
-        <View>
-          <Image source={props.props.program_img ? { uri: props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }}/>
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text>1 Program Added To Notifications</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-sm'>{props.props.program_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
-          </View>
-        </View>
-      </BlurView>
-    </Pressable>
-  ),
-  LectureAddedToPlaylist: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-3 p-1 max-w-[85%] max-h-[60]'
-        experimentalBlurMethod={'dimezisBlurView'}
-      >
-        <View className=''>
-          <Image source={props.props?.playlist_img ? { uri: props.props.playlist_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }}/>
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text numberOfLines={1} allowFontScaling adjustsFontSizeToFit>1 lecture added</Text>
-          </View>
-          <View className='flex-row'>
-            <Text>{props.props?.playlist_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
-          </View>
-        </View>
-      </BlurView>
-    </Pressable>
-  ),
-  ProgramAddedToPrograms: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]' 
-        experimentalBlurMethod={'dimezisBlurView'}
-        style={{ width: '100%', maxWidth: '100%' }}
-      >
-        <View>
-          <Image source={props.props.program_img ? { uri: props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }}/>
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text>1 Program Added to Library</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-sm'>{props.props.program_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
-          </View>
-        </View>
-      </BlurView>
-    </Pressable>
-  ),
-  addEventToNotificationsToast: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]' 
-        experimentalBlurMethod={'dimezisBlurView'}
-      >
-        <View>
-          <Image source={props.props.event_img ? { uri: props.props.event_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }}/>
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text>1 Program Added To Notifications</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-sm'>{props.props.event_name}</Text>
-            <Icon source={'chevron-right'} size={20} />
-          </View>
-        </View>
-      </BlurView>
-    </Pressable>
-  ),
-  ConfirmNotificationOption: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <BlurView intensity={40} className='flex-row items-center justify-between px-4 rounded-xl p-2 max-w-[90%] max-h-[60]' 
-        experimentalBlurMethod={'dimezisBlurView'}
-      >
-        <View className='flex-col pl-2'>
-          <View>
-            <Text className="text-white">{props.message} : {props.time}</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-md font-bold text-white'>{props.prayer}</Text>
-          </View>
-        </View>
-        <View className="pl-5"/>
-        <View className="bg-white p-1 rounded-full">
-          <Icon source={'check'} size={20} color="green"/>
-        </View>
-      </BlurView>
-    </Pressable>
-  )
-}
+// Use centralized glassy toast config
+const toastConfig = glassyToastConfig
 
 // Helper function to extract video ID from YouTube URL
 const getVideoIdFromUrl = (url: string) => {
@@ -176,10 +74,95 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
     const previousScrollOffset = useRef(0)
     const isClosing = useRef(false)
     const [modalToast, setModalToast] = useState<{ type: string; props: any } | null>(null)
+    const [showHearts, setShowHearts] = useState(false)
+    const heartAnimations = useRef<Animated.Value[]>([]).current
     const bottomSheetRef = useRef<BottomSheetModal>(null)
     const router = useRouter()
     const navigation = useNavigation<NavigationProp<any>>()
     const { width, height } = Dimensions.get("window")
+    
+    // Initialize heart animations
+    const NUM_HEARTS = 8
+    if (heartAnimations.length === 0) {
+        for (let i = 0; i < NUM_HEARTS; i++) {
+            heartAnimations.push(new Animated.Value(0))
+        }
+    }
+    
+    // Trigger hearts animation
+    const triggerHeartsAnimation = useCallback(() => {
+        setShowHearts(true)
+        
+        // Reset all animations
+        heartAnimations.forEach(anim => anim.setValue(0))
+        
+        // Stagger the heart animations
+        const animations = heartAnimations.map((anim, index) => {
+            return Animated.sequence([
+                Animated.delay(index * 50), // Stagger start
+                Animated.timing(anim, {
+                    toValue: 1,
+                    duration: 800 + Math.random() * 400,
+                    useNativeDriver: true,
+                })
+            ])
+        })
+        
+        Animated.parallel(animations).start(() => {
+            setShowHearts(false)
+        })
+    }, [heartAnimations])
+    
+    // Hearts animation component
+    const HeartsAnimation = () => {
+        if (!showHearts) return null
+        
+        const heartColors = ['#10B981', '#34D399', '#6EE7B7', '#059669', '#047857', '#065F46', '#10B981', '#34D399']
+        const heartSizes = [16, 18, 20, 22, 14, 24, 17, 19]
+        
+        return (
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 150, pointerEvents: 'none' }}>
+                {heartAnimations.map((anim, index) => {
+                    const translateY = anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -120 - Math.random() * 30],
+                    })
+                    const translateX = anim.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 80],
+                    })
+                    const opacity = anim.interpolate({
+                        inputRange: [0, 0.2, 0.8, 1],
+                        outputRange: [0, 1, 1, 0],
+                    })
+                    const scale = anim.interpolate({
+                        inputRange: [0, 0.3, 0.6, 1],
+                        outputRange: [0.3, 1.2, 1, 0.8],
+                    })
+                    const rotate = anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', `${(Math.random() - 0.5) * 40}deg`],
+                    })
+                    
+                    return (
+                        <Animated.View
+                            key={index}
+                            style={{
+                                position: 'absolute',
+                                bottom: 10,
+                                left: '50%',
+                                marginLeft: -10 + (index - NUM_HEARTS/2) * 8,
+                                transform: [{ translateY }, { translateX }, { scale }, { rotate }],
+                                opacity,
+                            }}
+                        >
+                            <Icon source="heart" size={heartSizes[index]} color={heartColors[index]} />
+                        </Animated.View>
+                    )
+                })}
+            </View>
+        )
+    }
     
     // Pan responder for slide-down gesture - only on drag handle
     const panResponder = useRef(
@@ -657,23 +640,19 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
             
             setProgramInNotifications(true);
             
-            const goToProgram = () => {
-                navigation.navigate('myPrograms', { 
-                    screen: 'notifications/ClassesAndLectures/[program_id]', 
-                    params: { program_id: item.program_id }, 
-                    initial: false 
-                });
+            const goToNotificationCenter = () => {
+                router.push('/myPrograms/notifications');
             };
             
             // Show toast in modal
             setModalToast({
                 type: 'addProgramToNotificationsToast',
-                props: { props: program, onPress: goToProgram }
+                props: { props: program, onPress: goToNotificationCenter }
             });
             // Also show root toast for when modal is closed
             // Toast.show({
             //     type: 'addProgramToNotificationsToast',
-            //     props: { props: program, onPress: goToProgram },
+            //     props: { props: program, onPress: goToNotificationCenter },
             //     position: 'top',
             //     topOffset: 50,
             // });
@@ -706,6 +685,9 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
             if (!error) {
                 setProgramInPrograms(true);
                 
+                // Trigger hearts animation
+                triggerHeartsAnimation();
+                
                 const goToProgram = () => {
                     navigation.navigate('myPrograms');
                 };
@@ -715,13 +697,6 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                     type: 'ProgramAddedToPrograms',
                     props: { props: program, onPress: goToProgram }
                 });
-                // Also show root toast for when modal is closed
-                // Toast.show({
-                //     type: 'ProgramAddedToPrograms',
-                //     props: { props: program, onPress: goToProgram },
-                //     position: 'top',
-                //     topOffset: 50,
-                // });
                 // Auto-hide modal toast after 3 seconds
                 setTimeout(() => setModalToast(null), 3000);
             }
@@ -1415,33 +1390,37 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                             </Pressable>
                                         )}
                                         
-                                        <Pressable
-                                            onPress={handleAddToProgramsPress}
-                                            style={{
-                                                width: (program?.program_is_paid || item.program_is_paid) ? 56 : undefined,
-                                                flex: (program?.program_is_paid || item.program_is_paid) ? undefined : 1,
-                                                backgroundColor: programInPrograms ? 'rgba(16,185,129,0.15)' : '#F3F4F6',
-                                                paddingVertical: 16,
-                                                borderRadius: 14,
-                                                flexDirection: 'row',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: 8,
-                                                borderWidth: 1,
-                                                borderColor: programInPrograms ? 'rgba(16,185,129,0.3)' : '#E5E7EB',
-                                            }}
-                                        >
-                                            <Icon 
-                                                source={programInPrograms ? 'heart' : 'heart-outline'} 
-                                                size={22} 
-                                                color={programInPrograms ? '#10B981' : '#374151'}
-                                            />
-                                            {!(program?.program_is_paid || item.program_is_paid) && (
-                                                <Text style={{ color: programInPrograms ? '#10B981' : '#374151', fontWeight: '700', fontSize: 16 }}>
-                                                    {programInPrograms ? 'Saved' : 'Save to Library'}
-                                                </Text>
-                                            )}
-                                        </Pressable>
+                                        <View style={{ position: 'relative', flex: (program?.program_is_paid || item.program_is_paid) ? undefined : 1 }}>
+                                            <Pressable
+                                                onPress={handleAddToProgramsPress}
+                                                style={{
+                                                    width: (program?.program_is_paid || item.program_is_paid) ? 56 : '100%',
+                                                    backgroundColor: programInPrograms ? 'rgba(16,185,129,0.15)' : '#F3F4F6',
+                                                    paddingVertical: 16,
+                                                    borderRadius: 14,
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: 8,
+                                                    borderWidth: 1,
+                                                    borderColor: programInPrograms ? 'rgba(16,185,129,0.3)' : '#E5E7EB',
+                                                    overflow: 'visible',
+                                                }}
+                                            >
+                                                <Icon 
+                                                    source={programInPrograms ? 'heart' : 'heart-outline'} 
+                                                    size={22} 
+                                                    color={programInPrograms ? '#10B981' : '#374151'}
+                                                />
+                                                {!(program?.program_is_paid || item.program_is_paid) && (
+                                                    <Text style={{ color: programInPrograms ? '#10B981' : '#374151', fontWeight: '700', fontSize: 16 }}>
+                                                        {programInPrograms ? 'Saved' : 'Save to Library'}
+                                                    </Text>
+                                                )}
+                                            </Pressable>
+                                            {/* Hearts Animation */}
+                                            <HeartsAnimation />
+                                        </View>
                                         </View>
                                     </View>
                             </Animated.View>

@@ -1,7 +1,7 @@
 import { View, Text, Dimensions, StatusBar, Pressable, Platform, KeyboardAvoidingView, Image, TextInput as RNTextInput, ScrollView } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
 import { Icon, TextInput, ActivityIndicator } from 'react-native-paper'
-import { Link, Stack } from "expo-router"
+import { Link, Stack, router } from "expo-router"
 import { supabase } from '@/src/lib/supabase'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import * as ImagePicker from 'expo-image-picker'
@@ -20,7 +20,6 @@ import Animated, {
   SlideInRight,
   SlideOutLeft,
 } from 'react-native-reanimated'
-import { LinearGradient } from 'expo-linear-gradient'
 import {
   GoogleSignin,
   statusCodes,
@@ -40,16 +39,16 @@ const { width, height } = Dimensions.get('window')
 // 0: Name, 1: Username, 2: Email, 3: Phone, 4: Verify, 5: Password, 6: Photo
 const TOTAL_STEPS = 7
 
-// Password strength indicator
+// Password strength indicator - for light theme
 const PasswordStrength = ({ password }: { password: string }) => {
   const getStrength = () => {
     if (password.length === 0) return { level: 0, text: '', color: 'transparent' }
     if (password.length < 6) return { level: 1, text: 'Weak', color: '#EF4444' }
     if (password.length < 8) return { level: 2, text: 'Fair', color: '#F59E0B' }
     if (password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password)) {
-      return { level: 4, text: 'Strong', color: '#6FA66C' }
+      return { level: 4, text: 'Strong', color: '#22c55e' }
     }
-    return { level: 3, text: 'Good', color: '#0F4184' }
+    return { level: 3, text: 'Good', color: '#0E519F' }
   }
 
   const strength = getStrength()
@@ -69,34 +68,15 @@ const PasswordStrength = ({ password }: { password: string }) => {
               flex: 1,
               height: 4,
               borderRadius: 2,
-              backgroundColor: level <= strength.level ? strength.color : 'rgba(15, 65, 132, 0.15)',
+              backgroundColor: level <= strength.level ? strength.color : 'rgba(14, 81, 159, 0.15)',
             }}
           />
         ))}
       </View>
-      <Text style={{ color: strength.color, fontSize: 13, fontFamily: 'Poppins_500Medium' }}>
+      <Text style={{ color: strength.color, fontSize: 13, fontWeight: '500' }}>
         {strength.text}
       </Text>
     </Animated.View>
-  )
-}
-
-// Progress indicator
-const ProgressIndicator = ({ currentStep, totalSteps }: { currentStep: number, totalSteps: number }) => {
-  return (
-    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 32 }}>
-      {Array.from({ length: totalSteps }).map((_, index) => (
-        <View
-          key={index}
-          style={{
-            flex: 1,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: index < currentStep ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
-          }}
-        />
-      ))}
-    </View>
   )
 }
 
@@ -292,6 +272,34 @@ const SignUp = () => {
     }
   }
 
+  // Check if code is correct for visual feedback
+  const isCodeCorrect = () => {
+    if (currentStep !== 4) return false
+    const enteredCode = verificationCode.join('')
+    return enteredCode.length === 6 && enteredCode === generatedCode
+  }
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 0:
+        return firstName.trim().length > 0 && lastName.trim().length > 0
+      case 1:
+        return username.trim().length >= 3
+      case 2:
+        return /\S+@\S+\.\S+/.test(email)
+      case 3:
+        return phoneNumber.replace(/\D/g, '').length === 10
+      case 4:
+        return verificationCode.every(digit => digit !== '')
+      case 5:
+        return password.length >= 6
+      case 6:
+        return true
+      default:
+        return false
+    }
+  }
+
   const handleNext = () => {
     if (!validateCurrentStep()) {
       buttonScale.value = withSequence(
@@ -318,6 +326,8 @@ const SignUp = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
       setError('')
+    } else {
+      router.back()
     }
   }
 
@@ -507,24 +517,24 @@ const SignUp = () => {
             {/* First Name */}
             <View style={{ marginBottom: 16 }}>
               <Text style={{ 
-                fontFamily: 'Poppins_500Medium', 
+                fontWeight: '500', 
                 fontSize: 14, 
-                color: focusedField === 'firstName' ? '#0F4184' : '#0f172a',
+                color: '#0E519F',
                 marginBottom: 8,
                 marginLeft: 4,
               }}>
                 First Name
               </Text>
               <View style={{
-                backgroundColor: focusedField === 'firstName' ? 'rgba(15, 65, 132, 0.08)' : 'rgba(15, 65, 132, 0.06)',
+                backgroundColor: 'rgba(14, 81, 159, 0.08)',
                 borderRadius: 16,
                 borderWidth: 2,
-                borderColor: focusedField === 'firstName' ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
+                borderColor: focusedField === 'firstName' ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
                 flexDirection: 'row',
                 alignItems: 'center',
                 paddingHorizontal: 16,
               }}>
-                <Icon source="account-outline" size={22} color={focusedField === 'firstName' ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'} />
+                <Icon source="account-outline" size={22} color="rgba(14, 81, 159, 0.5)" />
                 <TextInput
                   mode='flat'
                   value={firstName}
@@ -535,16 +545,15 @@ const SignUp = () => {
                     flex: 1,
                     backgroundColor: 'transparent',
                     fontSize: 16,
-                    fontFamily: 'Poppins_400Regular',
                   }}
                   placeholder="Enter your first name"
-                  placeholderTextColor='rgba(15, 65, 132, 0.4)'
+                  placeholderTextColor='rgba(14, 81, 159, 0.4)'
                   textColor='#0f172a'
                   underlineColor='transparent'
                   activeUnderlineColor='transparent'
                   autoCapitalize="words"
                   autoCorrect={false}
-                  cursorColor='#0F4184'
+                  cursorColor='#0E519F'
                 />
               </View>
             </View>
@@ -552,24 +561,24 @@ const SignUp = () => {
             {/* Last Name */}
             <View>
               <Text style={{ 
-                fontFamily: 'Poppins_500Medium', 
+                fontWeight: '500', 
                 fontSize: 14, 
-                color: focusedField === 'lastName' ? '#0F4184' : '#0f172a',
+                color: '#0E519F',
                 marginBottom: 8,
                 marginLeft: 4,
               }}>
                 Last Name
               </Text>
               <View style={{
-                backgroundColor: focusedField === 'lastName' ? 'rgba(15, 65, 132, 0.08)' : 'rgba(15, 65, 132, 0.06)',
+                backgroundColor: 'rgba(14, 81, 159, 0.08)',
                 borderRadius: 16,
                 borderWidth: 2,
-                borderColor: focusedField === 'lastName' ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
+                borderColor: focusedField === 'lastName' ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
                 flexDirection: 'row',
                 alignItems: 'center',
                 paddingHorizontal: 16,
               }}>
-                <Icon source="account-outline" size={22} color={focusedField === 'lastName' ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'} />
+                <Icon source="account-outline" size={22} color="rgba(14, 81, 159, 0.5)" />
                 <TextInput
                   mode='flat'
                   value={lastName}
@@ -580,16 +589,15 @@ const SignUp = () => {
                     flex: 1,
                     backgroundColor: 'transparent',
                     fontSize: 16,
-                    fontFamily: 'Poppins_400Regular',
                   }}
                   placeholder="Enter your last name"
-                  placeholderTextColor='rgba(15, 65, 132, 0.4)'
+                  placeholderTextColor='rgba(14, 81, 159, 0.4)'
                   textColor='#0f172a'
                   underlineColor='transparent'
                   activeUnderlineColor='transparent'
                   autoCapitalize="words"
                   autoCorrect={false}
-                  cursorColor='#0F4184'
+                  cursorColor='#0E519F'
                 />
               </View>
             </View>
@@ -604,15 +612,15 @@ const SignUp = () => {
             exiting={SlideOutLeft.duration(300)}
           >
             <View style={{
-              backgroundColor: focusedField === 'username' ? 'rgba(15, 65, 132, 0.08)' : 'rgba(15, 65, 132, 0.06)',
+              backgroundColor: 'rgba(14, 81, 159, 0.08)',
               borderRadius: 16,
               borderWidth: 2,
-              borderColor: focusedField === 'username' ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
+              borderColor: focusedField === 'username' ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
               flexDirection: 'row',
               alignItems: 'center',
               paddingHorizontal: 16,
             }}>
-              <Icon source="at" size={22} color={focusedField === 'username' ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'} />
+              <Icon source="at" size={22} color="rgba(14, 81, 159, 0.5)" />
               <TextInput
                 mode='flat'
                 value={username}
@@ -623,25 +631,24 @@ const SignUp = () => {
                   flex: 1,
                   backgroundColor: 'transparent',
                   fontSize: 16,
-                  fontFamily: 'Poppins_400Regular',
                 }}
                 placeholder="Choose a username"
-                placeholderTextColor='rgba(15, 65, 132, 0.4)'
+                placeholderTextColor='rgba(14, 81, 159, 0.4)'
                 textColor='#0f172a'
                 underlineColor='transparent'
                 activeUnderlineColor='transparent'
                 autoCapitalize="none"
                 autoCorrect={false}
-                cursorColor='#0F4184'
+                cursorColor='#0E519F'
               />
             </View>
             {username.length > 0 && (
               <Text style={{ 
-                color: 'rgba(15, 65, 132, 0.6)', 
+                color: 'rgba(14, 81, 159, 0.7)', 
                 fontSize: 14, 
                 marginTop: 12, 
                 marginLeft: 4, 
-                fontFamily: 'Poppins_500Medium' 
+                fontWeight: '500' 
               }}>
                 @{username}
               </Text>
@@ -657,15 +664,15 @@ const SignUp = () => {
             exiting={SlideOutLeft.duration(300)}
           >
             <View style={{
-              backgroundColor: focusedField === 'email' ? 'rgba(15, 65, 132, 0.08)' : 'rgba(15, 65, 132, 0.06)',
+              backgroundColor: 'rgba(14, 81, 159, 0.08)',
               borderRadius: 16,
               borderWidth: 2,
-              borderColor: focusedField === 'email' ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
+              borderColor: focusedField === 'email' ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
               flexDirection: 'row',
               alignItems: 'center',
               paddingHorizontal: 16,
             }}>
-              <Icon source="email-outline" size={22} color={focusedField === 'email' ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'} />
+              <Icon source="email-outline" size={22} color="rgba(14, 81, 159, 0.5)" />
               <TextInput
                 mode='flat'
                 value={email}
@@ -676,17 +683,16 @@ const SignUp = () => {
                   flex: 1,
                   backgroundColor: 'transparent',
                   fontSize: 16,
-                  fontFamily: 'Poppins_400Regular',
                 }}
                 placeholder="Enter your email"
-                placeholderTextColor='rgba(15, 65, 132, 0.4)'
+                placeholderTextColor='rgba(14, 81, 159, 0.4)'
                 textColor='#0f172a'
                 underlineColor='transparent'
                 activeUnderlineColor='transparent'
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                cursorColor='#0F4184'
+                cursorColor='#0E519F'
               />
             </View>
           </Animated.View>
@@ -699,18 +705,13 @@ const SignUp = () => {
             entering={SlideInRight.duration(300)}
             exiting={SlideOutLeft.duration(300)}
           >
-            {/* Professional Phone Input */}
+            {/* Phone Input Container */}
             <View style={{
-              backgroundColor: '#ffffff',
-              borderRadius: 20,
-              overflow: 'hidden',
-              shadowColor: '#0F4184',
-              shadowOffset: { width: 0, height: focusedField === 'phone' ? 8 : 4 },
-              shadowOpacity: focusedField === 'phone' ? 0.15 : 0.1,
-              shadowRadius: focusedField === 'phone' ? 16 : 12,
-              elevation: focusedField === 'phone' ? 6 : 4,
+              backgroundColor: 'rgba(14, 81, 159, 0.08)',
+              borderRadius: 16,
               borderWidth: 2,
-              borderColor: focusedField === 'phone' ? '#0F4184' : 'transparent',
+              borderColor: focusedField === 'phone' ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
+              overflow: 'hidden',
             }}>
               <View style={{
                 flexDirection: 'row',
@@ -720,19 +721,19 @@ const SignUp = () => {
                 <View style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                  paddingVertical: 20,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  paddingVertical: 16,
                   borderRightWidth: 1,
-                  borderRightColor: focusedField === 'phone' ? 'rgba(15, 65, 132, 0.2)' : 'rgba(15, 65, 132, 0.1)',
-                  backgroundColor: focusedField === 'phone' ? 'rgba(15, 65, 132, 0.06)' : 'rgba(15, 65, 132, 0.03)',
+                  borderRightColor: 'rgba(14, 81, 159, 0.15)',
+                  backgroundColor: 'rgba(14, 81, 159, 0.05)',
                 }}>
-                  <Text style={{ fontSize: 24 }}>🇺🇸</Text>
+                  <Text style={{ fontSize: 20 }}>🇺🇸</Text>
                   <Text style={{ 
-                    fontSize: 18, 
-                    color: focusedField === 'phone' ? '#0F4184' : '#0f172a', 
-                    fontFamily: 'Poppins_600SemiBold',
-                    marginLeft: 8,
+                    fontSize: 16, 
+                    color: '#0E519F', 
+                    fontWeight: '600',
+                    marginLeft: 6,
                   }}>
                     +1
                   </Text>
@@ -751,29 +752,29 @@ const SignUp = () => {
                     flex: 1,
                     backgroundColor: 'transparent',
                     fontSize: 18,
-                    fontFamily: 'Poppins_500Medium',
+                    fontWeight: '500',
                     paddingHorizontal: 16,
                   }}
-                  placeholderTextColor='rgba(15, 65, 132, 0.35)'
+                  placeholderTextColor='rgba(14, 81, 159, 0.35)'
                   textColor='#0f172a'
                   underlineColor='transparent'
                   activeUnderlineColor='transparent'
-                  selectionColor='#0F4184'
-                  cursorColor='#0F4184'
+                  selectionColor='#0E519F'
+                  cursorColor='#0E519F'
                 />
 
                 {/* Checkmark when valid */}
                 {phoneNumber.replace(/\D/g, '').length === 10 && (
                   <View style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
                     backgroundColor: '#22c55e',
                     justifyContent: 'center',
                     alignItems: 'center',
                     marginRight: 16,
                   }}>
-                    <Icon source="check" size={18} color="#ffffff" />
+                    <Icon source="check" size={16} color="#ffffff" />
                   </View>
                 )}
               </View>
@@ -781,13 +782,12 @@ const SignUp = () => {
 
             {/* Helper text */}
             <Text style={{
-              fontSize: 13,
-              color: 'rgba(15, 23, 42, 0.5)',
+              fontSize: 12,
+              color: 'rgba(14, 81, 159, 0.5)',
               textAlign: 'center',
-              marginTop: 16,
-              fontFamily: 'Poppins_400Regular',
+              marginTop: 12,
             }}>
-              We'll send you a verification code via SMS
+              Standard messaging rates may apply
             </Text>
           </Animated.View>
         )
@@ -803,8 +803,8 @@ const SignUp = () => {
             <View style={{
               flexDirection: 'row',
               justifyContent: 'center',
-              gap: 10,
-              marginBottom: 24,
+              gap: 8,
+              marginBottom: 16,
             }}>
               {verificationCode.map((digit, index) => (
                 <RNTextInput
@@ -819,30 +819,22 @@ const SignUp = () => {
                   maxLength={1}
                   selectTextOnFocus
                   style={{
-                    width: 50,
-                    height: 60,
-                    backgroundColor: codeError 
-                      ? 'rgba(239, 68, 68, 0.1)' 
-                      : focusedField === `code-${index}` 
-                        ? 'rgba(15, 65, 132, 0.08)' 
-                        : '#ffffff',
-                    borderRadius: 14,
+                    width: 48,
+                    height: 56,
+                    backgroundColor: codeError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(14, 81, 159, 0.08)',
+                    borderRadius: 12,
                     borderWidth: 2,
                     borderColor: codeError 
                       ? '#ef4444' 
                       : focusedField === `code-${index}`
-                        ? '#0F4184'
+                        ? '#0E519F'
                         : digit 
                           ? '#22c55e' 
-                          : 'rgba(15, 65, 132, 0.2)',
+                          : 'rgba(14, 81, 159, 0.2)',
                     fontSize: 24,
                     fontWeight: '700',
                     textAlign: 'center',
                     color: codeError ? '#ef4444' : '#0f172a',
-                    shadowColor: focusedField === `code-${index}` ? '#0F4184' : '#0F4184',
-                    shadowOffset: { width: 0, height: focusedField === `code-${index}` ? 4 : 2 },
-                    shadowOpacity: focusedField === `code-${index}` ? 0.15 : 0.05,
-                    shadowRadius: focusedField === `code-${index}` ? 8 : 4,
                   }}
                 />
               ))}
@@ -850,36 +842,32 @@ const SignUp = () => {
 
             {/* Error Message */}
             {codeError && (
-              <Animated.View entering={FadeIn.duration(200)}>
-                <Text style={{
-                  fontSize: 14,
-                  color: '#ef4444',
-                  textAlign: 'center',
-                  marginBottom: 16,
-                  fontFamily: 'Poppins_500Medium',
-                }}>
-                  Incorrect code. Please try again.
-                </Text>
-              </Animated.View>
+              <Text style={{
+                fontSize: 13,
+                color: '#ef4444',
+                textAlign: 'center',
+                marginBottom: 12,
+              }}>
+                Incorrect code. Please try again.
+              </Text>
             )}
 
             {/* Resend Code */}
             <View style={{ alignItems: 'center' }}>
               {resendCountdown > 0 ? (
                 <Text style={{
-                  fontSize: 14,
-                  color: 'rgba(15, 23, 42, 0.5)',
+                  fontSize: 13,
+                  color: 'rgba(14, 81, 159, 0.5)',
                   textAlign: 'center',
-                  fontFamily: 'Poppins_400Regular',
                 }}>
                   Resend code in {resendCountdown}s
                 </Text>
               ) : (
                 <Pressable onPress={sendVerificationCode}>
                   <Text style={{
-                    fontSize: 15,
-                    color: '#0F4184',
-                    fontFamily: 'Poppins_600SemiBold',
+                    fontSize: 14,
+                    color: '#0E519F',
+                    fontWeight: '600',
                     textAlign: 'center',
                   }}>
                     Resend Code
@@ -887,20 +875,6 @@ const SignUp = () => {
                 </Pressable>
               )}
             </View>
-
-            {/* Change number link */}
-            <Pressable 
-              onPress={handleBack}
-              style={{ marginTop: 24, alignItems: 'center' }}
-            >
-              <Text style={{
-                fontSize: 14,
-                color: 'rgba(15, 23, 42, 0.6)',
-                fontFamily: 'Poppins_400Regular',
-              }}>
-                Wrong number? <Text style={{ color: '#0F4184', fontFamily: 'Poppins_600SemiBold' }}>Change it</Text>
-              </Text>
-            </Pressable>
           </Animated.View>
         )
 
@@ -912,15 +886,15 @@ const SignUp = () => {
             exiting={SlideOutLeft.duration(300)}
           >
             <View style={{
-              backgroundColor: focusedField === 'password' ? 'rgba(15, 65, 132, 0.08)' : 'rgba(15, 65, 132, 0.06)',
+              backgroundColor: 'rgba(14, 81, 159, 0.08)',
               borderRadius: 16,
               borderWidth: 2,
-              borderColor: focusedField === 'password' ? '#0F4184' : 'rgba(15, 65, 132, 0.15)',
+              borderColor: focusedField === 'password' ? '#0E519F' : 'rgba(14, 81, 159, 0.15)',
               flexDirection: 'row',
               alignItems: 'center',
               paddingHorizontal: 16,
             }}>
-              <Icon source="lock-outline" size={22} color={focusedField === 'password' ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'} />
+              <Icon source="lock-outline" size={22} color="rgba(14, 81, 159, 0.5)" />
               <TextInput
                 mode='flat'
                 value={password}
@@ -931,23 +905,22 @@ const SignUp = () => {
                   flex: 1,
                   backgroundColor: 'transparent',
                   fontSize: 16,
-                  fontFamily: 'Poppins_400Regular',
                 }}
                 placeholder="Create a password"
-                placeholderTextColor='rgba(15, 65, 132, 0.4)'
+                placeholderTextColor='rgba(14, 81, 159, 0.4)'
                 textColor='#0f172a'
                 underlineColor='transparent'
                 activeUnderlineColor='transparent'
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                cursorColor='#0F4184'
+                cursorColor='#0E519F'
               />
               <Pressable onPress={() => setShowPassword(!showPassword)}>
                 <Icon
                   source={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={22}
-                  color={focusedField === 'password' ? '#0F4184' : 'rgba(15, 65, 132, 0.5)'}
+                  color="rgba(14, 81, 159, 0.5)"
                 />
               </Pressable>
             </View>
@@ -967,17 +940,16 @@ const SignUp = () => {
             <Pressable
               onPress={pickImage}
               style={{
-                width: 160,
-                height: 160,
-                borderRadius: 80,
-                backgroundColor: 'rgba(15, 65, 132, 0.08)',
+                width: 120,
+                height: 120,
+                borderRadius: 60,
+                backgroundColor: 'rgba(14, 81, 159, 0.08)',
                 borderWidth: 4,
-                borderColor: profileImage ? '#0F4184' : 'rgba(15, 65, 132, 0.2)',
+                borderColor: profileImage ? '#0E519F' : 'rgba(14, 81, 159, 0.3)',
                 borderStyle: profileImage ? 'solid' : 'dashed',
                 justifyContent: 'center',
                 alignItems: 'center',
                 overflow: 'hidden',
-                marginBottom: 24,
               }}
             >
               {profileImage ? (
@@ -987,66 +959,29 @@ const SignUp = () => {
                 />
               ) : (
                 <View style={{ alignItems: 'center' }}>
-                  <Icon source="camera-plus-outline" size={48} color="rgba(15, 65, 132, 0.4)" />
-                  <Text style={{ 
-                    fontSize: 14, 
-                    color: 'rgba(15, 65, 132, 0.5)', 
-                    marginTop: 8, 
-                    fontFamily: 'Poppins_500Medium' 
-                  }}>
+                  <Icon source="camera-plus" size={32} color="#0E519F" />
+                  <Text style={{ fontSize: 12, color: '#0E519F', marginTop: 4, fontWeight: '500' }}>
                     Tap to add
                   </Text>
                 </View>
               )}
             </Pressable>
 
-            {profileImage ? (
-              <View style={{ flexDirection: 'row', gap: 16 }}>
-                <Pressable
-                  onPress={pickImage}
-                  style={{
-                    paddingVertical: 12,
-                    paddingHorizontal: 24,
-                    backgroundColor: 'rgba(15, 65, 132, 0.08)',
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text style={{ 
-                    fontSize: 14, 
-                    color: '#0F4184', 
-                    fontFamily: 'Poppins_600SemiBold' 
-                  }}>
-                    Change
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setProfileImage(null)}
-                  style={{
-                    paddingVertical: 12,
-                    paddingHorizontal: 24,
-                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text style={{ 
-                    fontSize: 14, 
-                    color: '#EF4444', 
-                    fontFamily: 'Poppins_600SemiBold' 
-                  }}>
-                    Remove
-                  </Text>
-                </Pressable>
-              </View>
-            ) : (
-              <Text style={{ 
-                fontSize: 14, 
-                color: 'rgba(15, 23, 42, 0.5)', 
-                fontFamily: 'Poppins_400Regular',
-                textAlign: 'center',
-                marginTop: 8,
-              }}>
-                You can always add one later
-              </Text>
+            {profileImage && (
+              <Pressable
+                onPress={() => setProfileImage(null)}
+                style={{
+                  marginTop: 10,
+                  paddingVertical: 6,
+                  paddingHorizontal: 14,
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  borderRadius: 16,
+                }}
+              >
+                <Text style={{ fontSize: 13, color: '#ef4444', fontWeight: '500' }}>
+                  Remove Photo
+                </Text>
+              </Pressable>
             )}
           </Animated.View>
         )
@@ -1057,69 +992,101 @@ const SignUp = () => {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
       
-      <LinearGradient
-        colors={['#ffffff', '#f8fafc', '#f1f5f9']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-        >
+        {/* Floating Card Container */}
+        <View style={{ 
+          flex: 1,
+          marginHorizontal: 10,
+          marginTop: Platform.OS === 'ios' ? 60 : 40,
+          marginBottom: Platform.OS === 'ios' ? 12 : 10,
+          backgroundColor: '#ffffff',
+          borderRadius: 40,
+          overflow: 'hidden',
+          shadowColor: '#0E519F',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          elevation: 20,
+        }}>
+          {/* Handle */}
+          <View style={{
+            width: 36,
+            height: 4,
+            backgroundColor: 'rgba(14, 81, 159, 0.3)',
+            borderRadius: 2,
+            alignSelf: 'center',
+            marginTop: 10,
+            marginBottom: 10,
+          }} />
+
+          {/* Header */}
+          <View style={{ paddingHorizontal: 20, paddingBottom: 14 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <Text style={{ fontSize: 11, color: 'rgba(14, 81, 159, 0.7)', fontWeight: '600', letterSpacing: 1 }}>
+                STEP {currentStep + 1} OF {TOTAL_STEPS}
+              </Text>
+              {currentStep === 6 && (
+                <Pressable 
+                  onPress={handleNext} 
+                  style={{ 
+                    paddingVertical: 5, 
+                    paddingHorizontal: 12,
+                    backgroundColor: 'rgba(14, 81, 159, 0.1)',
+                    borderRadius: 14,
+                  }}
+                >
+                  <Text style={{ fontSize: 12, color: '#0E519F', fontWeight: '500' }}>
+                    Skip
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Progress Bars */}
+            <View style={{ flexDirection: 'row', gap: 5 }}>
+              {Array.from({ length: TOTAL_STEPS }).map((_, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flex: 1,
+                    height: 3,
+                    borderRadius: 2,
+                    backgroundColor: index <= currentStep ? '#0E519F' : 'rgba(14, 81, 159, 0.2)',
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+
           <ScrollView 
             contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={{ flex: 1, paddingHorizontal: 24, minHeight: height - 50 }}>
-              {/* Header */}
-              <View style={{ paddingTop: height * 0.08 }}>
-                {/* Back button */}
-                {currentStep > 0 && (
-                  <Pressable 
-                    onPress={handleBack}
-                    style={{ 
-                      marginBottom: 24,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Icon source="arrow-left" size={24} color="#0F4184" />
-                    <Text style={{ 
-                      marginLeft: 8, 
-                      fontFamily: 'Poppins_500Medium', 
-                      fontSize: 16, 
-                      color: '#0F4184' 
-                    }}>
-                      Back
-                    </Text>
-                  </Pressable>
-                )}
-
-                {/* Progress */}
-                <ProgressIndicator currentStep={currentStep + 1} totalSteps={TOTAL_STEPS} />
-
-                {/* Title */}
-                <Text style={{ 
-                  fontFamily: 'Poppins_700Bold',
-                  fontSize: 32,
-                  color: '#0f172a',
-                  letterSpacing: -0.5,
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
+              {/* Title Section */}
+              <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 24 }}>
+                <Text style={{
+                  fontSize: 24,
+                  color: '#0E519F',
+                  fontWeight: '700',
+                  textAlign: 'center',
+                  marginBottom: 8,
                 }}>
                   {getStepTitle()}
                 </Text>
                 <Text style={{
-                  fontFamily: 'Poppins_400Regular',
-                  fontSize: 16,
-                  color: 'rgba(15, 23, 42, 0.6)',
-                  marginTop: 8,
-                  marginBottom: 32,
+                  fontSize: 14,
+                  color: 'rgba(14, 81, 159, 0.6)',
+                  textAlign: 'center',
                 }}>
                   {getStepSubtitle()}
                 </Text>
@@ -1135,7 +1102,7 @@ const SignUp = () => {
                     <Text style={{ 
                       color: '#EF4444', 
                       fontSize: 14, 
-                      fontFamily: 'Poppins_500Medium',
+                      fontWeight: '500',
                       textAlign: 'center',
                     }}>
                       {error}
@@ -1144,148 +1111,166 @@ const SignUp = () => {
                 ) : null}
               </View>
 
-            {/* Bottom Section */}
-            <View style={{ paddingBottom: 40 }}>
-              {/* Continue/Create Account Button */}
-              <Animated.View style={[{ marginBottom: 16 }, buttonAnimatedStyle]}>
-                <Pressable
-                  onPress={handleNext}
-                  disabled={loading}
-                  style={{
-                    backgroundColor: '#0F4184',
-                    paddingVertical: 18,
-                    borderRadius: 16,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    shadowColor: '#0F4184',
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 16,
-                    elevation: 8,
-                  }}
-                >
-                  {loading ? (
-                    <ActivityIndicator color='#fff' size={22} />
-                  ) : (
-                    <>
-                      <Text style={{
-                        color: '#fff',
-                        fontFamily: 'Poppins_600SemiBold',
-                        fontSize: 17,
-                        marginRight: 8,
-                      }}>
-                        {currentStep === TOTAL_STEPS - 1 
-                          ? 'Create Account' 
-                          : currentStep === 4 
-                            ? 'Verify' 
-                            : 'Continue'}
-                      </Text>
-                      <Icon 
-                        source={currentStep === 4 ? 'shield-check' : 'arrow-right'} 
-                        size={20} 
-                        color='#fff' 
-                      />
-                    </>
+              {/* Bottom Section */}
+              <View style={{ paddingBottom: 20, paddingTop: 20 }}>
+                {/* Navigation Buttons */}
+                <View style={{
+                  flexDirection: 'row',
+                  gap: 10,
+                }}>
+                  {currentStep > 0 && (
+                    <Pressable
+                      onPress={handleBack}
+                      style={{
+                        width: 50,
+                        height: 50,
+                        backgroundColor: 'rgba(14, 81, 159, 0.1)',
+                        borderRadius: 25,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon source="arrow-left" size={22} color="#0E519F" />
+                    </Pressable>
                   )}
-                </Pressable>
-              </Animated.View>
+                  <Animated.View style={[{ flex: 1 }, buttonAnimatedStyle]}>
+                    <Pressable
+                      onPress={handleNext}
+                      disabled={loading}
+                      style={{
+                        height: 50,
+                        backgroundColor: isCodeCorrect() 
+                          ? '#22C55E' 
+                          : canProceed() 
+                            ? '#0E519F' 
+                            : 'rgba(14, 81, 159, 0.3)',
+                        borderRadius: 25,
+                        alignItems: 'center',
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        gap: 8,
+                      }}
+                    >
+                      {loading ? (
+                        <ActivityIndicator size="small" color="#ffffff" />
+                      ) : (
+                        <>
+                          <Text style={{
+                            fontSize: 16,
+                            color: '#ffffff',
+                            fontWeight: '600',
+                          }}>
+                            {currentStep === TOTAL_STEPS - 1 
+                              ? 'Create Account' 
+                              : currentStep === 4 
+                                ? (isCodeCorrect() ? 'Verified!' : 'Verify')
+                                : 'Continue'}
+                          </Text>
+                          {currentStep < TOTAL_STEPS - 1 && currentStep !== 4 && (
+                            <Icon source="arrow-right" size={20} color="#ffffff" />
+                          )}
+                          {currentStep === 4 && (
+                            <Icon source={isCodeCorrect() ? "check-circle" : "shield-check"} size={20} color="#ffffff" />
+                          )}
+                        </>
+                      )}
+                    </Pressable>
+                  </Animated.View>
+                </View>
 
-              {/* Social sign up - only show on first step */}
-              {currentStep === 0 && (
-                <>
-                  <View style={{ 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    marginVertical: 20,
-                  }}>
-                    <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15, 65, 132, 0.15)' }} />
-                    <Text style={{ 
-                      color: 'rgba(15, 23, 42, 0.5)', 
-                      marginHorizontal: 16,
-                      fontFamily: 'Poppins_400Regular',
-                      fontSize: 13,
+                {/* Social sign up - only show on first step */}
+                {currentStep === 0 && (
+                  <>
+                    <View style={{ 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
+                      marginVertical: 20,
                     }}>
-                      or continue with
-                    </Text>
-                    <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15, 65, 132, 0.15)' }} />
-                  </View>
+                      <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(14, 81, 159, 0.15)' }} />
+                      <Text style={{ 
+                        color: 'rgba(14, 81, 159, 0.5)', 
+                        marginHorizontal: 16,
+                        fontSize: 13,
+                      }}>
+                        or continue with
+                      </Text>
+                      <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(14, 81, 159, 0.15)' }} />
+                    </View>
 
-                  <View style={{ gap: 12 }}>
-                    {Platform.OS === 'ios' && (
+                    <View style={{ gap: 12 }}>
+                      {Platform.OS === 'ios' && (
+                        <Pressable
+                          onPress={handleAppleSignUp}
+                          style={{
+                            backgroundColor: '#0f172a',
+                            paddingVertical: 14,
+                            borderRadius: 25,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Icon source='apple' size={22} color='#fff' />
+                          <Text style={{
+                            color: '#fff',
+                            fontWeight: '600',
+                            fontSize: 15,
+                            marginLeft: 10,
+                          }}>
+                            Continue with Apple
+                          </Text>
+                        </Pressable>
+                      )}
+
                       <Pressable
-                        onPress={handleAppleSignUp}
+                        onPress={handleGoogleSignUp}
                         style={{
-                          backgroundColor: '#0f172a',
-                          paddingVertical: 15,
-                          borderRadius: 16,
+                          backgroundColor: 'rgba(14, 81, 159, 0.08)',
+                          paddingVertical: 14,
+                          borderRadius: 25,
                           flexDirection: 'row',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          borderWidth: 1,
+                          borderColor: 'rgba(14, 81, 159, 0.15)',
                         }}
                       >
-                        <Icon source='apple' size={22} color='#fff' />
+                        <Icon source='google' size={22} color='#0f172a' />
                         <Text style={{
-                          color: '#fff',
-                          fontFamily: 'Poppins_600SemiBold',
+                          color: '#0f172a',
+                          fontWeight: '600',
                           fontSize: 15,
                           marginLeft: 10,
                         }}>
-                          Continue with Apple
+                          Continue with Google
                         </Text>
                       </Pressable>
-                    )}
+                    </View>
 
-                    <Pressable
-                      onPress={handleGoogleSignUp}
-                      style={{
-                        backgroundColor: 'rgba(15, 65, 132, 0.08)',
-                        paddingVertical: 15,
-                        borderRadius: 16,
-                        flexDirection: 'row',
+                    {/* Already have account link */}
+                    <Link href='/SignIn' asChild>
+                      <Pressable style={{
+                        marginTop: 20,
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        borderWidth: 1,
-                        borderColor: 'rgba(15, 65, 132, 0.15)',
-                      }}
-                    >
-                      <Icon source='google' size={22} color='#0f172a' />
-                      <Text style={{
-                        color: '#0f172a',
-                        fontFamily: 'Poppins_600SemiBold',
-                        fontSize: 15,
-                        marginLeft: 10,
                       }}>
-                        Continue with Google
-                      </Text>
-                    </Pressable>
-                  </View>
-
-                  {/* Already have account link */}
-                  <Link href='/SignIn' asChild>
-                    <Pressable style={{
-                      marginTop: 20,
-                      alignItems: 'center',
-                    }}>
-                      <Text style={{ 
-                        color: 'rgba(15, 23, 42, 0.6)', 
-                        fontFamily: 'Poppins_400Regular',
-                        fontSize: 14,
-                      }}>
-                        Already have an account?{' '}
-                        <Text style={{ color: '#0F4184', fontFamily: 'Poppins_600SemiBold' }}>
-                          Sign In
+                        <Text style={{ 
+                          color: 'rgba(14, 81, 159, 0.6)', 
+                          fontSize: 14,
+                        }}>
+                          Already have an account?{' '}
+                          <Text style={{ color: '#0E519F', fontWeight: '600' }}>
+                            Sign In
+                          </Text>
                         </Text>
-                      </Text>
-                    </Pressable>
-                  </Link>
-                </>
-              )}
+                      </Pressable>
+                    </Link>
+                  </>
+                )}
+              </View>
             </View>
-          </View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </LinearGradient>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   )
 }

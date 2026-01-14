@@ -17,6 +17,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Text } from 'react-native';
 import LottieView from 'lottie-react-native';
 import Animated, { useSharedValue, withTiming, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
+import Toast from 'react-native-toast-message';
+import { glassyToastConfig } from '../lib/toastConfig';
 import "@/global.css"
 
 // Create a QueryClient instance
@@ -120,7 +122,14 @@ export default function RootLayout() {
                       </Animated.View>
                     )} */}
                     <RootLayoutNav />
-
+                    <Toast 
+                      config={glassyToastConfig}
+                      position="top"
+                      topOffset={60}
+                      visibilityTime={3000}
+                      autoHide={true}
+                      swipeable={true}
+                    />
                   </PaperProvider>
                 </MenuProvider>
               </BottomSheetModalProvider>

@@ -34,12 +34,13 @@ type SignInAnonModalProps = {
   dismissable?: boolean
   showLanding?: boolean
   onSignUpPress?: () => void
+  onContinueAsGuest?: () => void  // Callback when user wants to continue as guest
   bottomOffset?: number  // For positioning above tab bar
 }
 
 type ScreenState = 'landing' | 'signIn' | 'signUp'
 
-const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding = false, onSignUpPress, bottomOffset = 0 }: SignInAnonModalProps) => {
+const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding = false, onSignUpPress, onContinueAsGuest, bottomOffset = 0 }: SignInAnonModalProps) => {
   const [currentScreen, setCurrentScreen] = useState<ScreenState>(showLanding ? 'landing' : 'signIn')
   const [signIn, setSignIn] = useState(true)
   const { session } = useAuth()
@@ -186,6 +187,18 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
     if (onSignUpPress) {
       onSignUpPress()
     }
+  }
+
+  const handleContinueAsGuest = () => {
+    // Close the sheet first, then navigate
+    closeSheet()
+    
+    // Small delay to ensure modal is closed before navigation
+    setTimeout(() => {
+      if (onContinueAsGuest) {
+        onContinueAsGuest()
+      }
+    }, 100)
   }
 
   const handleGoogleSignIn = async () => {
@@ -351,6 +364,23 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           Create Account
         </Text>
       </Pressable>
+
+      {/* Continue as Guest Button */}
+      {onContinueAsGuest && (
+        <Pressable
+          onPress={handleContinueAsGuest}
+          disabled={isTransitioning}
+          style={{
+            paddingVertical: 14,
+            alignItems: 'center',
+            marginTop: 8,
+          }}
+        >
+          <Text style={{ fontSize: 15, fontWeight: '500', color: '#6b7280' }}>
+            Continue as Guest
+          </Text>
+        </Pressable>
+      )}
     </Animated.View>
   )
 
@@ -557,7 +587,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           style={[
             {
               backgroundColor: '#ffffff',
-              borderRadius: 38,
+              borderRadius: 50,
               marginHorizontal: 8,
               marginBottom: bottomOffset > 0 ? bottomOffset : 10,
               shadowColor: '#000',

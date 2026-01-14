@@ -17,110 +17,10 @@ import Toast from 'react-native-toast-message';
 import { FlyerSkeleton } from './FlyerSkeleton';
 import YoutubePlayer from "react-native-youtube-iframe";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { glassyToastConfig } from '@/src/lib/toastConfig';
 
-// Toast configuration
-const toastConfig = {
-  addProgramToNotificationsToast: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <View className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]'
-        style={{ width: '100%', maxWidth: '100%', backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
-      >
-        <View>
-          <Image source={props.props.program_img ? { uri: props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text className='text-white'>1 Program Added To Notifications</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-sm text-white'>{props.props.program_name}</Text>
-            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  ),
-  LectureAddedToPlaylist: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden' onPress={props.onPress}>
-      <View className='flex-row items-center justify-between px-3 p-1 max-w-[85%] max-h-[60]'
-        style={{ backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
-      >
-        <View className=''>
-          <Image source={props.props?.playlist_img ? { uri: props.props.playlist_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text className='text-white' numberOfLines={1} allowFontScaling adjustsFontSizeToFit>1 lecture added</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-white'>{props.props?.playlist_name}</Text>
-            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  ),
-  ProgramAddedToPrograms: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <View className='flex-row items-center justify-between px-4 rounded-xl p-1 max-w-[85%] max-h-[60]'
-        style={{ backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
-      >
-        <View>
-          <Image source={props.props.program_img ? { uri: props.props.program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text className='text-white'>1 Program Added to Library</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-sm text-white'>{props.props.program_name}</Text>
-            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  ),
-  addEventToNotificationsToast: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <View className='flex-row items-center justify-between px-4 rounded-xl p-1 max-h-[60]'
-        style={{ width: '100%', maxWidth: '100%', backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
-      >
-        <View>
-          <Image source={props.props.event_img ? { uri: props.props.event_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, objectFit: 'fill', borderRadius: 10 }} />
-        </View>
-        <View className='flex-col pl-2'>
-          <View>
-            <Text className='text-white'>1 Program Added To Notifications</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-sm text-white'>{props.props.event_name}</Text>
-            <Icon source={'chevron-right'} size={20} color='#FFFFFF' />
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  ),
-  ConfirmNotificationOption: ({ props }: any) => (
-    <Pressable className='rounded-xl overflow-hidden ' onPress={props.onPress}>
-      <View className='flex-row items-center justify-between px-4 rounded-xl p-2 max-w-[90%] max-h-[60]'
-        style={{ backgroundColor: 'rgba(50, 50, 50, 0.95)' }}
-      >
-        <View className='flex-col pl-2'>
-          <View>
-            <Text className="text-white">{props.message} : {props.time}</Text>
-          </View>
-          <View className='flex-row'>
-            <Text className='text-md font-bold text-white'>{props.prayer}</Text>
-          </View>
-        </View>
-        <View className="pl-5" />
-        <View className="bg-white p-1 rounded-full">
-          <Icon source={'check'} size={20} color="green" />
-        </View>
-      </View>
-    </Pressable>
-  )
-}
+// Use centralized glassy toast config
+const toastConfig = glassyToastConfig;
 
 // Helper function to extract video ID from YouTube URL
 const getVideoIdFromUrl = (url: string) => {
@@ -206,7 +106,57 @@ export default function UpcomingProgramWidget() {
   const [notificationOptionsVisible, setNotificationOptionsVisible] = useState(false);
   const [selectedNotificationTime, setSelectedNotificationTime] = useState<number | null>(null);
   const notificationSlideAnim = useRef(new Animated.Value(0)).current;
+  const notificationPanY = useRef(new Animated.Value(0)).current;
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const isSheetExpandedRef = useRef(false);
+
+  // Pan responder for notification sheet drag-to-dismiss
+  const notificationPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to downward gestures
+        return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      },
+      onPanResponderGrant: () => {
+        notificationPanY.setValue(0);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow downward movement
+        if (gestureState.dy > 0) {
+          notificationPanY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        // If dragged down enough or with enough velocity, dismiss
+        if (gestureState.dy > 80 || gestureState.vy > 0.5) {
+          Animated.parallel([
+            Animated.timing(notificationPanY, {
+              toValue: 500,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(notificationSlideAnim, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setNotificationOptionsVisible(false);
+            notificationPanY.setValue(0);
+          });
+        } else {
+          // Snap back
+          Animated.spring(notificationPanY, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 40,
+            friction: 8,
+          }).start();
+        }
+      },
+    })
+  ).current;
   const { width, height } = Dimensions.get("window");
 
   // Get current day of the week
@@ -263,28 +213,26 @@ export default function UpcomingProgramWidget() {
     return moment();
   };
 
-  // Pan responder for slide-down gesture - only on drag handle
+  // Pan responder for slide-down gesture on full description sheet
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => {
-        // Only respond if ScrollView is at the top
-        return scrollOffset.current === 0 && !isScrolling.current;
+        // Only respond if ScrollView is at the top and not expanded
+        return (scrollOffset.current === 0 && !isScrolling.current) || !isSheetExpandedRef.current;
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Only respond to downward gestures when scroll is at top
-        if (scrollOffset.current > 0 || isScrolling.current) return false;
+        // Only respond to downward gestures when scroll is at top or not expanded
+        if (isSheetExpandedRef.current && (scrollOffset.current > 0 || isScrolling.current)) return false;
         // Require significant downward movement to avoid conflicts
-        return gestureState.dy > 15 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 2;
+        return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onPanResponderGrant: () => {
         panY.setValue(0);
       },
       onPanResponderMove: (evt, gestureState) => {
-        // Only allow downward movement, with resistance at the top
+        // Only allow downward movement
         if (gestureState.dy > 0) {
-          // Add slight resistance for smoother feel
-          const resistance = gestureState.dy < 50 ? 0.5 : 1;
-          panY.setValue(gestureState.dy * resistance);
+          panY.setValue(gestureState.dy);
         }
       },
       onPanResponderTerminate: () => {
@@ -297,9 +245,8 @@ export default function UpcomingProgramWidget() {
         }).start();
       },
       onPanResponderRelease: (evt, gestureState) => {
-        const threshold = -10; // Dismiss immediately on any downward drag
-
-        if (gestureState.dy > threshold || gestureState.vy > 0.5) {
+        // Dismiss if dragged down enough or with enough velocity
+        if (gestureState.dy > 80 || gestureState.vy > 0.5) {
           // Mark as closing to prevent re-renders
           isClosing.current = true;
 
@@ -669,7 +616,7 @@ export default function UpcomingProgramWidget() {
 
         setModalToast({
           type: 'addProgramToNotificationsToast',
-          props: { props: programData, onPress: () => { } }
+          props: { props: programData, onPress: () => router.push('/myPrograms/notifications') }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -711,7 +658,7 @@ export default function UpcomingProgramWidget() {
 
         setModalToast({
           type: 'addEventToNotificationsToast',
-          props: { props: eventData, onPress: () => { } }
+          props: { props: eventData, onPress: () => router.push('/myPrograms/notifications') }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -849,7 +796,7 @@ export default function UpcomingProgramWidget() {
         // Show toast
         setModalToast({
           type: 'addProgramToNotificationsToast',
-          props: { props: programData, onPress: () => { } }
+          props: { props: programData, onPress: () => router.push('/myPrograms/notifications') }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -892,7 +839,7 @@ export default function UpcomingProgramWidget() {
         // Show toast
         setModalToast({
           type: 'addEventToNotificationsToast',
-          props: { props: eventData, onPress: () => { } }
+          props: { props: eventData, onPress: () => router.push('/myPrograms/notifications') }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -1070,6 +1017,7 @@ export default function UpcomingProgramWidget() {
       setModalVisible(false);
       setModalVisibleState(false);
       setIsSheetExpanded(false);
+      isSheetExpandedRef.current = false;
       slideAnim.setValue(0);
       panY.setValue(0);
       panYValue.current = 0;
@@ -1103,6 +1051,7 @@ export default function UpcomingProgramWidget() {
       setModalVisible(false);
       setModalVisibleState(false);
       setIsSheetExpanded(false);
+      isSheetExpandedRef.current = false;
       setModalSpeakerData([]);
       setModalSpeakerString('');
       setModalImageReady(false);
@@ -1133,7 +1082,9 @@ export default function UpcomingProgramWidget() {
         property: LayoutAnimation.Properties.opacity,
       },
     });
-    setIsSheetExpanded(!isSheetExpanded);
+    const newValue = !isSheetExpanded;
+    setIsSheetExpanded(newValue);
+    isSheetExpandedRef.current = newValue;
   }, [isSheetExpanded]);
 
   const checkWatchedStatus = async (lecturesData: Lectures[]) => {
@@ -1526,6 +1477,7 @@ export default function UpcomingProgramWidget() {
               />
             </Animated.View>
             <Animated.View
+              {...panResponder.panHandlers}
               style={{
                 transform: [{
                   translateY: Animated.add(
@@ -1866,7 +1818,7 @@ export default function UpcomingProgramWidget() {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'transparent',
+              backgroundColor: 'rgba(0, 0, 0, 0.4)',
               opacity: notificationSlideAnim,
             }}
           >
@@ -1876,40 +1828,46 @@ export default function UpcomingProgramWidget() {
             />
           </Animated.View>
           <Animated.View
+            {...notificationPanResponder.panHandlers}
             style={{
               position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              backgroundColor: '#FFFFFF',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              paddingBottom: 34,
+              bottom: Platform.OS === 'ios' ? 12 : 10,
+              left: 10,
+              right: 10,
+              backgroundColor: '#0E519F',
+              borderRadius: 32,
+              paddingBottom: 24,
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 12,
+              shadowOpacity: 0.2,
+              shadowRadius: 20,
               elevation: 20,
-              transform: [{
-                translateY: notificationSlideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [500, 0],
-                })
-              }]
+              overflow: 'hidden',
+              transform: [
+                {
+                  translateY: notificationSlideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [500, 0],
+                  })
+                },
+                { translateY: notificationPanY }
+              ]
             }}
           >
             {/* Drag Handle */}
-            <View style={{ 
-              width: '100%', 
-              alignItems: 'center', 
-              paddingTop: 12, 
-              paddingBottom: 8 
-            }}>
+            <View 
+              style={{ 
+                width: '100%', 
+                alignItems: 'center', 
+                paddingTop: 12, 
+                paddingBottom: 8 
+              }}
+            >
               <View style={{
                 width: 36,
-                height: 5,
-                borderRadius: 3,
-                backgroundColor: '#D1D5DB',
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: 'rgba(255, 255, 255, 0.4)',
               }} />
             </View>
 
@@ -1919,26 +1877,28 @@ export default function UpcomingProgramWidget() {
               alignItems: 'center', 
               justifyContent: 'space-between',
               paddingHorizontal: 20, 
-              paddingTop: 8, 
+              paddingTop: 4, 
               paddingBottom: 20 
             }}>
               <Text style={{ 
                 fontSize: 20, 
-                fontWeight: '600', 
-                color: '#111827',
+                fontWeight: '700', 
+                color: '#ffffff',
               }}>
                 Notification settings
               </Text>
               <Pressable
                 onPress={closeNotificationOptions}
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 36,
+                  height: 36,
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: 18,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Icon source="close" size={24} color="#6B7280" />
+                <Icon source="close" size={20} color="#ffffff" />
               </Pressable>
             </View>
 
@@ -1951,6 +1911,10 @@ export default function UpcomingProgramWidget() {
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   paddingVertical: 14,
+                  backgroundColor: selectedNotificationTime === 120 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  borderRadius: 12,
+                  marginHorizontal: -12,
+                  paddingHorizontal: 12,
                 }}
               >
                 <View style={{
@@ -1958,18 +1922,19 @@ export default function UpcomingProgramWidget() {
                   height: 24,
                   borderRadius: 12,
                   borderWidth: 2,
-                  borderColor: selectedNotificationTime === 120 ? '#2196F3' : '#D1D5DB',
+                  borderColor: selectedNotificationTime === 120 ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 14,
                   marginTop: 2,
+                  backgroundColor: selectedNotificationTime === 120 ? '#57BA47' : 'transparent',
                 }}>
                   {selectedNotificationTime === 120 && (
                     <View style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 6,
-                      backgroundColor: '#2196F3',
+                      width: 10,
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: '#ffffff',
                     }} />
                   )}
                 </View>
@@ -1977,13 +1942,13 @@ export default function UpcomingProgramWidget() {
                   <Text style={{ 
                     fontSize: 17, 
                     fontWeight: '600', 
-                    color: '#111827',
+                    color: '#ffffff',
                   }}>
-                    2 Hours Before:
+                    2 Hours Before
                   </Text>
                   <Text style={{ 
-                    fontSize: 15, 
-                    color: '#6B7280',
+                    fontSize: 14, 
+                    color: 'rgba(255, 255, 255, 0.7)',
                     marginTop: 2,
                   }}>
                     Get reminded with plenty of time to prepare
@@ -1998,6 +1963,10 @@ export default function UpcomingProgramWidget() {
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   paddingVertical: 14,
+                  backgroundColor: selectedNotificationTime === 60 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  borderRadius: 12,
+                  marginHorizontal: -12,
+                  paddingHorizontal: 12,
                 }}
               >
                 <View style={{
@@ -2005,18 +1974,19 @@ export default function UpcomingProgramWidget() {
                   height: 24,
                   borderRadius: 12,
                   borderWidth: 2,
-                  borderColor: selectedNotificationTime === 60 ? '#2196F3' : '#D1D5DB',
+                  borderColor: selectedNotificationTime === 60 ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 14,
                   marginTop: 2,
+                  backgroundColor: selectedNotificationTime === 60 ? '#57BA47' : 'transparent',
                 }}>
                   {selectedNotificationTime === 60 && (
                     <View style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 6,
-                      backgroundColor: '#2196F3',
+                      width: 10,
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: '#ffffff',
                     }} />
                   )}
                 </View>
@@ -2024,13 +1994,13 @@ export default function UpcomingProgramWidget() {
                   <Text style={{ 
                     fontSize: 17, 
                     fontWeight: '600', 
-                    color: '#111827',
+                    color: '#ffffff',
                   }}>
-                    1 Hour Before:
+                    1 Hour Before
                   </Text>
                   <Text style={{ 
-                    fontSize: 15, 
-                    color: '#6B7280',
+                    fontSize: 14, 
+                    color: 'rgba(255, 255, 255, 0.7)',
                     marginTop: 2,
                   }}>
                     Standard reminder time
@@ -2045,6 +2015,10 @@ export default function UpcomingProgramWidget() {
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   paddingVertical: 14,
+                  backgroundColor: selectedNotificationTime === 30 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  borderRadius: 12,
+                  marginHorizontal: -12,
+                  paddingHorizontal: 12,
                 }}
               >
                 <View style={{
@@ -2052,18 +2026,19 @@ export default function UpcomingProgramWidget() {
                   height: 24,
                   borderRadius: 12,
                   borderWidth: 2,
-                  borderColor: selectedNotificationTime === 30 ? '#2196F3' : '#D1D5DB',
+                  borderColor: selectedNotificationTime === 30 ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 14,
                   marginTop: 2,
+                  backgroundColor: selectedNotificationTime === 30 ? '#57BA47' : 'transparent',
                 }}>
                   {selectedNotificationTime === 30 && (
                     <View style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 6,
-                      backgroundColor: '#2196F3',
+                      width: 10,
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: '#ffffff',
                     }} />
                   )}
                 </View>
@@ -2071,13 +2046,13 @@ export default function UpcomingProgramWidget() {
                   <Text style={{ 
                     fontSize: 17, 
                     fontWeight: '600', 
-                    color: '#111827',
+                    color: '#ffffff',
                   }}>
-                    30 Minutes Before:
+                    30 Minutes Before
                   </Text>
                   <Text style={{ 
-                    fontSize: 15, 
-                    color: '#6B7280',
+                    fontSize: 14, 
+                    color: 'rgba(255, 255, 255, 0.7)',
                     marginTop: 2,
                   }}>
                     Last minute reminder before it starts

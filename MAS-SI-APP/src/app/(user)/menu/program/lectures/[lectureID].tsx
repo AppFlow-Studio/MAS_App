@@ -228,12 +228,12 @@ export default function LecturesData() {
 
   const NotificationBell = () => {
     const addedToNoti = () => {
-      const goToProgram = () => {
-        router.push(`/myPrograms/notifications/ClassesAndLectures/${program?.program_id}`)
+      const goToNotificationCenter = () => {
+        router.push('/myPrograms/notifications')
       }
       Toast.show({
         type: 'addProgramToNotificationsToast',
-        props: { props: program, onPress: goToProgram },
+        props: { props: program, onPress: goToNotificationCenter },
         position: 'top',
         topOffset: 50,
       })

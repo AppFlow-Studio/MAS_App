@@ -1,27 +1,19 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Pressable, Platform, Image, Modal, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Pressable, Platform, Image, Dimensions } from 'react-native';
 import { Stack, useRouter, useNavigation } from 'expo-router';
 import { Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass';
 import { Bell } from 'lucide-react-native';
-import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
 
 export default function NotificationsIndex() {
   const router = useRouter();
   const navigation = useNavigation();
-  const [showAnimation, setShowAnimation] = useState(false);
-  const lottieRef = useRef<LottieView>(null);
 
   const handleEnableNotifications = () => {
-    setShowAnimation(true);
-    // Animation plays for 2.5 seconds then navigates
-    setTimeout(() => {
-      setShowAnimation(false);
-      router.push('/myPrograms/notifications/NotificationEvents');
-    }, 2500);
+    router.push('/myPrograms/notifications/NotificationEvents');
   };
 
   return (
@@ -202,25 +194,6 @@ export default function NotificationsIndex() {
         </View>
       </ScrollView>
       </LinearGradient>
-
-      {/* Lottie Animation Overlay */}
-      <Modal
-        visible={showAnimation}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-      >
-        <View style={styles.animationOverlay}>
-          <LottieView
-            ref={lottieRef}
-            source={require('@/assets/animations/otp-notification.json')}
-            autoPlay
-            loop={false}
-            speed={1.2}
-            style={styles.lottieAnimation}
-          />
-        </View>
-      </Modal>
     </>
   );
 }
@@ -403,16 +376,6 @@ const styles = StyleSheet.create({
     color: '#6EE7B7',
     fontSize: 16,
     fontWeight: '600',
-  },
-  animationOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  lottieAnimation: {
-    width: width * 0.8,
-    height: width * 0.8,
   },
 });
 

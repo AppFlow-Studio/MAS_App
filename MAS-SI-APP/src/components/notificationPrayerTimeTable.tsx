@@ -61,17 +61,17 @@ const NotificationPrayerTable = ({
   // Blur fade animation
   const blurOpacity = useRef(new Animated.Value(0)).current;
   
-  // Animate blur right after the modal starts sliding up
+  // Animate blur when modal opens (matching Jummah animation)
   useEffect(() => {
     if (modalVisible) {
-      // Very short delay so blur appears right after modal starts
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         Animated.timing(blurOpacity, {
           toValue: 1,
-          duration: 250,
+          duration: 400,
           useNativeDriver: true,
         }).start();
-      }, 0);
+      }, 300);
+      return () => clearTimeout(timeout);
     } else {
       blurOpacity.setValue(0);
     }
@@ -852,7 +852,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
-    backgroundColor: '#1a3a5c',
+    backgroundColor: '#0053A5',
     borderRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 12,

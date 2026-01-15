@@ -1,4 +1,4 @@
-import { View, Text, Dimensions, StatusBar, Pressable, Platform, KeyboardAvoidingView, ScrollView } from 'react-native'
+import { View, Text, Dimensions, StatusBar, Pressable, Platform, KeyboardAvoidingView, ScrollView, Image } from 'react-native'
 import React, { useState } from 'react'
 import { Icon, TextInput, ActivityIndicator } from 'react-native-paper'
 import { Link, Stack, router } from "expo-router"
@@ -198,17 +198,6 @@ const SignIn = () => {
           shadowRadius: 20,
           elevation: 20,
         }}>
-          {/* Handle */}
-          <View style={{
-            width: 36,
-            height: 4,
-            backgroundColor: 'rgba(14, 81, 159, 0.3)',
-            borderRadius: 2,
-            alignSelf: 'center',
-            marginTop: 10,
-            marginBottom: 10,
-          }} />
-
           <ScrollView 
             contentContainerStyle={{ flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
@@ -492,6 +481,29 @@ const SignIn = () => {
                     </Text>
                   </Pressable>
                 </View>
+
+                {/* Continue as Guest Button */}
+                <Pressable
+                  onPress={async () => {
+                    const { error } = await supabase.auth.signInAnonymously()
+                    if (error) console.log(error)
+                  }}
+                  style={{
+                    marginTop: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 12,
+                  }}
+                >
+                  <Text style={{ 
+                    color: 'rgba(14, 81, 159, 0.6)', 
+                    fontSize: 14,
+                    fontWeight: '500',
+                    textDecorationLine: 'underline',
+                  }}>
+                    Continue as Guest
+                  </Text>
+                </Pressable>
               </View>
             </View>
           </ScrollView>

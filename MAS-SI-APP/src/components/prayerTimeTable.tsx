@@ -1,7 +1,7 @@
 import { DataTable, Divider, Icon, IconButton } from 'react-native-paper';
 import { gettingPrayerData, prayerTimeData } from '@/src/types';
 import ProgramWidgetSlider from "@/src/components/programWidgetSlider";
-import { View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground, Platform, Modal, Animated, PanResponder } from "react-native";
+import { View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground, Platform, Modal } from "react-native";
 import AlertBell from '../app/(user)/prayersTable/alertBell';
 import { useCurrentPrayer } from '../hooks/usePrayerTimes';
 import { FajrIcon, DhuhrIcon, AsrIcon, MaghribIcon, IshaIcon } from './SalahIcons/FajrIcon';
@@ -12,6 +12,15 @@ import { X, Check } from 'lucide-react-native';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import Toast from 'react-native-toast-message';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  interpolate,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 type NotificationOption = 'prayer_time' | 'iqamah_time' | '30_min_before' | 'mute';
 
@@ -52,63 +61,57 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState<string | null>(null);
-  const blurOpacity = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const panY = useRef(new Animated.Value(0)).current;
+  
+  // Reanimated shared values for smooth UI-thread animations
+  const translateY = useSharedValue(500);
+  const backdropOpacity = useSharedValue(0);
 
-  // Pan responder for swipe-to-dismiss
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only respond to downward gestures
-        return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
-      },
-      onPanResponderGrant: () => {
-        panY.setValue(0);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        // Only allow downward movement
-        if (gestureState.dy > 0) {
-          panY.setValue(gestureState.dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        // If dragged down enough or with enough velocity, dismiss
-        if (gestureState.dy > 80 || gestureState.vy > 0.5) {
-          Animated.parallel([
-            Animated.timing(panY, {
-              toValue: 500,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-            Animated.timing(slideAnim, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-            Animated.timing(blurOpacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-          ]).start(() => {
-            setModalVisible(false);
-            setSelectedPrayer(null);
-            panY.setValue(0);
-          });
-        } else {
-          // Snap back
-          Animated.spring(panY, {
-            toValue: 0,
-            useNativeDriver: true,
-            tension: 40,
-            friction: 8,
-          }).start();
-        }
-      },
+  // Close the modal (called from UI thread via runOnJS)
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedPrayer(null);
+  };
+
+  // Pan gesture for smooth drag-to-dismiss (runs on UI thread)
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      // Only allow dragging down (positive translationY)
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+        // Fade backdrop as user drags
+        backdropOpacity.value = interpolate(
+          event.translationY,
+          [0, 300],
+          [1, 0]
+        );
+      }
     })
-  ).current;
+    .onEnd((event) => {
+      // If dragged more than 100px down or with velocity, dismiss
+      if (event.translationY > 100 || event.velocityY > 500) {
+        translateY.value = withTiming(500, { duration: 250 });
+        backdropOpacity.value = withTiming(0, { duration: 250 }, () => {
+          runOnJS(closeModal)();
+        });
+      } else {
+        // Snap back to original position with spring
+        translateY.value = withSpring(0, {
+          damping: 25,
+          stiffness: 120,
+          mass: 0.8,
+        });
+        backdropOpacity.value = withTiming(1, { duration: 150 });
+      }
+    });
+
+  // Animated styles (run on UI thread)
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
   
   // Prayer notification settings state
   const [prayerSettings, setPrayerSettings] = useState<PrayerNotificationSettings>({
@@ -152,27 +155,22 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
     }
   }, [userSettings]);
 
-  // Animate blur and slide when modal opens
+  // Animate slide in when modal opens
   useEffect(() => {
     if (modalVisible) {
-      // Animate slide in and blur
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 40,
-          friction: 8,
-        }),
-        Animated.timing(blurOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      slideAnim.setValue(0);
-      blurOpacity.setValue(0);
-      panY.setValue(0);
+      // Reset and animate in with spring for smooth feel
+      translateY.value = 500;
+      backdropOpacity.value = 0;
+      
+      // Small delay to ensure modal is mounted
+      setTimeout(() => {
+        translateY.value = withSpring(0, {
+          damping: 25,
+          stiffness: 120,
+          mass: 0.8,
+        });
+        backdropOpacity.value = withTiming(1, { duration: 300 });
+      }, 50);
     }
   }, [modalVisible]);
 
@@ -244,21 +242,9 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
   };
 
   const handleCloseModal = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(blurOpacity, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setModalVisible(false);
-      setSelectedPrayer(null);
-      panY.setValue(0);
+    translateY.value = withTiming(500, { duration: 250 });
+    backdropOpacity.value = withTiming(0, { duration: 250 }, () => {
+      runOnJS(closeModal)();
     });
   };
 
@@ -595,30 +581,13 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
     >
       <View style={modalStyles.modalOverlay}>
         {/* Animated blur background */}
-        <Animated.View style={[modalStyles.blurContainer, { opacity: blurOpacity }]}>
+        <Animated.View style={[modalStyles.blurContainer, backdropAnimatedStyle]}>
           <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
           <Pressable style={StyleSheet.absoluteFill} onPress={handleCloseModal} />
         </Animated.View>
         
-        <Animated.View 
-          {...panResponder.panHandlers}
-          style={[
-            modalStyles.modalContent,
-            {
-              transform: [
-                {
-                  translateY: Animated.add(
-                    slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [500, 0],
-                    }),
-                    panY
-                  )
-                }
-              ]
-            }
-          ]}
-        >
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[modalStyles.modalContent, sheetAnimatedStyle]}>
           {/* Handle Indicator */}
           <View style={modalStyles.modalIndicator} />
           
@@ -721,7 +690,8 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
             <Check color="#FFFFFF" size={20} strokeWidth={2.5} style={{ marginRight: 8 }} />
             <Text style={modalStyles.saveButtonText}>Save</Text>
           </Pressable>
-        </Animated.View>
+          </Animated.View>
+        </GestureDetector>
       </View>
     </Modal>
     </>

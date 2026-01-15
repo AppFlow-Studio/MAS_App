@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, useWindowDimensions, Button, FlatList, Pressable, ImageBackground, StyleSheet, Modal, Animated, Image } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react'
 import { Redirect, Stack, useLocalSearchParams } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { supabase } from '@/src/lib/supabase'
 import { useAuth } from "@/src/providers/AuthProvider"
 import { EventsType, Program } from '@/src/types'
@@ -274,6 +275,7 @@ const SalahTimesScreen = () => {
 
 const NotificationEvents = () => {
   const { session } = useAuth()
+  const insets = useSafeAreaInsets()
   const { initialTab } = useLocalSearchParams<{ initialTab?: string }>()
   const [addedEvents, setAddedEvents] = useState<EventsType[]>([])
   const [addedPrograms, setAddedPrograms] = useState<Program[]>([])
@@ -418,6 +420,63 @@ const NotificationEvents = () => {
     return () => { supabase.removeChannel(listenForAddedEvents); supabase.removeChannel(listenForAddedPrograms) }
   }, [])
 
+  // Memoized JummahCard component to prevent re-renders when modal state changes
+  const JummahCard = memo(({ time, index, isEnabled, onToggle }: { 
+    time: string, 
+    index: number, 
+    isEnabled: boolean, 
+    onToggle: (index: number) => void 
+  }) => {
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingVertical: 20,
+          paddingHorizontal: 18,
+          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+          borderRadius: 16,
+          marginBottom: 20,
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+        }}
+      >
+        <View
+          style={{
+            width: 60,
+            height: 60,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 18,
+            overflow: 'hidden',
+          }}
+        >
+          <Image
+            source={require('@/assets/images/JummahIcon.png')}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+          />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: 'white', marginBottom: 6 }}>
+            Jummah Prayer {index + 1}
+          </Text>
+          <Text style={{ fontSize: 15, fontWeight: '500', color: '#6EE7B7' }}>
+            {time}
+          </Text>
+        </View>
+        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+          <Switch
+            value={isEnabled}
+            onValueChange={() => onToggle(index + 1)}
+            color="#6EE7B7"
+          />
+        </View>
+      </View>
+    )
+  })
+
   const JummahScreen = () => {
     const tabBarHeight = 120
     const jummahTimes = ['12:15 PM', '1:00 PM', '1:45 PM', '3:45 PM']
@@ -427,12 +486,15 @@ const NotificationEvents = () => {
     const [selectedJummah, setSelectedJummah] = useState<number | null>(null)
     const blurOpacity = useRef(new Animated.Value(0)).current
     
-    // Jummah notification settings
-    const [jummahSettings, setJummahSettings] = useState<{[key: number]: { enabled: boolean; option: string }}>({
-      1: { enabled: false, option: 'jummah_time' },
-      2: { enabled: false, option: 'jummah_time' },
-      3: { enabled: false, option: 'jummah_time' },
-      4: { enabled: false, option: 'jummah_time' },
+    // Separate state for modal options (doesn't affect card rendering)
+    const [modalOptions, setModalOptions] = useState<string[]>([])
+    
+    // Jummah notification settings - only track enabled state for cards
+    const [jummahSettings, setJummahSettings] = useState<{[key: number]: { enabled: boolean; options: string[] }}>({
+      1: { enabled: false, options: [] },
+      2: { enabled: false, options: [] },
+      3: { enabled: false, options: [] },
+      4: { enabled: false, options: [] },
     })
     
     // Animate blur when modal opens
@@ -451,104 +513,87 @@ const NotificationEvents = () => {
       }
     }, [jummahModalVisible])
     
-    const handleToggle = (jummahIndex: number) => {
-      const currentEnabled = jummahSettings[jummahIndex]?.enabled
-      
-      if (!currentEnabled) {
-        setSelectedJummah(jummahIndex)
-        setJummahModalVisible(true)
-      }
-      
-      setJummahSettings(prev => ({
-        ...prev,
-        [jummahIndex]: {
-          ...prev[jummahIndex],
-          enabled: !currentEnabled,
+    const handleToggle = useCallback((jummahIndex: number) => {
+      setJummahSettings(prev => {
+        const currentEnabled = prev[jummahIndex]?.enabled
+        
+        if (!currentEnabled) {
+          // Opening modal - set modal options from current settings
+          setSelectedJummah(jummahIndex)
+          setModalOptions(prev[jummahIndex]?.options || [])
+          setJummahModalVisible(true)
+          return prev // Don't change settings yet
+        } else {
+          // If disabling, clear options
+          return {
+            ...prev,
+            [jummahIndex]: {
+              enabled: false,
+              options: [],
+            }
+          }
         }
-      }))
-    }
+      })
+    }, [])
     
-    const handleOptionSelect = (option: string) => {
+    // Handle option selection - only updates modal state, not card state
+    const handleOptionSelect = useCallback((option: string) => {
+      setModalOptions(currentOptions => {
+        // If selecting 'mute', clear all other options and only set mute
+        if (option === 'mute') {
+          return currentOptions.includes('mute') ? [] : ['mute']
+        }
+        
+        // If selecting a non-mute option, remove 'mute' if it exists and toggle the option
+        if (currentOptions.includes(option)) {
+          return currentOptions.filter(o => o !== option)
+        } else {
+          return [...currentOptions.filter(o => o !== 'mute'), option]
+        }
+      })
+    }, [])
+    
+    const handleApplyToAll = useCallback(() => {
+      const currentOptions = [...modalOptions]
+      const hasValidOptions = currentOptions.length > 0 && !currentOptions.every(o => o === 'mute')
+      setJummahSettings({
+        1: { enabled: hasValidOptions, options: currentOptions },
+        2: { enabled: hasValidOptions, options: currentOptions },
+        3: { enabled: hasValidOptions, options: currentOptions },
+        4: { enabled: hasValidOptions, options: currentOptions },
+      })
+      setJummahModalVisible(false)
+      setSelectedJummah(null)
+      setModalOptions([])
+    }, [modalOptions])
+    
+    const handleCloseModal = useCallback(() => {
+      setJummahModalVisible(false)
+      setSelectedJummah(null)
+      setModalOptions([])
+    }, [])
+    
+    const handleSave = useCallback(() => {
       if (selectedJummah) {
+        const hasOptions = modalOptions.length > 0 && !modalOptions.every(o => o === 'mute')
         setJummahSettings(prev => ({
           ...prev,
           [selectedJummah]: {
-            ...prev[selectedJummah],
-            option: option,
+            enabled: hasOptions,
+            options: [...modalOptions],
           }
         }))
       }
-    }
-    
-    const handleCloseModal = () => {
-      setJummahModalVisible(false)
-      setSelectedJummah(null)
-    }
-    
-    const handleSave = () => {
-      console.log('Saving Jummah settings for:', selectedJummah, jummahSettings[selectedJummah!])
+      console.log('Saving Jummah settings for:', selectedJummah, modalOptions)
       handleCloseModal()
-    }
+    }, [selectedJummah, modalOptions, handleCloseModal])
     
     const notificationOptions = [
-      { key: 'jummah_time', title: 'Notify at Jummah Time:', description: 'Get notified exactly when Jummah starts' },
-      { key: '30_min_before', title: 'Notify 30 minutes before:', description: 'Get reminded 30 minutes before Jummah' },
-      { key: '1_hour_before', title: 'Notify 1 hour before:', description: 'Get reminded 1 hour before Jummah' },
-      { key: 'mute', title: 'Mute', description: '' },
+      { key: 'jummah_time', title: 'Notify at Jummah Time', description: 'Get notified exactly when it\'s time for Jummah' },
+      { key: '30_min_before', title: '30-Minute Reminder', description: 'Get reminded 30 minutes before Jummah' },
+      { key: '1_hour_before', title: '1-Hour Reminder', description: 'Get reminded 1 hour before Jummah to prepare' },
+      { key: 'mute', title: 'Mute', description: 'Disable all notifications for this Jummah' },
     ]
-
-    const JummahCard = ({ time, index }: { time: string, index: number }) => {
-      const isEnabled = jummahSettings[index + 1]?.enabled || false
-      
-      return (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: 20,
-            paddingHorizontal: 18,
-            backgroundColor: 'rgba(255, 255, 255, 0.12)',
-            borderRadius: 16,
-            marginBottom: 20,
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-          }}
-        >
-          <View
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: 14,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 18,
-              overflow: 'hidden',
-            }}
-          >
-            <Image
-              source={require('@/assets/images/JummahIcon.png')}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          </View>
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: '600', color: 'white', marginBottom: 6 }}>
-              Jummah Prayer {index + 1}
-            </Text>
-            <Text style={{ fontSize: 15, fontWeight: '500', color: '#6EE7B7' }}>
-              {time}
-            </Text>
-          </View>
-          <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-            <Switch
-              value={isEnabled}
-              onValueChange={() => handleToggle(index + 1)}
-              color="#6EE7B7"
-            />
-          </View>
-        </View>
-      )
-    }
 
     return (
       <>
@@ -557,7 +602,13 @@ const NotificationEvents = () => {
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: tabBarHeight }}
         >
           {jummahTimes.map((time, idx) => (
-            <JummahCard key={idx} time={time} index={idx} />
+            <JummahCard 
+              key={idx} 
+              time={time} 
+              index={idx} 
+              isEnabled={jummahSettings[idx + 1]?.enabled || false}
+              onToggle={handleToggle}
+            />
           ))}
         </ScrollView>
         
@@ -597,11 +648,11 @@ const NotificationEvents = () => {
                     onPress={() => handleOptionSelect(option.key)}
                   >
                     <View style={[
-                      jummahStyles.radioOuter,
-                      jummahSettings[selectedJummah || 1]?.option === option.key && jummahStyles.radioOuterSelected
+                      jummahStyles.checkboxOuter,
+                      modalOptions.includes(option.key) && jummahStyles.checkboxSelected
                     ]}>
-                      {jummahSettings[selectedJummah || 1]?.option === option.key && (
-                        <View style={jummahStyles.radioInner} />
+                      {modalOptions.includes(option.key) && (
+                        <Check color="#1a3a5c" size={14} strokeWidth={3} />
                       )}
                     </View>
                     <View style={jummahStyles.optionTextContainer}>
@@ -613,6 +664,11 @@ const NotificationEvents = () => {
                   </Pressable>
                 ))}
               </View>
+
+              {/* Apply to All Prayers Button */}
+              <Pressable style={jummahStyles.applyAllButton} onPress={handleApplyToAll}>
+                <Text style={jummahStyles.applyAllButtonText}>Apply to All Prayers</Text>
+              </Pressable>
 
               {/* Save Button */}
               <Pressable style={jummahStyles.saveButton} onPress={handleSave}>
@@ -704,7 +760,8 @@ const NotificationEvents = () => {
         headerShown: false,
       }} />
       <LinearGradient
-        colors={['#1d4681', '#3183bf']}
+        colors={['#1d4681', '#2a6299', '#3d84b8', '#5aa3d4']}
+        locations={[0, 0.3, 0.6, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={{ flex: 1 }}
@@ -793,7 +850,7 @@ const NotificationEvents = () => {
                     }}>
                       {route.title}
                     </Text>
-      </Pressable>
+                  </Pressable>
                 );
               })}
             </View>
@@ -912,18 +969,24 @@ const jummahStyles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   blurContainer: {
     ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
-    backgroundColor: '#1a3a5c',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: '#0053A5',
+    borderRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 40,
-    maxHeight: '60%',
+    paddingBottom: 30,
+    maxHeight: '70%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 20,
   },
   modalIndicator: {
     width: 40,
@@ -955,24 +1018,18 @@ const jummahStyles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 14,
   },
-  radioOuter: {
+  checkboxOuter: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: '#6EE7B7',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
-  radioOuterSelected: {
+  checkboxSelected: {
     backgroundColor: '#6EE7B7',
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#1a3a5c',
   },
   optionTextContainer: {
     flex: 1,
@@ -988,6 +1045,22 @@ const jummahStyles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     lineHeight: 20,
   },
+  applyAllButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(110, 231, 183, 0.6)',
+  },
+  applyAllButtonText: {
+    color: '#6EE7B7',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   saveButton: {
     backgroundColor: 'rgba(0, 122, 255, 0.8)',
     paddingVertical: 16,
@@ -995,7 +1068,8 @@ const jummahStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    marginTop: 32,
+    marginTop: 0,
+    marginBottom: 20,
   },
   saveButtonText: {
     color: '#FFFFFF',

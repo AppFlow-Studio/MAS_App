@@ -38,7 +38,7 @@ const RenderAddedEvents = ({ eventsInfo, onHeroPress }: RenderAddedEventsProps) 
       <View style={{ justifyContent: "center", alignItems: "center", marginHorizontal: 8 }}>
         <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
           <LinearGradient
-            colors={['#87CEEB', '#214E91', '#2A2A2A']}
+            colors={['#ffffff', '#ffffff', '#ffffff']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientBorder}
@@ -61,7 +61,7 @@ const RenderAddedEvents = ({ eventsInfo, onHeroPress }: RenderAddedEventsProps) 
         <Link href={`/myPrograms/notifications/${eventsInfo?.event_id}`} asChild>
             <TouchableOpacity>
               <LinearGradient
-                colors={['#87CEEB', '#214E91', '#2A2A2A']}
+                colors={['#ffffff', '#ffffff', '#ffffff']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.gradientBorder}

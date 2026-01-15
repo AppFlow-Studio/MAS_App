@@ -17,7 +17,6 @@ import { Link, Stack } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { supabase } from '@/src/lib/supabase'
 import { useVideoPlayer, VideoView } from 'expo-video'
-import { LiquidGlassView } from '@/src/lib/liquidGlass'
 
 // Video background configuration
 // Set to true AFTER rebuilding development build with: npx expo prebuild --clean && open ios/*.xcworkspace
@@ -157,14 +156,16 @@ const GreetingScreen = () => {
   const buttonsTranslate = useSharedValue(100)
   const buttonsOpacity = useSharedValue(0)
 
-  // Handle video end - just transition to blue gradient
+  // Handle video end - transition to blue gradient
   const handleVideoEnd = useCallback(() => {
     setVideoEnded(true)
+    
     // Smooth fade to blue gradient over 1.5 seconds
     backgroundOpacity.value = withTiming(1, { 
       duration: 1500, 
       easing: Easing.inOut(Easing.ease) 
     })
+    
   }, [])
 
   // Create video player with expo-video
@@ -195,12 +196,15 @@ const GreetingScreen = () => {
   }))
 
   useEffect(() => {
-    // Animate logo immediately while video plays - smooth without bounce
-    const logoDelay = 500
-    const buttonsDelay = 1200 // Buttons come in a bit later
-    logoOpacity.value = withDelay(logoDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
-    logoScale.value = withDelay(logoDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
-    logoTranslateY.value = withDelay(logoDelay, withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) }))
+    // Logo animates 4 seconds after video starts
+    const logoDelay = 4000
+    const logoDuration = 2200
+    logoOpacity.value = withDelay(logoDelay, withTiming(1, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
+    logoScale.value = withDelay(logoDelay, withTiming(1, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
+    logoTranslateY.value = withDelay(logoDelay, withTiming(0, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
+    
+    // Buttons animate on mount (like before)
+    const buttonsDelay = 1200
     buttonsOpacity.value = withDelay(buttonsDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
     buttonsTranslate.value = withDelay(buttonsDelay, withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) }))
   }, [])
@@ -335,49 +339,49 @@ const GreetingScreen = () => {
         paddingBottom: 50,
         gap: 12,
       }, buttonsStyle]}>
-        {/* Create Account Button - Liquid Glass */}
+        {/* Create Account Button */}
         <Link href='/SignUp' asChild>
-          <Pressable>
-            <LiquidGlassView
-              style={{
-                paddingVertical: 18,
-                borderRadius: 50,
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
-            >
-              <Text style={{
-                fontFamily: 'Poppins_600SemiBold',
-                fontSize: 17,
-                color: '#ffffff',
-              }}>
-                Create Account
-              </Text>
-            </LiquidGlassView>
+          <Pressable
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              paddingVertical: 18,
+              borderRadius: 50,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+            }}
+          >
+            <Text style={{
+              fontFamily: 'Poppins_600SemiBold',
+              fontSize: 17,
+              color: '#ffffff',
+            }}>
+              Create Account
+            </Text>
           </Pressable>
         </Link>
 
-        {/* Sign In Button - Liquid Glass */}
+        {/* Sign In Button */}
         <Link href='/SignIn' asChild>
-          <Pressable>
-            <LiquidGlassView
-              style={{
-                paddingVertical: 18,
-                borderRadius: 50,
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
-            >
-              <Text style={{
-                fontFamily: 'Poppins_600SemiBold',
-                fontSize: 17,
-                color: '#ffffff',
-              }}>
-                Sign In
-              </Text>
-            </LiquidGlassView>
+          <Pressable
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              paddingVertical: 18,
+              borderRadius: 50,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+            }}
+          >
+            <Text style={{
+              fontFamily: 'Poppins_600SemiBold',
+              fontSize: 17,
+              color: '#ffffff',
+            }}>
+              Sign In
+            </Text>
           </Pressable>
         </Link>
 

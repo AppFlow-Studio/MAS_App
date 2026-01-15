@@ -616,7 +616,7 @@ export default function UpcomingProgramWidget() {
 
         setModalToast({
           type: 'addProgramToNotificationsToast',
-          props: { props: programData, onPress: () => router.push('/myPrograms/notifications') }
+          props: { props: programData, onPress: () => { setModalVisible(false); router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs'); } }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -658,7 +658,7 @@ export default function UpcomingProgramWidget() {
 
         setModalToast({
           type: 'addEventToNotificationsToast',
-          props: { props: eventData, onPress: () => router.push('/myPrograms/notifications') }
+          props: { props: eventData, onPress: () => { setModalVisible(false); router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs'); } }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -796,7 +796,7 @@ export default function UpcomingProgramWidget() {
         // Show toast
         setModalToast({
           type: 'addProgramToNotificationsToast',
-          props: { props: programData, onPress: () => router.push('/myPrograms/notifications') }
+          props: { props: programData, onPress: () => { setModalVisible(false); router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs'); } }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -839,7 +839,7 @@ export default function UpcomingProgramWidget() {
         // Show toast
         setModalToast({
           type: 'addEventToNotificationsToast',
-          props: { props: eventData, onPress: () => router.push('/myPrograms/notifications') }
+          props: { props: eventData, onPress: () => { setModalVisible(false); router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs'); } }
         });
         setTimeout(() => setModalToast(null), 3000);
       }

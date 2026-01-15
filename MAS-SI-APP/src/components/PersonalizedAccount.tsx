@@ -12,6 +12,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
 
@@ -185,6 +186,48 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
         backdropOpacity.value = withTiming(1, { duration: 400 })
       }
     }, [visible])
+
+    // Handle dismiss (tap outside or drag down)
+    const handleDismiss = () => {
+      slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
+      backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
+        runOnJS(closeSheet)()
+        if (onSkip) {
+          runOnJS(onSkip)()
+        }
+      })
+    }
+
+    // Pan gesture for drag-to-dismiss
+    const panGesture = Gesture.Pan()
+      .onUpdate((event) => {
+        // Only allow dragging down (positive translationY)
+        if (event.translationY > 0) {
+          slideY.value = event.translationY
+          // Fade backdrop as user drags
+          backdropOpacity.value = Math.max(0, 1 - (event.translationY / 300))
+        }
+      })
+      .onEnd((event) => {
+        // If dragged more than 100px down or with velocity, dismiss
+        if (event.translationY > 100 || event.velocityY > 500) {
+          slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
+          backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
+            runOnJS(closeSheet)()
+            if (onSkip) {
+              runOnJS(onSkip)()
+            }
+          })
+        } else {
+          // Snap back to original position
+          slideY.value = withSpring(0, {
+            damping: 20,
+            stiffness: 90,
+            mass: 0.5,
+          })
+          backdropOpacity.value = withTiming(1, { duration: 200 })
+        }
+      })
     
     // Animated styles
     const backdropStyle = useAnimatedStyle(() => ({
@@ -653,34 +696,40 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
         statusBarTranslucent
       >
         <Animated.View style={[{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'flex-end' }, backdropStyle]}>
+          {/* Tap outside to dismiss */}
+          <Pressable 
+            style={{ flex: 1 }} 
+            onPress={handleDismiss}
+          />
           <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ flex: 1, justifyContent: 'flex-end' }}
+            style={{ justifyContent: 'flex-end' }}
           >
-            <Animated.View
-              style={[{
-                backgroundColor: '#0E519F',
-                borderRadius: 40,
-                marginHorizontal: 10,
-                marginBottom: Platform.OS === 'ios' ? 12 : 10,
-                overflow: 'hidden',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 20,
-                elevation: 20,
-              }, sheetStyle]}
-            >
-              {/* Handle */}
-              <View style={{
-                width: 36,
-                height: 4,
-                backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                borderRadius: 2,
-                alignSelf: 'center',
-                marginTop: 10,
-                marginBottom: 10,
-              }} />
+            <GestureDetector gesture={panGesture}>
+              <Animated.View
+                style={[{
+                  backgroundColor: '#0E519F',
+                  borderRadius: 40,
+                  marginHorizontal: 10,
+                  marginBottom: Platform.OS === 'ios' ? 12 : 10,
+                  overflow: 'hidden',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: -4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 20,
+                  elevation: 20,
+                }, sheetStyle]}
+              >
+                {/* Handle - visual indicator for dragging */}
+                <View style={{
+                  width: 36,
+                  height: 4,
+                  backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                  borderRadius: 2,
+                  alignSelf: 'center',
+                  marginTop: 10,
+                  marginBottom: 10,
+                }} />
 
               {/* Compact Header */}
               <View style={{ paddingHorizontal: 20, paddingBottom: 14 }}>
@@ -795,7 +844,8 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                   </Pressable>
                 </View>
               </View>
-            </Animated.View>
+              </Animated.View>
+            </GestureDetector>
           </KeyboardAvoidingView>
         </Animated.View>
       </Modal>

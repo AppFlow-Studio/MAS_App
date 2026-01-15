@@ -200,6 +200,10 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
               index == 0 ?
                 ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((salah, prayerIndex) => {
                   const prayerSetting = userSettings?.filter(setting => setting.prayer == salah.toLowerCase())
+                  const hasNotificationEnabled = prayerSetting && prayerSetting.length > 0 && 
+                    prayerSetting[0].notification_settings && 
+                    prayerSetting[0].notification_settings.length > 0 &&
+                    !prayerSetting[0].notification_settings.every(s => s === 'mute')
                   const isCurrentPrayer = currentPrayer == salah && index == 0;
                   const isFajr = prayerIndex === 0;
                   return (
@@ -261,12 +265,12 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: isCurrentPrayer ? 'rgba(128, 128, 128, 0.15)' : 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.15)' : isCurrentPrayer ? 'rgba(128, 128, 128, 0.15)' : 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source="bell-outline" size={20} color={isCurrentPrayer ? "#facc15" : "rgba(29,70,129,0.5)"} />
+                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(29,70,129,0.5)"} />
                           </Pressable>
                         </View>
                       </View>
@@ -275,6 +279,11 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 })
                 :
                 ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((salah, prayerIndex) => {
+                  const prayerSetting = userSettings?.filter(setting => setting.prayer == salah.toLowerCase())
+                  const hasNotificationEnabled = prayerSetting && prayerSetting.length > 0 && 
+                    prayerSetting[0].notification_settings && 
+                    prayerSetting[0].notification_settings.length > 0 &&
+                    !prayerSetting[0].notification_settings.every(s => s === 'mute')
                   const isFajr = prayerIndex === 0;
                   return (
                     <React.Fragment key={prayerIndex}>
@@ -331,12 +340,12 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.15)' : 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source="bell-outline" size={20} color="rgba(29,70,129,0.5)" />
+                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(29,70,129,0.5)"} />
                           </Pressable>
                         </View>
                       </View>

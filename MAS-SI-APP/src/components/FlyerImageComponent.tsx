@@ -641,7 +641,8 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
             setProgramInNotifications(true);
             
             const goToNotificationCenter = () => {
-                router.push('/myPrograms/notifications');
+                setModalVisible(false);
+                router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs');
             };
             
             // Show toast in modal

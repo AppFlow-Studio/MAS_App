@@ -151,17 +151,18 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef>((prop
     };
   }, []);
 
-  const padding = 24; // 12px on each side from px-3
-  const cardWidth = windowWidth * 0.75; // 75% of screen width
-  const spacing = 12;
+  const sideMargin = 12; // Space on left/right edges of screen
+  const cardWidth = windowWidth - (sideMargin * 2); // Card fills screen minus margins
 
   const handleScroll = (event: any) => {
     setScrollX(event.nativeEvent.contentOffset.x);
   };
 
+  const itemWidth = cardWidth + sideMargin; // Card width + gap to next card
+  
   const getItemLayout = (_data: any, index: number) => ({
-    length: cardWidth + spacing,
-    offset: (cardWidth + spacing) * index,
+    length: itemWidth,
+    offset: itemWidth * index,
     index: index,
   });
 
@@ -169,38 +170,18 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef>((prop
   useImperativeHandle(ref, () => ({
     scrollToDonation: () => {
       if (donationIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
-        try {
-          flatListRef.current.scrollToIndex({
-            index: donationIndexRef.current,
-            animated: true,
-            viewOffset: 12,
-          });
-        } catch (error) {
-          // Fallback to scrollToOffset if scrollToIndex fails
-          const offset = donationIndexRef.current * (cardWidth + spacing);
-          flatListRef.current.scrollToOffset({
-            offset: offset,
-            animated: true,
-          });
-        }
+        flatListRef.current.scrollToOffset({
+          offset: 0,
+          animated: true,
+        });
       }
     },
     scrollToVolunteer: () => {
       if (volunteerIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
-        try {
-          flatListRef.current.scrollToIndex({
-            index: volunteerIndexRef.current,
-            animated: true,
-            viewOffset: 12,
-          });
-        } catch (error) {
-          // Fallback to scrollToOffset if scrollToIndex fails
-          const offset = volunteerIndexRef.current * (cardWidth + spacing);
-          flatListRef.current.scrollToOffset({
-            offset: offset,
-            animated: true,
-          });
-        }
+        flatListRef.current.scrollToOffset({
+          offset: itemWidth,
+          animated: true,
+        });
       }
     },
   }));
@@ -218,7 +199,7 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef>((prop
   }
 
   return (
-    <View style={{ height: 250 }}>
+    <View style={{ height: 260, marginBottom: 8, overflow: 'hidden' }}>
       <AnimatedFlatList
         data={items}
         renderItem={({ item, index }) => (
@@ -226,20 +207,20 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef>((prop
             item={item}
             index={index}
             cardWidth={cardWidth}
-            spacing={spacing}
+            spacing={sideMargin}
             isFirst={index === 0}
-            isLast={index === items.length - 1}
           />
         )}
         horizontal
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        snapToInterval={cardWidth + spacing}
-        decelerationRate={0.9}
+        snapToInterval={itemWidth}
+        decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 12 }}
+        contentContainerStyle={{ paddingLeft: sideMargin }}
         getItemLayout={getItemLayout}
         ref={flatListRef}
+        pagingEnabled={false}
       />
     </View>
   );
@@ -255,19 +236,18 @@ type CardItemProps = {
   cardWidth: number;
   spacing: number;
   isFirst: boolean;
-  isLast: boolean;
 };
 
-function CardItem({ item, cardWidth, spacing, isFirst, isLast }: CardItemProps) {
+function CardItem({ item, cardWidth, spacing, isFirst }: CardItemProps) {
   const [imageReady, setImageReady] = useState(false);
 
-  const marginLeft = isFirst ? 0 : spacing / 2;
-  const marginRight = isLast ? 0 : spacing / 2;
+  // Each card has right margin for spacing, first card starts at container padding
+  const marginRight = spacing;
 
   if (item.type === 'donation') {
     const donation = item as DonationCategory;
     return (
-      <View style={{ width: cardWidth, marginLeft, marginRight }}>
+      <View style={{ width: cardWidth, marginRight }}>
         <Link
           href={{
             pathname: '/more/DonationCategoires/[project_id]',
@@ -322,7 +302,7 @@ function CardItem({ item, cardWidth, spacing, isFirst, isLast }: CardItemProps) 
             <Text
               className="mt-3 font-bold"
               numberOfLines={2}
-              style={{ color: '#000000', width: '100%', textAlign: 'left' }}
+              style={{ color: '#000000', width: '100%', textAlign: 'left', marginBottom: 4 }}
             >
               {donation.project_name}
             </Text>
@@ -353,7 +333,7 @@ function CardItem({ item, cardWidth, spacing, isFirst, isLast }: CardItemProps) 
     };
 
     return (
-      <View style={{ width: cardWidth, marginLeft, marginRight }}>
+      <View style={{ width: cardWidth, marginRight }}>
         <Pressable style={{ width: '100%', alignItems: 'flex-start' }} onPress={handlePress}>
           <View
             style={{
@@ -403,7 +383,7 @@ function CardItem({ item, cardWidth, spacing, isFirst, isLast }: CardItemProps) 
           <Text
             className="mt-3 font-bold"
             numberOfLines={2}
-            style={{ color: '#000000', width: '100%', textAlign: 'left' }}
+            style={{ color: '#000000', width: '100%', textAlign: 'left', marginBottom: 4 }}
           >
             {volunteer.title}
           </Text>

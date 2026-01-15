@@ -3,6 +3,8 @@ import React, { forwardRef, useState, useImperativeHandle, useEffect, useRef } f
 import { Icon, TextInput as PaperTextInput, ActivityIndicator } from 'react-native-paper'
 import { supabase } from '@/src/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
+import * as FileSystem from 'expo-file-system/legacy'
+import { decode } from 'base64-arraybuffer'
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -249,26 +251,32 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
 
           if (profileImage) {
             try {
-              const response = await fetch(profileImage)
-              const blob = await response.blob()
-              const fileExt = profileImage.split('.').pop()?.toLowerCase() || 'jpg'
-              const fileName = `${user.id}/profile.${fileExt}`
+              // Read file as base64 - the correct approach for React Native
+              const base64 = await FileSystem.readAsStringAsync(profileImage, { encoding: 'base64' })
+              const filePath = `${user.id}/profile_${new Date().getTime()}.png`
               
-              const { error: uploadError } = await supabase.storage
-                .from('profile-images')
-                .upload(fileName, blob, {
+              const { data: image, error: uploadError } = await supabase.storage
+                .from('user_playlist_img')
+                .upload(filePath, decode(base64), {
+                  contentType: 'image/png',
                   upsert: true,
-                  contentType: `image/${fileExt}`,
                 })
 
-              if (!uploadError) {
+              if (uploadError) {
+                console.error('Upload error:', uploadError)
+                Alert.alert('Error', 'Failed to upload profile picture. Please try again.')
+              } else if (image) {
                 const { data: urlData } = supabase.storage
-                  .from('profile-images')
-                  .getPublicUrl(fileName)
-                profileImageUrl = urlData.publicUrl
+                  .from('user_playlist_img')
+                  .getPublicUrl(image.path)
+                
+                if (urlData?.publicUrl) {
+                  profileImageUrl = urlData.publicUrl
+                }
               }
             } catch (uploadErr) {
               console.error('Error processing image:', uploadErr)
+              Alert.alert('Error', 'Failed to process profile picture. Please try again.')
             }
           }
           

@@ -1,4 +1,4 @@
-import { View, Text, useWindowDimensions, ScrollView, FlatList, Image } from 'react-native';
+import { View, Text, useWindowDimensions, ScrollView, FlatList, Image, StatusBar } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import React, { useState, useCallback, useEffect } from 'react';
 import { useProgram } from '@/src/providers/programProvider';
@@ -57,7 +57,7 @@ export default function LecturesData() {
 
         {
           speakerData?.map((speakerData) => (
-            <View className='border-2 border-gray-400 border-solid rounded-[25px] p-2 my-1'>
+            <View className='border-2 border-gray-400 border-solid rounded-[15px] p-2 my-1'>
               <Animated.View className=' flex-row'>
                 <Image source={speakerData?.speaker_img ? { uri: speakerData.speaker_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 110, height: 110, borderRadius: 50 }} resizeMode='cover' />
                 <View className='flex-col px-1'>
@@ -115,7 +115,7 @@ export default function LecturesData() {
         >
           <View className='flex-col items-center mt-3'>
             <Text className='font-bold text-black text-2xl text-center'>{currentLecture?.event_lecture_name}</Text>
-            <Text className='font-bold  text-blue-500' onPress={showModal}>{speakerString ? speakerString.join(' & ') : ''}</Text>
+            <Text className='font-bold text-[#0D509D]' onPress={showModal}>{speakerString ? speakerString.join(' & ') : ''}</Text>
           </View>
           {array ? array.map((item, index) => {
             return (
@@ -135,7 +135,7 @@ export default function LecturesData() {
       <ScrollView className='flex-1' contentContainerStyle={{ alignItems: "center", backgroundColor: "#ededed" }}>
         <View className='flex-col items-center mt-3'>
           <Text className='font-bold text-black text-2xl text-center'>{currentLecture?.event_lecture_name}</Text>
-          <Text className='font-bold  text-blue-500' onPress={showModal}>{speakerString ? speakerString.join(' & ') : ''}</Text>
+          <Text className='font-bold text-[#0D509D]' onPress={showModal}>{speakerString ? speakerString.join(' & ') : ''}</Text>
         </View>
         <View className='h-[350] w-[85%] mt-2'>
           <ScrollView className=' bg-white' style={{ borderRadius: 10 }} contentContainerStyle={{ paddingHorizontal: 8, paddingVertical: 5 }}>
@@ -184,7 +184,9 @@ export default function LecturesData() {
   }
   return (
     <View className='flex-1 bg-[#ededed]'>
-      <Stack.Screen options={{ title: currentLecture?.event_lecture_name, headerTintColor: '#007AFF', headerTitleStyle: { color: 'black' }, headerStyle: { backgroundColor: 'white' } }} />
+      <Stack.Screen options={{ title: currentLecture?.event_lecture_name, headerTintColor: '#007AFF', headerTitleStyle: { color: 'black' }, headerStyle: { backgroundColor: 'white', } }} />
+      <StatusBar barStyle={'dark-content'} />
+
       <View
         style={{
           width: layout * 0.98,
@@ -228,7 +230,7 @@ export default function LecturesData() {
         style={{ backgroundColor: "#ededed" }}
       />
       <Portal>
-        <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{ backgroundColor: 'white', padding: 20, minHeight: 400, maxHeight: "70%", width: "95%", borderRadius: 35, alignSelf: "center" }} >
+        <Modal visible={visible} onDismiss={hideModal} contentContainerStyle={{ backgroundColor: 'white', padding: 20, height: "70%", width: "95%", borderRadius: 35, alignSelf: "center" }} >
           <ScrollView className='flex-1'
             showsVerticalScrollIndicator={true}
           >

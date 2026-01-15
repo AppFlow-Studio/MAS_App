@@ -1,7 +1,7 @@
 import { DataTable, Divider, Icon, IconButton } from 'react-native-paper';
 import { gettingPrayerData, prayerTimeData } from '@/src/types';
 import ProgramWidgetSlider from "@/src/components/programWidgetSlider";
-import { View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground, Platform, Modal, Animated } from "react-native";
+import { View, Text, useWindowDimensions, StyleSheet, Pressable, ImageBackground, Platform, Modal } from "react-native";
 import AlertBell from '../app/(user)/prayersTable/alertBell';
 import { useCurrentPrayer } from '../hooks/usePrayerTimes';
 import { FajrIcon, DhuhrIcon, AsrIcon, MaghribIcon, IshaIcon } from './SalahIcons/FajrIcon';
@@ -9,6 +9,18 @@ import { Link } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
 import { BlurView } from 'expo-blur';
 import { X, Check } from 'lucide-react-native';
+import { supabase } from '@/src/lib/supabase';
+import { useAuth } from '@/src/providers/AuthProvider';
+import Toast from 'react-native-toast-message';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  interpolate,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 type NotificationOption = 'prayer_time' | 'iqamah_time' | '30_min_before' | 'mute';
 
@@ -25,14 +37,81 @@ type prayerDataProp = {
   index: number
   userSettings: { prayer: string, notification_settings: string[] }[] | undefined
 }
+// Map internal option names to database values
+const optionToDbValue: { [key in NotificationOption]: string } = {
+  'prayer_time': 'Alert at Athan time',
+  'iqamah_time': 'Alert at Iqamah time',
+  '30_min_before': 'Alert 30 mins before next prayer',
+  'mute': 'Mute',
+};
+
+// Map database values to internal option names
+const dbValueToOption: { [key: string]: NotificationOption } = {
+  'Alert at Athan time': 'prayer_time',
+  'Alert at Iqamah time': 'iqamah_time',
+  'Alert 30 mins before next prayer': '30_min_before',
+  'Mute': 'mute',
+};
+
 const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: prayerDataProp) => {
   const currentPrayer = useCurrentPrayer()
   const { width, height } = useWindowDimensions();
+  const { session } = useAuth();
   
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState<string | null>(null);
-  const blurOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Reanimated shared values for smooth UI-thread animations
+  const translateY = useSharedValue(500);
+  const backdropOpacity = useSharedValue(0);
+
+  // Close the modal (called from UI thread via runOnJS)
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedPrayer(null);
+  };
+
+  // Pan gesture for smooth drag-to-dismiss (runs on UI thread)
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      // Only allow dragging down (positive translationY)
+      if (event.translationY > 0) {
+        translateY.value = event.translationY;
+        // Fade backdrop as user drags
+        backdropOpacity.value = interpolate(
+          event.translationY,
+          [0, 300],
+          [1, 0]
+        );
+      }
+    })
+    .onEnd((event) => {
+      // If dragged more than 100px down or with velocity, dismiss
+      if (event.translationY > 100 || event.velocityY > 500) {
+        translateY.value = withTiming(500, { duration: 250 });
+        backdropOpacity.value = withTiming(0, { duration: 250 }, () => {
+          runOnJS(closeModal)();
+        });
+      } else {
+        // Snap back to original position with spring
+        translateY.value = withSpring(0, {
+          damping: 25,
+          stiffness: 120,
+          mass: 0.8,
+        });
+        backdropOpacity.value = withTiming(1, { duration: 150 });
+      }
+    });
+
+  // Animated styles (run on UI thread)
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
   
   // Prayer notification settings state
   const [prayerSettings, setPrayerSettings] = useState<PrayerNotificationSettings>({
@@ -43,24 +122,85 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
     'Isha': { enabled: false, options: [] },
   });
 
-  // Animate blur when modal opens
+  // Initialize prayerSettings from userSettings prop
+  useEffect(() => {
+    if (userSettings && userSettings.length > 0) {
+      const newSettings: PrayerNotificationSettings = {
+        'Fajr': { enabled: false, options: [] },
+        'Dhuhr': { enabled: false, options: [] },
+        'Asr': { enabled: false, options: [] },
+        'Maghrib': { enabled: false, options: [] },
+        'Isha': { enabled: false, options: [] },
+      };
+      
+      userSettings.forEach(setting => {
+        // Capitalize first letter to match our keys
+        const prayerName = setting.prayer.charAt(0).toUpperCase() + setting.prayer.slice(1);
+        // Handle 'zuhr' -> 'Dhuhr' mapping
+        const normalizedPrayer = prayerName === 'Zuhr' ? 'Dhuhr' : prayerName;
+        
+        if (newSettings[normalizedPrayer]) {
+          const options: NotificationOption[] = setting.notification_settings
+            .map(s => dbValueToOption[s])
+            .filter((opt): opt is NotificationOption => opt !== undefined);
+          
+          newSettings[normalizedPrayer] = {
+            enabled: options.length > 0 && !options.includes('mute'),
+            options: options,
+          };
+        }
+      });
+      
+      setPrayerSettings(newSettings);
+    }
+  }, [userSettings]);
+
+  // Animate slide in when modal opens
   useEffect(() => {
     if (modalVisible) {
-      const timeout = setTimeout(() => {
-        Animated.timing(blurOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }).start();
-      }, 300);
-      return () => clearTimeout(timeout);
-    } else {
-      blurOpacity.setValue(0);
+      // Reset and animate in with spring for smooth feel
+      translateY.value = 500;
+      backdropOpacity.value = 0;
+      
+      // Small delay to ensure modal is mounted
+      setTimeout(() => {
+        translateY.value = withSpring(0, {
+          damping: 25,
+          stiffness: 120,
+          mass: 0.8,
+        });
+        backdropOpacity.value = withTiming(1, { duration: 300 });
+      }, 50);
     }
   }, [modalVisible]);
 
-  const handleBellPress = (salah: string) => {
+  const handleBellPress = async (salah: string) => {
     setSelectedPrayer(salah);
+    
+    // Fetch current settings from database to ensure we show the latest
+    if (session?.user.id) {
+      const { data, error } = await supabase
+        .from('prayer_notification_settings')
+        .select('notification_settings')
+        .eq('user_id', session.user.id)
+        .eq('prayer', salah.toLowerCase())
+        .single();
+      
+      if (data && !error) {
+        const options: NotificationOption[] = (data.notification_settings || [])
+          .map((s: string) => dbValueToOption[s])
+          .filter((opt: NotificationOption | undefined): opt is NotificationOption => opt !== undefined);
+        
+        setPrayerSettings(prev => ({
+          ...prev,
+          [salah]: {
+            enabled: options.length > 0 && !options.includes('mute'),
+            options: options,
+          }
+        }));
+      }
+    }
+    
     setModalVisible(true);
   };
 
@@ -102,26 +242,89 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
   };
 
   const handleCloseModal = () => {
-    setModalVisible(false);
-    setSelectedPrayer(null);
+    translateY.value = withTiming(500, { duration: 250 });
+    backdropOpacity.value = withTiming(0, { duration: 250 }, () => {
+      runOnJS(closeModal)();
+    });
   };
 
-  const handleSave = () => {
-    console.log('Saving settings for:', selectedPrayer, prayerSettings[selectedPrayer!]);
+  // Save notification settings for a single prayer to database
+  const savePrayerSettings = async (prayer: string, options: NotificationOption[]) => {
+    if (!session?.user.id) return;
+    
+    // Convert internal options to database values
+    const dbSettings = options.map(opt => optionToDbValue[opt]);
+    
+    // If no options selected, default to empty array (or you could set to mute)
+    const settingsToSave = dbSettings.length > 0 ? dbSettings : [];
+    
+    const { error } = await supabase
+      .from('prayer_notification_settings')
+      .update({ notification_settings: settingsToSave })
+      .eq('user_id', session.user.id)
+      .eq('prayer', prayer.toLowerCase());
+    
+    if (error) {
+      console.error('Error saving prayer settings:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedPrayer || !session?.user.id) return;
+    
+    const options = prayerSettings[selectedPrayer].options;
+    await savePrayerSettings(selectedPrayer, options);
+    
+    // Show success toast
+    Toast.show({
+      type: 'success',
+      text1: 'Settings Saved',
+      text2: `${selectedPrayer} notification settings updated`,
+      visibilityTime: 2000,
+      topOffset: 60,
+    });
+    
     handleCloseModal();
   };
 
-  const handleApplyToAll = () => {
-    if (selectedPrayer) {
-      const currentOptions = [...prayerSettings[selectedPrayer].options];
-      setPrayerSettings({
-        'Fajr': { enabled: true, options: currentOptions },
-        'Dhuhr': { enabled: true, options: currentOptions },
-        'Asr': { enabled: true, options: currentOptions },
-        'Maghrib': { enabled: true, options: currentOptions },
-        'Isha': { enabled: true, options: currentOptions },
-      });
-    }
+  const handleApplyToAll = async () => {
+    if (!selectedPrayer || !session?.user.id) return;
+    
+    const currentOptions = [...prayerSettings[selectedPrayer].options];
+    const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    
+    // Update local state
+    setPrayerSettings({
+      'Fajr': { enabled: true, options: currentOptions },
+      'Dhuhr': { enabled: true, options: currentOptions },
+      'Asr': { enabled: true, options: currentOptions },
+      'Maghrib': { enabled: true, options: currentOptions },
+      'Isha': { enabled: true, options: currentOptions },
+    });
+    
+    // Save to database for all prayers
+    const dbSettings = currentOptions.map(opt => optionToDbValue[opt]);
+    const settingsToSave = dbSettings.length > 0 ? dbSettings : [];
+    
+    // Update all prayers in parallel
+    await Promise.all(
+      prayers.map(prayer => 
+        supabase
+          .from('prayer_notification_settings')
+          .update({ notification_settings: settingsToSave })
+          .eq('user_id', session.user.id)
+          .eq('prayer', prayer.toLowerCase())
+      )
+    );
+    
+    // Show success toast
+    Toast.show({
+      type: 'success',
+      text1: 'Applied to All',
+      text2: 'Notification settings applied to all prayers',
+      visibilityTime: 2000,
+      topOffset: 60,
+    });
   };
   
   const nextPress = () => {
@@ -200,6 +403,10 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
               index == 0 ?
                 ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((salah, prayerIndex) => {
                   const prayerSetting = userSettings?.filter(setting => setting.prayer == salah.toLowerCase())
+                  const hasNotificationEnabled = prayerSetting && prayerSetting.length > 0 && 
+                    prayerSetting[0].notification_settings && 
+                    prayerSetting[0].notification_settings.length > 0 &&
+                    !prayerSetting[0].notification_settings.every(s => s === 'mute')
                   const isCurrentPrayer = currentPrayer == salah && index == 0;
                   const isFajr = prayerIndex === 0;
                   return (
@@ -261,12 +468,12 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: isCurrentPrayer ? 'rgba(128, 128, 128, 0.15)' : 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.15)' : isCurrentPrayer ? 'rgba(128, 128, 128, 0.15)' : 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source="bell-outline" size={20} color={isCurrentPrayer ? "#facc15" : "rgba(29,70,129,0.5)"} />
+                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(29,70,129,0.5)"} />
                           </Pressable>
                         </View>
                       </View>
@@ -275,6 +482,11 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 })
                 :
                 ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((salah, prayerIndex) => {
+                  const prayerSetting = userSettings?.filter(setting => setting.prayer == salah.toLowerCase())
+                  const hasNotificationEnabled = prayerSetting && prayerSetting.length > 0 && 
+                    prayerSetting[0].notification_settings && 
+                    prayerSetting[0].notification_settings.length > 0 &&
+                    !prayerSetting[0].notification_settings.every(s => s === 'mute')
                   const isFajr = prayerIndex === 0;
                   return (
                     <React.Fragment key={prayerIndex}>
@@ -331,12 +543,12 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.15)' : 'rgba(29, 70, 129, 0.08)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source="bell-outline" size={20} color="rgba(29,70,129,0.5)" />
+                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(29,70,129,0.5)"} />
                           </Pressable>
                         </View>
                       </View>
@@ -363,17 +575,19 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
     {/* Modal for Notification Settings */}
     <Modal
       visible={modalVisible}
-      animationType="slide"
+      animationType="none"
       transparent={true}
       onRequestClose={handleCloseModal}
     >
       <View style={modalStyles.modalOverlay}>
         {/* Animated blur background */}
-        <Animated.View style={[modalStyles.blurContainer, { opacity: blurOpacity }]}>
+        <Animated.View style={[modalStyles.blurContainer, backdropAnimatedStyle]}>
           <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleCloseModal} />
         </Animated.View>
         
-        <View style={modalStyles.modalContent}>
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[modalStyles.modalContent, sheetAnimatedStyle]}>
           {/* Handle Indicator */}
           <View style={modalStyles.modalIndicator} />
           
@@ -399,7 +613,7 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 prayerSettings[selectedPrayer || '']?.options?.includes('prayer_time') && modalStyles.checkboxSelected
               ]}>
                 {prayerSettings[selectedPrayer || '']?.options?.includes('prayer_time') && (
-                  <Check color="#1a3a5c" size={14} strokeWidth={3} />
+                  <Check color="#0F519F" size={14} strokeWidth={3} />
                 )}
               </View>
               <View style={modalStyles.optionTextContainer}>
@@ -418,7 +632,7 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 prayerSettings[selectedPrayer || '']?.options?.includes('iqamah_time') && modalStyles.checkboxSelected
               ]}>
                 {prayerSettings[selectedPrayer || '']?.options?.includes('iqamah_time') && (
-                  <Check color="#1a3a5c" size={14} strokeWidth={3} />
+                  <Check color="#0F519F" size={14} strokeWidth={3} />
                 )}
               </View>
               <View style={modalStyles.optionTextContainer}>
@@ -437,7 +651,7 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 prayerSettings[selectedPrayer || '']?.options?.includes('30_min_before') && modalStyles.checkboxSelected
               ]}>
                 {prayerSettings[selectedPrayer || '']?.options?.includes('30_min_before') && (
-                  <Check color="#1a3a5c" size={14} strokeWidth={3} />
+                  <Check color="#0F519F" size={14} strokeWidth={3} />
                 )}
               </View>
               <View style={modalStyles.optionTextContainer}>
@@ -456,7 +670,7 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
                 prayerSettings[selectedPrayer || '']?.options?.includes('mute') && modalStyles.checkboxSelected
               ]}>
                 {prayerSettings[selectedPrayer || '']?.options?.includes('mute') && (
-                  <Check color="#1a3a5c" size={14} strokeWidth={3} />
+                  <Check color="#0F519F" size={14} strokeWidth={3} />
                 )}
               </View>
               <View style={modalStyles.optionTextContainer}>
@@ -476,7 +690,8 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
             <Check color="#FFFFFF" size={20} strokeWidth={2.5} style={{ marginRight: 8 }} />
             <Text style={modalStyles.saveButtonText}>Save</Text>
           </Pressable>
-        </View>
+          </Animated.View>
+        </GestureDetector>
       </View>
     </Modal>
     </>
@@ -555,7 +770,7 @@ const modalStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   modalContent: {
-    backgroundColor: '#1a3a5c',
+    backgroundColor: '#0F519F',
     borderRadius: 32,
     paddingHorizontal: 20,
     paddingTop: 12,

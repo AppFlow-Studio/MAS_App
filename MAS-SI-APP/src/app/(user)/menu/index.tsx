@@ -67,10 +67,20 @@ export default function homeScreen() {
   const donationVolunteerCarouselRef = useRef<DonationVolunteerCarouselRef>(null);
   const [activeButton, setActiveButton] = useState<'donate' | 'volunteer'>('donate');
   const tabPosition = useSharedValue(0);
+  const tabIndicatorWidthValue = useSharedValue(0);
+  
+  const tabContainerPadding = 2;
+  
+  const handleTabLayout = (e: { nativeEvent: { layout: { width: number } } }) => {
+    const containerWidth = e.nativeEvent.layout.width;
+    const indicatorWidth = (containerWidth - tabContainerPadding * 2) / 2;
+    tabIndicatorWidthValue.value = indicatorWidth;
+  };
   
   const tabAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateX: tabPosition.value * ((width - 38) / 2) }]
+      width: tabIndicatorWidthValue.value,
+      transform: [{ translateX: tabPosition.value * tabIndicatorWidthValue.value }]
     }
   });
   const [isAtBottom, setIsAtBottom] = useState(false);
@@ -268,15 +278,20 @@ export default function homeScreen() {
         </View>
 
         {/* Tab Bar - matching Recorded Lectures style */}
-        <View className="flex-row relative" style={{ backgroundColor: '#F3F4F6', borderRadius: 20, padding: 2 }}>
+        <View 
+          className="flex-row relative" 
+          style={{ backgroundColor: '#F3F4F6', borderRadius: 20, padding: tabContainerPadding }}
+          onLayout={handleTabLayout}
+        >
           <Animated.View 
             style={[
               {
                 position: 'absolute',
                 backgroundColor: 'rgba(33, 78, 145, 0.15)',
                 borderRadius: 18,
-                height: '100%',
-                width: '50%',
+                top: tabContainerPadding,
+                bottom: tabContainerPadding,
+                left: tabContainerPadding,
               },
               tabAnimatedStyle
             ]}
@@ -330,10 +345,11 @@ export default function homeScreen() {
           </Pressable>
         </View>
 
-        {/* Donation and Volunteer Cards Carousel */}
-        <View className='pt-3'>
-          <DonationVolunteerCarousel ref={donationVolunteerCarouselRef} />
-        </View>
+      </View>
+
+      {/* Donation and Volunteer Cards Carousel */}
+      <View className='pt-3'>
+        <DonationVolunteerCarousel ref={donationVolunteerCarouselRef} />
       </View>
 
       {/* Jummah Schedule */}

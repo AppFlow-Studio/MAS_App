@@ -253,12 +253,19 @@ const RecordedLectures = () => {
     },
   })
 
-  const containerPadding = 32 // 16px padding on each side
-  const tabWidth = (width - containerPadding) / 2
+  const tabContainerPadding = 1
+  const tabIndicatorWidthValue = useSharedValue(0)
+  
+  const handleTabLayout = (e: { nativeEvent: { layout: { width: number } } }) => {
+    const containerWidth = e.nativeEvent.layout.width
+    const indicatorWidth = (containerWidth - tabContainerPadding * 2) / 2
+    tabIndicatorWidthValue.value = indicatorWidth
+  }
 
   const tabAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateX: tabPosition.value * tabWidth }]
+      width: tabIndicatorWidthValue.value,
+      transform: [{ translateX: tabPosition.value * tabIndicatorWidthValue.value }]
     }
   })
 
@@ -290,7 +297,7 @@ const RecordedLectures = () => {
     return (
       <ProgramCard 
         item={item} 
-        onPress={() => router.push(`/menu/program/${item.program_id}` as any)}
+        onPress={() => router.push(`/myPrograms/programs/${item.program_id}` as any)}
       />
     )
   }
@@ -300,7 +307,7 @@ const RecordedLectures = () => {
     return (
       <EventCard 
         item={item} 
-        onPress={() => router.push(`/menu/program/events/${item.event_id}` as any)}
+        onPress={() => router.push(`/myPrograms/events/${item.event_id}` as any)}
       />
     )
   }
@@ -621,15 +628,20 @@ const RecordedLectures = () => {
         <View className="bg-white flex-1">
           {/* Custom Tab Bar */}
           <View className="bg-white" style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
-            <View className="flex-row relative" style={{ backgroundColor: '#F3F4F6', borderRadius: 20, padding: 2 }}>
+            <View 
+              className="flex-row relative" 
+              style={{ backgroundColor: '#F3F4F6', borderRadius: 20, padding: tabContainerPadding }}
+              onLayout={handleTabLayout}
+            >
               <Animated.View 
                 style={[
                   {
                     position: 'absolute',
                     backgroundColor: 'rgba(33, 78, 145, 0.15)',
-                    borderRadius: 18,
-                    height: '100%',
-                    width: '50%',
+                    borderRadius: 19,
+                    top: tabContainerPadding,
+                    bottom: tabContainerPadding,
+                    left: tabContainerPadding,
                   },
                   tabAnimatedStyle
                 ]}

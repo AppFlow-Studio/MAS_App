@@ -5,6 +5,8 @@ import { Link, Stack, router } from "expo-router"
 import { supabase } from '@/src/lib/supabase'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import * as ImagePicker from 'expo-image-picker'
+import * as FileSystem from 'expo-file-system/legacy'
+import { decode } from 'base64-arraybuffer'
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -435,26 +437,27 @@ const SignUp = () => {
       // Upload profile image if selected
       if (user && profileImage) {
         try {
-          const response = await fetch(profileImage)
-          const blob = await response.blob()
-          const fileExt = profileImage.split('.').pop()?.toLowerCase() || 'jpg'
-          const fileName = `${user.id}/profile.${fileExt}`
+          // Read file as base64 - the correct approach for React Native
+          const base64 = await FileSystem.readAsStringAsync(profileImage, { encoding: 'base64' })
+          const filePath = `${user.id}/profile_${new Date().getTime()}.png`
           
-          const { error: uploadError } = await supabase.storage
-            .from('profile-images')
-            .upload(fileName, blob, {
+          const { data: image, error: uploadError } = await supabase.storage
+            .from('user_playlist_img')
+            .upload(filePath, decode(base64), {
+              contentType: 'image/png',
               upsert: true,
-              contentType: `image/${fileExt}`,
             })
 
-          if (!uploadError) {
+          if (!uploadError && image) {
             const { data: urlData } = supabase.storage
-              .from('profile-images')
-              .getPublicUrl(fileName)
+              .from('user_playlist_img')
+              .getPublicUrl(image.path)
             
-            await supabase.from('profiles').update({
-              profile_image: urlData.publicUrl
-            }).eq('id', user.id)
+            if (urlData?.publicUrl) {
+              await supabase.from('profiles').update({
+                profile_pic: urlData.publicUrl
+              }).eq('id', user.id)
+            }
           }
         } catch (uploadErr) {
           console.error('Error uploading profile image:', uploadErr)
@@ -1016,17 +1019,6 @@ const SignUp = () => {
           shadowRadius: 20,
           elevation: 20,
         }}>
-          {/* Handle */}
-          <View style={{
-            width: 36,
-            height: 4,
-            backgroundColor: 'rgba(14, 81, 159, 0.3)',
-            borderRadius: 2,
-            alignSelf: 'center',
-            marginTop: 10,
-            marginBottom: 10,
-          }} />
-
           {/* Header */}
           <View style={{ paddingHorizontal: 20, paddingBottom: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -1264,6 +1256,29 @@ const SignUp = () => {
                         </Text>
                       </Pressable>
                     </Link>
+
+                    {/* Continue as Guest Button */}
+                    <Pressable
+                      onPress={async () => {
+                        const { error } = await supabase.auth.signInAnonymously()
+                        if (error) console.log(error)
+                      }}
+                      style={{
+                        marginTop: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: 12,
+                      }}
+                    >
+                      <Text style={{ 
+                        color: 'rgba(14, 81, 159, 0.6)', 
+                        fontSize: 14,
+                        fontWeight: '500',
+                        textDecorationLine: 'underline',
+                      }}>
+                        Continue as Guest
+                      </Text>
+                    </Pressable>
                   </>
                 )}
               </View>

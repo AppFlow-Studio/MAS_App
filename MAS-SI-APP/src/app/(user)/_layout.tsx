@@ -27,6 +27,7 @@ import { CreateProfilePopup } from '@/src/components/CreateProfilePopup';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { supabase } from '@/src/lib/supabase';
 import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingProvider';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 
 // const toastConfig = {
 //   addProgramToNotificationsToast: ({ props }: any) => (
@@ -253,6 +254,10 @@ const UserLayoutContent = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
 
+  // Video intro state
+  const [showVideoIntro, setShowVideoIntro] = useState(true);
+  const videoOpacity = useSharedValue(1);
+
   // Check for incomplete items in More screen (profile + preferences)
   useEffect(() => {
     const checkIncompleteItems = async () => {
@@ -334,6 +339,16 @@ const UserLayoutContent = () => {
   //   setShowTutorial(false);
   // };
 
+  // Video intro animated style and handler
+  const videoAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: videoOpacity.value,
+  }));
+
+  const handleVideoEnd = () => {
+    videoOpacity.value = withTiming(0, { duration: 500 }, () => {
+      runOnJS(setShowVideoIntro)(false);
+    });
+  };
 
   // Check onboarding status for non-anonymous users
   useEffect(() => {
@@ -427,6 +442,7 @@ const UserLayoutContent = () => {
 
   return (
     <BottomSheetModalProvider>
+      {/* Old Lottie Animation - kept for reference */}
       {/* {loading && (
         <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '100%' }, playMASAnimation]}>
           <LottieView
@@ -445,6 +461,24 @@ const UserLayoutContent = () => {
           />
         </Animated.View>
       )} */}
+
+      {/* Video Intro - plays once on app startup for signed-in users */}
+      {showVideoIntro && (
+        <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 100 }, videoAnimatedStyle]}>
+          <Video
+            source={require('@/assets/videos/TestIntro.mp4')}
+            style={{ flex: 1 }}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay
+            isLooping={false}
+            onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+              if (status.isLoaded && status.didJustFinish) {
+                handleVideoEnd();
+              }
+            }}
+          />
+        </Animated.View>
+      )}
 
       <NativeTabs>
         {/* {TabArray.map((tab, i) => (

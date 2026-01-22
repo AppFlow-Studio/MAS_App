@@ -181,16 +181,31 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
     })
   }
 
+  // Helper function to handle dismiss completion (runs on JS thread)
+  const handleDismissComplete = () => {
+    closeSheet()
+    if (onDismiss) {
+      onDismiss()
+    }
+  }
+
   const handleDismiss = () => {
     if (!dismissable) return
     
     slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
     backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
-      runOnJS(closeSheet)()
-      if (onDismiss) {
-        runOnJS(onDismiss)()
-      }
+      runOnJS(handleDismissComplete)()
     })
+  }
+
+  // Helper function to handle backdrop press completion (runs on JS thread)
+  const handleBackdropPressComplete = () => {
+    closeSheet()
+    if (onContinueAsGuest) {
+      setTimeout(() => {
+        onContinueAsGuest()
+      }, 100)
+    }
   }
 
   // Handle backdrop press - same as continue as guest
@@ -199,12 +214,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
     
     slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
     backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
-      runOnJS(closeSheet)()
-      if (onContinueAsGuest) {
-        setTimeout(() => {
-          onContinueAsGuest()
-        }, 100)
-      }
+      runOnJS(handleBackdropPressComplete)()
     })
   }
 
@@ -225,10 +235,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
       if (event.translationY > 100 || event.velocityY > 500) {
         slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
         backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
-          runOnJS(closeSheet)()
-          if (onDismiss) {
-            runOnJS(onDismiss)()
-          }
+          runOnJS(handleDismissComplete)()
         })
       } else {
         // Snap back to original position

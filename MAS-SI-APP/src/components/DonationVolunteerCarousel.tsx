@@ -2,9 +2,9 @@ import { View, Text, FlatList, Dimensions, Image, Pressable, Linking } from 'rea
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { supabase } from '../lib/supabase';
 import { ActivityIndicator } from 'react-native-paper';
-import { Link } from 'expo-router';
 import { FlyerSkeleton } from './FlyerSkeleton';
 import Animated from 'react-native-reanimated';
+import * as WebBrowser from 'expo-web-browser';
 
 type DonationCategory = {
   project_id: string;
@@ -31,9 +31,13 @@ export type DonationVolunteerCarouselRef = {
   scrollToVolunteer: () => void;
 };
 
+type DonationVolunteerCarouselProps = {
+  onDonationPress?: () => void;
+};
+
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef>((props, ref) => {
+const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, DonationVolunteerCarouselProps>(({ onDonationPress }, ref) => {
   const windowWidth = Dimensions.get("window").width;
   const [items, setItems] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,6 +213,7 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef>((prop
             cardWidth={cardWidth}
             spacing={sideMargin}
             isFirst={index === 0}
+            onDonationPress={onDonationPress}
           />
         )}
         horizontal
@@ -236,9 +241,10 @@ type CardItemProps = {
   cardWidth: number;
   spacing: number;
   isFirst: boolean;
+  onDonationPress?: () => void;
 };
 
-function CardItem({ item, cardWidth, spacing, isFirst }: CardItemProps) {
+function CardItem({ item, cardWidth, spacing, isFirst, onDonationPress }: CardItemProps) {
   const [imageReady, setImageReady] = useState(false);
 
   // Each card has right margin for spacing, first card starts at container padding
@@ -248,66 +254,55 @@ function CardItem({ item, cardWidth, spacing, isFirst }: CardItemProps) {
     const donation = item as DonationCategory;
     return (
       <View style={{ width: cardWidth, marginRight }}>
-        <Link
-          href={{
-            pathname: '/more/DonationCategoires/[project_id]',
-            params: {
-              project_id: donation.project_id,
-              project_name: donation.project_name,
-              project_linked_to: donation.project_linked_to,
-              project_goal: donation.project_goal,
-              thumbnail: donation.thumbnail,
-            },
-          }}
-          asChild
+        <Pressable 
+          style={{ width: '100%', alignItems: 'flex-start' }}
+          onPress={onDonationPress}
         >
-          <Pressable style={{ width: '100%', alignItems: 'flex-start' }}>
-            <View
+          <View
+            style={{
+              width: '100%',
+              height: 200,
+              shadowColor: 'black',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 20,
+              elevation: 8,
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {!imageReady && (
+              <FlyerSkeleton
+                width={cardWidth}
+                height={200}
+                style={{ position: 'absolute', top: 0, zIndex: 2 }}
+              />
+            )}
+            <Image
+              source={
+                donation.thumbnail
+                  ? { uri: donation.thumbnail }
+                  : require('@/assets/images/Donations5.png')
+              }
               style={{
                 width: '100%',
-                height: 200,
-                shadowColor: 'black',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.6,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 20,
-                elevation: 8,
-                position: 'relative',
-                overflow: 'hidden',
+                height: '100%',
+                resizeMode: 'cover',
               }}
-            >
-              {!imageReady && (
-                <FlyerSkeleton
-                  width={cardWidth}
-                  height={200}
-                  style={{ position: 'absolute', top: 0, zIndex: 2 }}
-                />
-              )}
-              <Image
-                source={
-                  donation.thumbnail
-                    ? { uri: donation.thumbnail }
-                    : require('@/assets/images/Donations5.png')
-                }
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  resizeMode: 'cover',
-                }}
-                onLoad={() => setImageReady(true)}
-                onError={() => setImageReady(false)}
-              />
-            </View>
-            <Text
-              className="mt-3 font-bold"
-              numberOfLines={2}
-              style={{ color: '#000000', width: '100%', textAlign: 'left', marginBottom: 4 }}
-            >
-              {donation.project_name}
-            </Text>
-          </Pressable>
-        </Link>
+              onLoad={() => setImageReady(true)}
+              onError={() => setImageReady(false)}
+            />
+          </View>
+          <Text
+            className="mt-3 font-bold"
+            numberOfLines={2}
+            style={{ color: '#000000', width: '100%', textAlign: 'left', marginBottom: 4 }}
+          >
+            {donation.project_name}
+          </Text>
+        </Pressable>
       </View>
     );
   } else {
@@ -320,12 +315,7 @@ function CardItem({ item, cardWidth, spacing, isFirst }: CardItemProps) {
           if (!url.startsWith('http://') && !url.startsWith('https://')) {
             url = 'https://' + url;
           }
-          const supported = await Linking.canOpenURL(url);
-          if (supported) {
-            await Linking.openURL(url);
-          } else {
-            console.log('Cannot open URL:', url);
-          }
+          await WebBrowser.openBrowserAsync(url);
         } catch (err) {
           console.log('Error opening URL:', err);
         }

@@ -611,19 +611,29 @@ export default function MoreScreen() {
         </View>
       </ScrollView>
 
-      <SignInAnonModal visible={visible} setVisible={() => setVisible(false)} />
+      <SignInAnonModal 
+        visible={visible} 
+        setVisible={() => setVisible(false)} 
+        onDismiss={() => router.push('/menu')}
+        onContinueAsGuest={() => {
+          router.push('/menu');
+        }}
+      />
       
       {/* Guest Auth Modal - blocks access for anonymous users */}
       <SignInAnonModal 
         visible={guestAuthModalVisible} 
         setVisible={() => setGuestAuthModalVisible(false)}
-        dismissable={false}
+        dismissable={true}
         showLanding={true}
         onSignUpPress={() => {
           setGuestAuthModalVisible(false);
           router.push('/(auth)/SignUp');
         }}
         onContinueAsGuest={() => {
+          router.push('/menu');
+        }}
+        onDismiss={() => {
           router.push('/menu');
         }}
       />

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, FlatList, RefreshControl, Pressable, Dimensions, TouchableOpacity, StatusBar, Animated as RNAnimated, Modal, PanResponder } from 'react-native'
+import { View, Text, ScrollView, FlatList, RefreshControl, Pressable, Dimensions, TouchableOpacity, StatusBar, Animated as RNAnimated, Modal, PanResponder, TextInput } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, interpolate, runOnJS } from 'react-native-reanimated'
 import { supabase } from '@/src/lib/supabase'
@@ -10,7 +10,8 @@ import FlyerImageComponent from '@/src/components/FlyerImageComponent'
 import EventImageComponent from '@/src/components/EventImageComponent'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
-import DateTimePicker from '@react-native-community/datetimepicker'
+import { MenuView } from '@react-native-menu/menu'
+import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -33,6 +34,7 @@ const formatTimeDisplay = (timeString: string) => {
   }
 }
 
+
 const UpcomingEvents = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
@@ -49,14 +51,25 @@ const UpcomingEvents = () => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [selectedProgramFromCalendar, setSelectedProgramFromCalendar] = useState<Program | null>(null)
   const [selectedEventFromCalendar, setSelectedEventFromCalendar] = useState<EventsType | null>(null)
-  const [monthPickerVisible, setMonthPickerVisible] = useState(false)
   
   // Animation
   const progress = useSharedValue(0)
   
-  // Month picker animation
-  const pickerHeight = useSharedValue(0)
-  const pickerOpacity = useSharedValue(0)
+  // Search state
+  const [isSearchActive, setIsSearchActive] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchInputRef = useRef<TextInput>(null)
+  const searchBarWidth = useSharedValue(0)
+  
+  // Expanded sections state (for "See More" functionality)
+  const [expandedSections, setExpandedSections] = useState<{
+    kids: boolean
+    programs: boolean
+    events: boolean
+    pace: boolean
+  }>({ kids: false, programs: false, events: false, pace: false })
+  
+  const INITIAL_ITEMS_LIMIT = 7
   
   // Button position (top-right of header)
   const BUTTON_SIZE = 36
@@ -104,12 +117,50 @@ const UpcomingEvents = () => {
     }
   })
 
-  // Month picker animated style
-  const pickerAnimatedStyle = useAnimatedStyle(() => ({
-    height: pickerHeight.value,
-    opacity: pickerOpacity.value,
-    overflow: 'hidden',
+  // Search activation/deactivation
+  const activateSearch = () => {
+    setIsSearchActive(true)
+    searchBarWidth.value = withSpring(1, { damping: 20, stiffness: 90, mass: 0.8 })
+    setTimeout(() => searchInputRef.current?.focus(), 250)
+  }
+
+  const deactivateSearch = () => {
+    searchInputRef.current?.blur()
+    searchBarWidth.value = withSpring(0, { damping: 22, stiffness: 100, mass: 0.8 })
+    setTimeout(() => {
+      setIsSearchActive(false)
+      setSearchQuery('')
+    }, 300)
+  }
+
+  // Search bar animated styles
+  const searchBarAnimatedStyle = useAnimatedStyle(() => ({
+    width: interpolate(searchBarWidth.value, [0, 1], [40, SCREEN_WIDTH - 32]),
   }))
+
+  const searchIconAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0, 0.3], [1, 0]),
+    transform: [{ scale: interpolate(searchBarWidth.value, [0, 0.3], [1, 0.8]) }],
+  }))
+
+  const searchContentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0.4, 0.7], [0, 1]),
+  }))
+
+  const backButtonAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0, 0.5], [1, 0]),
+    transform: [{ translateX: interpolate(searchBarWidth.value, [0, 1], [0, -60]) }],
+  }))
+
+  const titleAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0, 0.3], [1, 0]),
+  }))
+
+  const calendarButtonAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(searchBarWidth.value, [0, 0.3], [1, 0]),
+    transform: [{ scale: interpolate(searchBarWidth.value, [0, 0.3], [1, 0.8]) }],
+  }))
+
 
   // Month animation
   const fadeAnim = useRef(new RNAnimated.Value(1)).current
@@ -186,17 +237,6 @@ const UpcomingEvents = () => {
       }
     }
   }, [openProgramId, upcoming])
-
-  // Animate month picker visibility
-  useEffect(() => {
-    if (monthPickerVisible) {
-      pickerHeight.value = withTiming(130, { duration: 250 })
-      pickerOpacity.value = withTiming(1, { duration: 200 })
-    } else {
-      pickerOpacity.value = withTiming(0, { duration: 150 })
-      pickerHeight.value = withTiming(0, { duration: 200 })
-    }
-  }, [monthPickerVisible])
 
   // Calendar helpers
   const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -275,48 +315,302 @@ const UpcomingEvents = () => {
     })
   }
 
-  const kidsPrograms = upcoming.filter(p => p.is_kids == true)
-  const regularPrograms = upcoming.filter(p => p.is_kids == false)
-  const events = upcomingEvents.filter(e => e.pace == false)
-  const paceEvents = upcomingEvents.filter(e => e.pace == true)
+  // Filter by search query
+  const filterBySearch = (name: string) => {
+    if (!searchQuery.trim()) return true
+    return name.toLowerCase().includes(searchQuery.toLowerCase())
+  }
+
+  const kidsPrograms = upcoming.filter(p => p.is_kids == true && filterBySearch(p.program_name))
+  const regularPrograms = upcoming.filter(p => p.is_kids == false && filterBySearch(p.program_name))
+  const events = upcomingEvents.filter(e => e.pace == false && filterBySearch(e.event_name))
+  const paceEvents = upcomingEvents.filter(e => e.pace == true && filterBySearch(e.event_name))
 
   return (
     <View className='bg-white flex-1'>
-      <Stack.Screen 
-        options={{ 
-          title: 'Upcoming Events',
-          headerTitleAlign: 'center',
-          headerBackVisible: false,
-          headerLeft: () => (
-            <Pressable 
-              onPress={() => router.back()} 
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={{ 
-                width: 36,
-                height: 36,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="chevron-back" size={24} color="white" />
-            </Pressable>
-          ),
-          headerRight: () => (
-            <Pressable 
-              onPress={openCalendar} 
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={{ 
-                width: 36,
-                height: 36,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="calendar-outline" size={22} color="white" />
-            </Pressable>
-          ),
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
+      
+      {/* Custom Header with Liquid Glass morphing search */}
+      <View style={{ backgroundColor: '#0D509D', paddingTop: insets.top }}>
+        <View style={{ 
+          height: 56, 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          paddingHorizontal: 16,
+          position: 'relative',
+        }}>
+          {/* Back Button - slides out when searching */}
+          <Animated.View style={[{ zIndex: 1, position: 'absolute', left: 16 }, backButtonAnimatedStyle]}>
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                }}
+                interactive
+                effect="clear"
+              >
+                <Pressable 
+                  onPress={() => !isSearchActive && router.back()}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="chevron-back" size={22} color="white" />
+                </Pressable>
+              </LiquidGlassView>
+            ) : (
+              <Pressable 
+                onPress={() => !isSearchActive && router.back()}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="chevron-back" size={22} color="white" />
+              </Pressable>
+            )}
+          </Animated.View>
+          
+          {/* Title - fades out when searching */}
+          <Animated.Text style={[{ 
+            flex: 1,
+            color: 'white', 
+            fontSize: 17, 
+            fontWeight: '600',
+            textAlign: 'center',
+          }, titleAnimatedStyle]}>
+            Upcoming Events
+          </Animated.Text>
+          
+          {/* Calendar Button - fades out when searching */}
+          <Animated.View style={[{ position: 'absolute', right: 60, zIndex: 1 }, calendarButtonAnimatedStyle]}>
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                }}
+                interactive
+                effect="clear"
+              >
+                <Pressable 
+                  onPress={() => !isSearchActive && openCalendar()}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="white" />
+                </Pressable>
+              </LiquidGlassView>
+            ) : (
+              <Pressable 
+                onPress={() => !isSearchActive && openCalendar()}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="calendar-outline" size={20} color="white" />
+              </Pressable>
+            )}
+          </Animated.View>
+          
+          {/* Morphing Liquid Glass Search Button → Search Bar */}
+          <Animated.View 
+            style={[
+              {
+                position: 'absolute',
+                right: 16,
+                height: 40,
+                borderRadius: 20,
+                overflow: 'hidden',
+              },
+              searchBarAnimatedStyle
+            ]}
+          >
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView 
+                style={{
+                  flex: 1,
+                  borderRadius: 20,
+                  overflow: 'hidden',
+                }}
+                interactive
+                effect="clear"
+              >
+                <View style={{ flex: 1, position: 'relative' }}>
+                  {/* Centered search icon (visible when collapsed) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      },
+                      searchIconAnimatedStyle
+                    ]}
+                  >
+                    <Pressable 
+                      onPress={activateSearch}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="search" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                  
+                  {/* Search bar content (visible when expanded) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingLeft: 12,
+                        paddingRight: 4,
+                      },
+                      searchContentAnimatedStyle
+                    ]}
+                  >
+                    <Ionicons name="search" size={17} color="rgba(255, 255, 255, 0.8)" />
+                    <TextInput
+                      ref={searchInputRef}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Search..."
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      style={{
+                        flex: 1,
+                        color: 'white',
+                        fontSize: 15,
+                        marginLeft: 6,
+                        paddingVertical: 0,
+                      }}
+                      returnKeyType="search"
+                    />
+                    {searchQuery.length > 0 && (
+                      <Pressable onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+                        <Ionicons name="close-circle" size={17} color="rgba(255, 255, 255, 0.6)" />
+                      </Pressable>
+                    )}
+                    <Pressable 
+                      onPress={deactivateSearch}
+                      style={{ paddingLeft: 6, paddingRight: 10, paddingVertical: 6 }}
+                    >
+                      <Ionicons name="close" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                </View>
+              </LiquidGlassView>
+            ) : (
+              <View style={{
+                flex: 1,
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                borderRadius: 20,
+              }}>
+                <View style={{ flex: 1, position: 'relative' }}>
+                  {/* Centered search icon (visible when collapsed) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      },
+                      searchIconAnimatedStyle
+                    ]}
+                  >
+                    <Pressable 
+                      onPress={activateSearch}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="search" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                  
+                  {/* Search bar content (visible when expanded) */}
+                  <Animated.View 
+                    style={[
+                      {
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingLeft: 12,
+                        paddingRight: 4,
+                      },
+                      searchContentAnimatedStyle
+                    ]}
+                  >
+                    <Ionicons name="search" size={17} color="rgba(255, 255, 255, 0.7)" />
+                    <TextInput
+                      ref={searchInputRef}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Search..."
+                      placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                      style={{
+                        flex: 1,
+                        color: 'white',
+                        fontSize: 15,
+                        marginLeft: 6,
+                        paddingVertical: 0,
+                      }}
+                      returnKeyType="search"
+                    />
+                    {searchQuery.length > 0 && (
+                      <Pressable onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+                        <Ionicons name="close-circle" size={17} color="rgba(255, 255, 255, 0.6)" />
+                      </Pressable>
+                    )}
+                    <Pressable 
+                      onPress={deactivateSearch}
+                      style={{ paddingLeft: 6, paddingRight: 10, paddingVertical: 6 }}
+                    >
+                      <Ionicons name="close" size={20} color="white" />
+                    </Pressable>
+                  </Animated.View>
+                </View>
+              </View>
+            )}
+          </Animated.View>
+        </View>
+      </View>
 
       {/* Programs List */}
       <View style={{ flex: 1 }}>
@@ -327,56 +621,152 @@ const UpcomingEvents = () => {
         >
           {kidsPrograms.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center mb-4" style={{ paddingLeft: 8 }}>
-                <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#F59E0B' }}>
-                  <Icon source="star" size={18} color="#FFFFFF" />
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#F59E0B' }}>
+                    <Icon source="star" size={18} color="#FFFFFF" />
+                  </View>
+                  <Text className="text-gray-800 font-semibold text-lg">Kids Programs</Text>
                 </View>
-                <Text className="text-gray-800 font-semibold text-lg">Kids Programs</Text>
+                {kidsPrograms.length > INITIAL_ITEMS_LIMIT && (
+                  <Pressable 
+                    onPress={() => setExpandedSections(prev => ({ ...prev, kids: !prev.kids }))}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Text style={{ fontSize: 14, color: '#F59E0B', fontWeight: '600' }}>
+                      {expandedSections.kids ? 'Show Less' : 'See All'}
+                    </Text>
+                    <Ionicons 
+                      name={expandedSections.kids ? "chevron-back" : "chevron-forward"} 
+                      size={16} 
+                      color="#F59E0B" 
+                      style={{ marginLeft: 2 }}
+                    />
+                  </Pressable>
+                )}
               </View>
               <View style={{ marginRight: -50 }}>
-                <FlatList data={kidsPrograms} renderItem={({ item }) => <FlyerImageComponent item={item} key={item.program_id} />} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }} />
+                <FlatList 
+                  data={expandedSections.kids ? kidsPrograms : kidsPrograms.slice(0, INITIAL_ITEMS_LIMIT)} 
+                  renderItem={({ item }) => <FlyerImageComponent item={item} key={item.program_id} />} 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerStyle={{ paddingRight: 16 }}
+                />
               </View>
             </View>
           )}
 
           {regularPrograms.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center mb-4" style={{ paddingLeft: 8 }}>
-                <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#0D509D' }}>
-                  <Icon source="book-open-variant" size={18} color="#FFFFFF" />
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#0D509D' }}>
+                    <Icon source="book-open-variant" size={18} color="#FFFFFF" />
+                  </View>
+                  <Text className="text-gray-800 font-semibold text-lg">Programs</Text>
                 </View>
-                <Text className="text-gray-800 font-semibold text-lg">Programs</Text>
+                {regularPrograms.length > INITIAL_ITEMS_LIMIT && (
+                  <Pressable 
+                    onPress={() => setExpandedSections(prev => ({ ...prev, programs: !prev.programs }))}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Text style={{ fontSize: 14, color: '#0D509D', fontWeight: '600' }}>
+                      {expandedSections.programs ? 'Show Less' : 'See All'}
+                    </Text>
+                    <Ionicons 
+                      name={expandedSections.programs ? "chevron-back" : "chevron-forward"} 
+                      size={16} 
+                      color="#0D509D" 
+                      style={{ marginLeft: 2 }}
+                    />
+                  </Pressable>
+                )}
               </View>
               <View style={{ marginRight: -50 }}>
-                <FlatList data={regularPrograms} renderItem={({ item }) => <FlyerImageComponent item={item} key={item.program_id} />} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }} />
+                <FlatList 
+                  data={expandedSections.programs ? regularPrograms : regularPrograms.slice(0, INITIAL_ITEMS_LIMIT)} 
+                  renderItem={({ item }) => <FlyerImageComponent item={item} key={item.program_id} />} 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerStyle={{ paddingRight: 16 }}
+                />
               </View>
             </View>
           )}
 
           {events.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center mb-4" style={{ paddingLeft: 8 }}>
-                <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#10B981' }}>
-                  <Icon source="calendar-star" size={18} color="#FFFFFF" />
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#10B981' }}>
+                    <Icon source="calendar-star" size={18} color="#FFFFFF" />
+                  </View>
+                  <Text className="text-gray-800 font-semibold text-lg">Events</Text>
                 </View>
-                <Text className="text-gray-800 font-semibold text-lg">Events</Text>
+                {events.length > INITIAL_ITEMS_LIMIT && (
+                  <Pressable 
+                    onPress={() => setExpandedSections(prev => ({ ...prev, events: !prev.events }))}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Text style={{ fontSize: 14, color: '#10B981', fontWeight: '600' }}>
+                      {expandedSections.events ? 'Show Less' : 'See All'}
+                    </Text>
+                    <Ionicons 
+                      name={expandedSections.events ? "chevron-back" : "chevron-forward"} 
+                      size={16} 
+                      color="#10B981" 
+                      style={{ marginLeft: 2 }}
+                    />
+                  </Pressable>
+                )}
               </View>
               <View style={{ marginRight: -50 }}>
-                <FlatList data={events} renderItem={({ item }) => <EventImageComponent item={item} key={item.event_id} />} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }} />
+                <FlatList 
+                  data={expandedSections.events ? events : events.slice(0, INITIAL_ITEMS_LIMIT)} 
+                  renderItem={({ item }) => <EventImageComponent item={item} key={item.event_id} />} 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerStyle={{ paddingRight: 16 }}
+                />
               </View>
             </View>
           )}
 
           {paceEvents.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center mb-4" style={{ paddingLeft: 8 }}>
-                <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#8B5CF6' }}>
-                  <Icon source="account-group" size={18} color="#FFFFFF" />
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#8B5CF6' }}>
+                    <Icon source="account-group" size={18} color="#FFFFFF" />
+                  </View>
+                  <Text className="text-gray-800 font-semibold text-lg">PACE</Text>
                 </View>
-                <Text className="text-gray-800 font-semibold text-lg">PACE</Text>
+                {paceEvents.length > INITIAL_ITEMS_LIMIT && (
+                  <Pressable 
+                    onPress={() => setExpandedSections(prev => ({ ...prev, pace: !prev.pace }))}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Text style={{ fontSize: 14, color: '#8B5CF6', fontWeight: '600' }}>
+                      {expandedSections.pace ? 'Show Less' : 'See All'}
+                    </Text>
+                    <Ionicons 
+                      name={expandedSections.pace ? "chevron-back" : "chevron-forward"} 
+                      size={16} 
+                      color="#8B5CF6" 
+                      style={{ marginLeft: 2 }}
+                    />
+                  </Pressable>
+                )}
               </View>
               <View style={{ marginRight: -50 }}>
-                <FlatList data={paceEvents} renderItem={({ item }) => <EventImageComponent item={item} key={item.event_id} />} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }} />
+                <FlatList 
+                  data={expandedSections.pace ? paceEvents : paceEvents.slice(0, INITIAL_ITEMS_LIMIT)} 
+                  renderItem={({ item }) => <EventImageComponent item={item} key={item.event_id} />} 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerStyle={{ paddingRight: 16 }}
+                />
               </View>
             </View>
           )}
@@ -415,56 +805,56 @@ const UpcomingEvents = () => {
                 <Ionicons name="close" size={22} color="#1F2937" />
               </Pressable>
               
-              {/* Month Selector Button */}
-              <Pressable 
-                onPress={() => {
+              {/* Month Selector Button - Native iOS Menu */}
+              <MenuView
+                onPressAction={({ nativeEvent }) => {
+                  const monthIndex = parseInt(nativeEvent.event)
+                  setCurrentMonth(new Date(currentMonth.getFullYear(), monthIndex, 1))
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                  setMonthPickerVisible(!monthPickerVisible)
                 }}
+                actions={MONTH_NAMES.map((month, index) => ({
+                  id: index.toString(),
+                  title: month,
+                  state: currentMonth.getMonth() === index ? 'on' : 'off',
+                }))}
+              >
+                <Pressable 
+                  style={{ 
+                    flexDirection: 'row', 
+                    alignItems: 'center', 
+                    paddingHorizontal: 12, 
+                    paddingVertical: 6, 
+                    borderRadius: 12, 
+                    backgroundColor: '#F3F4F6' 
+                  }}
+                >
+                  <RNAnimated.Text style={{ color: '#1F2937', fontSize: 18, fontWeight: '600', opacity: fadeAnim }}>
+                    {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                  </RNAnimated.Text>
+                  <Ionicons name="chevron-down" size={18} color="#6B7280" style={{ marginLeft: 4 }} />
+                </Pressable>
+              </MenuView>
+              
+              <Pressable 
+                onPress={handleTodayPress} 
+                hitSlop={12} 
                 style={{ 
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
                   paddingHorizontal: 12, 
                   paddingVertical: 6, 
-                  borderRadius: 12, 
-                  backgroundColor: monthPickerVisible ? '#E5E7EB' : '#F3F4F6' 
+                  borderRadius: 14, 
+                  marginRight: 8,
+                  backgroundColor: selectedDate.toDateString() === new Date().toDateString() ? '#0D509D' : '#F3F4F6' 
                 }}
               >
-                <RNAnimated.Text style={{ color: '#1F2937', fontSize: 18, fontWeight: '600', opacity: fadeAnim }}>
-                  {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                </RNAnimated.Text>
-                <Ionicons name={monthPickerVisible ? "chevron-up" : "chevron-down"} size={18} color="#6B7280" style={{ marginLeft: 4 }} />
-              </Pressable>
-              
-              <Pressable onPress={handleTodayPress} hitSlop={12} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: '#F3F4F6' }}>
-                <Text style={{ color: '#1F2937', fontSize: 14, fontWeight: '600' }}>Today</Text>
+                <Text style={{ 
+                  color: selectedDate.toDateString() === new Date().toDateString() ? '#FFFFFF' : '#1F2937', 
+                  fontSize: 14, 
+                  fontWeight: '600' 
+                }}>
+                  Today
+                </Text>
               </Pressable>
             </View>
-            
-            {/* Native iOS Month Picker - Animated */}
-            <Animated.View style={[
-              { 
-                backgroundColor: '#F9FAFB', 
-                borderTopWidth: monthPickerVisible ? 1 : 0,
-                borderTopColor: '#E5E7EB',
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
-              pickerAnimatedStyle
-            ]}>
-              <DateTimePicker
-                value={currentMonth}
-                mode="date"
-                display="spinner"
-                onChange={(event, date) => {
-                  if (date) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                    setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1))
-                  }
-                }}
-                style={{ height: 140, marginTop: -10 }}
-              />
-            </Animated.View>
           </View>
           
           <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>

@@ -1,12 +1,10 @@
 import { View, Text, Pressable, Dimensions, Platform, Modal, ScrollView, Keyboard } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
-import { Button, Divider, TextInput, Icon } from 'react-native-paper';
+import { TextInput, Icon } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { useAuth } from '../providers/AuthProvider';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { User, LogIn, UserPlus, ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -14,9 +12,9 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   GoogleSignin,
-  GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 
@@ -36,11 +34,12 @@ type SignInAnonModalProps = {
   onSignUpPress?: () => void
   onContinueAsGuest?: () => void  // Callback when user wants to continue as guest
   bottomOffset?: number  // For positioning above tab bar
+  onDismiss?: () => void  // Callback when sheet is dismissed (touch outside or drag down)
 }
 
 type ScreenState = 'landing' | 'signIn' | 'signUp'
 
-const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding = false, onSignUpPress, onContinueAsGuest, bottomOffset = 0 }: SignInAnonModalProps) => {
+const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding = false, onSignUpPress, onContinueAsGuest, bottomOffset = 0, onDismiss }: SignInAnonModalProps) => {
   const [currentScreen, setCurrentScreen] = useState<ScreenState>(showLanding ? 'landing' : 'signIn')
   const [signIn, setSignIn] = useState(true)
   const { session } = useAuth()
@@ -180,8 +179,44 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
     slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
     backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
       runOnJS(closeSheet)()
+      if (onDismiss) {
+        runOnJS(onDismiss)()
+      }
     })
   }
+
+  // Pan gesture for drag-to-dismiss
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      if (!dismissable) return
+      // Only allow dragging down (positive translationY)
+      if (event.translationY > 0) {
+        slideY.value = event.translationY
+        // Fade backdrop as user drags
+        backdropOpacity.value = Math.max(0, 1 - (event.translationY / 200))
+      }
+    })
+    .onEnd((event) => {
+      if (!dismissable) return
+      // If dragged more than 100px down or with velocity, dismiss
+      if (event.translationY > 100 || event.velocityY > 500) {
+        slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
+        backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
+          runOnJS(closeSheet)()
+          if (onDismiss) {
+            runOnJS(onDismiss)()
+          }
+        })
+      } else {
+        // Snap back to original position
+        slideY.value = withSpring(0, {
+          damping: 20,
+          stiffness: 90,
+          mass: 0.5,
+        })
+        backdropOpacity.value = withTiming(1, { duration: 200 })
+      }
+    })
 
   const handleSignUpPress = () => {
     if (onSignUpPress) {
@@ -333,7 +368,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
         onPress={transitionToSignIn}
         disabled={isTransitioning}
         style={{
-          backgroundColor: '#0E519F',
+          backgroundColor: '#ffffff',
           borderRadius: 12,
           height: 50,
           alignItems: 'center',
@@ -341,7 +376,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           marginBottom: 10,
         }}
       >
-        <Text style={{ fontSize: 17, fontWeight: '600', color: '#ffffff' }}>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: '#0F519F' }}>
           Sign In
         </Text>
       </Pressable>
@@ -351,16 +386,16 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
         onPress={handleSignUpPress}
         disabled={isTransitioning}
         style={{
-          backgroundColor: '#ffffff',
+          backgroundColor: 'transparent',
           borderRadius: 12,
           height: 50,
           alignItems: 'center',
           justifyContent: 'center',
           borderWidth: 2,
-          borderColor: '#0E519F',
+          borderColor: '#ffffff',
         }}
       >
-        <Text style={{ fontSize: 17, fontWeight: '600', color: '#0E519F' }}>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: '#ffffff' }}>
           Create Account
         </Text>
       </Pressable>
@@ -376,7 +411,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
             marginTop: 8,
           }}
         >
-          <Text style={{ fontSize: 15, fontWeight: '500', color: '#6b7280' }}>
+          <Text style={{ fontSize: 15, fontWeight: '500', color: 'rgba(255, 255, 255, 0.7)' }}>
             Continue as Guest
           </Text>
         </Pressable>
@@ -401,9 +436,9 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           <TextInput
             mode='outlined'
             label="Email"
-            style={{ backgroundColor: "#f8f9fa" }}
-            outlineColor='#e0e0e0'
-            activeOutlineColor='#0E519F'
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
+            outlineColor='rgba(255, 255, 255, 0.3)'
+            activeOutlineColor='#ffffff'
             value={email}
             onChangeText={setEmail}
             left={<TextInput.Icon icon="email-outline" color="#6b7280" />}
@@ -415,9 +450,9 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           <TextInput
             mode='outlined'
             label="Password"
-            style={{ backgroundColor: "#f8f9fa" }}
-            outlineColor='#e0e0e0'
-            activeOutlineColor='#0E519F'
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
+            outlineColor='rgba(255, 255, 255, 0.3)'
+            activeOutlineColor='#ffffff'
             value={password}
             onChangeText={setPassword}
             left={<TextInput.Icon icon="lock-outline" color="#6b7280" />}
@@ -429,7 +464,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
             onPress={signInWithEmail}
             disabled={loading}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? '#0a4080' : '#0E519F',
+              backgroundColor: pressed ? 'rgba(255, 255, 255, 0.9)' : '#ffffff',
               borderRadius: 12,
               paddingVertical: 16,
               alignItems: 'center',
@@ -437,7 +472,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
               marginTop: 16,
             })}
           >
-            <Text style={{ fontSize: 17, fontWeight: '600', color: '#ffffff' }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: '#0F519F' }}>
               {loading ? 'Signing In...' : 'Continue'}
             </Text>
           </Pressable>
@@ -448,9 +483,9 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           <TextInput
             mode='outlined'
             label="Name"
-            style={{ backgroundColor: "#f8f9fa" }}
-            outlineColor='#e0e0e0'
-            activeOutlineColor='#0E519F'
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
+            outlineColor='rgba(255, 255, 255, 0.3)'
+            activeOutlineColor='#ffffff'
             value={name}
             onChangeText={setName}
             left={<TextInput.Icon icon="account-outline" color="#6b7280" />}
@@ -460,9 +495,9 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           <TextInput
             mode='outlined'
             label="Email"
-            style={{ backgroundColor: "#f8f9fa" }}
-            outlineColor='#e0e0e0'
-            activeOutlineColor='#0E519F'
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
+            outlineColor='rgba(255, 255, 255, 0.3)'
+            activeOutlineColor='#ffffff'
             value={email}
             onChangeText={setEmail}
             left={<TextInput.Icon icon="email-outline" color="#6b7280" />}
@@ -474,9 +509,9 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           <TextInput
             mode='outlined'
             label="Password"
-            style={{ backgroundColor: "#f8f9fa" }}
-            outlineColor='#e0e0e0'
-            activeOutlineColor='#0E519F'
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
+            outlineColor='rgba(255, 255, 255, 0.3)'
+            activeOutlineColor='#ffffff'
             value={password}
             onChangeText={setPassword}
             left={<TextInput.Icon icon="lock-outline" color="#6b7280" />}
@@ -488,7 +523,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
             onPress={signUpWithEmail}
             disabled={loading}
             style={({ pressed }) => ({
-              backgroundColor: pressed ? '#0a4080' : '#0E519F',
+              backgroundColor: pressed ? 'rgba(255, 255, 255, 0.9)' : '#ffffff',
               borderRadius: 12,
               paddingVertical: 16,
               alignItems: 'center',
@@ -496,7 +531,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
               marginTop: 8,
             })}
           >
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#ffffff' }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#0F519F' }}>
               {loading ? 'Creating Account...' : 'Create Account'}
             </Text>
           </Pressable>
@@ -505,9 +540,9 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
 
       {/* Divider */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
-        <Text style={{ paddingHorizontal: 16, color: '#9ca3af', fontSize: 14 }}>OR</Text>
-        <View style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+        <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
+        <Text style={{ paddingHorizontal: 16, color: 'rgba(255, 255, 255, 0.7)', fontSize: 14 }}>OR</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
       </View>
 
       {/* Social Sign In */}
@@ -515,20 +550,43 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
         {Platform.OS === 'ios' && (
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
             cornerRadius={12}
             style={{ width: '100%', height: 50 }}
             onPress={handleAppleSignIn}
           />
         )}
-        <View style={{ borderRadius: 20, overflow: 'hidden' }}>
-          <GoogleSigninButton
-            size={GoogleSigninButton.Size.Wide}
-            color={GoogleSigninButton.Color.Dark}
-            style={{ width: '100%', height: 65 }}
-            onPress={handleGoogleSignIn}
-          />
-        </View>
+        <Pressable
+          onPress={handleGoogleSignIn}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: pressed ? '#f0f0f0' : '#ffffff',
+            borderRadius: 12,
+            height: 50,
+            paddingHorizontal: 16,
+          })}
+        >
+          <View style={{ 
+            width: 24, 
+            height: 24, 
+            marginRight: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 12,
+            backgroundColor: '#fff',
+          }}>
+            <Text style={{ 
+              fontSize: 18, 
+              fontWeight: '700',
+              color: '#4285F4',
+            }}>G</Text>
+          </View>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#1f2937' }}>
+            Sign in with Google
+          </Text>
+        </Pressable>
       </View>
 
       {/* Switch Form */}
@@ -536,13 +594,29 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
         onPress={() => setSignIn(!signIn)}
         style={{ paddingVertical: 20, alignItems: 'center' }}
       >
-        <Text style={{ fontSize: 14, color: '#6b7280' }}>
+        <Text style={{ fontSize: 14, color: 'rgba(255, 255, 255, 0.8)' }}>
           {signIn ? "Don't have an account? " : "Already have an account? "}
-          <Text style={{ color: '#0E519F', fontWeight: '600' }}>
+          <Text style={{ color: '#ffffff', fontWeight: '600' }}>
             {signIn ? 'Sign Up' : 'Sign In'}
           </Text>
         </Text>
       </Pressable>
+
+      {/* Continue as Guest Button */}
+      {onContinueAsGuest && (
+        <Pressable
+          onPress={handleContinueAsGuest}
+          style={{
+            paddingVertical: 14,
+            alignItems: 'center',
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ fontSize: 15, fontWeight: '500', color: 'rgba(255, 255, 255, 0.7)' }}>
+            Continue as Guest
+          </Text>
+        </Pressable>
+      )}
     </ScrollView>
     </Animated.View>
   )
@@ -583,29 +657,30 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           />
         )}
 
-        <Animated.View
-          style={[
-            {
-              backgroundColor: '#ffffff',
-              borderRadius: 50,
-              marginHorizontal: 8,
-              marginBottom: bottomOffset > 0 ? bottomOffset : 10,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 12,
-              elevation: 20,
-              overflow: 'hidden',
-            },
-            sheetStyle
-          ]}
-        >
-            {/* Handle */}
+        <GestureDetector gesture={panGesture}>
+          <Animated.View
+            style={[
+              {
+                backgroundColor: '#0F519F',
+                borderRadius: 50,
+                marginHorizontal: 8,
+                marginBottom: bottomOffset > 0 ? bottomOffset : 10,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+                elevation: 20,
+                overflow: 'hidden',
+              },
+              sheetStyle
+            ]}
+          >
+            {/* Handle - visual indicator for dragging */}
             <View style={{ alignItems: 'center', paddingTop: 16, paddingBottom: 10 }}>
               <View style={{
                 width: 36,
                 height: 4,
-                backgroundColor: '#d1d5db',
+                backgroundColor: 'rgba(255, 255, 255, 0.4)',
                 borderRadius: 2,
               }} />
             </View>
@@ -627,7 +702,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
                     width: 44,
                     height: 44,
                     borderRadius: 22,
-                    backgroundColor: '#0E519F',
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
                     justifyContent: 'center',
                     alignItems: 'center',
                   }}
@@ -637,10 +712,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
               )}
 
               {/* Header */}
-              <LinearGradient
-                colors={['#0E519F', '#1a6bc7']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              <View
                 style={{
                   flex: 1,
                   borderRadius: 14,
@@ -648,6 +720,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
                   paddingHorizontal: 14,
                   flexDirection: 'row',
                   alignItems: 'center',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 }}
               >
                 {!(currentScreen === 'signIn' && showLanding) && (
@@ -655,7 +728,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
                     width: 44,
                     height: 44,
                     borderRadius: 22,
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
                     justifyContent: 'center',
                     alignItems: 'center',
                     marginRight: 12,
@@ -674,7 +747,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
                   </Text>
                   <Text style={{
                     fontSize: 13,
-                    color: 'rgba(255, 255, 255, 0.8)',
+                    color: 'rgba(255, 255, 255, 0.7)',
                     marginTop: 2,
                   }}>
                     {headerInfo.subtitle}
@@ -689,7 +762,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
                       width: 32,
                       height: 32,
                       borderRadius: 16,
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}
@@ -697,12 +770,13 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
                     <Icon source="close" size={18} color="#ffffff" />
                   </Pressable>
                 )}
-              </LinearGradient>
+              </View>
             </View>
 
             {/* Content based on current screen */}
             {currentScreen === 'landing' ? renderLandingScreen() : renderSignInScreen()}
           </Animated.View>
+        </GestureDetector>
       </Animated.View>
     </Modal>
   )

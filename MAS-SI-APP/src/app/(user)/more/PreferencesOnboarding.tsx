@@ -1,5 +1,5 @@
 import { View, Text, Pressable, Platform, ScrollView, SafeAreaView, TextInput } from 'react-native'
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Icon, ActivityIndicator } from 'react-native-paper'
 import { Stack, router } from "expo-router"
 import { LinearGradient } from 'expo-linear-gradient'
@@ -255,6 +255,7 @@ const PreferencesOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(0)
   const [formData, setFormData] = useState<PreferencesFormData>(DEFAULT_PREFERENCES_FORM)
   const [isInitialized, setIsInitialized] = useState(false)
+  const scrollViewRef = useRef<ScrollView>(null)
 
   const totalSteps = 6 // Added review step
 
@@ -285,6 +286,7 @@ const PreferencesOnboarding = () => {
 
   const handleNext = useCallback(() => {
     if (currentStep < totalSteps - 1) {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false })
       setCurrentStep(prev => prev + 1)
     } else {
       handleComplete()
@@ -293,6 +295,7 @@ const PreferencesOnboarding = () => {
 
   const handleBack = useCallback(() => {
     if (currentStep > 0) {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false })
       setCurrentStep(prev => prev - 1)
     } else {
       router.back()
@@ -390,6 +393,7 @@ const PreferencesOnboarding = () => {
 
   // Jump to specific step for editing
   const goToStep = useCallback((step: number) => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false })
     setCurrentStep(step)
   }, [])
 
@@ -1235,13 +1239,13 @@ const PreferencesOnboarding = () => {
                     width: 24,
                     height: 24,
                     borderRadius: 12,
-                    backgroundColor: i <= currentStep ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                    backgroundColor: i < currentStep ? '#22c55e' : (i === currentStep ? '#ffffff' : 'rgba(255, 255, 255, 0.2)'),
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
                   {i < currentStep ? (
-                    <Icon source="check" size={14} color="#0F4184" />
+                    <Icon source="check" size={14} color="#ffffff" />
                   ) : (
                     <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: i === currentStep ? '#0F4184' : 'rgba(255, 255, 255, 0.5)' }}>
                       {i + 1}
@@ -1259,6 +1263,7 @@ const PreferencesOnboarding = () => {
       <LinearGradient colors={['#ffffff', '#f8fafc', '#f1f5f9']} style={{ flex: 1 }}>
         {/* Content */}
         <ScrollView 
+          ref={scrollViewRef}
           style={{ flex: 1 }} 
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}

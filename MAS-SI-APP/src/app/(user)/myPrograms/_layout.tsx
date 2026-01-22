@@ -8,6 +8,8 @@ export default function MyProgramsStack(){
             <Stack.Screen name="notifications" options={{ headerShown : false}}/>
             <Stack.Screen name="recordedLectures" options={{ headerShown: true }}/>
             <Stack.Screen name="RecommendedForYou" options={{ headerShown: false }}/>
+            <Stack.Screen name="events/[event_id]" options={{ headerShown: true }}/>
+            <Stack.Screen name="programs/[programId]" options={{ headerShown: true }}/>
             <Stack.Screen 
               name="PreferencesOnboardingModal" 
               options={{ 

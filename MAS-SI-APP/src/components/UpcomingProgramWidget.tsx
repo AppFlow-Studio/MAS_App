@@ -104,7 +104,7 @@ export default function UpcomingProgramWidget() {
   const isClosing = useRef(false);
   const [modalToast, setModalToast] = useState<{ type: string; props: any } | null>(null);
   const [notificationOptionsVisible, setNotificationOptionsVisible] = useState(false);
-  const [selectedNotificationTime, setSelectedNotificationTime] = useState<number | null>(null);
+  const [selectedNotificationTimes, setSelectedNotificationTimes] = useState<number[]>([]);
   const notificationSlideAnim = useRef(new Animated.Value(0)).current;
   const notificationPanY = useRef(new Animated.Value(0)).current;
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
@@ -537,7 +537,7 @@ export default function UpcomingProgramWidget() {
 
   // Open notification options modal
   const openNotificationOptions = () => {
-    setSelectedNotificationTime(null);
+    setSelectedNotificationTimes([]);
     setNotificationOptionsVisible(true);
     Animated.spring(notificationSlideAnim, {
       toValue: 1,
@@ -547,20 +547,21 @@ export default function UpcomingProgramWidget() {
     }).start();
   };
 
-  // Select notification time and auto-save
-  const selectNotificationTime = async (minutes: number) => {
+  // Toggle notification time selection (multi-select)
+  const toggleNotificationTime = (minutes: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedNotificationTime(minutes);
-    
-    // Auto-save after selection
-    setTimeout(() => {
-      handleConfirmNotificationsWithTime(minutes);
-    }, 200);
+    setSelectedNotificationTimes(prev => {
+      if (prev.includes(minutes)) {
+        return prev.filter(t => t !== minutes);
+      } else {
+        return [...prev, minutes];
+      }
+    });
   };
 
-  // Handle confirm with specific time (for auto-save)
-  const handleConfirmNotificationsWithTime = async (minutesBefore: number) => {
-    if (!session?.user.id || !upcomingItem) return;
+  // Handle confirm with multiple selected times
+  const handleConfirmNotificationsWithTimes = async (minutesBeforeArray: number[]) => {
+    if (!session?.user.id || !upcomingItem || minutesBeforeArray.length === 0) return;
 
     closeNotificationOptions();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -575,8 +576,6 @@ export default function UpcomingProgramWidget() {
       return `${minutes} minutes`;
     };
 
-    const timeLabel = getTimeLabel(minutesBefore);
-
     if (upcomingItem.type === 'program' && programData) {
       const { error } = await supabase
         .from('added_notifications_programs')
@@ -589,34 +588,39 @@ export default function UpcomingProgramWidget() {
       if (!error) {
         const programDays = programData.program_days;
         const ProgramStartTime = setTimeToCurrentDate(programData.program_start_time || '');
-        const NotificationTime = new Date(ProgramStartTime.getTime() - minutesBefore * 60 * 1000);
 
-        if (programDays && isBefore(TodaysDate, NotificationTime)) {
-          await Promise.all(
-            (Array.isArray(programDays) ? programDays : [programDays]).map(async (day: string) => {
-              const { data: user_push_token } = await supabase
-                .from('profiles')
-                .select('push_notification_token')
-                .eq('id', session.user.id)
-                .single();
+        // Schedule notifications for all selected times
+        for (const minutesBefore of minutesBeforeArray) {
+          const timeLabel = getTimeLabel(minutesBefore);
+          const NotificationTime = new Date(ProgramStartTime.getTime() - minutesBefore * 60 * 1000);
 
-              if ((TodaysDate.getDay() === DaysOfWeek.indexOf(day)) && user_push_token?.push_notification_token) {
-                await schedule_notification(
-                  session.user.id,
-                  user_push_token.push_notification_token,
-                  `${programData.program_name} starts in ${timeLabel}!`,
-                  `${timeLabel} Before`,
-                  programData.program_name,
-                  NotificationTime
-                );
-              }
-            })
-          );
+          if (programDays && isBefore(TodaysDate, NotificationTime)) {
+            await Promise.all(
+              (Array.isArray(programDays) ? programDays : [programDays]).map(async (day: string) => {
+                const { data: user_push_token } = await supabase
+                  .from('profiles')
+                  .select('push_notification_token')
+                  .eq('id', session.user.id)
+                  .single();
+
+                if ((TodaysDate.getDay() === DaysOfWeek.indexOf(day)) && user_push_token?.push_notification_token) {
+                  await schedule_notification(
+                    session.user.id,
+                    user_push_token.push_notification_token,
+                    `${programData.program_name} starts in ${timeLabel}!`,
+                    `${timeLabel} Before`,
+                    programData.program_name,
+                    NotificationTime
+                  );
+                }
+              })
+            );
+          }
         }
 
         setModalToast({
           type: 'addProgramToNotificationsToast',
-          props: { props: programData, onPress: () => router.push('/myPrograms/notifications') }
+          props: { props: programData, onPress: () => { setModalVisible(false); router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs'); } }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -631,34 +635,39 @@ export default function UpcomingProgramWidget() {
       if (!error) {
         const eventDays = eventData.event_days;
         const EventStartTime = setTimeToCurrentDate(eventData.event_start_time || '');
-        const NotificationTime = new Date(EventStartTime.getTime() - minutesBefore * 60 * 1000);
 
-        if (eventDays && isBefore(TodaysDate, NotificationTime)) {
-          await Promise.all(
-            (Array.isArray(eventDays) ? eventDays : [eventDays]).map(async (day: string) => {
-              const { data: user_push_token } = await supabase
-                .from('profiles')
-                .select('push_notification_token')
-                .eq('id', session.user.id)
-                .single();
+        // Schedule notifications for all selected times
+        for (const minutesBefore of minutesBeforeArray) {
+          const timeLabel = getTimeLabel(minutesBefore);
+          const NotificationTime = new Date(EventStartTime.getTime() - minutesBefore * 60 * 1000);
 
-              if ((TodaysDate.getDay() === DaysOfWeek.indexOf(day)) && user_push_token?.push_notification_token) {
-                await schedule_notification(
-                  session.user.id,
-                  user_push_token.push_notification_token,
-                  `${eventData.event_name} starts in ${timeLabel}!`,
-                  `${timeLabel} Before`,
-                  eventData.event_name,
-                  NotificationTime
-                );
-              }
-            })
-          );
+          if (eventDays && isBefore(TodaysDate, NotificationTime)) {
+            await Promise.all(
+              (Array.isArray(eventDays) ? eventDays : [eventDays]).map(async (day: string) => {
+                const { data: user_push_token } = await supabase
+                  .from('profiles')
+                  .select('push_notification_token')
+                  .eq('id', session.user.id)
+                  .single();
+
+                if ((TodaysDate.getDay() === DaysOfWeek.indexOf(day)) && user_push_token?.push_notification_token) {
+                  await schedule_notification(
+                    session.user.id,
+                    user_push_token.push_notification_token,
+                    `${eventData.event_name} starts in ${timeLabel}!`,
+                    `${timeLabel} Before`,
+                    eventData.event_name,
+                    NotificationTime
+                  );
+                }
+              })
+            );
+          }
         }
 
         setModalToast({
           type: 'addEventToNotificationsToast',
-          props: { props: eventData, onPress: () => router.push('/myPrograms/notifications') }
+          props: { props: eventData, onPress: () => { setModalVisible(false); router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs'); } }
         });
         setTimeout(() => setModalToast(null), 3000);
       }
@@ -735,117 +744,10 @@ export default function UpcomingProgramWidget() {
     }
   };
 
-  // Handle confirm notification selection
+  // Handle confirm notification selection (called from Save button)
   const handleConfirmNotifications = async () => {
-    if (!session?.user.id || !upcomingItem || selectedNotificationTime === null) return;
-
-    closeNotificationOptions();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    const TodaysDate = new Date();
-    const DaysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    // Helper to get time label
-    const getTimeLabel = (minutes: number) => {
-      if (minutes === 120) return '2 hours';
-      if (minutes === 60) return '1 hour';
-      if (minutes === 30) return '30 minutes';
-      return `${minutes} minutes`;
-    };
-
-    const minutesBefore = selectedNotificationTime;
-    const timeLabel = getTimeLabel(minutesBefore);
-
-    if (upcomingItem.type === 'program' && programData) {
-      const { error } = await supabase
-        .from('added_notifications_programs')
-        .insert({
-          user_id: session.user.id,
-          program_id: upcomingItem.id,
-          has_lectures: programData.has_lectures || false
-        });
-
-      if (!error) {
-        const programDays = programData.program_days;
-        const ProgramStartTime = setTimeToCurrentDate(programData.program_start_time || '');
-        const NotificationTime = new Date(ProgramStartTime.getTime() - minutesBefore * 60 * 1000);
-
-        if (programDays && isBefore(TodaysDate, NotificationTime)) {
-          await Promise.all(
-            (Array.isArray(programDays) ? programDays : [programDays]).map(async (day: string) => {
-              const { data: user_push_token } = await supabase
-                .from('profiles')
-                .select('push_notification_token')
-                .eq('id', session.user.id)
-                .single();
-
-              if ((TodaysDate.getDay() === DaysOfWeek.indexOf(day)) && user_push_token?.push_notification_token) {
-                await schedule_notification(
-                  session.user.id,
-                  user_push_token.push_notification_token,
-                  `${programData.program_name} starts in ${timeLabel}!`,
-                  `${timeLabel} Before`,
-                  programData.program_name,
-                  NotificationTime
-                );
-              }
-            })
-          );
-        }
-
-        // Show toast
-        setModalToast({
-          type: 'addProgramToNotificationsToast',
-          props: { props: programData, onPress: () => router.push('/myPrograms/notifications') }
-        });
-        setTimeout(() => setModalToast(null), 3000);
-      }
-    } else if (upcomingItem.type === 'event' && eventData) {
-      const { error } = await supabase
-        .from('added_notifications_events')
-        .insert({
-          user_id: session.user.id,
-          event_id: upcomingItem.id
-        });
-
-      if (!error) {
-        const eventDays = eventData.event_days;
-        const EventStartTime = setTimeToCurrentDate(eventData.event_start_time || '');
-        const NotificationTime = new Date(EventStartTime.getTime() - minutesBefore * 60 * 1000);
-
-        if (eventDays && isBefore(TodaysDate, NotificationTime)) {
-          await Promise.all(
-            (Array.isArray(eventDays) ? eventDays : [eventDays]).map(async (day: string) => {
-              const { data: user_push_token } = await supabase
-                .from('profiles')
-                .select('push_notification_token')
-                .eq('id', session.user.id)
-                .single();
-
-              if ((TodaysDate.getDay() === DaysOfWeek.indexOf(day)) && user_push_token?.push_notification_token) {
-                await schedule_notification(
-                  session.user.id,
-                  user_push_token.push_notification_token,
-                  `${eventData.event_name} starts in ${timeLabel}!`,
-                  `${timeLabel} Before`,
-                  eventData.event_name,
-                  NotificationTime
-                );
-              }
-            })
-          );
-        }
-
-        // Show toast
-        setModalToast({
-          type: 'addEventToNotificationsToast',
-          props: { props: eventData, onPress: () => router.push('/myPrograms/notifications') }
-        });
-        setTimeout(() => setModalToast(null), 3000);
-      }
-    }
-
-    setItemInNotifications(true);
+    if (!session?.user.id || !upcomingItem || selectedNotificationTimes.length === 0) return;
+    await handleConfirmNotificationsWithTimes(selectedNotificationTimes);
   };
 
   // Handle add to programs button press
@@ -1902,16 +1804,16 @@ export default function UpcomingProgramWidget() {
               </Pressable>
             </View>
 
-            {/* Radio Options */}
+            {/* Checkbox Options (Multi-select) */}
             <View style={{ paddingHorizontal: 20 }}>
               {/* 2 Hours Before */}
               <Pressable
-                onPress={() => selectNotificationTime(120)}
+                onPress={() => toggleNotificationTime(120)}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   paddingVertical: 14,
-                  backgroundColor: selectedNotificationTime === 120 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  backgroundColor: selectedNotificationTimes.includes(120) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                   borderRadius: 12,
                   marginHorizontal: -12,
                   paddingHorizontal: 12,
@@ -1920,22 +1822,17 @@ export default function UpcomingProgramWidget() {
                 <View style={{
                   width: 24,
                   height: 24,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   borderWidth: 2,
-                  borderColor: selectedNotificationTime === 120 ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
+                  borderColor: selectedNotificationTimes.includes(120) ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 14,
                   marginTop: 2,
-                  backgroundColor: selectedNotificationTime === 120 ? '#57BA47' : 'transparent',
+                  backgroundColor: selectedNotificationTimes.includes(120) ? '#57BA47' : 'transparent',
                 }}>
-                  {selectedNotificationTime === 120 && (
-                    <View style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: '#ffffff',
-                    }} />
+                  {selectedNotificationTimes.includes(120) && (
+                    <Icon source="check" size={16} color="#ffffff" />
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -1958,12 +1855,12 @@ export default function UpcomingProgramWidget() {
 
               {/* 1 Hour Before */}
               <Pressable
-                onPress={() => selectNotificationTime(60)}
+                onPress={() => toggleNotificationTime(60)}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   paddingVertical: 14,
-                  backgroundColor: selectedNotificationTime === 60 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  backgroundColor: selectedNotificationTimes.includes(60) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                   borderRadius: 12,
                   marginHorizontal: -12,
                   paddingHorizontal: 12,
@@ -1972,22 +1869,17 @@ export default function UpcomingProgramWidget() {
                 <View style={{
                   width: 24,
                   height: 24,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   borderWidth: 2,
-                  borderColor: selectedNotificationTime === 60 ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
+                  borderColor: selectedNotificationTimes.includes(60) ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 14,
                   marginTop: 2,
-                  backgroundColor: selectedNotificationTime === 60 ? '#57BA47' : 'transparent',
+                  backgroundColor: selectedNotificationTimes.includes(60) ? '#57BA47' : 'transparent',
                 }}>
-                  {selectedNotificationTime === 60 && (
-                    <View style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: '#ffffff',
-                    }} />
+                  {selectedNotificationTimes.includes(60) && (
+                    <Icon source="check" size={16} color="#ffffff" />
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -2010,12 +1902,12 @@ export default function UpcomingProgramWidget() {
 
               {/* 30 Minutes Before */}
               <Pressable
-                onPress={() => selectNotificationTime(30)}
+                onPress={() => toggleNotificationTime(30)}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'flex-start',
                   paddingVertical: 14,
-                  backgroundColor: selectedNotificationTime === 30 ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                  backgroundColor: selectedNotificationTimes.includes(30) ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                   borderRadius: 12,
                   marginHorizontal: -12,
                   paddingHorizontal: 12,
@@ -2024,22 +1916,17 @@ export default function UpcomingProgramWidget() {
                 <View style={{
                   width: 24,
                   height: 24,
-                  borderRadius: 12,
+                  borderRadius: 6,
                   borderWidth: 2,
-                  borderColor: selectedNotificationTime === 30 ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
+                  borderColor: selectedNotificationTimes.includes(30) ? '#57BA47' : 'rgba(255, 255, 255, 0.4)',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 14,
                   marginTop: 2,
-                  backgroundColor: selectedNotificationTime === 30 ? '#57BA47' : 'transparent',
+                  backgroundColor: selectedNotificationTimes.includes(30) ? '#57BA47' : 'transparent',
                 }}>
-                  {selectedNotificationTime === 30 && (
-                    <View style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: '#ffffff',
-                    }} />
+                  {selectedNotificationTimes.includes(30) && (
+                    <Icon source="check" size={16} color="#ffffff" />
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
@@ -2058,6 +1945,34 @@ export default function UpcomingProgramWidget() {
                     Last minute reminder before it starts
                   </Text>
                 </View>
+              </Pressable>
+            </View>
+
+            {/* Save Button */}
+            <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+              <Pressable
+                onPress={handleConfirmNotifications}
+                disabled={selectedNotificationTimes.length === 0}
+                style={{
+                  backgroundColor: selectedNotificationTimes.length > 0 ? '#57BA47' : 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: 14,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  gap: 8,
+                }}
+              >
+                <Icon source="bell-check" size={20} color="#ffffff" />
+                <Text style={{
+                  fontSize: 16,
+                  fontWeight: '700',
+                  color: '#ffffff',
+                }}>
+                  {selectedNotificationTimes.length === 0 
+                    ? 'Select reminder times' 
+                    : `Save ${selectedNotificationTimes.length} reminder${selectedNotificationTimes.length > 1 ? 's' : ''}`}
+                </Text>
               </Pressable>
             </View>
 

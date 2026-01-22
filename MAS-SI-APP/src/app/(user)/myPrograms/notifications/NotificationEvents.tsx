@@ -246,7 +246,11 @@ const ProgramsScreen = ({ addedPrograms, addedLecturePrograms, addedEvents, layo
     </ScrollView>
   )
 }
-const SalahTimesScreen = () => {
+type SalahTimesScreenProps = {
+  openPrayer?: string;
+}
+
+const SalahTimesScreen = ({ openPrayer }: SalahTimesScreenProps) => {
   const { data: prayerTimesWeek } = usePrayerTimes();
   const [tableIndex, setTableIndex] = useState(0)
 
@@ -266,6 +270,7 @@ const SalahTimesScreen = () => {
           setTableIndex={setTableIndex}
           tableIndex={tableIndex}
           index={0}
+          openPrayer={openPrayer}
         />
       )}
     </View>
@@ -276,7 +281,7 @@ const SalahTimesScreen = () => {
 const NotificationEvents = () => {
   const { session } = useAuth()
   const insets = useSafeAreaInsets()
-  const { initialTab } = useLocalSearchParams<{ initialTab?: string }>()
+  const { initialTab, openPrayer } = useLocalSearchParams<{ initialTab?: string; openPrayer?: string }>()
   const [addedEvents, setAddedEvents] = useState<EventsType[]>([])
   const [addedPrograms, setAddedPrograms] = useState<Program[]>([])
   const [addedLecturePrograms, setAddedProgramLectures] = useState<Program[]>([])
@@ -480,6 +485,7 @@ const NotificationEvents = () => {
   const JummahScreen = () => {
     const tabBarHeight = 120
     const jummahTimes = ['12:15 PM', '1:00 PM', '1:45 PM', '3:45 PM']
+    const jummahNameMap: { [key: number]: string } = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth' }
     
     // Modal state
     const [jummahModalVisible, setJummahModalVisible] = useState(false)
@@ -496,6 +502,69 @@ const NotificationEvents = () => {
       3: { enabled: false, options: [] },
       4: { enabled: false, options: [] },
     })
+
+    // Map UI options to database format
+    const mapOptionsToDb = (options: string[]): string[] => {
+      const dbMap: { [key: string]: string } = {
+        'jummah_time': 'Alert at Athan Time',
+        '30_min_before': 'Alert 30 Mins Before',
+        '1_hour_before': 'Alert 1 Hour Before',
+        'mute': 'Mute',
+      }
+      return options.map(o => dbMap[o]).filter(Boolean)
+    }
+
+    // Map database format to UI options
+    const mapDbToOptions = (dbSettings: string[]): string[] => {
+      const uiMap: { [key: string]: string } = {
+        'Alert at Athan Time': 'jummah_time',
+        'Alert 30 Mins Before': '30_min_before',
+        'Alert 1 Hour Before': '1_hour_before',
+        'Mute': 'mute',
+      }
+      return dbSettings.map(s => uiMap[s]).filter(Boolean)
+    }
+
+    // Load settings from database on mount
+    useEffect(() => {
+      const loadJummahSettings = async () => {
+        if (!session?.user.id) return
+        
+        const { data, error } = await supabase
+          .from('jummah_notifications')
+          .select('jummah, notification_settings')
+          .eq('user_id', session.user.id)
+        
+        if (data && data.length > 0) {
+          const newSettings: {[key: number]: { enabled: boolean; options: string[] }} = {
+            1: { enabled: false, options: [] },
+            2: { enabled: false, options: [] },
+            3: { enabled: false, options: [] },
+            4: { enabled: false, options: [] },
+          }
+          
+          const nameToIndex: { [key: string]: number } = { 'first': 1, 'second': 2, 'third': 3, 'fourth': 4 }
+          
+          data.forEach((item: { jummah: string; notification_settings: string[] }) => {
+            const jummahIndex = nameToIndex[item.jummah]
+            if (jummahIndex) {
+              const options = mapDbToOptions(item.notification_settings)
+              const isMuted = item.notification_settings.includes('Mute')
+              const hasValidOptions = options.length > 0 && !isMuted
+              
+              newSettings[jummahIndex] = {
+                enabled: hasValidOptions,
+                options: options,
+              }
+            }
+          })
+          
+          setJummahSettings(newSettings)
+        }
+      }
+      
+      loadJummahSettings()
+    }, [session?.user.id])
     
     // Animate blur when modal opens
     useEffect(() => {
@@ -512,29 +581,66 @@ const NotificationEvents = () => {
         blurOpacity.setValue(0)
       }
     }, [jummahModalVisible])
-    
-    const handleToggle = useCallback((jummahIndex: number) => {
-      setJummahSettings(prev => {
-        const currentEnabled = prev[jummahIndex]?.enabled
+
+    // Save to database helper
+    const saveJummahToDb = async (jummahIndex: number, dbSettings: string[]) => {
+      if (!session?.user.id) return
+      
+      const jummahName = jummahNameMap[jummahIndex]
+      const finalSettings = dbSettings.length > 0 ? dbSettings : ['Mute']
+      
+      // Check if record exists
+      const { data: existingSettings, error: fetchError } = await supabase
+        .from('jummah_notifications')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('jummah', jummahName)
+        .single()
+      
+      if (existingSettings) {
+        // Update existing record
+        const { error } = await supabase
+          .from('jummah_notifications')
+          .update({ notification_settings: finalSettings })
+          .eq('user_id', session.user.id)
+          .eq('jummah', jummahName)
         
-        if (!currentEnabled) {
-          // Opening modal - set modal options from current settings
-          setSelectedJummah(jummahIndex)
-          setModalOptions(prev[jummahIndex]?.options || [])
-          setJummahModalVisible(true)
-          return prev // Don't change settings yet
-        } else {
-          // If disabling, clear options
-          return {
-            ...prev,
-            [jummahIndex]: {
-              enabled: false,
-              options: [],
-            }
+        if (error) console.log('Update error:', error)
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('jummah_notifications')
+          .insert({
+            user_id: session.user.id,
+            jummah: jummahName,
+            notification_settings: finalSettings,
+          })
+        
+        if (error) console.log('Insert error:', error)
+      }
+    }
+    
+    const handleToggle = useCallback(async (jummahIndex: number) => {
+      const currentEnabled = jummahSettings[jummahIndex]?.enabled
+      
+      if (!currentEnabled) {
+        // Opening modal - set modal options from current settings
+        setSelectedJummah(jummahIndex)
+        setModalOptions(jummahSettings[jummahIndex]?.options || [])
+        setJummahModalVisible(true)
+      } else {
+        // If disabling, save Mute to database
+        await saveJummahToDb(jummahIndex, ['Mute'])
+        
+        setJummahSettings(prev => ({
+          ...prev,
+          [jummahIndex]: {
+            enabled: false,
+            options: [],
           }
-        }
-      })
-    }, [])
+        }))
+      }
+    }, [jummahSettings, session?.user.id])
     
     // Handle option selection - only updates modal state, not card state
     const handleOptionSelect = useCallback((option: string) => {
@@ -553,9 +659,16 @@ const NotificationEvents = () => {
       })
     }, [])
     
-    const handleApplyToAll = useCallback(() => {
+    const handleApplyToAll = useCallback(async () => {
       const currentOptions = [...modalOptions]
       const hasValidOptions = currentOptions.length > 0 && !currentOptions.every(o => o === 'mute')
+      const dbSettings = mapOptionsToDb(currentOptions)
+      
+      // Save to database for all jummahs
+      for (let i = 1; i <= 4; i++) {
+        await saveJummahToDb(i, dbSettings)
+      }
+      
       setJummahSettings({
         1: { enabled: hasValidOptions, options: currentOptions },
         2: { enabled: hasValidOptions, options: currentOptions },
@@ -565,7 +678,7 @@ const NotificationEvents = () => {
       setJummahModalVisible(false)
       setSelectedJummah(null)
       setModalOptions([])
-    }, [modalOptions])
+    }, [modalOptions, session?.user.id])
     
     const handleCloseModal = useCallback(() => {
       setJummahModalVisible(false)
@@ -573,9 +686,14 @@ const NotificationEvents = () => {
       setModalOptions([])
     }, [])
     
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
       if (selectedJummah) {
         const hasOptions = modalOptions.length > 0 && !modalOptions.every(o => o === 'mute')
+        const dbSettings = mapOptionsToDb(modalOptions)
+        
+        // Save to database
+        await saveJummahToDb(selectedJummah, dbSettings)
+        
         setJummahSettings(prev => ({
           ...prev,
           [selectedJummah]: {
@@ -584,9 +702,8 @@ const NotificationEvents = () => {
           }
         }))
       }
-      console.log('Saving Jummah settings for:', selectedJummah, modalOptions)
       handleCloseModal()
-    }, [selectedJummah, modalOptions, handleCloseModal])
+    }, [selectedJummah, modalOptions, handleCloseModal, session?.user.id])
     
     const notificationOptions = [
       { key: 'jummah_time', title: 'Notify at Jummah Time', description: 'Get notified exactly when it\'s time for Jummah' },
@@ -858,7 +975,7 @@ const NotificationEvents = () => {
 
           {/* Content based on selected tab */}
           <View style={{ flex: 1, minHeight: 500 }}>
-            {index === 0 && <SalahTimesScreen />}
+            {index === 0 && <SalahTimesScreen openPrayer={openPrayer} />}
             {index === 1 && (
               <ProgramsScreen
                 addedPrograms={addedPrograms}

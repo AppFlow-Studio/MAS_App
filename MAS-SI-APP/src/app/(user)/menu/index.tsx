@@ -25,6 +25,7 @@ import MASQuestionaire from '@/src/components/MASQuestionaire';
 import DailyProgramsWidget from '@/src/components/DailyProgramsWidget';
 import OverlappingWidget from '@/src/components/OverlappingWidget';
 import DonationVolunteerCarousel, { DonationVolunteerCarouselRef } from '@/src/components/DonationVolunteerCarousel';
+import DonationBottomSheet, { DonationBottomSheetRef } from '@/src/components/DonationBottomSheet';
 
 // Color Theme based on Figma design
 const COLORS = {
@@ -65,6 +66,7 @@ export default function homeScreen() {
   const [exploreFeaturesY, setExploreFeaturesY] = useState(0);
   const [donationCarouselRelativeY, setDonationCarouselRelativeY] = useState(0);
   const donationVolunteerCarouselRef = useRef<DonationVolunteerCarouselRef>(null);
+  const donationSheetRef = useRef<DonationBottomSheetRef>(null);
   const [activeButton, setActiveButton] = useState<'donate' | 'volunteer'>('donate');
   const tabPosition = useSharedValue(0);
   const tabIndicatorWidthValue = useSharedValue(0);
@@ -349,7 +351,10 @@ export default function homeScreen() {
 
       {/* Donation and Volunteer Cards Carousel */}
       <View className='pt-3'>
-        <DonationVolunteerCarousel ref={donationVolunteerCarouselRef} />
+        <DonationVolunteerCarousel 
+          ref={donationVolunteerCarouselRef} 
+          onDonationPress={() => donationSheetRef.current?.open()}
+        />
       </View>
 
       {/* Jummah Schedule */}
@@ -432,6 +437,9 @@ export default function homeScreen() {
 
       <View style={[{ paddingBottom: 100 }]}></View>
       </Animated.ScrollView>
+
+      {/* Donation Bottom Sheet */}
+      <DonationBottomSheet ref={donationSheetRef} />
     </View>
   )
 

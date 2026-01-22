@@ -130,8 +130,12 @@ const NotificationCard = ({height , width, index, scrollY, setSelectedNotificati
       }
       onPress()
   }
+  const CardOptions = ['When Program Starts', '30 Mins Before', 'Day Before']
+  
   const getSettings = async () => {
-    const { data , error } = await supabase.from('program_notifications_settings').select('notification_settings').eq('program_id', program_id).eq('user_id', session?.user.id, ).single()
+    if (!session?.user.id) return
+    
+    const { data , error } = await supabase.from('program_notifications_settings').select('notification_settings').eq('program_id', program_id).eq('user_id', session?.user.id).single()
     const { data : user_push_token } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
     if( user_push_token ){
       setPushToken(user_push_token.push_notification_token)
@@ -149,18 +153,17 @@ const NotificationCard = ({height , width, index, scrollY, setSelectedNotificati
         });
         
         setChecked(true); 
-        }
+      }
     }
   }
   useEffect(() => {
     getSettings()
-  }, [])
+  }, [session?.user.id, program_id, index])
   const cardStyle = useAnimatedStyle(() => {
     return{
         transform: [{ scale : scale.value }]
     }
   })
-  const CardOptions = ['When Program Starts', '30 Mins Before', 'Day Before']
   const CardInfo = [
     { header : 'Notify at Start:' , subText : "Get notified exactly when the program starts"},
     { header : 'Notify 30 minutes before Start:' , subText : "Get reminded 30 min before the program starts"},

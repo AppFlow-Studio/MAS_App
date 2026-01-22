@@ -18,6 +18,14 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 
+// Configure Google Sign-In once at module level
+GoogleSignin.configure({
+  iosClientId: '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com',
+  webClientId: '991344123272-p3p68bb5kk77j6f36fij21t42ovhcr93.apps.googleusercontent.com',
+  scopes: ['profile', 'email'],
+  offlineAccess: false,
+});
+
 const { height: SCREEN_HEIGHT, width } = Dimensions.get('window')
 
 // Height for different screens - keeping sheet compact like Flighty app
@@ -185,6 +193,21 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
     })
   }
 
+  // Handle backdrop press - same as continue as guest
+  const handleBackdropPress = () => {
+    if (!dismissable) return
+    
+    slideY.value = withTiming(SCREEN_HEIGHT * 0.6, { duration: 300 })
+    backdropOpacity.value = withTiming(0, { duration: 300 }, () => {
+      runOnJS(closeSheet)()
+      if (onContinueAsGuest) {
+        setTimeout(() => {
+          onContinueAsGuest()
+        }, 100)
+      }
+    })
+  }
+
   // Pan gesture for drag-to-dismiss
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
@@ -237,10 +260,6 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
   }
 
   const handleGoogleSignIn = async () => {
-    GoogleSignin.configure({
-      iosClientId: '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com'
-    })
-
     try {
       await GoogleSignin.hasPlayServices()
       const response = await GoogleSignin.signIn()
@@ -251,23 +270,30 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
           provider: 'google',
           token: idToken,
         })
-        if (!error) {
+        if (!error && data?.user) {
           // Update profile in background, close immediately
-          supabase.from('profiles').update({ first_name: user?.name, profile_email: user?.email }).eq('id', data?.user.id)
+          supabase.from('profiles').update({ 
+            first_name: user?.name || user?.givenName, 
+            profile_email: user?.email 
+          }).eq('id', data.user.id)
           closeSheet()
+        } else {
+          console.error('Supabase sign-in error:', error)
+          alert(error?.message || 'Google sign-in failed')
         }
       } else {
-        throw new Error('no ID token present!')
+        throw new Error('No ID token present!')
       }
     } catch (error: any) {
+      console.log('Google Sign-In Error:', error)
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // user cancelled the login flow
+        console.log('User cancelled the login flow')
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        // operation (e.g. sign in) is in progress already
+        console.log('Sign in is in progress already')
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        // play services not available or outdated
+        console.log('Play services not available or outdated')
       } else {
-        // some other error happened
+        alert(`Sign-in error: ${error.message || 'Unknown error'}`)
       }
     }
   }
@@ -435,108 +461,120 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
         <View style={{ gap: 16 }}>
           <TextInput
             mode='outlined'
-            label="Email"
+            placeholder="Email"
             style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
             outlineColor='rgba(255, 255, 255, 0.3)'
-            activeOutlineColor='#ffffff'
+            activeOutlineColor='rgba(255, 255, 255, 0.5)'
             value={email}
             onChangeText={setEmail}
             left={<TextInput.Icon icon="email-outline" color="#6b7280" />}
             textColor='#1f2937'
+            placeholderTextColor='#6b7280'
+            cursorColor='#1f2937'
+            selectionColor='rgba(14, 81, 159, 0.3)'
+            theme={{ roundness: 12, colors: { onSurfaceVariant: '#000000', primary: '#000000', onSurface: '#000000', outline: '#000000', text: '#000000' } }}
             keyboardType="email-address"
             autoCapitalize="none"
           />
 
           <TextInput
             mode='outlined'
-            label="Password"
+            placeholder="Password"
             style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
             outlineColor='rgba(255, 255, 255, 0.3)'
-            activeOutlineColor='#ffffff'
+            activeOutlineColor='rgba(255, 255, 255, 0.5)'
             value={password}
             onChangeText={setPassword}
             left={<TextInput.Icon icon="lock-outline" color="#6b7280" />}
             secureTextEntry
             textColor='#1f2937'
+            placeholderTextColor='#6b7280'
+            cursorColor='#1f2937'
+            selectionColor='rgba(14, 81, 159, 0.3)'
+            theme={{ roundness: 12, colors: { onSurfaceVariant: '#000000', primary: '#000000', onSurface: '#000000', outline: '#000000', text: '#000000' } }}
           />
 
-          <Pressable
-            onPress={signInWithEmail}
-            disabled={loading}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? 'rgba(255, 255, 255, 0.9)' : '#ffffff',
-              borderRadius: 12,
-              paddingVertical: 16,
-              alignItems: 'center',
-              opacity: loading ? 0.7 : 1,
-              marginTop: 16,
-            })}
-          >
-            <Text style={{ fontSize: 17, fontWeight: '600', color: '#0F519F' }}>
-              {loading ? 'Signing In...' : 'Continue'}
-            </Text>
-          </Pressable>
         </View>
       ) : (
         // Sign Up Form
         <View style={{ gap: 16 }}>
           <TextInput
             mode='outlined'
-            label="Name"
+            placeholder="Name"
             style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
             outlineColor='rgba(255, 255, 255, 0.3)'
-            activeOutlineColor='#ffffff'
+            activeOutlineColor='rgba(255, 255, 255, 0.5)'
             value={name}
             onChangeText={setName}
             left={<TextInput.Icon icon="account-outline" color="#6b7280" />}
             textColor='#1f2937'
+            placeholderTextColor='#6b7280'
+            cursorColor='#1f2937'
+            selectionColor='rgba(14, 81, 159, 0.3)'
+            theme={{ roundness: 12, colors: { onSurfaceVariant: '#000000', primary: '#000000', onSurface: '#000000', outline: '#000000', text: '#000000' } }}
           />
 
           <TextInput
             mode='outlined'
-            label="Email"
+            placeholder="Email"
             style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
             outlineColor='rgba(255, 255, 255, 0.3)'
-            activeOutlineColor='#ffffff'
+            activeOutlineColor='rgba(255, 255, 255, 0.5)'
             value={email}
             onChangeText={setEmail}
             left={<TextInput.Icon icon="email-outline" color="#6b7280" />}
             textColor='#1f2937'
+            placeholderTextColor='#6b7280'
+            cursorColor='#1f2937'
+            selectionColor='rgba(14, 81, 159, 0.3)'
+            theme={{ roundness: 12, colors: { onSurfaceVariant: '#000000', primary: '#000000', onSurface: '#000000', outline: '#000000', text: '#000000' } }}
             keyboardType="email-address"
             autoCapitalize="none"
           />
 
           <TextInput
             mode='outlined'
-            label="Password"
+            placeholder="Password"
             style={{ backgroundColor: "rgba(255, 255, 255, 0.95)" }}
             outlineColor='rgba(255, 255, 255, 0.3)'
-            activeOutlineColor='#ffffff'
+            activeOutlineColor='rgba(255, 255, 255, 0.5)'
             value={password}
             onChangeText={setPassword}
             left={<TextInput.Icon icon="lock-outline" color="#6b7280" />}
             secureTextEntry
             textColor='#1f2937'
+            placeholderTextColor='#6b7280'
+            cursorColor='#1f2937'
+            selectionColor='rgba(14, 81, 159, 0.3)'
+            theme={{ roundness: 12, colors: { onSurfaceVariant: '#000000', primary: '#000000', onSurface: '#000000', outline: '#000000', text: '#000000' } }}
           />
 
-          <Pressable
-            onPress={signUpWithEmail}
-            disabled={loading}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? 'rgba(255, 255, 255, 0.9)' : '#ffffff',
-              borderRadius: 12,
-              paddingVertical: 16,
-              alignItems: 'center',
-              opacity: loading ? 0.7 : 1,
-              marginTop: 8,
-            })}
-          >
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#0F519F' }}>
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </Text>
-          </Pressable>
         </View>
       )}
+
+      {/* Continue Button */}
+      <View style={{
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        height: 50,
+        marginTop: 16,
+        overflow: 'hidden',
+      }}>
+        <Pressable
+          onPress={signIn ? signInWithEmail : signUpWithEmail}
+          disabled={loading}
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: loading ? 0.7 : 1,
+          }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '600', color: '#0F519F' }}>
+            {loading ? (signIn ? 'Signing In...' : 'Creating Account...') : 'Continue'}
+          </Text>
+        </Pressable>
+      </View>
 
       {/* Divider */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
@@ -556,37 +594,39 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
             onPress={handleAppleSignIn}
           />
         )}
-        <Pressable
-          onPress={handleGoogleSignIn}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: pressed ? '#f0f0f0' : '#ffffff',
-            borderRadius: 12,
-            height: 50,
-            paddingHorizontal: 16,
-          })}
-        >
-          <View style={{ 
-            width: 24, 
-            height: 24, 
-            marginRight: 12,
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderRadius: 12,
-            backgroundColor: '#fff',
-          }}>
-            <Text style={{ 
-              fontSize: 18, 
-              fontWeight: '700',
+        <View style={{
+          backgroundColor: '#ffffff',
+          borderRadius: 12,
+          height: 50,
+          width: '100%',
+          overflow: 'hidden',
+        }}>
+          <Pressable
+            onPress={handleGoogleSignIn}
+            android_ripple={{ color: '#e0e0e0' }}
+            style={{
+              flex: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
               color: '#4285F4',
+              marginRight: 8,
             }}>G</Text>
-          </View>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: '#1f2937' }}>
-            Sign in with Google
-          </Text>
-        </Pressable>
+            <Text style={{
+              fontSize: 17,
+              fontWeight: '500',
+              color: '#000000',
+              letterSpacing: 0.3,
+            }}>
+              Sign in with Google
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Switch Form */}
@@ -653,7 +693,7 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
         {dismissable && (
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            onPress={handleDismiss}
+            onPress={handleBackdropPress}
           />
         )}
 

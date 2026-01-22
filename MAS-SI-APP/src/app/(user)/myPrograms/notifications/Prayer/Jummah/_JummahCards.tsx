@@ -38,7 +38,31 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
     })
 
    const onPress = async () => {
-    const { data : CurrentSettings , error } = await supabase.from('jummah_notifications').select('notification_settings').eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id, ).single()
+    if (!session?.user.id) return
+    
+    const { data : CurrentSettings , error } = await supabase.from('jummah_notifications').select('notification_settings').eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id).single()
+    
+    // If no settings exist yet (error code PGRST116 means no rows), create a new record
+    if (error || !CurrentSettings) {
+      // If clicking Mute, create with Mute
+      if (index === 2) {
+        const { error: insertError } = await supabase.from('jummah_notifications').insert({
+          user_id: session.user.id,
+          jummah: SupabaseJummahName,
+          notification_settings: ['Mute']
+        })
+        if (insertError) console.log('Insert error:', insertError)
+        return
+      }
+      // Otherwise create with the selected notification option
+      const { error: insertError } = await supabase.from('jummah_notifications').insert({
+        user_id: session.user.id,
+        jummah: SupabaseJummahName,
+        notification_settings: [NotificationArray[index]]
+      })
+      if (insertError) console.log('Insert error:', insertError)
+      return
+    }
     
     if( CurrentSettings ){
         const settings = CurrentSettings.notification_settings
@@ -121,7 +145,9 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
    }
 
    const getSettings = async () => {
-    const { data , error } = await supabase.from('jummah_notifications').select('notification_settings').eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id, ).single()
+    if (!session?.user.id) return
+    
+    const { data , error } = await supabase.from('jummah_notifications').select('notification_settings').eq('jummah', SupabaseJummahName).eq('user_id', session?.user.id).single()
     if( error ) {
       return
     }
@@ -133,7 +159,7 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
           }
           return prevSelected; 
         });
-        }
+      }
     }
    }
     const handlePress = () => {
@@ -176,7 +202,7 @@ const JummahCards = ({ height , width, index, setSelectedNotification, selectedN
 
   useEffect(() => {
     getSettings()
-  }, [])
+  }, [session?.user.id, SupabaseJummahName, index])
   return (
     <Animated.View style={[{ height : height, width : width, borderRadius : 20 }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
         <Pressable onPress={handlePress} style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center", backgroundColor : 'white'  }]}>

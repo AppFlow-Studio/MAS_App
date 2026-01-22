@@ -2,6 +2,7 @@ import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, E
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Divider, Portal, Modal, IconButton, Icon, Button, Badge } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { EventLectureType, SheikDataType, EventsType } from '@/src/types';
@@ -1316,9 +1317,7 @@ async function getUserPlaylists(){
                       event?.is_paid ? 
                       (
                         <Pressable onPress={() => {
-                        Linking.canOpenURL(event.paid_link).then(() => {
-                        Linking.openURL(event.paid_link);
-                        });
+                          WebBrowser.openBrowserAsync(event.paid_link);
                         }}>
                         <Button icon={() => <Icon source={"cart-variant"} size={20} color='white'/>} mode='elevated' style={{ backgroundColor : "#57BA47", marginTop : 10, width: "90%"}}><Text className='text-white'>Sign Up Now</Text></Button>
                         </Pressable>

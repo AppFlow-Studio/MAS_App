@@ -29,6 +29,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass';
 import { Pencil, X, Check } from 'lucide-react-native';
+import { supabase } from '@/src/lib/supabase';
+import { useAuth } from '@/src/providers/AuthProvider';
 
 type NotificationOption = 'prayer_time' | 'iqamah_time' | '30_min_before' | 'mute';
 
@@ -44,13 +46,16 @@ type prayerDataProp = {
   setTableIndex: (tableIndex: number) => void;
   tableIndex: number;
   index: number;
+  openPrayer?: string;
 };
 const NotificationPrayerTable = ({
   prayerData,
   setTableIndex,
   tableIndex,
   index,
+  openPrayer,
 }: prayerDataProp) => {
+  const { session } = useAuth();
   const currentPrayer = useCurrentPrayer();
   const { width, height } = Dimensions.get("window");
   const navigation = useNavigation<any>();
@@ -87,15 +92,115 @@ const NotificationPrayerTable = ({
     'Asr': { enabled: false, options: [] },
     'Maghrib': { enabled: false, options: [] },
     'Isha': { enabled: false, options: [] },
+    'Taraweeh 1': { enabled: false, options: [] },
+    'Taraweeh 2': { enabled: false, options: [] },
   });
 
-  const handleToggle = (prayerName: string) => {
+  // Map database notification_settings array to our options format
+  const mapDbSettingsToOptions = (dbSettings: string[]): NotificationOption[] => {
+    const optionMap: { [key: string]: NotificationOption } = {
+      'Alert at Athan time': 'prayer_time',
+      'Alert at Iqamah time': 'iqamah_time',
+      'Alert 30 mins before next prayer': '30_min_before',
+      'Mute': 'mute',
+    };
+    return dbSettings.map(s => optionMap[s]).filter(Boolean);
+  };
+
+  // Map our options format back to database format
+  const mapOptionsToDbSettings = (options: NotificationOption[]): string[] => {
+    const dbMap: { [key in NotificationOption]: string } = {
+      'prayer_time': 'Alert at Athan time',
+      'iqamah_time': 'Alert at Iqamah time',
+      '30_min_before': 'Alert 30 mins before next prayer',
+      'mute': 'Mute',
+    };
+    return options.map(o => dbMap[o]);
+  };
+
+  // Load settings from database on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!session?.user.id) return;
+      
+      const { data, error } = await supabase
+        .from('prayer_notification_settings')
+        .select('prayer, notification_settings')
+        .eq('user_id', session.user.id);
+      
+      if (data && data.length > 0) {
+        const newSettings: PrayerNotificationSettings = {
+          'Fajr': { enabled: false, options: [] },
+          'Dhuhr': { enabled: false, options: [] },
+          'Asr': { enabled: false, options: [] },
+          'Maghrib': { enabled: false, options: [] },
+          'Isha': { enabled: false, options: [] },
+          'Taraweeh 1': { enabled: false, options: [] },
+          'Taraweeh 2': { enabled: false, options: [] },
+        };
+        
+        data.forEach((item: { prayer: string; notification_settings: string[] }) => {
+          const prayerName = item.prayer.charAt(0).toUpperCase() + item.prayer.slice(1);
+          const options = mapDbSettingsToOptions(item.notification_settings);
+          const isMuted = item.notification_settings.includes('Mute');
+          const hasValidOptions = options.length > 0 && !isMuted;
+          
+          if (newSettings[prayerName]) {
+            newSettings[prayerName] = {
+              enabled: hasValidOptions,
+              options: options,
+            };
+          }
+        });
+        
+        setPrayerSettings(newSettings);
+      }
+    };
+    
+    loadSettings();
+  }, [session?.user.id]);
+
+  // Auto-open modal when openPrayer is provided
+  useEffect(() => {
+    if (openPrayer) {
+      setSelectedPrayer(openPrayer);
+      setModalVisible(true);
+    }
+  }, [openPrayer]);
+
+  const handleToggle = async (prayerName: string) => {
     const currentEnabled = prayerSettings[prayerName]?.enabled;
     
     if (!currentEnabled) {
       // Opening - show modal
       setSelectedPrayer(prayerName);
       setModalVisible(true);
+    } else {
+      // Disabling - save mute to database
+      if (session?.user.id) {
+        const { data: existingSettings } = await supabase
+          .from('prayer_notification_settings')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('prayer', prayerName.toLowerCase())
+          .single();
+        
+        if (existingSettings) {
+          await supabase
+            .from('prayer_notification_settings')
+            .update({ notification_settings: ['Mute'] })
+            .eq('user_id', session.user.id)
+            .eq('prayer', prayerName.toLowerCase());
+        } else {
+          await supabase
+            .from('prayer_notification_settings')
+            .insert({
+              user_id: session.user.id,
+              prayer: prayerName.toLowerCase(),
+              notification_settings: ['Mute'],
+            });
+        }
+      }
     }
     
     // Update the toggle state
@@ -104,6 +209,7 @@ const NotificationPrayerTable = ({
       [prayerName]: {
         ...prev[prayerName],
         enabled: !currentEnabled,
+        options: !currentEnabled ? prev[prayerName].options : [],
       }
     }));
   };
@@ -150,23 +256,105 @@ const NotificationPrayerTable = ({
     setSelectedPrayer(null);
   };
 
-  const handleSave = () => {
-    // Here you would save to your backend/storage
-    console.log('Saving settings for:', selectedPrayer, prayerSettings[selectedPrayer!]);
+  const handleSave = async () => {
+    if (!selectedPrayer || !session?.user.id) {
+      handleCloseModal();
+      return;
+    }
+    
+    const options = prayerSettings[selectedPrayer].options;
+    const dbSettings = mapOptionsToDbSettings(options);
+    const finalSettings = dbSettings.length > 0 ? dbSettings : ['Mute'];
+    
+    // Check if record exists
+    const { data: existingSettings, error: fetchError } = await supabase
+      .from('prayer_notification_settings')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('prayer', selectedPrayer.toLowerCase())
+      .single();
+    
+    if (existingSettings) {
+      // Update existing record
+      const { error } = await supabase
+        .from('prayer_notification_settings')
+        .update({ notification_settings: finalSettings })
+        .eq('user_id', session.user.id)
+        .eq('prayer', selectedPrayer.toLowerCase());
+      
+      if (error) console.log('Update error:', error);
+    } else {
+      // Insert new record
+      const { error } = await supabase
+        .from('prayer_notification_settings')
+        .insert({
+          user_id: session.user.id,
+          prayer: selectedPrayer.toLowerCase(),
+          notification_settings: finalSettings,
+        });
+      
+      if (error) console.log('Insert error:', error);
+    }
+    
+    // Update local state to reflect saved options
+    const hasValidOptions = options.length > 0 && !options.includes('mute');
+    setPrayerSettings(prev => ({
+      ...prev,
+      [selectedPrayer]: {
+        enabled: hasValidOptions,
+        options: options,
+      }
+    }));
+    
     handleCloseModal();
   };
 
-  const handleApplyToAll = () => {
-    if (selectedPrayer) {
-      const currentOptions = [...prayerSettings[selectedPrayer].options];
-      setPrayerSettings({
-        'Fajr': { enabled: true, options: currentOptions },
-        'Dhuhr': { enabled: true, options: currentOptions },
-        'Asr': { enabled: true, options: currentOptions },
-        'Maghrib': { enabled: true, options: currentOptions },
-        'Isha': { enabled: true, options: currentOptions },
-      });
+  const handleApplyToAll = async () => {
+    if (!selectedPrayer || !session?.user.id) return;
+    
+    const currentOptions = [...prayerSettings[selectedPrayer].options];
+    const dbSettings = mapOptionsToDbSettings(currentOptions);
+    const finalSettings = dbSettings.length > 0 ? dbSettings : ['Mute'];
+    const hasValidOptions = currentOptions.length > 0 && !currentOptions.includes('mute');
+    
+    // Save to database for all prayers
+    const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'taraweeh 1', 'taraweeh 2'];
+    
+    for (const prayer of prayers) {
+      const { data: existingSettings } = await supabase
+        .from('prayer_notification_settings')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('prayer', prayer)
+        .single();
+      
+      if (existingSettings) {
+        await supabase
+          .from('prayer_notification_settings')
+          .update({ notification_settings: finalSettings })
+          .eq('user_id', session.user.id)
+          .eq('prayer', prayer);
+      } else {
+        await supabase
+          .from('prayer_notification_settings')
+          .insert({
+            user_id: session.user.id,
+            prayer: prayer,
+            notification_settings: finalSettings,
+          });
+      }
     }
+    
+    // Update local state
+    setPrayerSettings({
+      'Fajr': { enabled: hasValidOptions, options: currentOptions },
+      'Dhuhr': { enabled: hasValidOptions, options: currentOptions },
+      'Asr': { enabled: hasValidOptions, options: currentOptions },
+      'Maghrib': { enabled: hasValidOptions, options: currentOptions },
+      'Isha': { enabled: hasValidOptions, options: currentOptions },
+      'Taraweeh 1': { enabled: hasValidOptions, options: currentOptions },
+      'Taraweeh 2': { enabled: hasValidOptions, options: currentOptions },
+    });
   };
 
   const nextPress = () => {
@@ -276,6 +464,64 @@ const NotificationPrayerTable = ({
               );
             })
           }
+          
+          {/* Taraweeh 1 Card */}
+          <View style={styles.prayerCardOffWhite}>
+            <View style={styles.prayerCard}>
+              <Image 
+                source={require('@/assets/images/glowingTree.png')} 
+                style={styles.prayerIcon}
+                resizeMode="contain"
+              />
+              <View style={styles.contentContainer}>
+                <Text style={styles.prayerName}>Taraweeh 1</Text>
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>Athan</Text>
+                  <Text style={styles.timeValue}>--</Text>
+                </View>
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>Iqamah</Text>
+                  <Text style={styles.timeValue}>{format(FirstTaraweehTime, 'h:mma')}</Text>
+                </View>
+              </View>
+              <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                <Switch
+                  value={prayerSettings['Taraweeh 1']?.enabled || false}
+                  onValueChange={() => handleToggle('Taraweeh 1')}
+                  color="#6EE7B7"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Taraweeh 2 Card */}
+          <View style={styles.prayerCardOffWhite}>
+            <View style={styles.prayerCard}>
+              <Image 
+                source={require('@/assets/images/glowingTree.png')} 
+                style={styles.prayerIcon}
+                resizeMode="contain"
+              />
+              <View style={styles.contentContainer}>
+                <Text style={styles.prayerName}>Taraweeh 2</Text>
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>Athan</Text>
+                  <Text style={styles.timeValue}>--</Text>
+                </View>
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>Iqamah</Text>
+                  <Text style={styles.timeValue}>{format(SecondTaraweehTime, 'h:mma')}</Text>
+                </View>
+              </View>
+              <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                <Switch
+                  value={prayerSettings['Taraweeh 2']?.enabled || false}
+                  onValueChange={() => handleToggle('Taraweeh 2')}
+                  color="#6EE7B7"
+                />
+              </View>
+            </View>
+          </View>
           </ScrollView>
             {/* Jummah section moved to its own tab */}
             {/* <Text className="font-bold text-lg mt-[15%] mb-1">Taraweeh Notifications</Text>

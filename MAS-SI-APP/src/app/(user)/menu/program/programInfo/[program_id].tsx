@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '@/src/providers/AuthProvider'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
+import * as WebBrowser from 'expo-web-browser'
 import { isBefore } from 'date-fns'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -355,7 +356,7 @@ export default function ProgramInfoPage() {
           borderTopColor: '#E8ECF0',
         }}>
           <Pressable
-            onPress={() => Linking.openURL(program.paid_link || '')}
+            onPress={() => WebBrowser.openBrowserAsync(program.paid_link || '')}
             style={{
               backgroundColor: '#0D509D',
               borderRadius: 14,

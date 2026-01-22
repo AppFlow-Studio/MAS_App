@@ -2,6 +2,7 @@ import { View, Text, Pressable, Linking, Image } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ActivityIndicator } from 'react-native-paper';
+import * as WebBrowser from 'expo-web-browser';
 
 type VolunteerOpportunity = {
   id: string;
@@ -88,12 +89,7 @@ export default function VolunteerCard() {
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
           url = 'https://' + url;
         }
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else {
-          console.log('Cannot open URL:', url);
-        }
+        await WebBrowser.openBrowserAsync(url);
       } catch (err) {
         console.log('Error opening URL:', err);
       }

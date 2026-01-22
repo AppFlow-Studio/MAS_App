@@ -1,6 +1,7 @@
 import { View, Text, Dimensions, Image, ScrollView, Pressable, Linking, Platform } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Stack, router } from "expo-router"
+import * as WebBrowser from 'expo-web-browser'
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated,{ interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
@@ -139,9 +140,7 @@ const EventInfoDisplay = ({ event_img, event_speaker, event_name, event_desc, ev
                     event?.is_paid ? 
                     (
                       <Pressable onPress={() => {
-                      Linking.canOpenURL(event.paid_link).then(() => {
-                      Linking.openURL(event.paid_link);
-                      });
+                        WebBrowser.openBrowserAsync(event.paid_link);
                       }}>
                       <Button icon={() => <Icon source={"cart-variant"} size={20} color='white'/>} mode='elevated' style={{ backgroundColor : "#57BA47", marginTop : 10, width: "90%"}}><Text className='text-white'>Sign Up Now</Text></Button>
                       </Pressable>

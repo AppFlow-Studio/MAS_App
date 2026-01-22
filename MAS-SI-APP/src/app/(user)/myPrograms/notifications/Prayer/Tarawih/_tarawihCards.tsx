@@ -39,7 +39,31 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
     })
   const lowercasedTarawihName = tarawihName.toLowerCase()
    const onPress = async () => {
-    const { data : CurrentSettings , error } = await supabase.from('prayer_notification_settings').select('notification_settings').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id, ).single()
+    if (!session?.user.id) return
+    
+    const { data : CurrentSettings , error } = await supabase.from('prayer_notification_settings').select('notification_settings').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id).single()
+    
+    // If no settings exist yet, create a new record
+    if (error || !CurrentSettings) {
+      // If clicking Mute, create with Mute
+      if (index === 2) {
+        const { error: insertError } = await supabase.from('prayer_notification_settings').insert({
+          user_id: session.user.id,
+          prayer: lowercasedTarawihName,
+          notification_settings: ['Mute']
+        })
+        if (insertError) console.log('Insert error:', insertError)
+        return
+      }
+      // Otherwise create with the selected notification option
+      const { error: insertError } = await supabase.from('prayer_notification_settings').insert({
+        user_id: session.user.id,
+        prayer: lowercasedTarawihName,
+        notification_settings: [NotificationArray[index]]
+      })
+      if (insertError) console.log('Insert error:', insertError)
+      return
+    }
     
     if( CurrentSettings ){
         const settings = CurrentSettings.notification_settings
@@ -137,7 +161,9 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
    
 
    const getSettings = async () => {
-    const { data , error } = await supabase.from('prayer_notification_settings').select('notification_settings').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id, ).single()
+    if (!session?.user.id) return
+    
+    const { data , error } = await supabase.from('prayer_notification_settings').select('notification_settings').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id).single()
     if( error ) {
       return
     }
@@ -149,7 +175,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
           }
           return prevSelected; 
         });
-        }
+      }
     }
    }
     const handlePress = () => {
@@ -192,7 +218,7 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
 
   useEffect(() => {
     getSettings()
-  }, [])
+  }, [session?.user.id, lowercasedTarawihName, index])
   return (
     <Animated.View style={[{ height : height, width : width, borderRadius : 20 }, cardStyle, {marginTop : index === 0 ? 10: 0}, {marginBottom : index === 5 ? 10 : 0}]}>
         <Pressable onPress={handlePress} style={[{ height : height, width : width, flexDirection : "row", alignItems : "center", justifyContent : "center", backgroundColor : 'white'  }]}>

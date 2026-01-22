@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, Image, Dimensions, Animated, FlatList } from 'react-native'
+import { View, Text, ScrollView, Image, Dimensions, Animated, FlatList, Linking, Platform, Pressable } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/src/lib/supabase'
 import { Extrapolation, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { BlurView } from 'expo-blur'
+import { Icon } from 'react-native-paper'
 function formatPhoneNumber( phoneNumberString : number ) {
   var cleaned = ('' + phoneNumberString).replace(/\D/g, '');
   var match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
@@ -11,6 +12,32 @@ function formatPhoneNumber( phoneNumberString : number ) {
   }
   return null;
 }
+
+// Helper functions for contact actions
+const handleCall = (phoneNumber: number) => {
+  const cleaned = ('' + phoneNumber).replace(/\D/g, '');
+  Linking.openURL(`tel:${cleaned}`);
+};
+
+const handleSMS = (phoneNumber: number) => {
+  const cleaned = ('' + phoneNumber).replace(/\D/g, '');
+  Linking.openURL(`sms:${cleaned}`);
+};
+
+const handleEmail = (email: string) => {
+  Linking.openURL(`mailto:${email}`);
+};
+
+const handleOpenMaps = (address: string) => {
+  const encodedAddress = encodeURIComponent(address);
+  const url = Platform.select({
+    ios: `maps://maps.apple.com/?q=${encodedAddress}`,
+    android: `geo:0,0?q=${encodedAddress}`,
+  });
+  if (url) {
+    Linking.openURL(url);
+  }
+};
 const ApprovedAds = ( {setRenderedFalse, setRenderedTrue} : { setRenderedFalse : ( ) => void, setRenderedTrue : ( ) => void } ) => {
   const [ ads, setAds ] = useState<any[]>([])
   const [ index, setIndex ] = useState(0)
@@ -132,38 +159,111 @@ const handleScroll = (event : any) =>{
   if ( ads.length < 1 ){
     return
   } 
+
+  // Action button component
+  const ActionButton = ({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) => (
+    <Pressable onPress={onPress} className='items-center'>
+      <View style={{ 
+        width: 48, 
+        height: 48, 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: 'white',
+        borderRadius: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+        elevation: 10
+      }}>
+        <Icon source={icon} size={22} color='#1f2937' />
+      </View>
+      <Text className='text-gray-800 text-xs font-semibold mt-1'>{label}</Text>
+    </Pressable>
+  );
+
   return (
-      <View className='h-[300] bg-gray-300 p-1 self-center mt-3 relative' style={{ borderRadius : 20,  width : listItemWidth * .95 }}>
-        <BlurView className=' bg-white' style={{ borderRadius : 19,overflow : 'hidden', width : listItemWidth * .93 }} intensity={80}>
+    <View style={{ 
+      width: '100%', 
+      alignItems: 'center',
+      marginTop: 12
+    }}>
+      <View style={{ 
+        width: listItemWidth * .95,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+        overflow: 'hidden'
+      }}>
         <Animated.FlatList 
-            className='h-[100%] w-full'
             ref={flatListRef}
             horizontal
             onScroll={(event) =>{
               handleScroll(event);
             }}
-            snapToInterval={listItemWidth * .93}
+            snapToInterval={listItemWidth * .95}
             scrollEventThrottle={16}
             decelerationRate={0.6}
             disableIntervalMomentum={true}
             disableScrollViewPanResponder={true}
             snapToAlignment={"start"}
             showsHorizontalScrollIndicator={false}
-            getItemLayout={getItemLayout}
+            getItemLayout={(data, index) => ({
+              length: listItemWidth * .95,
+              offset: (listItemWidth * .95) * index,
+              index: index
+            })}
             data={ads}           
             renderItem={({item}) => (
-              <View className='h-[100%] flex flex-col bg-gray-500' style={{  borderRadius : 19, overflow : 'hidden', width : listItemWidth * .93}}>
-                  <Image source={{ uri : item.business_flyer_img}} style={{  width : '100%', height : 250, objectFit : 'fill' }}/>
-                  <View className='px-2 mt-1'>
-                    <Text className='text-white text-[12px]' numberOfLines={1} adjustsFontSizeToFit><Text className='font-bold'>{item.business_name}</Text> {item.business_address}</Text>
-                    <Text className='text-white text-[12px]' numberOfLines={1} adjustsFontSizeToFit>Contacts: {item.business_email} {formatPhoneNumber(item.business_phone_number)}</Text>
+              <View className='flex flex-col bg-white' style={{ borderRadius: 20, overflow: 'hidden', width: listItemWidth * .95 }}>
+                  {/* Flyer Image */}
+                  <Image source={{ uri : item.business_flyer_img}} style={{ width: '100%', height: 250, objectFit: 'fill' }}/>
+                  
+                  {/* Bottom Section */}
+                  <View style={{ backgroundColor: '#f3f4f6', paddingBottom: 16 }}>
+                    {/* Action Buttons */}
+                    <View className='flex-row justify-around px-4 py-4'>
+                      <ActionButton 
+                        icon="phone" 
+                        label="Call" 
+                        onPress={() => handleCall(item.business_phone_number)} 
+                      />
+                      <ActionButton 
+                        icon="message-text" 
+                        label="SMS" 
+                        onPress={() => handleSMS(item.business_phone_number)} 
+                      />
+                      <ActionButton 
+                        icon="email" 
+                        label="Email" 
+                        onPress={() => handleEmail(item.business_email)} 
+                      />
+                    </View>
+                    
+                    {/* Address Card */}
+                    <Pressable 
+                      onPress={() => handleOpenMaps(item.business_address)}
+                      className='mx-4 bg-white rounded-xl flex-row items-center p-3'
+                    >
+                      <View className='bg-gray-800 rounded-full p-2 mr-3'>
+                        <Icon source="map-marker" size={20} color='white' />
+                      </View>
+                      <View className='flex-1'>
+                        <Text className='text-gray-900 font-semibold text-sm' numberOfLines={1}>{item.business_address}</Text>
+                        <Text className='text-gray-500 text-xs'>OPEN IN MAPS</Text>
+                      </View>
+                      <Icon source="chevron-right" size={24} color='#9CA3AF' />
+                    </Pressable>
                   </View>
               </View>
             )}
         />
-        </BlurView>
-
       </View>
+    </View>
   )
 }
 

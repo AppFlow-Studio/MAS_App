@@ -44,7 +44,32 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
   const { session } = useAuth()
   const scale = useSharedValue(1)
   const onPress = async () => {
-    const { data : currentSettings, error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id).eq('prayer', prayerName.toLowerCase() ).single()
+    if (!session?.user.id) return
+    
+    const { data : currentSettings, error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session?.user.id).eq('prayer', prayerName.toLowerCase()).single()
+    
+    // If no settings exist yet (error code PGRST116 means no rows), create a new record
+    if (error || !currentSettings) {
+      // If clicking Mute, create with Mute
+      if (index === 3) {
+        const { error: insertError } = await supabase.from('prayer_notification_settings').insert({
+          user_id: session.user.id,
+          prayer: prayerName.toLowerCase(),
+          notification_settings: ['Mute']
+        })
+        if (insertError) console.log('Insert error:', insertError)
+        return
+      }
+      // Otherwise create with the selected notification option
+      const { error: insertError } = await supabase.from('prayer_notification_settings').insert({
+        user_id: session.user.id,
+        prayer: prayerName.toLowerCase(),
+        notification_settings: [NotificationArray[index]]
+      })
+      if (insertError) console.log('Insert error:', insertError)
+      return
+    }
+    
     if(currentSettings){
       const settings = currentSettings.notification_settings
       // Disable setting if it exists 
@@ -245,7 +270,9 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
   })
 
   const getSettings = async () => {
-    const { data , error } = await supabase.from('prayer_notification_settings').select('notification_settings').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id, ).single()
+    if (!session?.user.id) return
+    
+    const { data , error } = await supabase.from('prayer_notification_settings').select('notification_settings').eq('prayer', prayerName.toLowerCase()).eq('user_id', session?.user.id).single()
     if( error ) {
       return
     }
@@ -257,12 +284,12 @@ const NotificationCard = ({height , width, index, scrollY,item, setSelectedNotif
           }
           return prevSelected; 
         });
-                }
+      }
     }
   }
   useEffect(() => {
     getSettings()
-  },[])
+  }, [session?.user.id, prayerName, index])
   const CardInfo = [
     { header : 'Notify at Prayer Time:' , subText : "Get notified exactly when it's time to pray"},
     { header : 'Notify at Iqamah Time:' , subText : "Get notified when it's time to gather at the masjid"},

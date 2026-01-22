@@ -262,7 +262,7 @@ async function signUpWithEmail() {
       <SignInAnonModal 
         visible={guestAuthModalVisible} 
         setVisible={() => setGuestAuthModalVisible(false)}
-        dismissable={false}
+        dismissable={true}
         showLanding={true}
         onSignUpPress={() => {
           setGuestAuthModalVisible(false);

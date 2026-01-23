@@ -28,6 +28,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { supabase } from '@/src/lib/supabase';
 import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingProvider';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { userSignedInThisSession } from '../(auth)/_layout';
 
 // const toastConfig = {
 //   addProgramToNotificationsToast: ({ props }: any) => (
@@ -254,9 +255,22 @@ const UserLayoutContent = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
 
-  // Video intro state
-  const [showVideoIntro, setShowVideoIntro] = useState(true);
+  // Video intro state - only show if user was already signed in on app startup (not fresh sign-in)
+  // userSignedInThisSession is true if user went through auth flow (signed in fresh)
+  const [showVideoIntro, setShowVideoIntro] = useState(false);
   const videoOpacity = useSharedValue(1);
+  const hasCheckedInitialSession = useRef(false);
+
+  // Only show video intro if user was already signed in when app started (not a fresh sign-in)
+  useEffect(() => {
+    if (!authLoading && !hasCheckedInitialSession.current) {
+      hasCheckedInitialSession.current = true;
+      // Only show video if session exists AND user didn't just sign in from auth flow
+      if (session && !userSignedInThisSession) {
+        setShowVideoIntro(true);
+      }
+    }
+  }, [authLoading, session]);
 
   // Check for incomplete items in More screen (profile + preferences)
   useEffect(() => {
@@ -390,23 +404,23 @@ const UserLayoutContent = () => {
     checkOnboarding();
   }, [session?.user?.id, authLoading]);
 
-  // Show create profile popup for guest/anonymous users
-  useEffect(() => {
-    const showGuestPrompt = async () => {
-      if (!session?.user || authLoading) return;
-      
-      // Only show for anonymous users
-      if (session.user.is_anonymous) {
-        // Delay to let the app load first
-        setTimeout(() => {
-          setShowGuestPopup(true);
-          guestPopupRef.current?.present();
-        }, 1500);
-      }
-    };
-
-    showGuestPrompt();
-  }, [session?.user?.id, authLoading]);
+  // Show create profile popup for guest/anonymous users - DISABLED
+  // useEffect(() => {
+  //   const showGuestPrompt = async () => {
+  //     if (!session?.user || authLoading) return;
+  //     
+  //     // Only show for anonymous users
+  //     if (session.user.is_anonymous) {
+  //       // Delay to let the app load first
+  //       setTimeout(() => {
+  //         setShowGuestPopup(true);
+  //         guestPopupRef.current?.present();
+  //       }, 17000);
+  //     }
+  //   };
+  //
+  //   showGuestPrompt();
+  // }, [session?.user?.id, authLoading]);
 
   const handleGuestPopupDismiss = () => {
     setShowGuestPopup(false);
@@ -513,13 +527,13 @@ const UserLayoutContent = () => {
         />
       )}
 
-      {/* Create Profile popup for guest users */}
-      {showGuestPopup && (
+      {/* Create Profile popup for guest users - DISABLED */}
+      {/* {showGuestPopup && (
         <CreateProfilePopup
           ref={guestPopupRef}
           onDismiss={handleGuestPopupDismiss}
         />
-      )}
+      )} */}
 
       {/* Enhanced Badge indicator with notification count */}
       {notificationCount > 0 && (

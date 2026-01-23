@@ -1094,10 +1094,10 @@ const jummahStyles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#0053A5',
-    borderRadius: 32,
+    borderRadius: 40,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 30,
+    paddingBottom: 50,
     maxHeight: '70%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },

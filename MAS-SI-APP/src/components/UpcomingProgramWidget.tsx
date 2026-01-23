@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ImageBackground, ScrollView, Animated, Image, Dimensions, Linking, PanResponder, LayoutAnimation, Platform, UIManager, Modal as RNModal } from 'react-native';
+import { View, Text, Pressable, ImageBackground, ScrollView, Animated, Image, Dimensions, PanResponder, LayoutAnimation, Platform, UIManager, Modal as RNModal } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import ReAnimated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -1640,13 +1641,12 @@ export default function UpcomingProgramWidget() {
                       {((upcomingItem.type === 'program' && programData && programData.program_is_paid) ||
                         (upcomingItem.type === 'event' && eventData && eventData.is_paid)) && (
                         <Pressable
-                          onPress={() => {
+                          onPress={async () => {
                             const paidLink = (upcomingItem.type === 'program' && programData?.paid_link) ||
                               (upcomingItem.type === 'event' && eventData?.paid_link);
                             if (paidLink) {
-                              Linking.canOpenURL(paidLink).then(() => {
-                                Linking.openURL(paidLink);
-                              });
+                              closeModal(true);
+                              await WebBrowser.openBrowserAsync(paidLink);
                             }
                           }}
                           style={{
@@ -1725,7 +1725,7 @@ export default function UpcomingProgramWidget() {
                   style={{ width: '100%', maxWidth: '100%' }}
                 >
                   <View style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                    {toastConfig[modalToast.type as keyof typeof toastConfig]?.({ props: modalToast.props })}
+                    {toastConfig[modalToast.type as keyof typeof toastConfig]?.({ props: modalToast.props } as any)}
                   </View>
                 </Pressable>
               </View>

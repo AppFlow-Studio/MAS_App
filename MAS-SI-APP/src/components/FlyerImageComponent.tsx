@@ -1,4 +1,5 @@
-import { View, Text, Pressable, Image, Dimensions, StatusBar, Linking, ImageBackground, FlatList } from 'react-native'
+import { View, Text, Pressable, Image, Dimensions, StatusBar, ImageBackground, FlatList } from 'react-native'
+import * as WebBrowser from 'expo-web-browser'
 import { ScrollView } from 'react-native-gesture-handler'
 import { Animated, PanResponder } from 'react-native'
 import React, { useState, useRef, useCallback, useEffect } from 'react'
@@ -1365,12 +1366,11 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                     <View style={{ flexDirection: 'row', gap: 12 }}>
                                         {(program?.program_is_paid || item.program_is_paid) && (
                                             <Pressable
-                                                onPress={() => {
+                                                onPress={async () => {
                                                     const paidLink = program?.paid_link || item.paid_link;
                                                     if (paidLink) {
-                                                        Linking.canOpenURL(paidLink).then(() => {
-                                                            Linking.openURL(paidLink);
-                                                        });
+                                                        closeModal(true);
+                                                        await WebBrowser.openBrowserAsync(paidLink);
                                                     }
                                                 }}
                                                 style={{
@@ -1551,7 +1551,7 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                     style={{ width: '100%', maxWidth: '100%' }}
                                 >
                                     <View style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                                        {toastConfig[modalToast.type as keyof typeof toastConfig]?.({ props: modalToast.props })}
+                                        {toastConfig[modalToast.type as keyof typeof toastConfig]?.({ props: modalToast.props } as any)}
                                     </View>
                                 </Pressable>
                             </View>

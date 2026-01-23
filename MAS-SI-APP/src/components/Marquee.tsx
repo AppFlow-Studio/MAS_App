@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, StyleSheet, View, Image, Pressable, Text, Linking } from 'react-native';
+import { Button, StyleSheet, View, Image, Pressable, Text } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import Animated, {
   clamp,
   useAnimatedStyle,
@@ -156,9 +157,11 @@ function IconsMarquee() {
           <View className='flex flex-row gap-8'>
             {
                 MasjidPlatforms.map((item, index) => {
-                    const onPress = () => Linking.canOpenURL(item.link).then(() => {
-                         Linking.openURL(item.link);
-                    });
+                    const onPress = async () => {
+                        if (item.link) {
+                            await WebBrowser.openBrowserAsync(item.link);
+                        }
+                    };
                     return (
                     <Pressable 
                         key={index}

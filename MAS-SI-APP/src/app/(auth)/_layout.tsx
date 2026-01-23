@@ -3,6 +3,9 @@ import { useAuth } from '@/src/providers/AuthProvider';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/src/lib/supabase';
 
+// Track if user went through auth flow (signed in fresh, not loaded from storage)
+export let userSignedInThisSession = false;
+
 const UserAuthStack = () => {
   const { session, loading } = useAuth(); // ✅ loading must come from your AuthProvider
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
@@ -46,6 +49,9 @@ const UserAuthStack = () => {
     }
     return <Redirect href="/(user)" />;
   }
+
+  // User is in auth flow (no session) - mark that they signed in this session
+  userSignedInThisSession = true;
 
   return <Stack />;
 };

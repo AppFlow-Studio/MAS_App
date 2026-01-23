@@ -1,4 +1,5 @@
-import { View, Text, Pressable, Image, ScrollView, Animated, Dimensions, Linking, PanResponder } from 'react-native'
+import { View, Text, Pressable, Image, ScrollView, Animated, Dimensions, PanResponder } from 'react-native'
+import * as WebBrowser from 'expo-web-browser'
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'expo-router'
 import { FlyerSkeleton } from './FlyerSkeleton'
@@ -934,12 +935,11 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                     <View style={{ flexDirection: 'row', gap: 12 }}>
                                         {(event?.is_paid || item.is_paid) && (
                                             <Pressable
-                                                onPress={() => {
+                                                onPress={async () => {
                                                     const paidLink = event?.paid_link || item.paid_link;
                                                     if (paidLink) {
-                                                        Linking.canOpenURL(paidLink).then(() => {
-                                                            Linking.openURL(paidLink);
-                                                        });
+                                                        setModalVisible(false);
+                                                        await WebBrowser.openBrowserAsync(paidLink);
                                                     }
                                                 }}
                                                 style={{

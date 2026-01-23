@@ -1,5 +1,6 @@
-import { View, Text, Linking, Pressable, FlatList } from 'react-native'
+import { View, Text, Pressable, FlatList } from 'react-native'
 import React from 'react'
+import * as WebBrowser from 'expo-web-browser'
 import X from '@/src/components/Icons/X';
 import WhatsApp from '@/src/components/Icons/Whatsapp';
 import Instagram from '@/src/components/Icons/Instagram';
@@ -8,12 +9,12 @@ import Meta from '@/src/components/Icons/Meta';
 import YouTube from '@/src/components/Icons/Youtube';
 export default function SocialPlatforms() {
     const MasjidPlatforms : { platform : any, link : string, name : string, bg: string }[]= [
-        { platform : <TikTok />, link : '', name : 'TikTok', bg : '#000' },
-        { platform : <YouTube />, link : '', name : 'YouTube', bg : '#FFF' },
-        { platform : <WhatsApp />, link : '', name : 'WhatsApp', bg : '#00E676' },
-        { platform : <Meta />, link : '' , name : 'Meta', bg : 'white'},
-        { platform : <X />, link : '', name : 'X' , bg : '#000'},
-        { platform : <Instagram />, link : '', name : 'Instagram' , bg : 'bg-custom-gradient'},
+        { platform : <TikTok />, link : 'https://www.tiktok.com/@masnewyork', name : 'TikTok', bg : '#000' },
+        { platform : <YouTube />, link : 'https://www.youtube.com/@massicenter/featured', name : 'YouTube', bg : '#FFF' },
+        { platform : <WhatsApp />, link : 'https://chat.whatsapp.com/EBSOqkjWKeQ4rbJ7x1Vib7', name : 'WhatsApp', bg : '#00E676' },
+        { platform : <Meta />, link : 'https://www.facebook.com/MASSICenter' , name : 'Meta', bg : 'white'},
+        { platform : <X />, link : 'https://x.com/massicenter', name : 'X' , bg : '#000'},
+        { platform : <Instagram />, link : 'https://www.instagram.com/massicenter', name : 'Instagram' , bg : 'bg-custom-gradient'},
     ]
   return (
     <View className='w-[100%] flex-1 p-2 pb-10 '>
@@ -23,7 +24,11 @@ export default function SocialPlatforms() {
         renderItem={({item}) => (
             <View className='flex-col flex'>
             <Pressable
-              onPress={() => console.log(`Navigating to: ${item.link}`)}
+              onPress={async () => {
+                if (item.link) {
+                  await WebBrowser.openBrowserAsync(item.link);
+                }
+              }}
               className=' w-[100] h-[100] rounded-full items-center  justify-center p-2'
               style={{ backgroundColor : item.bg }}
             >

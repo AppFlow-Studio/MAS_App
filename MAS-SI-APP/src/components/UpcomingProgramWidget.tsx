@@ -750,8 +750,16 @@ export default function UpcomingProgramWidget() {
 
       setItemInNotifications(false);
     } else {
-      // Show notification options modal instead of adding directly
-      openNotificationOptions();
+      // Close the description modal first if it's open, then show notification options
+      if (modalVisible) {
+        closeModal(true); // Skip animation for immediate close
+        // Small delay to ensure modal is closed before opening notification options
+        setTimeout(() => {
+          openNotificationOptions();
+        }, 100);
+      } else {
+        openNotificationOptions();
+      }
     }
   };
 

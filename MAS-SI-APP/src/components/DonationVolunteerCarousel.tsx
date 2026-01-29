@@ -1,10 +1,11 @@
 import { View, Text, FlatList, Dimensions, Image, Pressable, Linking } from 'react-native';
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { supabase } from '../lib/supabase';
-import { ActivityIndicator } from 'react-native-paper';
+import { ActivityIndicator, Icon } from 'react-native-paper';
 import { FlyerSkeleton } from './FlyerSkeleton';
 import Animated from 'react-native-reanimated';
 import * as WebBrowser from 'expo-web-browser';
+import { useRouter } from 'expo-router';
 
 type DonationCategory = {
   project_id: string;
@@ -24,27 +25,36 @@ type VolunteerOpportunity = {
   type: 'volunteer';
 };
 
-type CardItem = DonationCategory | VolunteerOpportunity;
+type AdvertiseCard = {
+  id: string;
+  type: 'advertise';
+};
+
+type CardItem = DonationCategory | VolunteerOpportunity | AdvertiseCard;
 
 export type DonationVolunteerCarouselRef = {
   scrollToDonation: () => void;
   scrollToVolunteer: () => void;
+  scrollToAdvertise: () => void;
 };
 
 type DonationVolunteerCarouselProps = {
   onDonationPress?: () => void;
+  onIndexChange?: (index: number) => void;
 };
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, DonationVolunteerCarouselProps>(({ onDonationPress }, ref) => {
+const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, DonationVolunteerCarouselProps>(({ onDonationPress, onIndexChange }, ref) => {
   const windowWidth = Dimensions.get("window").width;
   const [items, setItems] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
   const [scrollX, setScrollX] = useState(0);
+  const currentIndexRef = useRef<number>(0);
   const donationIndexRef = useRef<number>(-1);
   const volunteerIndexRef = useRef<number>(-1);
+  const advertiseIndexRef = useRef<number>(-1);
 
   const fetchData = async () => {
     try {
@@ -95,6 +105,13 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
         });
         volunteerIndexRef.current = combinedItems.length - 1;
       }
+
+      // Add advertise your business card
+      combinedItems.push({
+        id: 'advertise',
+        type: 'advertise' as const,
+      });
+      advertiseIndexRef.current = combinedItems.length - 1;
 
       setItems(combinedItems);
     } catch (error) {
@@ -159,7 +176,15 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
   const cardWidth = windowWidth - (sideMargin * 2); // Card fills screen minus margins
 
   const handleScroll = (event: any) => {
-    setScrollX(event.nativeEvent.contentOffset.x);
+    const offsetX = event.nativeEvent.contentOffset.x;
+    setScrollX(offsetX);
+    
+    // Calculate the current index based on scroll position
+    const newIndex = Math.round(offsetX / itemWidth);
+    if (newIndex !== currentIndexRef.current && newIndex >= 0 && newIndex < items.length) {
+      currentIndexRef.current = newIndex;
+      onIndexChange?.(newIndex);
+    }
   };
 
   const itemWidth = cardWidth + sideMargin; // Card width + gap to next card
@@ -184,6 +209,14 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
       if (volunteerIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
         flatListRef.current.scrollToOffset({
           offset: itemWidth,
+          animated: true,
+        });
+      }
+    },
+    scrollToAdvertise: () => {
+      if (advertiseIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
+        flatListRef.current.scrollToOffset({
+          offset: itemWidth * 2,
           animated: true,
         });
       }
@@ -246,9 +279,101 @@ type CardItemProps = {
 
 function CardItem({ item, cardWidth, spacing, isFirst, onDonationPress }: CardItemProps) {
   const [imageReady, setImageReady] = useState(false);
+  const router = useRouter();
 
   // Each card has right margin for spacing, first card starts at container padding
   const marginRight = spacing;
+
+  if (item.type === 'advertise') {
+    return (
+      <View style={{ width: cardWidth, marginRight }}>
+        <Pressable 
+          style={{ width: '100%', alignItems: 'flex-start' }}
+          onPress={() => router.push('/more/BusinessAds')}
+        >
+          <View
+            style={{
+              width: '100%',
+              height: 200,
+              shadowColor: 'black',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6,
+              borderRadius: 20,
+              elevation: 8,
+              backgroundColor: '#1F2937',
+              padding: 20,
+              justifyContent: 'space-between',
+            }}
+          >
+            {/* Top row: Megaphone icon and price badge */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              {/* Megaphone icon container */}
+              <View
+                style={{
+                  backgroundColor: '#374151',
+                  borderRadius: 16,
+                  width: 56,
+                  height: 56,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Icon source="bullhorn" size={28} color="#FFFFFF" />
+              </View>
+              
+              {/* Price badge */}
+              <View
+                style={{
+                  backgroundColor: '#F3F4F6',
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                }}
+              >
+                <Text style={{ color: '#1F2937', fontSize: 18, fontWeight: 'bold' }}>$50/mo</Text>
+              </View>
+            </View>
+
+            {/* Bottom content: Title, subtitle, and arrow */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 4 }}>
+                  Advertise Your
+                </Text>
+                <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>
+                  Business
+                </Text>
+                <Text style={{ color: '#9CA3AF', fontSize: 14 }}>
+                  Reach 2000+ local community members
+                </Text>
+              </View>
+              
+              {/* Arrow button */}
+              <View
+                style={{
+                  backgroundColor: '#374151',
+                  borderRadius: 24,
+                  width: 48,
+                  height: 48,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Icon source="arrow-right" size={24} color="#FFFFFF" />
+              </View>
+            </View>
+          </View>
+          <Text
+            className="mt-3 font-bold"
+            numberOfLines={2}
+            style={{ color: '#000000', width: '100%', textAlign: 'left', marginBottom: 4 }}
+          >
+            Advertise Your Business
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   if (item.type === 'donation') {
     const donation = item as DonationCategory;

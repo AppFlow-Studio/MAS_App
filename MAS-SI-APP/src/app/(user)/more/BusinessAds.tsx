@@ -42,6 +42,8 @@ const DURATION_OPTIONS = [
     { value: '1 Year', price: '$480', priceInCents: 48000, description: 'Best value - Save 20%' },
 ]
 
+const ONBOARDING_FEE_CENTS = 10000 // $100 onboarding fee for first-time advertisers
+
 const TOTAL_STEPS = 6
 
 const STEP_CONFIG = [
@@ -205,6 +207,40 @@ const BusinessAds = () => {
     const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null)
     const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false)
     const [saveCardForFuture, setSaveCardForFuture] = useState(false)
+    const [isFirstSubmission, setIsFirstSubmission] = useState(true)
+    const [isCheckingFirstSubmission, setIsCheckingFirstSubmission] = useState(true)
+
+    // Check if user has previous submissions (for onboarding fee)
+    useEffect(() => {
+        const checkFirstSubmission = async () => {
+            if (!session?.user.id) {
+                setIsCheckingFirstSubmission(false)
+                return
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('business_ads_submissions')
+                    .select('id')
+                    .eq('user_id', session.user.id)
+                    .limit(1)
+                
+                if (error) {
+                    console.log('Error checking submissions:', error)
+                    setIsFirstSubmission(true)
+                } else {
+                    setIsFirstSubmission(!data || data.length === 0)
+                }
+            } catch (error) {
+                console.log('Error checking submissions:', error)
+                setIsFirstSubmission(true)
+            } finally {
+                setIsCheckingFirstSubmission(false)
+            }
+        }
+        
+        checkFirstSubmission()
+    }, [session?.user.id])
 
     // Load saved cards on mount
     useEffect(() => {
@@ -263,6 +299,18 @@ const BusinessAds = () => {
     // Watch form values for live preview
     const businessValues = businessMethods.watch()
     const personalValues = personalMethods.watch()
+
+    // Calculate total amount including onboarding fee if first submission
+    const getTotalAmount = () => {
+        const durationOption = DURATION_OPTIONS.find(d => d.value === selectedDuration)
+        if (!durationOption) return { total: 0, adPrice: 0, onboardingFee: 0 }
+        
+        const adPrice = durationOption.priceInCents
+        const onboardingFee = isFirstSubmission ? ONBOARDING_FEE_CENTS : 0
+        const total = adPrice + onboardingFee
+        
+        return { total, adPrice, onboardingFee }
+    }
 
     const onSelectImage = async () => {
         const options: ImagePicker.ImagePickerOptions = {
@@ -354,6 +402,8 @@ const BusinessAds = () => {
             return
         }
 
+        const { total: totalAmountCents } = getTotalAmount()
+
         setIsPaymentProcessing(true)
         
         try {
@@ -361,7 +411,7 @@ const BusinessAds = () => {
 
             // If a saved card is selected, charge it directly
             if (selectedSavedCard) {
-                const result = await chargeWithSavedCard(selectedSavedCard, durationOption.priceInCents)
+                const result = await chargeWithSavedCard(selectedSavedCard, totalAmountCents)
                 
                 if (result.success) {
                     success = true
@@ -381,7 +431,7 @@ const BusinessAds = () => {
             } else {
                 // Use payment sheet for new card
                 // Pass saveCardForFuture to determine if card should be saved
-                const paymentIntent = await setupStripePaymentSheet(durationOption.priceInCents, saveCardForFuture)
+                const paymentIntent = await setupStripePaymentSheet(totalAmountCents, saveCardForFuture)
                 
                 if (!paymentIntent) {
                     Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.')
@@ -1014,15 +1064,39 @@ const BusinessAds = () => {
                     </Text>
                     <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Ad Duration</Text>
-                            <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }}>{selectedDuration}</Text>
+                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Ad Duration ({selectedDuration})</Text>
+                            <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }}>{durationOption?.price}</Text>
                         </View>
+                        {isFirstSubmission && (
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 14, color: '#6B7280' }}>One-time Onboarding Fee</Text>
+                                    <View style={{ 
+                                        backgroundColor: '#DBEAFE', 
+                                        paddingHorizontal: 6, 
+                                        paddingVertical: 2, 
+                                        borderRadius: 4, 
+                                        marginLeft: 8 
+                                    }}>
+                                        <Text style={{ fontSize: 10, color: '#1D4ED8', fontWeight: '600' }}>NEW</Text>
+                                    </View>
+                                </View>
+                                <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }}>$100</Text>
+                            </View>
+                        )}
                         <View style={{ height: 1, backgroundColor: '#E5E7EB', marginVertical: 12 }} />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <Text style={{ fontSize: 16, color: '#111827', fontWeight: '600' }}>Total</Text>
-                            <Text style={{ fontSize: 20, color: '#111827', fontWeight: '700' }}>{durationOption?.price}</Text>
+                            <Text style={{ fontSize: 20, color: '#111827', fontWeight: '700' }}>
+                                ${(getTotalAmount().total / 100).toFixed(0)}
+                            </Text>
                         </View>
                     </View>
+                    {isFirstSubmission && (
+                        <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 8, fontStyle: 'italic' }}>
+                            * The onboarding fee is a one-time charge for new advertisers and won't apply to future ads.
+                        </Text>
+                    )}
                 </View>
 
                 {/* Saved Cards Section */}
@@ -1268,7 +1342,7 @@ const BusinessAds = () => {
                     ) : (
                         <>
                             <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF', marginRight: 8 }}>
-                                {isReviewStep ? `Pay ${DURATION_OPTIONS.find(d => d.value === selectedDuration)?.price || ''}` : currentStep === 0 ? 'Start Application' : 'Continue'}
+                                {isReviewStep ? `Pay $${(getTotalAmount().total / 100).toFixed(0)}` : currentStep === 0 ? 'Start Application' : 'Continue'}
                             </Text>
                             <Icon source={isReviewStep ? "credit-card-outline" : "arrow-right"} size={20} color="#FFFFFF" />
                         </>

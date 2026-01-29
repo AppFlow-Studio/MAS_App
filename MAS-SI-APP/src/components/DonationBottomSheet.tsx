@@ -24,10 +24,10 @@ import * as Haptics from 'expo-haptics';
 import { fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod } from '@/src/lib/StripePaySheet';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLLAPSED_HEIGHT = 420;
-const EXPANDED_HEIGHT = 570;
-const PAYMENT_HEIGHT = 520;
-const SAVED_CARDS_HEIGHT = 470;
+const COLLAPSED_HEIGHT = 340;
+const EXPANDED_HEIGHT = 540;
+const PAYMENT_HEIGHT = 560;
+const SAVED_CARDS_HEIGHT = 450;
 
 const PRESET_AMOUNTS = [25, 50, 100];
 const CUSTOM_PRESET_AMOUNTS = [10, 50, 100];
@@ -202,26 +202,9 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
       console.log('Edge function response:', JSON.stringify(data, null, 2));
       console.log('Edge function error:', error);
 
-      if (error) {
-        // Try to get the actual error message from the response
-        let errorMessage = 'Failed to initialize payment. Please try again.';
-        try {
-          const errorBody = await error.context?.json?.();
-          if (errorBody?.error) {
-            errorMessage = errorBody.error;
-          }
-        } catch (e) {
-          console.log('Could not parse error body:', e);
-        }
-        console.log('Payment intent error:', error, 'message:', errorMessage);
-        Alert.alert('Payment Error', errorMessage);
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!data?.paymentIntent) {
-        console.log('Missing paymentIntent in response:', data);
-        Alert.alert('Payment Error', data?.error || 'Failed to initialize payment. Please try again.');
+      if (error || !data?.paymentIntent) {
+        console.log('Payment intent error:', error || data);
+        Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.');
         setIsProcessing(false);
         return;
       }
@@ -354,6 +337,25 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
     });
     setTimeout(() => {
       setViewState('savedCards');
+      savedCardsContentOpacity.value = withTiming(1, { duration: 200 });
+    }, 150);
+  };
+
+  // Show saved cards from payment view
+  const handleShowSavedCardsFromPayment = () => {
+    if (savedCards.length === 0) return;
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    paymentContentOpacity.value = withTiming(0, { duration: 150 });
+    sheetHeight.value = withSpring(SAVED_CARDS_HEIGHT, { 
+      damping: 20, 
+      stiffness: 150,
+      mass: 0.8,
+    });
+    setTimeout(() => {
+      setViewState('savedCards');
+      setPaymentIntentClientSecret(null);
+      setCardComplete(false);
       savedCardsContentOpacity.value = withTiming(1, { duration: 200 });
     }, 150);
   };
@@ -606,20 +608,6 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 <RNText style={styles.customLinkText}>Enter custom amount</RNText>
               </Pressable>
 
-              {/* Save Card Checkbox */}
-              <Pressable 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSaveCardForFuture(!saveCardForFuture);
-                }}
-                style={styles.saveCardRow}
-              >
-                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
-                  {saveCardForFuture && <Icon source="check" size={14} color="#111827" />}
-                </View>
-                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
-              </Pressable>
-
               {/* Pay Button */}
               <Pressable
                 style={[styles.donateButton, isProcessing && styles.donateButtonDisabled]}
@@ -631,15 +619,6 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 ) : (
                   <RNText style={styles.donateButtonText}>Donate ${selectedAmount}</RNText>
                 )}
-              </Pressable>
-
-              {/* Pay with Card Option */}
-              <Pressable onPress={savedCards.length > 0 ? handleShowSavedCards : handlePayment} style={styles.cardRow}>
-                <Icon source="credit-card-outline" size={18} color="#6B7280" />
-                <RNText style={styles.cardRowText}>
-                  {savedCards.length > 0 ? `Pay with saved card (${savedCards.length})` : 'Pay with card'}
-                </RNText>
-                <Icon source="chevron-right" size={16} color="#9CA3AF" />
               </Pressable>
 
               {/* Secured Footer */}
@@ -701,20 +680,6 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 </View>
               </View>
 
-              {/* Save Card Checkbox */}
-              <Pressable 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSaveCardForFuture(!saveCardForFuture);
-                }}
-                style={styles.saveCardRowCustom}
-              >
-                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
-                  {saveCardForFuture && <Icon source="check" size={14} color="#111827" />}
-                </View>
-                <RNText style={styles.saveCardText}>Save card for future</RNText>
-              </Pressable>
-
               {/* Review Button */}
               <Pressable
                 style={[styles.reviewBtn, !customAmount && styles.reviewBtnDisabled]}
@@ -774,6 +739,20 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 />
               </View>
 
+              {/* Save Card Checkbox */}
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSaveCardForFuture(!saveCardForFuture);
+                }}
+                style={styles.saveCardRowPayment}
+              >
+                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
+                  {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
+                </View>
+                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
+              </Pressable>
+
               {/* Pay Button */}
               <Pressable
                 style={[
@@ -791,6 +770,17 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   </RNText>
                 )}
               </Pressable>
+
+              {/* Pay with Saved Card Option */}
+              {savedCards.length > 0 && (
+                <Pressable onPress={handleShowSavedCardsFromPayment} style={styles.cardRow}>
+                  <Icon source="credit-card-outline" size={18} color="#6B7280" />
+                  <RNText style={styles.cardRowText}>
+                    Pay with saved card ({savedCards.length})
+                  </RNText>
+                  <Icon source="chevron-right" size={16} color="#9CA3AF" />
+                </Pressable>
+              )}
 
               {/* Secured Footer */}
               <View style={styles.securedRow}>
@@ -1271,18 +1261,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
+  saveCardRowPayment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   saveCardCheckbox: {
     width: 22,
     height: 22,
-    borderRadius: 6,
+    borderRadius: 7,
     borderWidth: 2,
     borderColor: '#D1D5DB',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    backgroundColor: '#FFFFFF',
   },
   saveCardCheckboxChecked: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#111827',
     borderColor: '#111827',
   },
   saveCardText: {

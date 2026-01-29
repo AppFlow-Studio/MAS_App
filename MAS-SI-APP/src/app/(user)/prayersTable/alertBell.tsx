@@ -123,7 +123,6 @@ export default function AlertBell( {salah, iqamah, athan, nextPrayerAthan, salah
       type: 'ConfirmNotificationOption',
       props : { message, prayer, time },
       visibilityTime: 3000,
-      topOffset : 60
     });
   };
   return (

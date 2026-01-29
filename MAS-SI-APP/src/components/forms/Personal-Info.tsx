@@ -11,8 +11,8 @@ export const submissionFormSchema = z.object({
         invalid_type_error: 'Name must be a string',
         required_error: FIELD_REQUIRED_STR,
       })
-      .min(3, 'Minimum 3 characters')
-      .max(20, 'Maximum 20 characters')
+      .min(2, 'Minimum 2 characters')
+      .max(50, 'Maximum 50 characters')
       .trim(),
 
     phoneNumber: z
@@ -60,8 +60,8 @@ export const businessInfoSubmissions = z.object({
     city : z.string({
         invalid_type_error: 'City must be a string',
         required_error: FIELD_REQUIRED_STR,
-    }).min(3, 'Minimum 3 characters')
-    .max(20, 'Maximum 20 characters')
+    }).min(2, 'Minimum 2 characters')
+    .max(50, 'Maximum 50 characters')
     .trim(),
 
     state : z.string({
@@ -75,8 +75,8 @@ export const businessInfoSubmissions = z.object({
     address : z.string({
         invalid_type_error: 'Address must be a string',
         required_error: FIELD_REQUIRED_STR,
-    }).min(3, 'Minimum 3 characters')
-    .max(20, 'Maximum 20 characters')
+    }).min(5, 'Minimum 5 characters')
+    .max(100, 'Maximum 100 characters')
     .trim(),
 
 })

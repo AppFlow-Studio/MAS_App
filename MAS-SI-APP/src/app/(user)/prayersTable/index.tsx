@@ -390,14 +390,14 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
 // SUHOOR/IFTAR TIMER COMPONENT WITH SUN ARC
 // ============================================
 interface SuhoorIftarTimerProps {
-  currentPrayer: string;
-  timeToNextPrayer: string;
-  suhoorTime: string;
-  iftarTime: string;
+  todayFajrAthan: string;
+  tomorrowFajrAthan: string;
+  todayMaghribAthan: string;
+  tomorrowMaghribAthan: string;
 }
 
 // Helper to parse time string (e.g., "5:57 AM") to today's Date
-const parseTimeToDate = (timeStr: string): Date => {
+const parseTimeToDate = (timeStr: string, addDays: number = 0): Date => {
   const today = new Date();
   const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (!match) return today;
@@ -410,27 +410,90 @@ const parseTimeToDate = (timeStr: string): Date => {
   if (period === 'AM' && hours === 12) hours = 0;
   
   const date = new Date(today);
+  date.setDate(date.getDate() + addDays);
   date.setHours(hours, minutes, 0, 0);
   return date;
 };
 
-const SuhoorIftarTimer = ({ currentPrayer, timeToNextPrayer, suhoorTime, iftarTime }: SuhoorIftarTimerProps) => {
+// Format countdown duration
+const formatCountdown = (targetTime: Date, now: Date): string => {
+  const diffMs = targetTime.getTime() - now.getTime();
+  if (diffMs <= 0) return 'Now';
+  
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  if (hours === 0) {
+    return `${minutes} min${minutes !== 1 ? 's' : ''}`;
+  }
+  return `${hours} hr ${minutes} min${minutes !== 1 ? 's' : ''}`;
+};
+
+const SuhoorIftarTimer = ({ todayFajrAthan, tomorrowFajrAthan, todayMaghribAthan, tomorrowMaghribAthan }: SuhoorIftarTimerProps) => {
   const screenWidth = Dimensions.get('window').width * 0.95;
   const arcWidth = screenWidth - 40;
   const arcHeight = 80;
   
-  const now = new Date();
-  const sunriseTime = parseTimeToDate(suhoorTime); // Fajr/Suhoor end = approximate sunrise
-  const sunsetTime = parseTimeToDate(iftarTime);   // Maghrib/Iftar = sunset
+  // Use state for current time to enable live countdown
+  const [now, setNow] = useState(new Date());
   
-  // Determine current state based on actual time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 1000); // Update every second for accurate countdown
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Parse all relevant times
+  const todayFajr = parseTimeToDate(todayFajrAthan);
+  const tomorrowFajr = parseTimeToDate(tomorrowFajrAthan, 1);
+  const todayMaghrib = parseTimeToDate(todayMaghribAthan);
+  const tomorrowMaghrib = parseTimeToDate(tomorrowMaghribAthan, 1);
+  
+  // Determine the fasting state and countdown target
+  // Suhoor ends at Fajr athan, Iftar begins at Maghrib athan
+  const isBeforeTodayFajr = now < todayFajr;
+  const isAfterTodayMaghrib = now >= todayMaghrib;
+  const isFastingTime = !isBeforeTodayFajr && !isAfterTodayMaghrib; // Between Fajr and Maghrib
+  
+  // Determine which countdown to show and the target time
+  let isSuhoorCountdown: boolean;
+  let countdownTarget: Date;
+  let displaySuhoorTime: string;
+  let displayIftarTime: string;
+  
+  if (isBeforeTodayFajr) {
+    // Before Fajr: Show countdown to Suhoor ending (today's Fajr)
+    isSuhoorCountdown = true;
+    countdownTarget = todayFajr;
+    displaySuhoorTime = todayFajrAthan;
+    displayIftarTime = todayMaghribAthan;
+  } else if (isFastingTime) {
+    // Between Fajr and Maghrib: Show countdown to Iftar (today's Maghrib)
+    isSuhoorCountdown = false;
+    countdownTarget = todayMaghrib;
+    displaySuhoorTime = tomorrowFajrAthan;
+    displayIftarTime = todayMaghribAthan;
+  } else {
+    // After Maghrib: Show countdown to next Suhoor ending (tomorrow's Fajr)
+    isSuhoorCountdown = true;
+    countdownTarget = tomorrowFajr;
+    displaySuhoorTime = tomorrowFajrAthan;
+    displayIftarTime = tomorrowMaghribAthan;
+  }
+  
+  const countdownText = formatCountdown(countdownTarget, now);
+  
+  // For sun arc visualization, use today's times
+  const sunriseTime = todayFajr;
+  const sunsetTime = todayMaghrib;
+  
+  // Determine current state based on actual time for the arc visualization
   const isBeforeSunrise = now < sunriseTime;
   const isAfterSunset = now >= sunsetTime;
   const isDaytime = !isBeforeSunrise && !isAfterSunset;
-  
-  // Determine which countdown to show
-  const isSuhoorCountdown = currentPrayer === 'Isha' || currentPrayer === '' || currentPrayer === 'Fajr';
-  const isIftarCountdown = currentPrayer === 'Dhuhr' || currentPrayer === 'Asr' || currentPrayer === 'Maghrib';
   
   // Calculate sun position along the arc (0 = sunrise, 1 = sunset)
   const getSunPosition = (): number => {
@@ -549,14 +612,14 @@ const SuhoorIftarTimer = ({ currentPrayer, timeToNextPrayer, suhoorTime, iftarTi
         <View style={styles.timeLabelsTop}>
           {/* Suhoor - Top Left */}
           <View style={styles.timeLabelLeft}>
-            <Text style={styles.timeLabelTitle}>Suhoor</Text>
-            <Text style={styles.timeLabelValue}>{suhoorTime}</Text>
+            <Text style={styles.timeLabelTitle}>Suhoor Ends</Text>
+            <Text style={styles.timeLabelValue}>{displaySuhoorTime}</Text>
           </View>
           
           {/* Iftar - Top Right */}
           <View style={styles.timeLabelRight}>
             <Text style={styles.timeLabelTitle}>Iftar</Text>
-            <Text style={styles.timeLabelValue}>{iftarTime}</Text>
+            <Text style={styles.timeLabelValue}>{displayIftarTime}</Text>
           </View>
         </View>
 
@@ -631,7 +694,7 @@ const SuhoorIftarTimer = ({ currentPrayer, timeToNextPrayer, suhoorTime, iftarTi
             />
             <Text style={styles.countdownPillText}>
               {isSuhoorCountdown ? 'Suhoor ends in ' : 'Iftar in '}
-              <Text style={styles.countdownPillTime}>{timeToNextPrayer}</Text>
+              <Text style={styles.countdownPillTime}>{countdownText}</Text>
             </Text>
           </View>
         </View>
@@ -954,10 +1017,10 @@ export default function Index() {
 
           {/* Suhoor & Iftar Timer - Redesigned */}
           <SuhoorIftarTimer
-            currentPrayer={currentPrayer}
-            timeToNextPrayer={timeToNextPrayer}
-            suhoorTime={prayerTimesWeek[1]?.athan_fajr || prayerTimesWeek[0].athan_fajr}
-            iftarTime={currentPrayer === 'Isha' ? prayerTimesWeek[1]?.athan_maghrib || prayerTimesWeek[0].athan_maghrib : prayerTimesWeek[0].athan_maghrib}
+            todayFajrAthan={prayerTimesWeek[0].athan_fajr}
+            tomorrowFajrAthan={prayerTimesWeek[1]?.athan_fajr || prayerTimesWeek[0].athan_fajr}
+            todayMaghribAthan={prayerTimesWeek[0].athan_maghrib}
+            tomorrowMaghribAthan={prayerTimesWeek[1]?.athan_maghrib || prayerTimesWeek[0].athan_maghrib}
           />
 
           {/* Ramadan Quran Tracker - Redesigned */}

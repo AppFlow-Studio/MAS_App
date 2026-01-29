@@ -125,7 +125,7 @@ export default function RootLayout() {
                     <Toast 
                       config={glassyToastConfig}
                       position="top"
-                      topOffset={60}
+                      topOffset={110}
                       visibilityTime={3000}
                       autoHide={true}
                       swipeable={true}

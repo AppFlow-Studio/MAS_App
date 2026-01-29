@@ -281,7 +281,6 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
       text1: 'Settings Saved',
       text2: `${selectedPrayer} notification settings updated`,
       visibilityTime: 2000,
-      topOffset: 60,
     });
     
     handleCloseModal();
@@ -323,7 +322,6 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
       text1: 'Applied to All',
       text2: 'Notification settings applied to all prayers',
       visibilityTime: 2000,
-      topOffset: 60,
     });
   };
   

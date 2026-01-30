@@ -554,8 +554,8 @@ export default function MoreScreen() {
           {/* BUSINESS ADS */}
           <Text style={styles.sectionLabel}>BUSINESS ADS</Text>
           <View style={styles.menuCard}>
-            <MenuButton icon={Briefcase} label="Start an Application" />
-            <MenuButton icon={Eye} label="Check the Status" />
+            <MenuButton icon={Briefcase} label="Start an Application" onPress={() => router.push('/more/BusinessAds')} />
+            <MenuButton icon={Eye} label="Check the Status" onPress={() => router.push('/more/BusinessStatus')} />
           </View>
 
           {/* EDIT PROFILE */}

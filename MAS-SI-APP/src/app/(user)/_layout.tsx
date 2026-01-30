@@ -198,7 +198,7 @@ const NotificationBadge = ({ count = 1 }: { count?: number }) => {
 
   return (
     <Animated.View
-      entering={FadeIn.delay(300).duration(200)}
+      entering={FadeIn.delay(1000).duration(300)}
       style={{
         position: 'absolute',
         bottom: Platform.OS === 'ios' ? 62 : 52, // Closer to the icon
@@ -365,6 +365,7 @@ const UserLayoutContent = () => {
   };
 
   // Check onboarding status for non-anonymous users
+  // This only tracks the state for the badge - popup is shown from More screen only
   useEffect(() => {
     const checkOnboarding = async () => {
       if (!session?.user || authLoading) return;
@@ -379,25 +380,20 @@ const UserLayoutContent = () => {
           .eq('id', session.user.id)
           .single();
 
-        // Show PersonalizedAccount if:
+        // Track onboarding status for badge display
         // 1. Profile doesn't exist (error) - shouldn't happen for logged in users
         // 2. Profile exists but onboarding_completed is false or null
-        const shouldShowOnboarding = error || !profile || !profile.onboarding_completed;
+        const isIncomplete = error || !profile || !profile.onboarding_completed;
         
-        if (shouldShowOnboarding) {
+        if (isIncomplete) {
           setShowOnboarding(true);
           setOnboardingIncomplete(true);
-          setTimeout(() => {
-            onboardingSheetRef.current?.present();
-          }, 800);
+          // Don't auto-present - user will access from More screen
         }
       } catch (error) {
-        // On error, show onboarding to be safe
+        // On error, mark as incomplete for badge
         setShowOnboarding(true);
         setOnboardingIncomplete(true);
-        setTimeout(() => {
-          onboardingSheetRef.current?.present();
-        }, 800);
       }
     };
 
@@ -535,8 +531,8 @@ const UserLayoutContent = () => {
         />
       )} */}
 
-      {/* Enhanced Badge indicator with notification count */}
-      {notificationCount > 0 && (
+      {/* Enhanced Badge indicator with notification count - hide during video intro */}
+      {notificationCount > 0 && !showVideoIntro && (
         <NotificationBadge count={notificationCount} />
       )}
     </BottomSheetModalProvider>

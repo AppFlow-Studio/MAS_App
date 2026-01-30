@@ -1,4 +1,4 @@
-import { View, StyleSheet, Modal, Pressable, Dimensions, ActivityIndicator, Platform, Text as RNText } from 'react-native';
+import { View, StyleSheet, Modal, Pressable, Dimensions, ActivityIndicator, Platform, Text as RNText, Alert, ScrollView } from 'react-native';
 import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { Text, Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,14 +17,18 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { initializePaymentSheet, openPaymentSheet } from '@/src/lib/stripe';
+import { CardForm, useConfirmPayment, CardFormView } from '@stripe/stripe-react-native';
 import { supabase } from '@/src/lib/supabase';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
+import { fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod } from '@/src/lib/StripePaySheet';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLLAPSED_HEIGHT = 370;
-const EXPANDED_HEIGHT = 520;
+const COLLAPSED_HEIGHT = 340;
+const EXPANDED_HEIGHT = 540;
+const PAYMENT_HEIGHT = 560;
+const SAVED_CARDS_HEIGHT = 450;
+const SUCCESS_HEIGHT = 360;
 
 const PRESET_AMOUNTS = [25, 50, 100];
 const CUSTOM_PRESET_AMOUNTS = [10, 50, 100];
@@ -36,24 +40,51 @@ export interface DonationBottomSheetRef {
 
 const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [viewState, setViewState] = useState<'select' | 'custom'>('select');
+  const [viewState, setViewState] = useState<'select' | 'custom' | 'payment' | 'savedCards' | 'success'>('select');
   const [selectedAmount, setSelectedAmount] = useState<number>(50);
   const [customAmount, setCustomAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [paymentIntentClientSecret, setPaymentIntentClientSecret] = useState<string | null>(null);
+  const [savedCards, setSavedCards] = useState<SavedPaymentMethod[]>([]);
+  const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null);
+  const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
+  const [saveCardForFuture, setSaveCardForFuture] = useState(false);
+  const { confirmPayment, loading: confirmLoading } = useConfirmPayment();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(0);
   const sheetHeight = useSharedValue(COLLAPSED_HEIGHT);
   const contentOpacity = useSharedValue(1);
   const customContentOpacity = useSharedValue(0);
+  const paymentContentOpacity = useSharedValue(0);
+  const savedCardsContentOpacity = useSharedValue(0);
+  const successContentOpacity = useSharedValue(0);
 
   const closeSheet = () => {
     setIsVisible(false);
     setViewState('select');
     setCustomAmount('');
     setSelectedAmount(50);
+    setCardComplete(false);
+    setPaymentIntentClientSecret(null);
+    setSelectedSavedCard(null);
+    setSaveCardForFuture(false);
     sheetHeight.value = COLLAPSED_HEIGHT;
     contentOpacity.value = 1;
     customContentOpacity.value = 0;
+    paymentContentOpacity.value = 0;
+    savedCardsContentOpacity.value = 0;
+    successContentOpacity.value = 0;
+  };
+
+  // Load saved cards when sheet opens
+  const loadSavedCards = async () => {
+    setIsLoadingSavedCards(true);
+    const cards = await fetchSavedPaymentMethods();
+    if (cards) {
+      setSavedCards(cards);
+    }
+    setIsLoadingSavedCards(false);
   };
 
   useImperativeHandle(ref, () => ({
@@ -62,8 +93,11 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
       sheetHeight.value = COLLAPSED_HEIGHT;
       contentOpacity.value = 1;
       customContentOpacity.value = 0;
+      savedCardsContentOpacity.value = 0;
       setIsVisible(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // Load saved cards in the background
+      loadSavedCards();
     },
     close: () => {
       closeSheet();
@@ -136,7 +170,10 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
     return selectedAmount;
   };
 
+  // Fetch payment intent and show card input
   const handlePayment = async () => {
+    if (isProcessing) return;
+    
     const amount = getFinalAmount();
     if (!amount || amount <= 0) {
       Toast.show({
@@ -151,18 +188,93 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
     setIsProcessing(true);
 
     try {
-      const paymentIntent = await initializePaymentSheet(Math.floor(amount * 100));
-      
-      if (!paymentIntent) {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        Alert.alert('Login Required', 'Please log in to make a donation.');
         setIsProcessing(false);
         return;
       }
 
-      const paymentSuccess = await openPaymentSheet();
+      // Fetch payment intent from edge function
+      console.log('Calling stripe--checkout with amount:', Math.floor(amount * 100), 'saveCard:', saveCardForFuture);
+      const { data, error } = await supabase.functions.invoke('stripe--checkout', { 
+        body: { TotalAmount: Math.floor(amount * 100), saveCard: saveCardForFuture }
+      });
 
-      if (paymentSuccess) {
+      console.log('Edge function response:', JSON.stringify(data, null, 2));
+      console.log('Edge function error:', error);
+
+      if (error || !data?.paymentIntent) {
+        console.log('Payment intent error:', error || data);
+        Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Log the keys for debugging
+      console.log('PaymentIntent client secret (first 20 chars):', data.paymentIntent?.substring(0, 20));
+      console.log('Server publishable key:', data.publishableKey);
+      console.log('Client publishable key:', process.env.STRIPE_PUBLISHABLE_KEY);
+
+      setPaymentIntentClientSecret(data.paymentIntent);
+      
+      // Transition to payment view
+      if (viewState === 'select') {
+        contentOpacity.value = withTiming(0, { duration: 150 });
+      } else {
+        customContentOpacity.value = withTiming(0, { duration: 150 });
+      }
+      
+      sheetHeight.value = withSpring(PAYMENT_HEIGHT, { 
+        damping: 20, 
+        stiffness: 150,
+        mass: 0.8,
+      });
+      
+      setTimeout(() => {
+        setViewState('payment');
+        paymentContentOpacity.value = withTiming(1, { duration: 200 });
+        setIsProcessing(false);
+      }, 150);
+
+    } catch (error) {
+      console.log('Payment setup error:', error);
+      Alert.alert('Payment Error', 'Something went wrong. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
+  // Process the card payment
+  const handleConfirmPayment = async () => {
+    if (!paymentIntentClientSecret || !cardComplete || confirmLoading) return;
+
+    console.log('Starting payment confirmation...');
+    console.log('PaymentIntent secret (first 30 chars):', paymentIntentClientSecret?.substring(0, 30));
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const amount = getFinalAmount();
+
+    try {
+      console.log('Calling confirmPayment...');
+      const { error, paymentIntent } = await confirmPayment(paymentIntentClientSecret, {
+        paymentMethodType: 'Card',
+      });
+
+      console.log('confirmPayment result - error:', JSON.stringify(error));
+      console.log('confirmPayment result - paymentIntent:', JSON.stringify(paymentIntent));
+
+      if (error) {
+        console.log('Payment confirmation error:', error);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('Payment Failed', error.message || 'Network timeout. Please check your connection and try again.');
+        return;
+      }
+
+      if (paymentIntent?.status === 'Succeeded') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         
+        // Record donation
         const { error: insertError } = await supabase
           .from('donations')
           .insert({ 
@@ -172,31 +284,167 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
 
         if (insertError) console.log('Insert error:', insertError);
 
+        // Send confirmation email
         const { error: emailError } = await supabase.functions.invoke('donation-confirmation-email', {
           body: { donation_amount: amount }
         });
 
         if (emailError) console.log('Email error:', emailError);
 
-        Toast.show({
-          type: 'success',
-          text1: 'Thank you for your donation!',
-          text2: `$${amount} has been donated to MAS Staten Island`,
-        });
-
-        closeSheet();
+        // Show success animation
+        showSuccessScreen(amount);
       }
     } catch (error) {
-      console.log('Donation error:', error);
+      console.log('Payment error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Payment Failed', 'Please try again.');
+    }
+  };
+
+  // Go back from payment view
+  const handleBackFromPayment = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    paymentContentOpacity.value = withTiming(0, { duration: 150 });
+    sheetHeight.value = withSpring(COLLAPSED_HEIGHT, { 
+      damping: 20, 
+      stiffness: 150,
+      mass: 0.8,
+    });
+    setTimeout(() => {
+      setViewState('select');
+      setPaymentIntentClientSecret(null);
+      setCardComplete(false);
+      contentOpacity.value = withTiming(1, { duration: 200 });
+    }, 150);
+  };
+
+  // Show saved cards view
+  const handleShowSavedCards = () => {
+    if (savedCards.length === 0) {
+      // No saved cards, go directly to new card entry
+      handlePayment();
+      return;
+    }
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    contentOpacity.value = withTiming(0, { duration: 150 });
+    sheetHeight.value = withSpring(SAVED_CARDS_HEIGHT, { 
+      damping: 20, 
+      stiffness: 150,
+      mass: 0.8,
+    });
+    setTimeout(() => {
+      setViewState('savedCards');
+      savedCardsContentOpacity.value = withTiming(1, { duration: 200 });
+    }, 150);
+  };
+
+  // Show saved cards from payment view
+  const handleShowSavedCardsFromPayment = () => {
+    if (savedCards.length === 0) return;
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    paymentContentOpacity.value = withTiming(0, { duration: 150 });
+    sheetHeight.value = withSpring(SAVED_CARDS_HEIGHT, { 
+      damping: 20, 
+      stiffness: 150,
+      mass: 0.8,
+    });
+    setTimeout(() => {
+      setViewState('savedCards');
+      setPaymentIntentClientSecret(null);
+      setCardComplete(false);
+      savedCardsContentOpacity.value = withTiming(1, { duration: 200 });
+    }, 150);
+  };
+
+  // Go back from saved cards view
+  const handleBackFromSavedCards = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    savedCardsContentOpacity.value = withTiming(0, { duration: 150 });
+    sheetHeight.value = withSpring(COLLAPSED_HEIGHT, { 
+      damping: 20, 
+      stiffness: 150,
+      mass: 0.8,
+    });
+    setTimeout(() => {
+      setViewState('select');
+      setSelectedSavedCard(null);
+      contentOpacity.value = withTiming(1, { duration: 200 });
+    }, 150);
+  };
+
+  // Charge with saved card
+  const handleChargeWithSavedCard = async () => {
+    if (!selectedSavedCard || isProcessing) return;
+
+    const amount = getFinalAmount();
+    if (!amount || amount <= 0) {
       Toast.show({
         type: 'error',
-        text1: 'Donation failed',
-        text2: 'Please try again',
+        text1: 'Invalid amount',
+        text2: 'Please select or enter a donation amount',
       });
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsProcessing(true);
+
+    try {
+      const result = await chargeWithSavedCard(selectedSavedCard, Math.floor(amount * 100));
+
+      if (result.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // Record donation
+        const { error: insertError } = await supabase
+          .from('donations')
+          .insert({ 
+            amountGiven: amount, 
+            project_donated_to: ['1fcda08a-c61d-4d44-af5f-f32ff3af58f9']
+          });
+
+        if (insertError) console.log('Insert error:', insertError);
+
+        // Send confirmation email
+        const { error: emailError } = await supabase.functions.invoke('donation-confirmation-email', {
+          body: { donation_amount: amount }
+        });
+
+        if (emailError) console.log('Email error:', emailError);
+
+        // Show success animation
+        showSuccessScreen(amount);
+      } else if (result.requiresAction && result.clientSecret) {
+        // Card requires authentication - handle 3D Secure
+        Alert.alert(
+          'Authentication Required',
+          'Your card requires additional verification. Please use a new card or try again.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('Payment Failed', result.error || 'Please try again.');
+      }
+    } catch (error) {
+      console.log('Charge error:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Payment Failed', 'Please try again.');
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Go to new card entry from saved cards view
+  const handleUseNewCard = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    savedCardsContentOpacity.value = withTiming(0, { duration: 150 });
+    setTimeout(() => {
+      setViewState('select');
+      setSelectedSavedCard(null);
+      handlePayment();
+    }, 150);
   };
 
   const panGesture = Gesture.Pan()
@@ -227,6 +475,42 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const animatedCustomStyle = useAnimatedStyle(() => ({
     opacity: customContentOpacity.value,
   }));
+
+  const animatedPaymentStyle = useAnimatedStyle(() => ({
+    opacity: paymentContentOpacity.value,
+  }));
+
+  const animatedSavedCardsStyle = useAnimatedStyle(() => ({
+    opacity: savedCardsContentOpacity.value,
+  }));
+
+  const animatedSuccessStyle = useAnimatedStyle(() => ({
+    opacity: successContentOpacity.value,
+  }));
+
+  // Show success screen after payment completes
+  const showSuccessScreen = (amount: number) => {
+    // Fade out current view
+    paymentContentOpacity.value = withTiming(0, { duration: 150 });
+    savedCardsContentOpacity.value = withTiming(0, { duration: 150 });
+    
+    sheetHeight.value = withSpring(SUCCESS_HEIGHT, { 
+      damping: 20, 
+      stiffness: 150,
+      mass: 0.8,
+    });
+    
+    setTimeout(() => {
+      setViewState('success');
+      successContentOpacity.value = withTiming(1, { duration: 300 });
+      
+      // Auto-close after 2.5 seconds
+      setTimeout(() => {
+        successContentOpacity.value = withTiming(0, { duration: 200 });
+        setTimeout(() => closeSheet(), 200);
+      }, 2500);
+    }, 150);
+  };
 
   // Number pad component
   const NumberPad = () => (
@@ -358,20 +642,13 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 )}
               </Pressable>
 
-              {/* Pay with Card Option */}
-              <Pressable onPress={handlePayment} style={styles.cardRow}>
-                <Icon source="credit-card-outline" size={18} color="#6B7280" />
-                <RNText style={styles.cardRowText}>Pay with card</RNText>
-                <Icon source="chevron-right" size={16} color="#9CA3AF" />
-              </Pressable>
-
               {/* Secured Footer */}
               <View style={styles.securedRow}>
                 <Icon source="shield-check" size={14} color="#10B981" />
                 <RNText style={styles.securedRowText}>SECURED BY STRIPE</RNText>
               </View>
             </Animated.View>
-          ) : (
+          ) : viewState === 'custom' ? (
             /* CUSTOM AMOUNT VIEW */
             <Animated.View style={[styles.customView, animatedCustomStyle]}>
               {/* Close Button */}
@@ -442,7 +719,214 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
               {/* Number Pad */}
               <NumberPad />
             </Animated.View>
-          )}
+          ) : viewState === 'payment' ? (
+            /* PAYMENT VIEW */
+            <Animated.View style={[styles.paymentView, animatedPaymentStyle]}>
+              {/* Back Button */}
+              <Pressable style={styles.backButton} onPress={handleBackFromPayment}>
+                <Icon source="chevron-left" size={24} color="#6B7280" />
+              </Pressable>
+
+              {/* Label */}
+              <RNText style={styles.label}>ENTER CARD DETAILS</RNText>
+
+              {/* Amount Display */}
+              <RNText style={styles.paymentAmount}>${getFinalAmount()}</RNText>
+
+              {/* Card Form */}
+              <View style={styles.cardFormContainer}>
+                <CardForm
+                  placeholders={{
+                    number: '4242 4242 4242 4242',
+                    expiration: 'MM/YY',
+                    cvc: 'CVC',
+                    postalCode: 'ZIP',
+                  }}
+                  cardStyle={{
+                    backgroundColor: '#FFFFFF',
+                    textColor: '#111827',
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: '#E5E7EB',
+                    fontSize: 16,
+                    placeholderColor: '#9CA3AF',
+                    cursorColor: '#214E91',
+                    textErrorColor: '#EF4444',
+                  }}
+                  style={styles.cardForm}
+                  onFormComplete={(cardDetails) => {
+                    setCardComplete(cardDetails.complete);
+                  }}
+                />
+              </View>
+
+              {/* Save Card Checkbox */}
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSaveCardForFuture(!saveCardForFuture);
+                }}
+                style={styles.saveCardRowPayment}
+              >
+                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
+                  {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
+                </View>
+                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
+              </Pressable>
+
+              {/* Pay Button */}
+              <Pressable
+                style={[
+                  styles.payButton, 
+                  (!cardComplete || confirmLoading) && styles.payButtonDisabled
+                ]}
+                onPress={handleConfirmPayment}
+                disabled={!cardComplete || confirmLoading}
+              >
+                {confirmLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <RNText style={styles.payButtonText}>
+                    Pay ${getFinalAmount()}
+                  </RNText>
+                )}
+              </Pressable>
+
+              {/* Pay with Saved Card Option */}
+              {savedCards.length > 0 && (
+                <Pressable onPress={handleShowSavedCardsFromPayment} style={styles.cardRow}>
+                  <Icon source="credit-card-outline" size={18} color="#6B7280" />
+                  <RNText style={styles.cardRowText}>
+                    Pay with saved card ({savedCards.length})
+                  </RNText>
+                  <Icon source="chevron-right" size={16} color="#9CA3AF" />
+                </Pressable>
+              )}
+
+              {/* Secured Footer */}
+              <View style={styles.securedRow}>
+                <Icon source="shield-check" size={14} color="#10B981" />
+                <RNText style={styles.securedRowText}>SECURED BY STRIPE</RNText>
+              </View>
+            </Animated.View>
+          ) : viewState === 'savedCards' ? (
+            /* SAVED CARDS VIEW */
+            <Animated.View style={[styles.savedCardsView, animatedSavedCardsStyle]}>
+              {/* Back Button */}
+              <Pressable style={styles.backButton} onPress={handleBackFromSavedCards}>
+                <Icon source="chevron-left" size={24} color="#6B7280" />
+              </Pressable>
+
+              {/* Label */}
+              <RNText style={styles.label}>SELECT PAYMENT METHOD</RNText>
+
+              {/* Amount Display */}
+              <RNText style={styles.paymentAmount}>${getFinalAmount()}</RNText>
+
+              {/* Saved Cards List */}
+              <ScrollView style={styles.savedCardsList} showsVerticalScrollIndicator={false}>
+                {savedCards.map((card) => (
+                  <Pressable
+                    key={card.id}
+                    style={[
+                      styles.savedCardItem,
+                      selectedSavedCard === card.id && styles.savedCardItemSelected
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedSavedCard(card.id);
+                    }}
+                  >
+                    <View style={styles.savedCardLeft}>
+                      <Icon 
+                        source={card.brand === 'visa' ? 'credit-card' : 'credit-card-outline'} 
+                        size={24} 
+                        color={selectedSavedCard === card.id ? '#2563EB' : '#6B7280'} 
+                      />
+                      <View style={styles.savedCardInfo}>
+                        <RNText style={styles.savedCardBrand}>
+                          {getCardBrandDisplayName(card.brand)}
+                        </RNText>
+                        <RNText style={styles.savedCardNumber}>
+                          •••• {card.last4}
+                        </RNText>
+                      </View>
+                    </View>
+                    <View style={[
+                      styles.savedCardRadio,
+                      selectedSavedCard === card.id && styles.savedCardRadioSelected
+                    ]}>
+                      {selectedSavedCard === card.id && (
+                        <View style={styles.savedCardRadioInner} />
+                      )}
+                    </View>
+                  </Pressable>
+                ))}
+
+                {/* Add New Card Option */}
+                <Pressable style={styles.addNewCardButton} onPress={handleUseNewCard}>
+                  <Icon source="plus" size={20} color="#2563EB" />
+                  <RNText style={styles.addNewCardText}>Add new card</RNText>
+                </Pressable>
+              </ScrollView>
+
+              {/* Pay Button */}
+              <Pressable
+                style={[
+                  styles.payButton, 
+                  (!selectedSavedCard || isProcessing) && styles.payButtonDisabled
+                ]}
+                onPress={handleChargeWithSavedCard}
+                disabled={!selectedSavedCard || isProcessing}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <RNText style={styles.payButtonText}>
+                    Pay ${getFinalAmount()}
+                  </RNText>
+                )}
+              </Pressable>
+
+              {/* Secured Footer */}
+              <View style={styles.securedRow}>
+                <Icon source="shield-check" size={14} color="#10B981" />
+                <RNText style={styles.securedRowText}>SECURED BY STRIPE</RNText>
+              </View>
+            </Animated.View>
+          ) : viewState === 'success' ? (
+            /* SUCCESS VIEW */
+            <Animated.View style={[styles.successView, animatedSuccessStyle]}>
+              <Animated.View 
+                entering={FadeIn.duration(200).delay(100)}
+                style={styles.successCircle}
+              >
+                <Animated.View
+                  entering={FadeIn.duration(300).delay(300)}
+                >
+                  <Icon source="check-bold" size={56} color="#FFFFFF" />
+                </Animated.View>
+              </Animated.View>
+              <Animated.Text 
+                entering={FadeIn.duration(300).delay(400)}
+                style={styles.successTitle}
+              >
+                Thank You!
+              </Animated.Text>
+              <Animated.Text 
+                entering={FadeIn.duration(300).delay(500)}
+                style={styles.successSubtitle}
+              >
+                Your ${getFinalAmount()} donation to MAS Staten Island has been received
+              </Animated.Text>
+              <Animated.Text 
+                entering={FadeIn.duration(300).delay(600)}
+                style={styles.successNote}
+              >
+                May Allah reward you abundantly
+              </Animated.Text>
+            </Animated.View>
+          ) : null}
         </Animated.View>
       </GestureDetector>
     </Modal>
@@ -702,5 +1186,197 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '400',
     color: '#1F2937',
+  },
+  // Payment View Styles
+  paymentView: {
+    flex: 1,
+    paddingTop: 8,
+  },
+  paymentAmount: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  cardFormContainer: {
+    marginBottom: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 4,
+  },
+  cardForm: {
+    width: '100%',
+    height: 200,
+  },
+  payButton: {
+    backgroundColor: '#2563EB',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  payButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  payButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  // Saved Cards View Styles
+  savedCardsView: {
+    flex: 1,
+    paddingTop: 8,
+  },
+  savedCardsList: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  savedCardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 10,
+  },
+  savedCardItemSelected: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
+  },
+  savedCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  savedCardInfo: {
+    marginLeft: 12,
+  },
+  savedCardBrand: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  savedCardNumber: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  savedCardRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  savedCardRadioSelected: {
+    borderColor: '#2563EB',
+  },
+  savedCardRadioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#2563EB',
+  },
+  addNewCardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+    marginBottom: 10,
+  },
+  addNewCardText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2563EB',
+    marginLeft: 8,
+  },
+  // Save Card Checkbox Styles
+  saveCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  saveCardRowCustom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  saveCardRowPayment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  saveCardCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  saveCardCheckboxChecked: {
+    backgroundColor: '#111827',
+    borderColor: '#111827',
+  },
+  saveCardText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  // Success View Styles
+  successView: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  successCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  successNote: {
+    fontSize: 14,
+    color: '#10B981',
+    fontStyle: 'italic',
   },
 });

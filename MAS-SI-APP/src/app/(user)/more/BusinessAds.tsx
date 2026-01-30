@@ -1,103 +1,323 @@
-import { View, Text, ScrollView, Pressable, Dimensions, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { Button, Divider, Icon, TextInput, HelperText } from 'react-native-paper'
-import BusinessAdsDurationCard from '@/src/components/BusinessAdsComponets/BusinessAdsDurationCard'
-import BusinessAdsLocationCard from '@/src/components/BusinessAdsComponets/BusinessAdsLocationCard'
-import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
+import { View, Text, ScrollView, Pressable, Dimensions, Image, Alert, StatusBar, KeyboardAvoidingView, Platform } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { Icon, ActivityIndicator } from 'react-native-paper'
 import * as ImagePicker from "expo-image-picker"
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 import { useAuth } from '@/src/providers/AuthProvider'
 import { supabase } from '@/src/lib/supabase'
-import { BlurView } from 'expo-blur'
-import { Stack, useRouter } from 'expo-router'
-import { useRoute } from '@react-navigation/native'
-import { useForm, SubmitHandler, Controller } from "react-hook-form"
+import { useRouter } from 'expo-router'
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SubmissionFormSchema, submissionFormSchema, businessInfoSubmissions, BusinessInfoSchema } from '@/src/components/forms/Personal-Info'
-import Animated, { Easing, FadeIn, FadeInLeft, FadeInRight, FadeOut, FadeOutLeft, FadeOutRight, useAnimatedStyle } from 'react-native-reanimated'
+import Animated, { 
+    FadeInRight, 
+    FadeOutLeft, 
+    useSharedValue, 
+    useAnimatedStyle, 
+    withTiming,
+    FadeIn,
+    FadeOut
+} from 'react-native-reanimated'
 import Toast from 'react-native-toast-message'
-const BusinessAdsDurationInfoTooltip = () => {
+import ValidatedInput from '@/src/components/BusinessAdsComponets/ValidatedInput'
+import BusinessAdPreview from '@/src/components/BusinessAdsComponets/BusinessAdPreview'
+import { setupStripePaymentSheet, openStripePaymentSheet, fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod, createBusinessSubscription } from '@/src/lib/StripePaySheet'
+import * as WebBrowser from 'expo-web-browser'
+import Confetti from '@/src/components/Confetti'
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
+
+const { width: screenWidth } = Dimensions.get('window')
+
+type FormField = {
+    schemaId: string,
+    label: string,
+    placeholder: string,
+    keyboardType?: 'default' | 'email-address' | 'number-pad'
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
+}
+
+const DURATION_OPTIONS = [
+    { value: 'Monthly Subscription', price: '$50/mo', priceInCents: 5000, description: 'Auto-renews monthly', isSubscription: true, priceId: 'price_1Sv2YcRWBa8XSkKT6U1mMHca' },
+    { value: '3 Months', price: '$135', priceInCents: 13500, description: 'Save 10%', isSubscription: false },
+    { value: '1 Year', price: '$480', priceInCents: 48000, description: 'Best value - Save 20%', isSubscription: false },
+]
+
+const ONBOARDING_FEE_CENTS = 10000 // $100 onboarding fee for first-time advertisers
+
+const TOTAL_STEPS = 6
+
+const STEP_CONFIG = [
+    {
+        title: 'Grow Your Business With Us',
+        subtitle: 'Join the MAS SI community network and expand your local reach instantly.',
+        fields: [],
+        form: 'landing'
+    },
+    {
+        title: 'Your Contact Info',
+        subtitle: "We'll use this to reach you about your ad.",
+        fields: [
+            { schemaId: 'name', label: 'Full Name', placeholder: 'Enter your full name', autoCapitalize: 'words' as const },
+            { schemaId: 'phoneNumber', label: 'Phone Number', placeholder: '(555) 555-5555', keyboardType: 'number-pad' as const },
+            { schemaId: 'email', label: 'Email Address', placeholder: 'you@example.com', keyboardType: 'email-address' as const, autoCapitalize: 'none' as const }
+        ],
+        form: 'personal'
+    },
+    {
+        title: 'About Your Business',
+        subtitle: 'Tell us about your business and upload your flyer.',
+        fields: [
+            { schemaId: 'businessName', label: 'Business Name', placeholder: 'Enter business name', autoCapitalize: 'words' as const },
+        ],
+        form: 'businessWithFlyer'
+    },
+    {
+        title: 'Business Location',
+        subtitle: 'Where can customers find your business?',
+        fields: [
+            { schemaId: 'address', label: 'Street Address', placeholder: '123 Main Street', autoCapitalize: 'words' as const },
+            { schemaId: 'city', label: 'City', placeholder: 'City', autoCapitalize: 'words' as const },
+            { schemaId: 'state', label: 'State', placeholder: 'State', autoCapitalize: 'words' as const },
+            { schemaId: 'businessPhoneNumber', label: 'Business Phone', placeholder: '(555) 555-5555', keyboardType: 'number-pad' as const },
+            { schemaId: 'businessEmail', label: 'Business Email', placeholder: 'contact@business.com', keyboardType: 'email-address' as const, autoCapitalize: 'none' as const }
+        ],
+        form: 'business'
+    },
+    {
+        title: 'Choose Your Plan',
+        subtitle: 'Select how long you want your ad to run.',
+        fields: [],
+        form: 'ad'
+    },
+    {
+        title: 'Review Your Ad',
+        subtitle: 'Make sure everything looks good before payment.',
+        fields: [],
+        form: 'review'
+    }
+]
+
+// Step indicator component
+const StepIndicator = ({ currentStep, totalSteps }: { currentStep: number, totalSteps: number }) => {
     return (
-        <Menu>
-            <MenuTrigger>
-                <Icon source={'information-outline'} size={20} />
-            </MenuTrigger>
-            <MenuOptions customStyles={{ optionsContainer: { width: 150, borderRadius: 8, marginTop: 20, padding: 8 } }}>
-                <MenuOption>
-                    <Text>How long would you like your business to be displayed?</Text>
-                </MenuOption>
-            </MenuOptions>
-        </Menu>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 12, gap: 8 }}>
+            {Array.from({ length: totalSteps }).map((_, index) => {
+                const isActive = index === currentStep
+                const isCompleted = index < currentStep
+                
+                return (
+                    <View
+                        key={index}
+                        style={{
+                            width: isActive ? 24 : 8,
+                            height: 8,
+                            borderRadius: 4,
+                            backgroundColor: isActive ? '#111827' : isCompleted ? '#6B7280' : '#E5E7EB',
+                        }}
+                    />
+                )
+            })}
+        </View>
     )
 }
-type BusinessSchemaId = {
-    schemaId: "businessName" | "businessPhoneNumber" | "businessEmail" | "city" | "state" | "address",
-    label: string
+
+// Success screen component
+const SuccessScreen = ({ onDone }: { onDone: () => void }) => {
+    const confettiRef = React.useRef<{ fire: () => void }>(null)
+    
+    useEffect(() => {
+        // Fire confetti on mount
+        const timer = setTimeout(() => {
+            confettiRef.current?.fire()
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [])
+    
+    return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#FFFFFF' }}>
+            <Confetti ref={confettiRef} />
+            
+            <Animated.View 
+                entering={FadeIn.duration(300)}
+                style={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: 50,
+                    backgroundColor: '#DCFCE7',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: 32
+                }}
+            >
+                <Icon source="check" size={56} color="#22C55E" />
+            </Animated.View>
+            
+            <Animated.Text 
+                entering={FadeIn.delay(200)}
+                style={{ fontSize: 28, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 12 }}
+            >
+                Payment Successful!
+            </Animated.Text>
+            
+            <Animated.Text 
+                entering={FadeIn.delay(400)}
+                style={{ fontSize: 16, color: '#6B7280', textAlign: 'center', lineHeight: 24, marginBottom: 8 }}
+            >
+                Your business ad application has been submitted.
+            </Animated.Text>
+            
+            <Animated.Text 
+                entering={FadeIn.delay(600)}
+                style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 22, marginBottom: 40 }}
+            >
+                Our team will review your submission within 1-2 business days. You'll receive an email once your ad is approved.
+            </Animated.Text>
+            
+            <Animated.View entering={FadeIn.delay(800)} style={{ width: '100%' }}>
+                <Pressable
+                    onPress={onDone}
+                    style={({ pressed }) => ({
+                        backgroundColor: pressed ? '#1F2937' : '#111827',
+                        borderRadius: 16,
+                        paddingVertical: 18,
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    })}
+                >
+                    <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF' }}>
+                        Done
+                    </Text>
+                </Pressable>
+            </Animated.View>
+        </View>
+    )
 }
-type PersonalSchemaId = {
-    schemaId: "name" | "phoneNumber" | "email",
-    label: string
-}
-function formatPhoneNumber(phoneNumberString: string | undefined) {
-    if (phoneNumberString == undefined) {
-        return ''
-    }
-    var cleaned = ('' + phoneNumberString).replace(/\D/g, '');
-    var match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-        return '(' + match[1] + ') ' + match[2] + '-' + match[3];
-    }
-    return null;
-}
+
 const BusinessAds = () => {
     const { session } = useAuth()
     const router = useRouter()
-    const { height, width } = Dimensions.get('screen')
-    const [currentStage, setCurrentStage] = useState(0)
-    const listItemWidth = Dimensions.get('screen').width
-    const [PreviewBusinessAdInfo, setPreviewBusinessAdInfo] = useState<{ businessName: string; businessPhoneNumber: string; businessEmail: string; city: string; state: string; address: string }>()
+    const insets = useSafeAreaInsets()
+    const [currentStep, setCurrentStep] = useState(0)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
+    const [showSuccess, setShowSuccess] = useState(false)
+    const [termsAccepted, setTermsAccepted] = useState(false)
+    const [savedCards, setSavedCards] = useState<SavedPaymentMethod[]>([])
+    const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null)
+    const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false)
+    const [saveCardForFuture, setSaveCardForFuture] = useState(false)
+    const [isFirstSubmission, setIsFirstSubmission] = useState(true)
+    const [isCheckingFirstSubmission, setIsCheckingFirstSubmission] = useState(true)
 
-    const methods = useForm<SubmissionFormSchema>({
+    // Check if user has previous submissions (for onboarding fee)
+    useEffect(() => {
+        const checkFirstSubmission = async () => {
+            if (!session?.user.id) {
+                setIsCheckingFirstSubmission(false)
+                return
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('business_ads_submissions')
+                    .select('id')
+                    .eq('user_id', session.user.id)
+                    .limit(1)
+                
+                if (error) {
+                    console.log('Error checking submissions:', error)
+                    setIsFirstSubmission(true)
+                } else {
+                    setIsFirstSubmission(!data || data.length === 0)
+                }
+            } catch (error) {
+                console.log('Error checking submissions:', error)
+                setIsFirstSubmission(true)
+            } finally {
+                setIsCheckingFirstSubmission(false)
+            }
+        }
+        
+        checkFirstSubmission()
+    }, [session?.user.id])
+
+    // Load saved cards on mount
+    useEffect(() => {
+        const loadSavedCards = async () => {
+            setIsLoadingSavedCards(true)
+            const cards = await fetchSavedPaymentMethods()
+            if (cards) {
+                setSavedCards(cards)
+            }
+            setIsLoadingSavedCards(false)
+        }
+        loadSavedCards()
+    }, [])
+
+    // Phone number formatter - formats as (XXX) XXX-XXXX
+    const formatPhoneNumber = (text: string) => {
+        // Remove all non-numeric characters
+        const cleaned = text.replace(/\D/g, '')
+        
+        // Limit to 10 digits
+        const limited = cleaned.slice(0, 10)
+        
+        // Format based on length
+        if (limited.length === 0) return ''
+        if (limited.length <= 3) return `(${limited}`
+        if (limited.length <= 6) return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+        return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
+    }
+
+    // Animated progress bar
+    const progressWidth = useSharedValue(1 / TOTAL_STEPS)
+    
+    const progressAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            width: `${progressWidth.value * 100}%`,
+        }
+    })
+
+    useEffect(() => {
+        progressWidth.value = withTiming((currentStep + 1) / TOTAL_STEPS, { duration: 300 })
+    }, [currentStep])
+
+    const personalMethods = useForm<SubmissionFormSchema>({
         resolver: zodResolver(submissionFormSchema),
-        mode: 'onBlur',
+        mode: 'onChange', // Real-time validation
     });
 
     const businessMethods = useForm<BusinessInfoSchema>({
         resolver: zodResolver(businessInfoSubmissions),
-        mode: 'onBlur',
+        mode: 'onChange', // Real-time validation
     })
 
-    const [selectedDuration, setSelectedDuration] = useState([''])
-    const [finishedSelectedChoices, setFinishedSelectedChoices] = useState(false)
+    const [selectedDuration, setSelectedDuration] = useState<string>('')
     const [businessFlyer, setBusinessFlyer] = useState<ImagePicker.ImagePickerAsset>()
 
+    // Watch form values for live preview
+    const businessValues = businessMethods.watch()
+    const personalValues = personalMethods.watch()
 
-    useEffect(() => {
-        if (selectedDuration.length > 0 && businessFlyer) {
-            setFinishedSelectedChoices(true)
-        }
-        else {
-            setFinishedSelectedChoices(false)
-        }
-    }, [selectedDuration, businessFlyer])
-
-    const ADDURATIONOPTIONS = ['1 Month', '3 Months', '1 Year']
-    const stageInfo = ['Personal Info', 'Business Info', 'Ad details']
-    const personalStageQuestions: PersonalSchemaId[] = [{ schemaId: 'name', label: 'Full Name' }, { schemaId: 'phoneNumber', label: 'Phone Number' }, { schemaId: 'email', label: 'Email' }]
-    const onFinished = () => {
-        setCurrentStage(currentStage + 1)
+    // Calculate total amount including onboarding fee if first submission
+    const getTotalAmount = () => {
+        const durationOption = DURATION_OPTIONS.find(d => d.value === selectedDuration)
+        if (!durationOption) return { total: 0, adPrice: 0, onboardingFee: 0 }
+        
+        const adPrice = durationOption.priceInCents
+        const onboardingFee = isFirstSubmission ? ONBOARDING_FEE_CENTS : 0
+        const total = adPrice + onboardingFee
+        
+        return { total, adPrice, onboardingFee }
     }
-
-    const onGoBack = () => {
-        setCurrentStage(currentStage - 1)
-    }
-    const businessStageQuestions: BusinessSchemaId[] = [{ schemaId: 'businessName', label: 'Business Name' }, { schemaId: 'address', label: 'Address' }, { schemaId: 'city', label: 'City' }, { schemaId: 'state', label: 'State' }, { schemaId: 'businessPhoneNumber', label: 'Phone Number' }, { schemaId: 'businessEmail', label: 'Email' }]
 
     const onSelectImage = async () => {
         const options: ImagePicker.ImagePickerOptions = {
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true
+            allowsEditing: true,
+            quality: 0.8,
         }
 
         const result = await ImagePicker.launchImageLibraryAsync(options)
@@ -105,255 +325,1133 @@ const BusinessAds = () => {
         if (!result.canceled) {
             const img = result.assets[0]
             setBusinessFlyer(img)
-            setPreviewBusinessAdInfo(businessMethods.getValues())
         }
     }
 
-    const onSubmit = async () => {
-        if (businessFlyer) {
-            setFinishedSelectedChoices(false)
+    const saveSubmission = async () => {
+        if (!businessFlyer) return false
+
+        try {
             const base64 = await FileSystem.readAsStringAsync(businessFlyer.uri, { encoding: 'base64' });
             const filePath = `${session?.user.id}/${new Date().getTime()}.${businessFlyer.type === 'image' ? 'png' : 'mp4'}`;
-            const contentType = businessFlyer.type === 'image' ? 'image/png' : 'video/mp4';
             const { data: image, error: image_upload_error } = await supabase.storage.from('business_flyers').upload(filePath, decode(base64));
-            console.log(image_upload_error)
+            
+            if (image_upload_error) {
+                console.log(image_upload_error)
+                return false
+            }
+
             if (image) {
                 const { data: business_flyer_url } = await supabase.storage.from('business_flyers').getPublicUrl(image?.path)
-                const personalInfo = methods.getValues()
+                const personalInfo = personalMethods.getValues()
                 const businessInfo = businessMethods.getValues()
+                
                 if (business_flyer_url) {
-                    const onApprove = async () => {
-                        const { error } = await supabase.from('business_ads_submissions').update({ status: 'APPROVED' }).eq('business_flyer_img', business_flyer_url.publicUrl)
-                    }
-                    const { data, error } = await supabase.from('business_ads_submissions').insert({ 'personal_full_name': personalInfo.name, 'personal_phone_number': personalInfo.phoneNumber, 'personal_email': personalInfo.email, 'business_name': businessInfo.businessName, 'business_address': businessInfo.address, 'business_phone_number': businessInfo.businessPhoneNumber, 'business_email': businessInfo.businessEmail, 'business_flyer_duration': selectedDuration[0], 'business_flyer_img': business_flyer_url.publicUrl, user_id: session?.user.id, onApprove: onApprove })
+                    const { error } = await supabase.from('business_ads_submissions').insert({ 
+                        'personal_full_name': personalInfo.name, 
+                        'personal_phone_number': personalInfo.phoneNumber, 
+                        'personal_email': personalInfo.email, 
+                        'business_name': businessInfo.businessName, 
+                        'business_address': businessInfo.address, 
+                        'business_phone_number': businessInfo.businessPhoneNumber, 
+                        'business_email': businessInfo.businessEmail, 
+                        'business_flyer_duration': selectedDuration, 
+                        'business_flyer_img': business_flyer_url.publicUrl, 
+                        user_id: session?.user.id,
+                    })
+                    
                     if (error) {
                         console.log(error)
-                    } else {
-                        await supabase.functions.invoke('resend', { body: { submission: { personal_full_name: personalInfo.name, personal_phone_number: personalInfo.phoneNumber, personal_email: personalInfo.email, business_name: businessInfo.businessName, business_address: businessInfo.address, business_phone_number: businessInfo.businessPhoneNumber, business_email: businessInfo.businessEmail, business_flyer_duration: selectedDuration[0], business_flyer_img: business_flyer_url.publicUrl } } })
+                        return false
                     }
-                    router.back()
+                    
+                    await supabase.functions.invoke('resend', { 
+                        body: { 
+                            submission: { 
+                                personal_full_name: personalInfo.name, 
+                                personal_phone_number: personalInfo.phoneNumber, 
+                                personal_email: personalInfo.email, 
+                                business_name: businessInfo.businessName, 
+                                business_address: businessInfo.address, 
+                                business_phone_number: businessInfo.businessPhoneNumber, 
+                                business_email: businessInfo.businessEmail, 
+                                business_flyer_duration: selectedDuration, 
+                                business_flyer_img: business_flyer_url.publicUrl 
+                            } 
+                        } 
+                    })
+                    
+                    return true
                 }
             }
-            Toast.show(
-                {
-                    type: 'success',
-                    text1: 'Submission Received!',
-                    position: "top",
-                    topOffset: 50,
-                    visibilityTime: 2000,
-                }
-            )
-            setFinishedSelectedChoices(true)
+            return false
+        } catch (error) {
+            console.log(error)
+            return false
         }
-        else {
-            Alert.alert("Submit Business Flyer")
-        }
-
     }
-    const personalSubmit: SubmitHandler<SubmissionFormSchema> = (data) => {
-        console.log(JSON.stringify(data));
-    };
 
-    return (
-        <ScrollView className='flex-1 bg-white' contentContainerStyle={{ paddingBottom: 0 }}
-            automaticallyAdjustKeyboardInsets
-            contentInsetAdjustmentBehavior='scrollableAxes'
-        >
-            <Stack.Screen options={{ title: 'Business Application', headerTintColor: '#007AFF', headerTitleStyle: { color: 'black' }, headerStyle: { backgroundColor: 'white', } }} />
-            <View className='w-[100%] bg-[#0D509D] h-[15%] flex-row items-center justify-evenly'>
-                {stageInfo.map((item, index) => {
-                    return (
-                        <View key={index} style={{ width: '25%', height: 65 }} className='items-center justify-center flex-col'>
-                            <View style={[{ backgroundColor: currentStage == index ? 'white' : currentStage < index ? 'gray' : 'green' }, { borderRadius: 50, width: '48%', height: '70%', alignItems: 'center' }]}>
-                                {currentStage > index ? <Icon source={'check-bold'} color='white' size={40} /> : <></>}
-                            </View>
-                            <Text className='text-center text-white'>{item}</Text>
-                        </View>
-                    )
-                })
+    const handlePayment = async () => {
+        if (!termsAccepted) {
+            Alert.alert('Terms Required', 'Please accept the terms and conditions to continue.')
+            return
+        }
+
+        const durationOption = DURATION_OPTIONS.find(d => d.value === selectedDuration)
+        if (!durationOption) {
+            Alert.alert('Error', 'Please select a duration.')
+            return
+        }
+
+        const { total: totalAmountCents } = getTotalAmount()
+
+        setIsPaymentProcessing(true)
+        
+        try {
+            let success = false
+
+            // Handle subscription payments differently
+            if (durationOption.isSubscription && durationOption.priceId) {
+                console.log('Processing subscription payment for price:', durationOption.priceId)
+                
+                const subscriptionResult = await createBusinessSubscription(durationOption.priceId)
+                
+                if (!subscriptionResult.success || !subscriptionResult.url) {
+                    Alert.alert('Subscription Error', subscriptionResult.error || 'Failed to create subscription. Please try again.')
+                    setIsPaymentProcessing(false)
+                    return
                 }
-            </View>
-            <View className='flex-1 bg-white'>
-                <View className='flex-2 pt-2'>
-                    {currentStage == 0 && <Text className='text-3xl font-bold pl-2'>Personal Information</Text>}
-                    {currentStage == 1 && <Text className='text-3xl font-bold pl-2'>Business Information</Text>}
-                    {currentStage == 2 && <Text className='text-3xl font-bold pl-2'>Advertisment Details</Text>}
-                    <Divider style={{ backgroundColor: 'black' }} />
+
+                // Open Stripe Checkout in browser
+                const browserResult = await WebBrowser.openBrowserAsync(subscriptionResult.url, {
+                    dismissButtonStyle: 'cancel',
+                    presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+                })
+
+                console.log('Browser result:', browserResult.type)
+
+                // Check if user completed or cancelled
+                if (browserResult.type === 'cancel' || browserResult.type === 'dismiss') {
+                    console.log('User cancelled subscription checkout')
+                    setIsPaymentProcessing(false)
+                    return
+                }
+
+                // For subscriptions, we assume success if the browser was closed normally
+                // The webhook will handle the actual subscription confirmation
+                success = true
+            } else {
+                // Handle one-time payments with existing flow
+                // If a saved card is selected, charge it directly
+                if (selectedSavedCard) {
+                    const result = await chargeWithSavedCard(selectedSavedCard, totalAmountCents)
+                    
+                    if (result.success) {
+                        success = true
+                    } else if (result.requiresAction) {
+                        Alert.alert(
+                            'Authentication Required',
+                            'Your card requires additional verification. Please use the payment form instead.',
+                            [{ text: 'OK', onPress: () => setSelectedSavedCard(null) }]
+                        )
+                        setIsPaymentProcessing(false)
+                        return
+                    } else {
+                        Alert.alert('Payment Failed', result.error || 'Please try again.')
+                        setIsPaymentProcessing(false)
+                        return
+                    }
+                } else {
+                    // Use payment sheet for new card
+                    // Pass saveCardForFuture to determine if card should be saved
+                    const paymentIntent = await setupStripePaymentSheet(totalAmountCents, saveCardForFuture)
+                    
+                    if (!paymentIntent) {
+                        Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.')
+                        setIsPaymentProcessing(false)
+                        return
+                    }
+
+                    success = await openStripePaymentSheet()
+                }
+            }
+            
+            if (success) {
+                setIsSubmitting(true)
+                const saved = await saveSubmission()
+                
+                if (saved) {
+                    setShowSuccess(true)
+                } else {
+                    Alert.alert('Submission Error', 'Payment was successful but we failed to save your submission. Please contact support.')
+                }
+            }
+        } catch (error) {
+            console.log('Payment error:', error)
+            Alert.alert('Payment Error', 'Something went wrong. Please try again.')
+        } finally {
+            setIsPaymentProcessing(false)
+            setIsSubmitting(false)
+        }
+    }
+
+    const validateCurrentStep = useCallback((): boolean => {
+        // Step 0 is landing page - no validation needed
+        if (currentStep === 0) {
+            return true
+        } else if (currentStep === 1) {
+            const values = personalMethods.getValues()
+            const result = submissionFormSchema.safeParse(values)
+            if (!result.success) {
+                personalMethods.trigger()
+                Alert.alert("Required Fields", "Please fill out all required fields to continue.")
+                return false
+            }
+        } else if (currentStep === 2) {
+            // Business name + flyer
+            const values = businessMethods.getValues()
+            if (!values.businessName) {
+                businessMethods.trigger(['businessName'])
+                Alert.alert("Required Fields", "Please enter your business name to continue.")
+                return false
+            }
+            if (!businessFlyer) {
+                Alert.alert("Missing Flyer", "Please upload a business flyer to continue.")
+                return false
+            }
+        } else if (currentStep === 3) {
+            // Location fields
+            const values = businessMethods.getValues()
+            const result = businessInfoSubmissions.safeParse(values)
+            if (!result.success) {
+                businessMethods.trigger()
+                Alert.alert("Required Fields", "Please fill out all required fields to continue.")
+                return false
+            }
+        } else if (currentStep === 4) {
+            // Duration selection
+            if (!selectedDuration) {
+                Alert.alert("Missing Duration", "Please select an ad duration to continue.")
+                return false
+            }
+        }
+        return true
+    }, [currentStep, personalMethods, businessMethods, businessFlyer, selectedDuration])
+
+    const handleNext = () => {
+        if (!validateCurrentStep()) return
+        
+        if (currentStep < TOTAL_STEPS - 1) {
+            setCurrentStep(currentStep + 1)
+        }
+    }
+
+    const handleBack = () => {
+        if (currentStep === 0) {
+            router.back()
+        } else {
+            setCurrentStep(currentStep - 1)
+        }
+    }
+
+    const goToStep = (step: number) => {
+        setCurrentStep(step)
+    }
+
+    const handleSuccessDone = () => {
+        router.back()
+        router.back()
+    }
+
+    // Button is always enabled - validation happens on click
+    const isButtonLoading = isSubmitting || isPaymentProcessing
+
+    const isReviewStep = currentStep === TOTAL_STEPS - 1
+    const currentConfig = STEP_CONFIG[currentStep]
+
+    // Get field validation state
+    const getFieldValidState = (form: 'personal' | 'business', fieldName: string) => {
+        if (form === 'personal') {
+            const value = personalMethods.watch(fieldName as keyof SubmissionFormSchema)
+            const error = personalMethods.formState.errors[fieldName as keyof SubmissionFormSchema]
+            return { isValid: !!value && !error, error: error?.message }
+        } else {
+            const value = businessMethods.watch(fieldName as keyof BusinessInfoSchema)
+            const error = businessMethods.formState.errors[fieldName as keyof BusinessInfoSchema]
+            return { isValid: !!value && !error, error: error?.message }
+        }
+    }
+
+    const renderPersonalFields = () => {
+        const fields = STEP_CONFIG[1].fields
+        return fields.map((field, index) => {
+            const isPhoneField = field.schemaId === 'phoneNumber'
+            return (
+                <Controller
+                    key={index}
+                    control={personalMethods.control}
+                    name={field.schemaId as 'name' | 'phoneNumber' | 'email'}
+                    render={({ field: { onChange, onBlur, value }, fieldState: { error: fieldError } }) => (
+                        <ValidatedInput
+                            label={field.label}
+                            placeholder={field.placeholder}
+                            value={value}
+                            onChangeText={(text) => {
+                                if (isPhoneField) {
+                                    onChange(formatPhoneNumber(text))
+                                } else {
+                                    onChange(text)
+                                }
+                            }}
+                            onBlur={onBlur}
+                            error={fieldError?.message}
+                            isValid={!!value && !fieldError}
+                            keyboardType={field.keyboardType}
+                            autoCapitalize={field.autoCapitalize}
+                        />
+                    )}
+                />
+            )
+        })
+    }
+
+    const renderBusinessFields = (stepIndex: number) => {
+        const fields = STEP_CONFIG[stepIndex].fields
+        return fields.map((field, index) => {
+            const isPhoneField = field.schemaId === 'businessPhoneNumber'
+            return (
+                <Controller
+                    key={index}
+                    control={businessMethods.control}
+                    name={field.schemaId as 'businessName' | 'address' | 'city' | 'state' | 'businessPhoneNumber' | 'businessEmail'}
+                    render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                        <ValidatedInput
+                            label={field.label}
+                            placeholder={field.placeholder}
+                            value={value}
+                            onChangeText={(text) => {
+                                if (isPhoneField) {
+                                    onChange(formatPhoneNumber(text))
+                                } else {
+                                    onChange(text)
+                                }
+                            }}
+                            onBlur={onBlur}
+                            error={error?.message}
+                            isValid={!!value && !error}
+                            keyboardType={field.keyboardType}
+                            autoCapitalize={field.autoCapitalize}
+                        />
+                    )}
+                />
+            )
+        })
+    }
+
+    const benefits = [
+        {
+            icon: 'check-circle',
+            title: 'Easy setup',
+            description: 'Get your ad running in under 5 minutes',
+        },
+        {
+            icon: 'eye',
+            title: 'High visibility',
+            description: 'Reach 2000+ local community members',
+        },
+        {
+            icon: 'heart',
+            title: 'Community impact',
+            description: 'Support your local center while you grow',
+        },
+    ]
+
+    const renderLandingStep = () => (
+        <>
+            {/* Hero Image Section */}
+            <View 
+                style={{ 
+                    backgroundColor: '#F5F0E8',
+                    borderRadius: 24,
+                    height: 280,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    overflow: 'hidden',
+                    marginBottom: 32,
+                }}
+            >
+                {/* Phone Mockup */}
+                <View 
+                    style={{
+                        width: 200,
+                        height: 240,
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: 24,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 10 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 20,
+                        elevation: 10,
+                        padding: 12,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    {/* Mock Analytics Dashboard */}
+                    <View style={{ width: '100%', height: '100%', justifyContent: 'space-between' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ fontSize: 10, fontWeight: '600', color: '#374151' }}>Analytics</Text>
+                            <Text style={{ fontSize: 8, color: '#9CA3AF' }}>This Week</Text>
+                        </View>
+                        
+                        {/* Mock Chart Bars */}
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', height: 100, paddingTop: 10 }}>
+                            {[40, 65, 45, 80, 55, 70, 90].map((height, index) => (
+                                <View 
+                                    key={index}
+                                    style={{
+                                        width: 16,
+                                        height: height,
+                                        backgroundColor: index === 6 ? '#214E91' : '#E5E7EB',
+                                        borderRadius: 4,
+                                    }}
+                                />
+                            ))}
+                        </View>
+                        
+                        {/* Mock Stats */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+                            <View>
+                                <Text style={{ fontSize: 8, color: '#9CA3AF' }}>Views</Text>
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: '#111827' }}>2,847</Text>
+                            </View>
+                            <View>
+                                <Text style={{ fontSize: 8, color: '#9CA3AF' }}>Clicks</Text>
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: '#111827' }}>384</Text>
+                            </View>
+                            <View>
+                                <Text style={{ fontSize: 8, color: '#9CA3AF' }}>Rate</Text>
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: '#57BA47' }}>13.5%</Text>
+                            </View>
+                        </View>
+                    </View>
                 </View>
-                {currentStage == 0 && (
-                    <Animated.View className='flex-1 flex-col gap-y-8 mt-5' entering={FadeInLeft.duration(500).easing(Easing.inOut(Easing.quad))} exiting={FadeOut} >
-                        {personalStageQuestions.map((item, index) => {
-                            return (
-                                <View className='w-[90%] self-center flex-2' key={index}>
-                                    <Controller
-                                        control={methods.control}
-                                        name={item.schemaId}
-                                        render={({
-                                            field: { onChange, onBlur, value },
-                                            fieldState: { error },
-                                        }) => {
-                                            return (
-                                                <>
-                                                    <TextInput
-                                                        mode='outlined'
-                                                        label={item.label}
-                                                        onBlur={onBlur}
-                                                        value={value}
-                                                        onChangeText={onChange}
-                                                        style={{ backgroundColor: 'white', borderBottomWidth: 0, borderWidth: 0, paddingLeft: 10 }}
-                                                        outlineColor='blue'
-                                                        activeOutlineColor='blue'
-                                                        textColor='black'
-                                                        contentStyle={{ paddingLeft: 3 }}
-                                                        selectionColor='black'
-                                                        keyboardType={item.schemaId == 'phoneNumber' ? 'number-pad' : item.schemaId == 'email' ? 'email-address' : 'default'}
-                                                    />
-                                                    <HelperText type="error" visible={error ? true : false} className='text-red-500 font-bold'>
-                                                        {error?.message}
-                                                    </HelperText>
-                                                </>
-                                            );
-                                        }}
-                                    />
-                                </View>
-                            )
-                        })}
-                        <View className='flex-row items-center w-[100%] justify-end flex-2 px-5' >
-                            <Button className='bg-[#57BA47] ' mode='contained' theme={{ roundness: 1 }} textColor='white' onPress={() => {
-                                // get current form values
-                                const currFormValues = methods.getValues();
+            </View>
 
-                                // Prevalidate using zod's safeParse
-                                const result = submissionFormSchema.safeParse(currFormValues);
-
-                                // If prevalidation is failed, display the error
-                                if (!result.success) {
-                                    Alert.alert('Fill out all questions please')
-                                } else {
-                                    // If prevalidation is successful, notify the user
-                                    console.log(methods.getValues())
-                                    onFinished()
-                                }
-                            }}>
-                                <Text>Next</Text>
-                            </Button>
+            {/* Benefits List */}
+            <View style={{ marginBottom: 24 }}>
+                {benefits.map((benefit, index) => (
+                    <View 
+                        key={index}
+                        style={{ 
+                            flexDirection: 'row', 
+                            alignItems: 'flex-start',
+                            marginBottom: 20,
+                        }}
+                    >
+                        {/* Icon Container */}
+                        <View 
+                            style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 22,
+                                backgroundColor: '#F3F4F6',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                marginRight: 16,
+                            }}
+                        >
+                            <Icon 
+                                source={benefit.icon} 
+                                size={22} 
+                                color="#374151" 
+                            />
                         </View>
-                    </Animated.View>
+                        
+                        {/* Text Content */}
+                        <View style={{ flex: 1 }}>
+                            <Text 
+                                style={{ 
+                                    fontSize: 16, 
+                                    fontWeight: '600', 
+                                    color: '#111827',
+                                    marginBottom: 4,
+                                }}
+                            >
+                                {benefit.title}
+                            </Text>
+                            <Text 
+                                style={{ 
+                                    fontSize: 14, 
+                                    color: '#6B7280',
+                                    lineHeight: 20,
+                                }}
+                            >
+                                {benefit.description}
+                            </Text>
+                        </View>
+                    </View>
+                ))}
+            </View>
+
+            {/* Pricing Card */}
+            <View style={{ 
+                backgroundColor: '#F3F4F6', 
+                borderRadius: 16, 
+                padding: 20,
+            }}>
+                <View 
+                    style={{ 
+                        flexDirection: 'row', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center' 
+                    }}
+                >
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline', flex: 1 }}>
+                        <Text style={{ fontSize: 36, fontWeight: '700', color: '#111827' }}>$50</Text>
+                        <Text style={{ fontSize: 16, color: '#6B7280', marginLeft: 4 }}>/ month</Text>
+                    </View>
+                </View>
+                
+                <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 12, lineHeight: 20 }}>
+                    Save with 3-month or yearly plans. Cancel anytime with no hidden costs.
+                </Text>
+            </View>
+        </>
+    )
+
+    const renderStepContent = () => {
+        switch (currentStep) {
+            case 0:
+                return renderLandingStep()
+            case 1:
+                return renderPersonalFields()
+            case 2:
+                // Business name + flyer upload
+                return (
+                    <>
+                        {renderBusinessFields(currentStep)}
+                        {renderFlyerUpload()}
+                        {/* Show live preview */}
+                        <View style={{ marginTop: 24 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#6B7280', marginBottom: 12, textAlign: 'center' }}>
+                                Live Preview
+                            </Text>
+                            <BusinessAdPreview
+                                businessName={businessValues.businessName}
+                                address={businessValues.address}
+                                city={businessValues.city}
+                                state={businessValues.state}
+                                phoneNumber={businessValues.businessPhoneNumber}
+                                email={businessValues.businessEmail}
+                                imageUri={businessFlyer?.uri}
+                                compact
+                            />
+                        </View>
+                    </>
+                )
+            case 3:
+                // Location fields
+                return (
+                    <>
+                        {renderBusinessFields(currentStep)}
+                        {/* Show live preview */}
+                        <View style={{ marginTop: 24 }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#6B7280', marginBottom: 12, textAlign: 'center' }}>
+                                Live Preview
+                            </Text>
+                            <BusinessAdPreview
+                                businessName={businessValues.businessName}
+                                address={businessValues.address}
+                                city={businessValues.city}
+                                state={businessValues.state}
+                                phoneNumber={businessValues.businessPhoneNumber}
+                                email={businessValues.businessEmail}
+                                imageUri={businessFlyer?.uri}
+                                compact
+                            />
+                        </View>
+                    </>
+                )
+            case 4:
+                return renderDurationSelection()
+            case 5:
+                return renderReviewStep()
+            default:
+                return null
+        }
+    }
+
+    const renderFlyerUpload = () => (
+        <View style={{ marginTop: 24 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 12 }}>
+                Business Flyer
+            </Text>
+            <Pressable onPress={onSelectImage}>
+                {businessFlyer ? (
+                    <View 
+                        style={{ 
+                            borderRadius: 16, 
+                            overflow: 'hidden',
+                            backgroundColor: '#1F2937',
+                        }}
+                    >
+                        <Image 
+                            source={{ uri: businessFlyer.uri }} 
+                            style={{ width: '100%', height: 220, resizeMode: 'cover' }} 
+                        />
+                        <View style={{ padding: 12 }}>
+                            <Text style={{ color: '#FFFFFF', fontWeight: '600', fontSize: 14 }} numberOfLines={1}>
+                                {businessValues.businessName || 'Business Name'}
+                            </Text>
+                            <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 2 }} numberOfLines={1}>
+                                {businessValues.address || 'Business Address'}
+                            </Text>
+                        </View>
+                        <View 
+                            style={{ 
+                                position: 'absolute', 
+                                top: 12, 
+                                right: 12, 
+                                backgroundColor: 'rgba(0,0,0,0.6)', 
+                                borderRadius: 8,
+                                padding: 8,
+                            }}
+                        >
+                            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '500' }}>
+                                Tap to change
+                            </Text>
+                        </View>
+                    </View>
+                ) : (
+                    <View 
+                        style={{
+                            height: 180,
+                            borderRadius: 16,
+                            borderWidth: 2,
+                            borderColor: '#E5E7EB',
+                            borderStyle: 'dashed',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: '#F9FAFB',
+                        }}
+                    >
+                        <View 
+                            style={{
+                                width: 56,
+                                height: 56,
+                                borderRadius: 28,
+                                backgroundColor: '#E5E7EB',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                marginBottom: 12,
+                            }}
+                        >
+                            <Icon source="image-plus" size={28} color="#6B7280" />
+                        </View>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 4 }}>
+                            Upload your flyer
+                        </Text>
+                        <Text style={{ fontSize: 14, color: '#9CA3AF' }}>
+                            Tap to select an image
+                        </Text>
+                    </View>
                 )}
-                {currentStage == 1 && (
-                    <Animated.View className='flex-1 flex-col gap-y-3 mt-5' entering={FadeInLeft.duration(500).easing(Easing.inOut(Easing.quad))} exiting={FadeOut}>
-                        {businessStageQuestions.map((item, index) => {
-                            return (
-                                <View className='w-[90%] self-center flex-2' key={index}>
-                                    <Controller
-                                        control={businessMethods.control}
-                                        name={item.schemaId}
-                                        render={({
-                                            field: { onChange, onBlur, value },
-                                            fieldState: { error },
-                                        }) => {
-                                            return (
-                                                <>
-                                                    <TextInput
-                                                        mode='outlined'
-                                                        label={item.label}
-                                                        onBlur={onBlur}
-                                                        value={value}
-                                                        onChangeText={onChange}
-                                                        style={{ backgroundColor: 'white', borderBottomWidth: 0, borderWidth: 0, paddingLeft: 10 }}
-                                                        outlineColor='blue'
-                                                        activeOutlineColor='blue'
-                                                        textColor='black'
-                                                        contentStyle={{ paddingLeft: 3 }}
-                                                        selectionColor='black'
-                                                    />
-                                                    <HelperText type="error" visible={error ? true : false} className='text-red-500 font-bold'>
-                                                        {error?.message}
-                                                    </HelperText>
-                                                </>
-                                            );
-                                        }}
-                                    />
-                                </View>
-                            )
-                        }
-                        )}
-                        <View className='flex-row items-center w-[100%] justify-between flex-2 px-5' >
-                            <Button className=' bg-gray-500 ' mode='contained' theme={{ roundness: 1 }} textColor='white' onPress={onGoBack}>
-                                <Text>Back</Text>
-                            </Button>
-                            <Button className='bg-[#57BA47] ' mode='contained' theme={{ roundness: 1 }} textColor='white' onPress={() => {
-                                // get current form values
-                                const currFormValues = businessMethods.getValues();
+            </Pressable>
+        </View>
+    )
 
-                                // Prevalidate using zod's safeParse
-                                const result = businessInfoSubmissions.safeParse(currFormValues);
+    const renderDurationSelection = () => (
+        <>
+            {/* Onboarding Fee Notice */}
+            <View style={{
+                backgroundColor: '#FEF3C7',
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+            }}>
+                <View style={{
+                    backgroundColor: '#F59E0B',
+                    borderRadius: 12,
+                    width: 24,
+                    height: 24,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 10,
+                }}>
+                    <Text style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>$</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#92400E' }}>
+                        $100 Onboarding Fee
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#B45309' }}>
+                        One-time fee for new advertisers (added at checkout)
+                    </Text>
+                </View>
+            </View>
 
-                                // If prevalidation is failed, display the error
-                                if (!result.success) {
-                                    Alert.alert('Fill out all questions please')
-                                } else {
-                                    // If prevalidation is successful, notify the user
-                                    console.log(businessMethods.getValues())
-                                    onFinished()
-                                }
-                            }}>
-                                <Text>Next</Text>
-                            </Button>
+            {DURATION_OPTIONS.map((option, index) => (
+                <Pressable
+                    key={index}
+                    onPress={() => setSelectedDuration(option.value)}
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: 16,
+                        borderRadius: 12,
+                        borderWidth: 2,
+                        borderColor: selectedDuration === option.value ? '#111827' : '#E5E7EB',
+                        backgroundColor: selectedDuration === option.value ? '#F9FAFB' : '#FFFFFF',
+                        marginBottom: 12,
+                    }}
+                >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <View 
+                            style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: 12,
+                                borderWidth: 2,
+                                borderColor: selectedDuration === option.value ? '#111827' : '#D1D5DB',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                marginRight: 12,
+                            }}
+                        >
+                            {selectedDuration === option.value && (
+                                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#111827' }} />
+                            )}
                         </View>
-                    </Animated.View>
-                )}
-                {currentStage == 2 && (
-                    <Animated.View className='flex-col' entering={FadeInLeft.duration(500).easing(Easing.inOut(Easing.quad))}>
-                        <View className='flex-row justify-between items-center px-2'>
-                            <Text className='text-gray-400 text-xl'>Duration</Text>
-                            <BusinessAdsDurationInfoTooltip />
-                        </View>
-                        <View className='items-center flex-col gap-y-2'>
-                            {
-                                ADDURATIONOPTIONS.map((item, index) => (
-                                    <View key={index}>
-                                        <BusinessAdsDurationCard height={height / 15} width={width * .8} selectedDuration={selectedDuration} setDuration={setSelectedDuration} duration={item} index={index} />
-                                    </View>
-                                ))
-                            }
-                        </View>
-                        <View className='flex-row justify-between items-center px-2 mt-4'>
-                            <Text className='text-gray-400 text-xl'>Upload Flyer</Text>
-                        </View>
-                        <Pressable className='items-center justify-center bg-white self-center mt-2' onPress={onSelectImage} style={{ borderRadius: 20, width: listItemWidth * .93 }}>
-                            {businessFlyer ?
-                                <View className='h-[300] flex flex-col bg-gray-500' style={{ borderRadius: 19, overflow: 'hidden', width: listItemWidth * .93 }}>
-                                    <Image source={{ uri: businessFlyer.uri }} style={{ width: '100%', height: 250, objectFit: 'fill' }} />
-                                    <View className='px-2 mt-1'>
-                                        <Text className='text-white text-[12px]' numberOfLines={1} adjustsFontSizeToFit><Text className='font-bold'>{PreviewBusinessAdInfo?.businessName}</Text> {PreviewBusinessAdInfo?.address}</Text>
-                                        <Text className='text-white text-[12px]' numberOfLines={1} adjustsFontSizeToFit>Contacts: {PreviewBusinessAdInfo?.businessEmail} {formatPhoneNumber(PreviewBusinessAdInfo?.businessPhoneNumber)}</Text>
-                                    </View>
-                                </View>
-
-                                : (
-                                    <View className=' overflow-hidden w-[100%] h-[100%]' style={{ borderRadius: 20 }}>
-                                        <BlurView intensity={10} style={{ height: '100%', width: '100%', borderRadius: 20, alignItems: 'center', justifyContent: 'center' }} >
-                                            <View className='p-2 rounded-full bg-gray-50' >
-                                                <Icon source={"camera"} size={60} color='#007AFF' />
-                                            </View>
-                                        </BlurView>
+                        <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>
+                                    {option.value}
+                                </Text>
+                                {option.isSubscription && (
+                                    <View style={{
+                                        backgroundColor: '#DBEAFE',
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 2,
+                                        borderRadius: 6,
+                                        marginLeft: 8,
+                                    }}>
+                                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#1D4ED8' }}>
+                                            AUTO-RENEW
+                                        </Text>
                                     </View>
                                 )}
-                        </Pressable>
-                        <View className='flex-row items-center w-[100%] justify-between  px-5 mt-[20%]' >
-                            <Button className=' bg-gray-500 ' mode='contained' theme={{ roundness: 1 }} onPress={onGoBack} textColor='white'>
-                                <Text>Back</Text>
-                            </Button>
-                            <Button className='bg-[#57BA47] ' mode='contained' theme={{ roundness: 1 }} disabled={!finishedSelectedChoices} onPress={onSubmit} textColor='white'>
-                                <Text>Submit</Text>
-                            </Button>
+                            </View>
+                            <Text style={{ fontSize: 13, color: '#6B7280' }}>
+                                {option.description}
+                            </Text>
                         </View>
-                    </Animated.View>
-                )
-                }
+                    </View>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginLeft: 8 }}>
+                        {option.price}
+                    </Text>
+                </Pressable>
+            ))}
+        </>
+    )
+
+    const renderReviewStep = () => {
+        const durationOption = DURATION_OPTIONS.find(d => d.value === selectedDuration)
+        const personalInfo = personalMethods.getValues()
+        const businessInfo = businessMethods.getValues()
+
+        return (
+            <>
+                {/* Personal Info Section */}
+                <View style={{ marginBottom: 24 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151' }}>
+                            Contact Information
+                        </Text>
+                        <Pressable onPress={() => goToStep(1)}>
+                            <Text style={{ fontSize: 14, color: '#2563EB', fontWeight: '500' }}>Edit</Text>
+                        </Pressable>
+                    </View>
+                    <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
+                        <Text style={{ fontSize: 14, color: '#111827', marginBottom: 4 }}>{personalInfo.name}</Text>
+                        <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 4 }}>{personalInfo.phoneNumber}</Text>
+                        <Text style={{ fontSize: 14, color: '#6B7280' }}>{personalInfo.email}</Text>
+                    </View>
+                </View>
+
+                {/* Business Info Section */}
+                <View style={{ marginBottom: 24 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151' }}>
+                            Business Name
+                        </Text>
+                        <Pressable onPress={() => goToStep(2)}>
+                            <Text style={{ fontSize: 14, color: '#2563EB', fontWeight: '500' }}>Edit</Text>
+                        </Pressable>
+                    </View>
+                    <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
+                        <Text style={{ fontSize: 14, color: '#111827', fontWeight: '600' }}>{businessInfo.businessName}</Text>
+                    </View>
+                </View>
+
+                {/* Business Location Section */}
+                <View style={{ marginBottom: 24 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151' }}>
+                            Business Location
+                        </Text>
+                        <Pressable onPress={() => goToStep(3)}>
+                            <Text style={{ fontSize: 14, color: '#2563EB', fontWeight: '500' }}>Edit</Text>
+                        </Pressable>
+                    </View>
+                    <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
+                        <Text style={{ fontSize: 14, color: '#111827', marginBottom: 4 }}>{businessInfo.address}</Text>
+                        <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 4 }}>{businessInfo.city}, {businessInfo.state}</Text>
+                        <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 4 }}>{businessInfo.businessPhoneNumber}</Text>
+                        <Text style={{ fontSize: 14, color: '#6B7280' }}>{businessInfo.businessEmail}</Text>
+                    </View>
+                </View>
+
+                {/* Ad Preview */}
+                <View style={{ marginBottom: 24 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151' }}>
+                            Your Ad Preview
+                        </Text>
+                        <Pressable onPress={() => goToStep(2)}>
+                            <Text style={{ fontSize: 14, color: '#2563EB', fontWeight: '500' }}>Edit</Text>
+                        </Pressable>
+                    </View>
+                    <BusinessAdPreview
+                        businessName={businessInfo.businessName}
+                        address={businessInfo.address}
+                        city={businessInfo.city}
+                        state={businessInfo.state}
+                        phoneNumber={businessInfo.businessPhoneNumber}
+                        email={businessInfo.businessEmail}
+                        imageUri={businessFlyer?.uri}
+                    />
+                </View>
+
+                {/* Pricing Summary */}
+                <View style={{ marginBottom: 24 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 12 }}>
+                        Payment Summary
+                    </Text>
+                    <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                                    {durationOption?.isSubscription ? 'Monthly Subscription' : `Ad Duration (${selectedDuration})`}
+                                </Text>
+                                {durationOption?.isSubscription && (
+                                    <View style={{
+                                        backgroundColor: '#DBEAFE',
+                                        paddingHorizontal: 6,
+                                        paddingVertical: 2,
+                                        borderRadius: 4,
+                                        marginLeft: 8
+                                    }}>
+                                        <Text style={{ fontSize: 10, color: '#1D4ED8', fontWeight: '600' }}>RECURRING</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }}>{durationOption?.price}</Text>
+                        </View>
+                        {isFirstSubmission && (
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 14, color: '#6B7280' }}>One-time Onboarding Fee</Text>
+                                    <View style={{ 
+                                        backgroundColor: '#DBEAFE', 
+                                        paddingHorizontal: 6, 
+                                        paddingVertical: 2, 
+                                        borderRadius: 4, 
+                                        marginLeft: 8 
+                                    }}>
+                                        <Text style={{ fontSize: 10, color: '#1D4ED8', fontWeight: '600' }}>NEW</Text>
+                                    </View>
+                                </View>
+                                <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }}>$100</Text>
+                            </View>
+                        )}
+                        <View style={{ height: 1, backgroundColor: '#E5E7EB', marginVertical: 12 }} />
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <Text style={{ fontSize: 16, color: '#111827', fontWeight: '600' }}>
+                                {durationOption?.isSubscription ? 'Due Today' : 'Total'}
+                            </Text>
+                            <Text style={{ fontSize: 20, color: '#111827', fontWeight: '700' }}>
+                                ${(getTotalAmount().total / 100).toFixed(0)}
+                            </Text>
+                        </View>
+                    </View>
+                    {isFirstSubmission && (
+                        <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 8, fontStyle: 'italic' }}>
+                            * The onboarding fee is a one-time charge for new advertisers and won't apply to future ads.
+                        </Text>
+                    )}
+                    {durationOption?.isSubscription && (
+                        <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 8, fontStyle: 'italic' }}>
+                            * Your subscription will automatically renew each month. You can cancel anytime from your Stripe account.
+                        </Text>
+                    )}
+                </View>
+
+                {/* Saved Cards Section */}
+                {savedCards.length > 0 && (
+                    <View style={{ marginBottom: 24 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 12 }}>
+                            Payment Method
+                        </Text>
+                        
+                        {/* Saved Cards List */}
+                        {savedCards.map((card) => (
+                            <Pressable
+                                key={card.id}
+                                onPress={() => setSelectedSavedCard(selectedSavedCard === card.id ? null : card.id)}
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: 16,
+                                    borderRadius: 12,
+                                    borderWidth: 2,
+                                    borderColor: selectedSavedCard === card.id ? '#111827' : '#E5E7EB',
+                                    backgroundColor: selectedSavedCard === card.id ? '#F9FAFB' : '#FFFFFF',
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Icon 
+                                        source="credit-card-outline" 
+                                        size={24} 
+                                        color={selectedSavedCard === card.id ? '#111827' : '#6B7280'} 
+                                    />
+                                    <View style={{ marginLeft: 12 }}>
+                                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
+                                            {getCardBrandDisplayName(card.brand)}
+                                        </Text>
+                                        <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
+                                            •••• {card.last4} | Expires {card.expMonth}/{card.expYear}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View 
+                                    style={{
+                                        width: 22,
+                                        height: 22,
+                                        borderRadius: 11,
+                                        borderWidth: 2,
+                                        borderColor: selectedSavedCard === card.id ? '#111827' : '#D1D5DB',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    {selectedSavedCard === card.id && (
+                                        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#111827' }} />
+                                    )}
+                                </View>
+                            </Pressable>
+                        ))}
+
+                        {/* Use New Card Option */}
+                        <Pressable
+                            onPress={() => setSelectedSavedCard(null)}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                paddingVertical: 14,
+                                borderRadius: 12,
+                                borderWidth: 1.5,
+                                borderColor: '#E5E7EB',
+                                borderStyle: 'dashed',
+                            }}
+                        >
+                            <Icon source="plus" size={18} color="#2563EB" />
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#2563EB', marginLeft: 8 }}>
+                                {selectedSavedCard ? 'Use a different card' : 'Enter card at checkout'}
+                            </Text>
+                        </Pressable>
+                    </View>
+                )}
+
+                {/* Save Card Checkbox - only show if not using a saved card */}
+                {!selectedSavedCard && (
+                    <Pressable 
+                        onPress={() => setSaveCardForFuture(!saveCardForFuture)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
+                    >
+                        <View 
+                            style={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: 6,
+                                borderWidth: 2,
+                                borderColor: saveCardForFuture ? '#111827' : '#D1D5DB',
+                                backgroundColor: saveCardForFuture ? '#E5E7EB' : '#FFFFFF',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                marginRight: 12,
+                            }}
+                        >
+                            {saveCardForFuture && (
+                                <Icon source="check" size={14} color="#111827" />
+                            )}
+                        </View>
+                        <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                            Save card for future purchases
+                        </Text>
+                    </Pressable>
+                )}
+
+                {/* Terms Checkbox */}
+                <Pressable 
+                    onPress={() => setTermsAccepted(!termsAccepted)}
+                    style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24 }}
+                >
+                    <View 
+                        style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 6,
+                            borderWidth: 2,
+                            borderColor: termsAccepted ? '#111827' : '#D1D5DB',
+                            backgroundColor: termsAccepted ? '#111827' : '#FFFFFF',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            marginRight: 12,
+                            marginTop: 2,
+                        }}
+                    >
+                        {termsAccepted && (
+                            <Icon source="check" size={16} color="#FFFFFF" />
+                        )}
+                    </View>
+                    <Text style={{ flex: 1, fontSize: 14, color: '#6B7280', lineHeight: 20 }}>
+                        I agree to the terms and conditions. I understand my ad will be reviewed before being posted and payment is non-refundable once the ad is approved.
+                    </Text>
+                </Pressable>
+            </>
+        )
+    }
+
+    // Show success screen
+    if (showSuccess) {
+        return <SuccessScreen onDone={handleSuccessDone} />
+    }
+
+    return (
+        <KeyboardAvoidingView 
+            style={{ flex: 1 }} 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['bottom']}>
+                <StatusBar barStyle="dark-content" />
+            
+            {/* Custom Header */}
+            <View style={{ 
+                flexDirection: 'row', 
+                alignItems: 'center', 
+                paddingHorizontal: 16, 
+                paddingTop: insets.top + 8,
+                paddingBottom: 8,
+                backgroundColor: '#FFFFFF'
+            }}>
+                <Pressable onPress={handleBack} style={{ padding: 8 }}>
+                    <Icon source="arrow-left" size={24} color="#000000" />
+                </Pressable>
             </View>
-        </ScrollView>
+            
+            {/* Scrollable Content */}
+            <ScrollView 
+                style={{ flex: 1 }} 
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Progress Bar */}
+                <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 8 }}>
+                    <View 
+                        style={{ 
+                            height: 6, 
+                            backgroundColor: '#E5E7EB', 
+                            borderRadius: 3,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <Animated.View 
+                            style={[
+                                { 
+                                    height: '100%', 
+                                    backgroundColor: '#111827', 
+                                    borderRadius: 3,
+                                },
+                                progressAnimatedStyle
+                            ]} 
+                        />
+                    </View>
+                </View>
+
+                {/* Step Content */}
+                <Animated.View 
+                    key={currentStep}
+                    entering={FadeInRight.duration(250)} 
+                    exiting={FadeOutLeft.duration(200)}
+                    style={{ paddingHorizontal: 24, paddingTop: 24 }}
+                >
+                    {/* Step Title */}
+                    <Text style={{ fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 }}>
+                        {currentConfig.title}
+                    </Text>
+                    <Text style={{ fontSize: 16, color: '#6B7280', marginBottom: 32, lineHeight: 24 }}>
+                        {currentConfig.subtitle}
+                    </Text>
+
+                    {/* Step Content */}
+                    {renderStepContent()}
+                </Animated.View>
+            </ScrollView>
+
+            {/* Bottom Button */}
+            <View 
+                style={{
+                    backgroundColor: '#FFFFFF',
+                    paddingHorizontal: 24,
+                    paddingVertical: 16,
+                    borderTopWidth: 1,
+                    borderTopColor: '#E5E7EB',
+                }}
+            >
+                <Pressable
+                    onPress={isReviewStep ? handlePayment : handleNext}
+                    disabled={isButtonLoading}
+                    style={{
+                        backgroundColor: isButtonLoading ? '#9CA3AF' : '#111827',
+                        borderRadius: 16,
+                        height: 56,
+                        flexDirection: 'row',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    {isButtonLoading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                        <>
+                            <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF', marginRight: 8 }}>
+                                {isReviewStep ? `Pay $${(getTotalAmount().total / 100).toFixed(0)}` : currentStep === 0 ? 'Start Application' : 'Continue'}
+                            </Text>
+                            <Icon source={isReviewStep ? "credit-card-outline" : "arrow-right"} size={20} color="#FFFFFF" />
+                        </>
+                    )}
+                </Pressable>
+            </View>
+            </SafeAreaView>
+        </KeyboardAvoidingView>
     )
 }
 

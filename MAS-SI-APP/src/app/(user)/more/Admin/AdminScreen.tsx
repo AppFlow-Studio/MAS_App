@@ -56,8 +56,9 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
     ]
   },
   {
-    title: 'Ramdan Quran Tracker', screens : [
-      { buttonTitle : 'Update Information', link : '/more/Admin/RamadanQuranTracker'}
+    title: 'Ramadan Tracker', screens : [
+      { buttonTitle : 'Update Quran Progress', link : '/more/Admin/RamadanQuranTracker'},
+      { buttonTitle : 'Update Taraweeh Lineup', link : '/more/Admin/TaraweehLineupAdmin'}
     ]
   },
   {

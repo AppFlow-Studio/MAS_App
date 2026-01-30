@@ -29,20 +29,52 @@ import Animated, {
   FadeInDown,
   SlideInUp,
 } from 'react-native-reanimated';
+import { TaraweehSessionBottomSheet, TaraweehSessionBottomSheetRef, TaraweehSessionData } from '@/src/components/TaraweehSessionBottomSheet';
 
 // ============================================
 // TARAWEEH TIMELINE COMPONENT
 // ============================================
+interface TaraweehImam {
+  id?: string;
+  imam_name: string;
+  imam_img?: string;
+}
+
+interface TaraweehSpeaker {
+  id?: string;
+  speaker_name: string;
+  speaker_img?: string;
+}
+
 interface TaraweehTimelineProps {
   sessionOneStart: Date;
   sessionOneEnd: Date | number;
   sessionTwoStart: Date | number;
   sessionTwoEnd: Date | number;
+  currentSurah: {
+    surah: number;
+    ayah_num: number;
+    ayah: string;
+    surah_name: string;
+  };
+  sessionOneLineup?: {
+    firstFourImam?: TaraweehImam;
+    speaker?: TaraweehSpeaker;
+    secondFourImam?: TaraweehImam;
+    witrImam?: TaraweehImam;
+  };
+  sessionTwoLineup?: {
+    firstFourImam?: TaraweehImam;
+    speaker?: TaraweehSpeaker;
+    secondFourImam?: TaraweehImam;
+    witrImam?: TaraweehImam;
+  };
 }
 
 type TaraweehState = 'before' | 'session_one' | 'break' | 'session_two' | 'completed';
 
-const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, sessionTwoEnd }: TaraweehTimelineProps) => {
+const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, sessionTwoEnd, currentSurah, sessionOneLineup, sessionTwoLineup }: TaraweehTimelineProps) => {
+  const sessionBottomSheetRef = useRef<TaraweehSessionBottomSheetRef>(null);
   const [now, setNow] = useState(new Date());
   
   // Update time every minute for live countdown
@@ -199,6 +231,75 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
   
   const countdownInfo = getCountdownInfo();
 
+  // Handler to open session bottom sheet
+  const handleSessionPress = (sessionNumber: 1 | 2) => {
+    const lineup = sessionNumber === 1 ? sessionOneLineup : sessionTwoLineup;
+    
+    const sessionData: TaraweehSessionData = {
+      sessionNumber,
+      sessionTitle: sessionNumber === 1 ? 'Session One' : 'Session Two',
+      startTime: format(sessionNumber === 1 ? sessionOneStart : new Date(sessionTwoStart), 'h:mm a'),
+      endTime: format(sessionNumber === 1 ? new Date(sessionOneEnd) : new Date(sessionTwoEnd), 'h:mm a'),
+      lineup: [],
+    };
+
+    // All sessions have 4 sections: Rakats 1-4, Speaker, Rakats 5-8, Witr
+    
+    // 1. Rakats 1-4
+    sessionData.lineup.push({
+      type: 'rakats',
+      imam_name: lineup?.firstFourImam?.imam_name || 'TBA',
+      imam_img: lineup?.firstFourImam?.imam_img,
+      rakats: 4,
+      label: 'RAKATS 1-4',
+    });
+
+    // 2. Speaker
+    sessionData.lineup.push({
+      type: 'speaker',
+      speaker_name: lineup?.speaker?.speaker_name || 'TBA',
+      speaker_img: lineup?.speaker?.speaker_img,
+    });
+
+    // 3. Rakats 5-8
+    sessionData.lineup.push({
+      type: 'rakats',
+      imam_name: lineup?.secondFourImam?.imam_name || 'TBA',
+      imam_img: lineup?.secondFourImam?.imam_img,
+      rakats: 4,
+      label: 'RAKATS 5-8',
+    });
+
+    // 4. Witr
+    const witrImam = (lineup as typeof sessionTwoLineup)?.witrImam;
+    sessionData.lineup.push({
+      type: 'witr',
+      imam_name: witrImam?.imam_name || 'TBA',
+      imam_img: witrImam?.imam_img,
+      rakats: 3,
+      label: 'WITR',
+    });
+
+    sessionBottomSheetRef.current?.open(sessionData);
+  };
+
+  // Quran progress calculation for compact tracker
+  const totalVerses = 6236;
+  const versesBeforeSurah = [
+    0, 7, 293, 493, 669, 789, 954, 1160, 1235, 1364, 1473, 1596, 1707, 1750, 1802,
+    1901, 2029, 2140, 2250, 2348, 2483, 2595, 2673, 2791, 2855, 2932, 3159, 3252,
+    3340, 3409, 3469, 3503, 3533, 3606, 3660, 3705, 3788, 3970, 4058, 4133, 4218,
+    4272, 4325, 4414, 4473, 4510, 4545, 4583, 4612, 4630, 4675, 4735, 4784, 4846,
+    4901, 4979, 5075, 5104, 5126, 5150, 5163, 5177, 5188, 5199, 5217, 5229, 5241,
+    5271, 5323, 5375, 5419, 5447, 5475, 5495, 5531, 5566, 5616, 5656, 5672, 5698,
+    5743, 5765, 5801, 5829, 5848, 5884, 5909, 5931, 5948, 5967, 5993, 6023, 6043,
+    6058, 6079, 6090, 6098, 6106, 6125, 6130, 6138, 6146, 6157, 6168, 6176, 6179,
+    6188, 6193, 6197, 6204, 6207, 6213, 6221, 6227, 6231
+  ];
+  const currentVerseNumber = (versesBeforeSurah[currentSurah.surah - 1] || 0) + currentSurah.ayah_num;
+  const quranProgressPercent = Math.min(100, Math.round((currentVerseNumber / totalVerses) * 100));
+  const juzNumber = Math.min(30, Math.ceil((currentVerseNumber / totalVerses) * 30));
+
   // Helper to determine node state
   const getNodeState = (nodeIndex: number): 'completed' | 'active' | 'upcoming' => {
     if (nodeIndex === 1) {
@@ -241,10 +342,13 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
       {/* Session Cards */}
       <View style={styles.sessionCardsContainer}>
         {/* Session One Card */}
-        <View style={[
-          styles.sessionCard,
-          currentState === 'session_one' && styles.sessionCardActive
-        ]}>
+        <Pressable 
+          style={[
+            styles.sessionCard,
+            currentState === 'session_one' && styles.sessionCardActive
+          ]}
+          onPress={() => handleSessionPress(1)}
+        >
           <View style={styles.sessionCardHeader}>
             <Text style={styles.sessionNumber}>1</Text>
             <Text style={styles.sessionLabel}>Session One</Text>
@@ -263,25 +367,33 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
               <Text style={styles.nowBadgeText}>NOW</Text>
             </View>
           )}
-          <Link 
-            href={{
-              pathname: '/myPrograms/notifications/NotificationEvents',
-              params: { initialTab: 'prayer', openPrayer: 'Taraweeh 1' }
-            }}
-            asChild
-          >
-            <Pressable style={styles.sessionNotificationBtn}>
-              <Icon source="bell-outline" size={14} color="#1d4681" />
-              <Text style={styles.sessionNotificationBtnText}>Notify</Text>
-            </Pressable>
-          </Link>
-        </View>
+          <View style={styles.sessionActionRow}>
+            <View style={styles.viewLineupBtn}>
+              <Icon source="account-group-outline" size={14} color="#1d4681" />
+              <Text style={styles.viewLineupBtnText}>Lineup</Text>
+            </View>
+            <Link 
+              href={{
+                pathname: '/myPrograms/notifications/NotificationEvents',
+                params: { initialTab: 'prayer', openPrayer: 'Taraweeh 1' }
+              }}
+              asChild
+            >
+              <Pressable style={styles.sessionNotificationBtn} onPress={(e) => e.stopPropagation()}>
+                <Icon source="bell-outline" size={14} color="#1d4681" />
+              </Pressable>
+            </Link>
+          </View>
+        </Pressable>
 
         {/* Session Two Card */}
-        <View style={[
-          styles.sessionCard,
-          currentState === 'session_two' && styles.sessionCardActive
-        ]}>
+        <Pressable 
+          style={[
+            styles.sessionCard,
+            currentState === 'session_two' && styles.sessionCardActive
+          ]}
+          onPress={() => handleSessionPress(2)}
+        >
           <View style={styles.sessionCardHeader}>
             <Text style={styles.sessionNumber}>2</Text>
             <Text style={styles.sessionLabel}>Session Two</Text>
@@ -300,20 +412,64 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
               <Text style={styles.nowBadgeText}>NOW</Text>
             </View>
           )}
-          <Link 
-            href={{
-              pathname: '/myPrograms/notifications/NotificationEvents',
-              params: { initialTab: 'prayer', openPrayer: 'Taraweeh 2' }
-            }}
-            asChild
-          >
-            <Pressable style={styles.sessionNotificationBtn}>
-              <Icon source="bell-outline" size={14} color="#1d4681" />
-              <Text style={styles.sessionNotificationBtnText}>Notify</Text>
-            </Pressable>
-          </Link>
-        </View>
+          <View style={styles.sessionActionRow}>
+            <View style={styles.viewLineupBtn}>
+              <Icon source="account-group-outline" size={14} color="#1d4681" />
+              <Text style={styles.viewLineupBtnText}>Lineup</Text>
+            </View>
+            <Link 
+              href={{
+                pathname: '/myPrograms/notifications/NotificationEvents',
+                params: { initialTab: 'prayer', openPrayer: 'Taraweeh 2' }
+              }}
+              asChild
+            >
+              <Pressable style={styles.sessionNotificationBtn} onPress={(e) => e.stopPropagation()}>
+                <Icon source="bell-outline" size={14} color="#1d4681" />
+              </Pressable>
+            </Link>
+          </View>
+        </Pressable>
       </View>
+
+      {/* Taraweeh Session Bottom Sheet */}
+      <TaraweehSessionBottomSheet ref={sessionBottomSheetRef} />
+
+      {/* Compact Quran Tracker */}
+      <LinearGradient
+        colors={['#FFFFFF', '#D4F5E9', '#D4F5E9', '#FFFFFF']}
+        locations={[0, 0.05, 0.95, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.compactQuranContainer}
+      >
+        <View style={styles.compactQuranHeader}>
+          <View style={styles.compactQuranTitleRow}>
+            <Icon source="book-open-page-variant" size={14} color="#1d4681" />
+            <Text style={styles.compactQuranTitle}>Currently Reading</Text>
+          </View>
+          <View style={styles.compactJuzBadge}>
+            <Text style={styles.compactJuzBadgeText}>Juz {juzNumber}</Text>
+          </View>
+        </View>
+        <View style={styles.compactQuranProgressRow}>
+          <View style={styles.compactProgressBarBg}>
+            <LinearGradient
+              colors={['#10b981', '#059669']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.compactProgressBarFill, { width: `${quranProgressPercent}%` }]}
+            />
+          </View>
+          <Text style={styles.compactProgressText}>{quranProgressPercent}%</Text>
+        </View>
+        <Text style={styles.compactSurahText}>
+          {currentSurah.surah_name} {currentSurah.surah}:{currentSurah.ayah_num}
+        </Text>
+        <View style={styles.compactAyahContainer}>
+          <Text style={styles.compactAyahText}>{currentSurah.ayah}</Text>
+        </View>
+      </LinearGradient>
 
       {/* Timeline Track */}
       <View style={styles.timelineTrack}>
@@ -874,6 +1030,20 @@ export default function Index() {
   const [showRamadanTrackerInfo, setShowRamadanTrackerInfo] = useState(false);
   const [tableIndex, setTableIndex] = useState(0);
   const [UserSettings, setUserSettings] = useState<{ prayer: string, notification_settings: string[] }[]>();
+  const [taraweehLineup, setTaraweehLineup] = useState<{
+    sessionOne?: {
+      firstFourImam?: { imam_name: string; imam_img?: string };
+      speaker?: { speaker_name: string; speaker_img?: string };
+      secondFourImam?: { imam_name: string; imam_img?: string };
+      witrImam?: { imam_name: string; imam_img?: string };
+    };
+    sessionTwo?: {
+      firstFourImam?: { imam_name: string; imam_img?: string };
+      speaker?: { speaker_name: string; speaker_img?: string };
+      secondFourImam?: { imam_name: string; imam_img?: string };
+      witrImam?: { imam_name: string; imam_img?: string };
+    };
+  } | null>(null);
   const { height } = Dimensions.get('window');
   const tableWidth = Dimensions.get('screen').width * .95;
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
@@ -898,6 +1068,37 @@ export default function Index() {
     }
   };
 
+  const getTaraweehLineup = async () => {
+    // Fetch today's taraweeh lineup from supabase
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('taraweeh_lineup')
+      .select('*')
+      .eq('date', today)
+      .single();
+    
+    if (data) {
+      setTaraweehLineup(data.lineup);
+    } else {
+      // If no data in database, use placeholder/default data
+      // This can be removed once the database is populated
+      setTaraweehLineup({
+        sessionOne: {
+          firstFourImam: { imam_name: 'TBA' },
+          speaker: { speaker_name: 'TBA' },
+          secondFourImam: { imam_name: 'TBA' },
+          witrImam: { imam_name: 'TBA' },
+        },
+        sessionTwo: {
+          firstFourImam: { imam_name: 'TBA' },
+          speaker: { speaker_name: 'TBA' },
+          secondFourImam: { imam_name: 'TBA' },
+          witrImam: { imam_name: 'TBA' },
+        },
+      });
+    }
+  };
+
   // ALL useEffect hooks must be called before early returns
   useEffect(() => {
     flatlistRef.current?.scrollToIndex({
@@ -911,6 +1112,7 @@ export default function Index() {
 
     getUserSetting();
     GetRamadanTracker();
+    getTaraweehLineup();
 
     const listenForSettings = supabase.channel('Listen for user settings change').on(
       'postgres_changes',
@@ -934,9 +1136,20 @@ export default function Index() {
       async (payload) => await GetRamadanTracker()
     ).subscribe();
 
+    const listenForTaraweehLineupChanges = supabase.channel('Listen for Taraweeh Lineup Changes').on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'taraweeh_lineup',
+      },
+      async (payload) => await getTaraweehLineup()
+    ).subscribe();
+
     return () => {
       supabase.removeChannel(listenForSettings);
       supabase.removeChannel(listenForQuranTrackerChanges);
+      supabase.removeChannel(listenForTaraweehLineupChanges);
     };
   }, [session?.user.id]);
 
@@ -1013,6 +1226,9 @@ export default function Index() {
             sessionOneEnd={FirstTaraweehEndTime}
             sessionTwoStart={SecondTaraweehTime}
             sessionTwoEnd={SecondTaraweehEndTime}
+            currentSurah={currentSurah}
+            sessionOneLineup={taraweehLineup?.sessionOne}
+            sessionTwoLineup={taraweehLineup?.sessionTwo}
           />
 
           {/* Suhoor & Iftar Timer - Redesigned */}
@@ -1358,6 +1574,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.5,
   },
+  sessionActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    gap: 8,
+  },
+  viewLineupBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(29, 70, 129, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    gap: 4,
+  },
+  viewLineupBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1d4681',
+  },
   sessionNotificationBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1366,7 +1605,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 12,
-    marginTop: 8,
     gap: 4,
   },
   sessionNotificationBtnText: {
@@ -1396,6 +1634,80 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#1d4681',
+  },
+
+  // Compact Quran Tracker Styles (inside Taraweeh container)
+  compactQuranContainer: {
+    marginHorizontal: -16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  compactQuranHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  compactQuranTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  compactQuranTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  compactJuzBadge: {
+    backgroundColor: 'rgba(29, 70, 129, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  compactJuzBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#1d4681',
+  },
+  compactQuranProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 6,
+  },
+  compactProgressBarBg: {
+    flex: 1,
+    height: 6,
+    backgroundColor: 'rgba(29, 70, 129, 0.1)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  compactProgressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  compactProgressText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#10b981',
+    minWidth: 32,
+  },
+  compactSurahText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1d4681',
+  },
+  compactAyahContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 10,
+  },
+  compactAyahText: {
+    fontSize: 18,
+    color: '#1e293b',
+    textAlign: 'right',
+    lineHeight: 30,
   },
 
   // Suhoor/Iftar Sun Arc Styles

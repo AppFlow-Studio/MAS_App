@@ -286,3 +286,65 @@ export const getCardBrandDisplayName = (brand: string): string => {
     }
     return brandNames[brand?.toLowerCase()] || brand || 'Card'
 }
+
+// Type for subscription checkout result
+export interface SubscriptionCheckoutResult {
+    success: boolean;
+    sessionId?: string;
+    url?: string;
+    error?: string;
+}
+
+/**
+ * Create a Stripe Checkout Session for a subscription
+ * @param priceId The Stripe Price ID for the subscription
+ * @param successUrl Optional custom success URL
+ * @param cancelUrl Optional custom cancel URL
+ * @returns SubscriptionCheckoutResult with checkout URL or error
+ */
+export const createBusinessSubscription = async (
+    priceId: string,
+    successUrl?: string,
+    cancelUrl?: string
+): Promise<SubscriptionCheckoutResult> => {
+    console.log('Creating business subscription for price:', priceId)
+    
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+        console.log('No active session found')
+        return { success: false, error: 'Login required' }
+    }
+    
+    try {
+        const { data, error } = await supabase.functions.invoke('create-business-subscription', {
+            body: { 
+                priceId,
+                successUrl,
+                cancelUrl
+            }
+        })
+        
+        if (error) {
+            console.log('Error creating subscription:', error)
+            return { success: false, error: error.message || 'Failed to create subscription' }
+        }
+        
+        if (data?.error) {
+            console.log('Server error creating subscription:', data.error)
+            return { success: false, error: data.error }
+        }
+        
+        console.log('Subscription checkout session created:', data?.sessionId)
+        console.log('Checkout URL:', data?.url)
+        
+        return {
+            success: true,
+            sessionId: data?.sessionId,
+            url: data?.url
+        }
+    } catch (error: any) {
+        console.log('Exception creating subscription:', error)
+        return { success: false, error: error?.message || 'Failed to create subscription' }
+    }
+}

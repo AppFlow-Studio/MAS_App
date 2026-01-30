@@ -178,12 +178,30 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     setScrollX(offsetX);
-    
-    // Calculate the current index based on scroll position
+  };
+
+  // Only update tab when scroll settles to prevent flickering during fast swipes
+  const handleMomentumScrollEnd = (event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / itemWidth);
     if (newIndex !== currentIndexRef.current && newIndex >= 0 && newIndex < items.length) {
       currentIndexRef.current = newIndex;
       onIndexChange?.(newIndex);
+    }
+  };
+
+  // Also handle when user lifts finger without momentum (slow drag and release)
+  const handleScrollEndDrag = (event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const velocity = event.nativeEvent.velocity?.x || 0;
+    
+    // If there's no significant velocity, the momentum event won't fire, so update here
+    if (Math.abs(velocity) < 0.5) {
+      const newIndex = Math.round(offsetX / itemWidth);
+      if (newIndex !== currentIndexRef.current && newIndex >= 0 && newIndex < items.length) {
+        currentIndexRef.current = newIndex;
+        onIndexChange?.(newIndex);
+      }
     }
   };
 
@@ -251,6 +269,8 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
         )}
         horizontal
         onScroll={handleScroll}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollEndDrag={handleScrollEndDrag}
         scrollEventThrottle={16}
         snapToInterval={itemWidth}
         decelerationRate="fast"

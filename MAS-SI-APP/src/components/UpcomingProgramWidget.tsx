@@ -1,12 +1,5 @@
 import { View, Text, Pressable, ImageBackground, ScrollView, Animated, Image, Dimensions, PanResponder, LayoutAnimation, Platform, UIManager, Modal as RNModal } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import ReAnimated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -118,8 +111,6 @@ export default function UpcomingProgramWidget() {
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const isSheetExpandedRef = useRef(false);
   const sheetHeightAnim = useRef(new Animated.Value(0)).current; // 0 = collapsed, 1 = expanded (legacy)
-  // Reanimated shared value for smooth spring animation (like SignInAnonModal)
-  const sheetMinHeight = useSharedValue(220);
 
   // Pan responder for notification sheet drag-to-dismiss
   const notificationPanResponder = useRef(
@@ -943,7 +934,6 @@ export default function UpcomingProgramWidget() {
       panY.setValue(0);
       panYValue.current = 0;
       sheetHeightAnim.setValue(0);
-      sheetMinHeight.value = 220; // Reset reanimated value
       setModalSpeakerData([]);
       setModalSpeakerString('');
       setModalImageReady(false);
@@ -982,13 +972,12 @@ export default function UpcomingProgramWidget() {
       panY.setValue(0);
       panYValue.current = 0;
       sheetHeightAnim.setValue(0);
-      sheetMinHeight.value = 220; // Reset reanimated value
       scrollOffset.current = 0;
       previousScrollOffset.current = 0;
       isScrolling.current = false;
       isClosing.current = false;
     });
-  }, [sheetHeightAnim, sheetMinHeight]);
+  }, [sheetHeightAnim]);
 
   // Toggle sheet expansion with smooth rise animation (like SignInAnonModal)
   const toggleSheetExpand = useCallback(() => {
@@ -1015,12 +1004,6 @@ export default function UpcomingProgramWidget() {
     setIsSheetExpanded(newValue);
     isSheetExpandedRef.current = newValue;
   }, [isSheetExpanded]);
-
-  // Animated style for the sheet height (using reanimated)
-  // Only apply minHeight when collapsed, let content determine height when expanded
-  const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    minHeight: isSheetExpanded ? undefined : sheetMinHeight.value,
-  }));
 
   const checkWatchedStatus = async (lecturesData: Lectures[]) => {
     try {
@@ -1653,8 +1636,10 @@ export default function UpcomingProgramWidget() {
                             const paidLink = (upcomingItem.type === 'program' && programData?.paid_link) ||
                               (upcomingItem.type === 'event' && eventData?.paid_link);
                             if (paidLink) {
-                              closeModal(true);
+                              // Open WebBrowser first, then close modal after browser is dismissed
+                              // This prevents the visual drop and app freeze issues
                               await WebBrowser.openBrowserAsync(paidLink);
+                              closeModal();
                             }
                           }}
                           style={{

@@ -28,6 +28,7 @@ const COLLAPSED_HEIGHT = 340;
 const EXPANDED_HEIGHT = 540;
 const PAYMENT_HEIGHT = 560;
 const SAVED_CARDS_HEIGHT = 450;
+const SUCCESS_HEIGHT = 360;
 
 const PRESET_AMOUNTS = [25, 50, 100];
 const CUSTOM_PRESET_AMOUNTS = [10, 50, 100];
@@ -39,7 +40,7 @@ export interface DonationBottomSheetRef {
 
 const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [viewState, setViewState] = useState<'select' | 'custom' | 'payment' | 'savedCards'>('select');
+  const [viewState, setViewState] = useState<'select' | 'custom' | 'payment' | 'savedCards' | 'success'>('select');
   const [selectedAmount, setSelectedAmount] = useState<number>(50);
   const [customAmount, setCustomAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -57,6 +58,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const customContentOpacity = useSharedValue(0);
   const paymentContentOpacity = useSharedValue(0);
   const savedCardsContentOpacity = useSharedValue(0);
+  const successContentOpacity = useSharedValue(0);
 
   const closeSheet = () => {
     setIsVisible(false);
@@ -72,6 +74,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
     customContentOpacity.value = 0;
     paymentContentOpacity.value = 0;
     savedCardsContentOpacity.value = 0;
+    successContentOpacity.value = 0;
   };
 
   // Load saved cards when sheet opens
@@ -288,13 +291,8 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
 
         if (emailError) console.log('Email error:', emailError);
 
-        Toast.show({
-          type: 'success',
-          text1: 'Thank you for your donation!',
-          text2: `$${amount} has been donated to MAS Staten Island`,
-        });
-
-        closeSheet();
+        // Show success animation
+        showSuccessScreen(amount);
       }
     } catch (error) {
       console.log('Payment error:', error);
@@ -416,13 +414,8 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
 
         if (emailError) console.log('Email error:', emailError);
 
-        Toast.show({
-          type: 'success',
-          text1: 'Thank you for your donation!',
-          text2: `$${amount} has been donated to MAS Staten Island`,
-        });
-
-        closeSheet();
+        // Show success animation
+        showSuccessScreen(amount);
       } else if (result.requiresAction && result.clientSecret) {
         // Card requires authentication - handle 3D Secure
         Alert.alert(
@@ -490,6 +483,34 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const animatedSavedCardsStyle = useAnimatedStyle(() => ({
     opacity: savedCardsContentOpacity.value,
   }));
+
+  const animatedSuccessStyle = useAnimatedStyle(() => ({
+    opacity: successContentOpacity.value,
+  }));
+
+  // Show success screen after payment completes
+  const showSuccessScreen = (amount: number) => {
+    // Fade out current view
+    paymentContentOpacity.value = withTiming(0, { duration: 150 });
+    savedCardsContentOpacity.value = withTiming(0, { duration: 150 });
+    
+    sheetHeight.value = withSpring(SUCCESS_HEIGHT, { 
+      damping: 20, 
+      stiffness: 150,
+      mass: 0.8,
+    });
+    
+    setTimeout(() => {
+      setViewState('success');
+      successContentOpacity.value = withTiming(1, { duration: 300 });
+      
+      // Auto-close after 2.5 seconds
+      setTimeout(() => {
+        successContentOpacity.value = withTiming(0, { duration: 200 });
+        setTimeout(() => closeSheet(), 200);
+      }, 2500);
+    }, 150);
+  };
 
   // Number pad component
   const NumberPad = () => (
@@ -872,6 +893,38 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 <Icon source="shield-check" size={14} color="#10B981" />
                 <RNText style={styles.securedRowText}>SECURED BY STRIPE</RNText>
               </View>
+            </Animated.View>
+          ) : viewState === 'success' ? (
+            /* SUCCESS VIEW */
+            <Animated.View style={[styles.successView, animatedSuccessStyle]}>
+              <Animated.View 
+                entering={FadeIn.duration(200).delay(100)}
+                style={styles.successCircle}
+              >
+                <Animated.View
+                  entering={FadeIn.duration(300).delay(300)}
+                >
+                  <Icon source="check-bold" size={56} color="#FFFFFF" />
+                </Animated.View>
+              </Animated.View>
+              <Animated.Text 
+                entering={FadeIn.duration(300).delay(400)}
+                style={styles.successTitle}
+              >
+                Thank You!
+              </Animated.Text>
+              <Animated.Text 
+                entering={FadeIn.duration(300).delay(500)}
+                style={styles.successSubtitle}
+              >
+                Your ${getFinalAmount()} donation to MAS Staten Island has been received
+              </Animated.Text>
+              <Animated.Text 
+                entering={FadeIn.duration(300).delay(600)}
+                style={styles.successNote}
+              >
+                May Allah reward you abundantly
+              </Animated.Text>
             </Animated.View>
           ) : null}
         </Animated.View>
@@ -1286,5 +1339,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#6B7280',
+  },
+  // Success View Styles
+  successView: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  successCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  successNote: {
+    fontSize: 14,
+    color: '#10B981',
+    fontStyle: 'italic',
   },
 });

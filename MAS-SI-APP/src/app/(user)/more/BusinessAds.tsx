@@ -22,7 +22,8 @@ import Animated, {
 import Toast from 'react-native-toast-message'
 import ValidatedInput from '@/src/components/BusinessAdsComponets/ValidatedInput'
 import BusinessAdPreview from '@/src/components/BusinessAdsComponets/BusinessAdPreview'
-import { setupStripePaymentSheet, openStripePaymentSheet, fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod } from '@/src/lib/StripePaySheet'
+import { setupStripePaymentSheet, openStripePaymentSheet, fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod, createBusinessSubscription } from '@/src/lib/StripePaySheet'
+import * as WebBrowser from 'expo-web-browser'
 import Confetti from '@/src/components/Confetti'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 
@@ -37,9 +38,9 @@ type FormField = {
 }
 
 const DURATION_OPTIONS = [
-    { value: '1 Month', price: '$50', priceInCents: 5000, description: 'Perfect for trying out' },
-    { value: '3 Months', price: '$135', priceInCents: 13500, description: 'Save 10%' },
-    { value: '1 Year', price: '$480', priceInCents: 48000, description: 'Best value - Save 20%' },
+    { value: 'Monthly Subscription', price: '$50/mo', priceInCents: 5000, description: 'Auto-renews monthly', isSubscription: true, priceId: 'price_1Sv2YcRWBa8XSkKT6U1mMHca' },
+    { value: '3 Months', price: '$135', priceInCents: 13500, description: 'Save 10%', isSubscription: false },
+    { value: '1 Year', price: '$480', priceInCents: 48000, description: 'Best value - Save 20%', isSubscription: false },
 ]
 
 const ONBOARDING_FEE_CENTS = 10000 // $100 onboarding fee for first-time advertisers
@@ -409,37 +410,70 @@ const BusinessAds = () => {
         try {
             let success = false
 
-            // If a saved card is selected, charge it directly
-            if (selectedSavedCard) {
-                const result = await chargeWithSavedCard(selectedSavedCard, totalAmountCents)
+            // Handle subscription payments differently
+            if (durationOption.isSubscription && durationOption.priceId) {
+                console.log('Processing subscription payment for price:', durationOption.priceId)
                 
-                if (result.success) {
-                    success = true
-                } else if (result.requiresAction) {
-                    Alert.alert(
-                        'Authentication Required',
-                        'Your card requires additional verification. Please use the payment form instead.',
-                        [{ text: 'OK', onPress: () => setSelectedSavedCard(null) }]
-                    )
-                    setIsPaymentProcessing(false)
-                    return
-                } else {
-                    Alert.alert('Payment Failed', result.error || 'Please try again.')
-                    setIsPaymentProcessing(false)
-                    return
-                }
-            } else {
-                // Use payment sheet for new card
-                // Pass saveCardForFuture to determine if card should be saved
-                const paymentIntent = await setupStripePaymentSheet(totalAmountCents, saveCardForFuture)
+                const subscriptionResult = await createBusinessSubscription(durationOption.priceId)
                 
-                if (!paymentIntent) {
-                    Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.')
+                if (!subscriptionResult.success || !subscriptionResult.url) {
+                    Alert.alert('Subscription Error', subscriptionResult.error || 'Failed to create subscription. Please try again.')
                     setIsPaymentProcessing(false)
                     return
                 }
 
-                success = await openStripePaymentSheet()
+                // Open Stripe Checkout in browser
+                const browserResult = await WebBrowser.openBrowserAsync(subscriptionResult.url, {
+                    dismissButtonStyle: 'cancel',
+                    presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+                })
+
+                console.log('Browser result:', browserResult.type)
+
+                // Check if user completed or cancelled
+                if (browserResult.type === 'cancel' || browserResult.type === 'dismiss') {
+                    console.log('User cancelled subscription checkout')
+                    setIsPaymentProcessing(false)
+                    return
+                }
+
+                // For subscriptions, we assume success if the browser was closed normally
+                // The webhook will handle the actual subscription confirmation
+                success = true
+            } else {
+                // Handle one-time payments with existing flow
+                // If a saved card is selected, charge it directly
+                if (selectedSavedCard) {
+                    const result = await chargeWithSavedCard(selectedSavedCard, totalAmountCents)
+                    
+                    if (result.success) {
+                        success = true
+                    } else if (result.requiresAction) {
+                        Alert.alert(
+                            'Authentication Required',
+                            'Your card requires additional verification. Please use the payment form instead.',
+                            [{ text: 'OK', onPress: () => setSelectedSavedCard(null) }]
+                        )
+                        setIsPaymentProcessing(false)
+                        return
+                    } else {
+                        Alert.alert('Payment Failed', result.error || 'Please try again.')
+                        setIsPaymentProcessing(false)
+                        return
+                    }
+                } else {
+                    // Use payment sheet for new card
+                    // Pass saveCardForFuture to determine if card should be saved
+                    const paymentIntent = await setupStripePaymentSheet(totalAmountCents, saveCardForFuture)
+                    
+                    if (!paymentIntent) {
+                        Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.')
+                        setIsPaymentProcessing(false)
+                        return
+                    }
+
+                    success = await openStripePaymentSheet()
+                }
             }
             
             if (success) {
@@ -929,6 +963,36 @@ const BusinessAds = () => {
 
     const renderDurationSelection = () => (
         <>
+            {/* Onboarding Fee Notice */}
+            <View style={{
+                backgroundColor: '#FEF3C7',
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+            }}>
+                <View style={{
+                    backgroundColor: '#F59E0B',
+                    borderRadius: 12,
+                    width: 24,
+                    height: 24,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 10,
+                }}>
+                    <Text style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>$</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#92400E' }}>
+                        $100 Onboarding Fee
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#B45309' }}>
+                        One-time fee for new advertisers (added at checkout)
+                    </Text>
+                </View>
+            </View>
+
             {DURATION_OPTIONS.map((option, index) => (
                 <Pressable
                     key={index}
@@ -945,7 +1009,7 @@ const BusinessAds = () => {
                         marginBottom: 12,
                     }}
                 >
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                         <View 
                             style={{
                                 width: 24,
@@ -962,16 +1026,31 @@ const BusinessAds = () => {
                                 <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#111827' }} />
                             )}
                         </View>
-                        <View>
-                            <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>
-                                {option.value}
-                            </Text>
+                        <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>
+                                    {option.value}
+                                </Text>
+                                {option.isSubscription && (
+                                    <View style={{
+                                        backgroundColor: '#DBEAFE',
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 2,
+                                        borderRadius: 6,
+                                        marginLeft: 8,
+                                    }}>
+                                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#1D4ED8' }}>
+                                            AUTO-RENEW
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={{ fontSize: 13, color: '#6B7280' }}>
                                 {option.description}
                             </Text>
                         </View>
                     </View>
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827' }}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#111827', marginLeft: 8 }}>
                         {option.price}
                     </Text>
                 </Pressable>
@@ -1064,7 +1143,22 @@ const BusinessAds = () => {
                     </Text>
                     <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 16 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Ad Duration ({selectedDuration})</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                                    {durationOption?.isSubscription ? 'Monthly Subscription' : `Ad Duration (${selectedDuration})`}
+                                </Text>
+                                {durationOption?.isSubscription && (
+                                    <View style={{
+                                        backgroundColor: '#DBEAFE',
+                                        paddingHorizontal: 6,
+                                        paddingVertical: 2,
+                                        borderRadius: 4,
+                                        marginLeft: 8
+                                    }}>
+                                        <Text style={{ fontSize: 10, color: '#1D4ED8', fontWeight: '600' }}>RECURRING</Text>
+                                    </View>
+                                )}
+                            </View>
                             <Text style={{ fontSize: 14, color: '#111827', fontWeight: '500' }}>{durationOption?.price}</Text>
                         </View>
                         {isFirstSubmission && (
@@ -1086,7 +1180,9 @@ const BusinessAds = () => {
                         )}
                         <View style={{ height: 1, backgroundColor: '#E5E7EB', marginVertical: 12 }} />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Text style={{ fontSize: 16, color: '#111827', fontWeight: '600' }}>Total</Text>
+                            <Text style={{ fontSize: 16, color: '#111827', fontWeight: '600' }}>
+                                {durationOption?.isSubscription ? 'Due Today' : 'Total'}
+                            </Text>
                             <Text style={{ fontSize: 20, color: '#111827', fontWeight: '700' }}>
                                 ${(getTotalAmount().total / 100).toFixed(0)}
                             </Text>
@@ -1095,6 +1191,11 @@ const BusinessAds = () => {
                     {isFirstSubmission && (
                         <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 8, fontStyle: 'italic' }}>
                             * The onboarding fee is a one-time charge for new advertisers and won't apply to future ads.
+                        </Text>
+                    )}
+                    {durationOption?.isSubscription && (
+                        <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 8, fontStyle: 'italic' }}>
+                            * Your subscription will automatically renew each month. You can cancel anytime from your Stripe account.
                         </Text>
                     )}
                 </View>

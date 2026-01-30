@@ -7,10 +7,19 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { stripe } from "../_utils/stripe.ts";
 import { createOrRetrieveProfile } from '../_utils/supabase.ts';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
-    const { amount } = await req.json();
+    const { amount, saveCard = false } = await req.json();
     const customer = await createOrRetrieveProfile(req)
     const ephemeralKey = await stripe.ephemeralKeys.create(
       { customer: customer },
@@ -18,28 +27,37 @@ serve(async (req) => {
     );
 
     // Create a PaymentIntent so that the SDK can charge the logged in customer.
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Only set setup_future_usage if user wants to save the card
+    const paymentIntentParams: any = {
       amount: amount,
       currency: 'usd',
       customer: customer,
-      
-    });
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    };
+    
+    // Only save card for future use if user opted in
+    if (saveCard) {
+      paymentIntentParams.setup_future_usage = 'off_session';
+    }
+    
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
    
     console.log('PaymentIntent', paymentIntent)
     const res = {
-      publishableKey: Deno.env.get('EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY'),
+      publishableKey: Deno.env.get('EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY') || Deno.env.get('STRIPE_PUBLISHABLE_KEY'),
       paymentIntent: paymentIntent.client_secret,
       ephemeralKey : ephemeralKey.secret,
       customer: customer,
     };
     return new Response(JSON.stringify(res), {
-      headers: { 
-        'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
-    return new Response(JSON.stringify(error), {
-      headers: { 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });
   }

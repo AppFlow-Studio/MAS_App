@@ -103,7 +103,7 @@ const AthkarPlaylist = () => {
     }
   }
 
-  const { width } = Dimensions.get("window")
+  const { width, height } = Dimensions.get("window")
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
 
   useEffect(() => {
@@ -214,12 +214,14 @@ const AthkarPlaylist = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         style={{ flex: 1, backgroundColor: 'transparent' }}
+        bounces={false}
+        overScrollMode="never"
       >
         {/* Spacer to account for fixed hero - transparent so image shows through */}
         <View style={{ height: 280, backgroundColor: 'transparent' }} />
 
         {/* Content Section */}
-        <View style={styles.contentSection}>
+        <View style={[styles.contentSection, { minHeight: height }]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>All Athkar</Text>
             <Text style={styles.sectionCount}>{videos.length} available</Text>

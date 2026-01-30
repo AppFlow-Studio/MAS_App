@@ -1,16 +1,20 @@
 import React from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Icon } from 'react-native-paper';
 import { Check, Bell, Music, BookOpen } from 'lucide-react-native';
 import { BaseToast, ErrorToast, ToastConfig } from 'react-native-toast-message';
 import Animated, { SlideInUp, SlideOutUp, Easing } from 'react-native-reanimated';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const TOAST_WIDTH = SCREEN_WIDTH - 32; // 16px padding on each side
+
 // Glassy Toast Wrapper Component with smooth animation
 const GlassyToastWrapper = ({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) => (
   <Animated.View 
     entering={SlideInUp.duration(350).easing(Easing.out(Easing.cubic))}
     exiting={SlideOutUp.duration(250).easing(Easing.in(Easing.cubic))}
+    style={styles.animatedContainer}
   >
     <Pressable onPress={onPress} style={styles.toastPressable}>
       <BlurView 
@@ -112,12 +116,15 @@ export const glassyToastConfig: ToastConfig = {
   ConfirmNotificationOption: ({ props }: any) => (
     <GlassyToastWrapper>
       <View style={styles.toastContent}>
+        <View style={styles.notificationIconContainer}>
+          <Icon source={'bell-ring'} size={22} color="#ffffff"/>
+        </View>
         <View style={styles.toastTextContainer}>
-          <Text style={styles.toastSubtext}>{props?.message}</Text>
-          <Text style={styles.toastTitleLarge}>{props?.prayer} · {props?.time}</Text>
+          <Text style={styles.notificationMessage}>{props?.message}</Text>
+          <Text style={styles.notificationPrayer}>{props?.prayer} · {props?.time}</Text>
         </View>
         <View style={styles.checkCircle}>
-          <Icon source={'check'} size={18} color="#ffffff"/>
+          <Icon source={'check'} size={16} color="#ffffff"/>
         </View>
       </View>
     </GlassyToastWrapper>
@@ -170,20 +177,24 @@ export const glassyToastConfig: ToastConfig = {
 };
 
 const styles = StyleSheet.create({
+  animatedContainer: {
+    width: TOAST_WIDTH,
+    alignSelf: 'center',
+  },
   toastPressable: {
-    width: '92%',
-    borderRadius: 20,
+    width: '100%',
+    borderRadius: 16,
     overflow: 'hidden',
   },
   blurView: {
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   glassOverlay: {
-    backgroundColor: 'rgba(15, 65, 132, 0.75)',
+    backgroundColor: 'rgba(15, 65, 132, 0.85)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 20,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 16,
   },
   toastContent: {
     flexDirection: 'row',
@@ -227,12 +238,33 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   checkCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 8,
+  },
+  notificationIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  notificationMessage: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  notificationPrayer: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   successIcon: {
     marginRight: 4,

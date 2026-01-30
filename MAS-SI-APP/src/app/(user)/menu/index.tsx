@@ -67,7 +67,7 @@ export default function homeScreen() {
   const [donationCarouselRelativeY, setDonationCarouselRelativeY] = useState(0);
   const donationVolunteerCarouselRef = useRef<DonationVolunteerCarouselRef>(null);
   const donationSheetRef = useRef<DonationBottomSheetRef>(null);
-  const [activeButton, setActiveButton] = useState<'donate' | 'volunteer'>('donate');
+  const [activeButton, setActiveButton] = useState<'donate' | 'volunteer' | 'advertise'>('donate');
   const tabPosition = useSharedValue(0);
   const tabIndicatorWidthValue = useSharedValue(0);
   
@@ -75,8 +75,17 @@ export default function homeScreen() {
   
   const handleTabLayout = (e: { nativeEvent: { layout: { width: number } } }) => {
     const containerWidth = e.nativeEvent.layout.width;
-    const indicatorWidth = (containerWidth - tabContainerPadding * 2) / 2;
+    const indicatorWidth = (containerWidth - tabContainerPadding * 2) / 3;
     tabIndicatorWidthValue.value = indicatorWidth;
+  };
+
+  // Handle carousel index change from swiping
+  const handleCarouselIndexChange = (index: number) => {
+    const tabs: ('donate' | 'volunteer' | 'advertise')[] = ['donate', 'volunteer', 'advertise'];
+    if (index >= 0 && index < tabs.length) {
+      setActiveButton(tabs[index]);
+      tabPosition.value = withTiming(index, { duration: 200 });
+    }
   };
   
   const tabAnimatedStyle = useAnimatedStyle(() => {
@@ -345,6 +354,30 @@ export default function homeScreen() {
               </Text>
             </View>
           </Pressable>
+
+          {/* Advertise Button */}
+          <Pressable 
+            onPress={() => {
+              setActiveButton('advertise');
+              tabPosition.value = withTiming(2, { duration: 200 });
+              donationVolunteerCarouselRef.current?.scrollToAdvertise();
+            }}
+            style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
+          >
+            <View className="flex-row items-center">
+              <Icon 
+                source="bullhorn" 
+                size={18} 
+                color={activeButton === 'advertise' ? '#214E91' : '#6B7280'} 
+              />
+              <Text 
+                className="font-semibold ml-2"
+                style={{ color: activeButton === 'advertise' ? '#214E91' : '#6B7280', fontSize: 14 }}
+              >
+                Advertise
+              </Text>
+            </View>
+          </Pressable>
         </View>
 
       </View>
@@ -354,6 +387,7 @@ export default function homeScreen() {
         <DonationVolunteerCarousel 
           ref={donationVolunteerCarouselRef} 
           onDonationPress={() => donationSheetRef.current?.open()}
+          onIndexChange={handleCarouselIndexChange}
         />
       </View>
 

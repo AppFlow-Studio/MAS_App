@@ -156,7 +156,23 @@ export default function GreetingScreen() {
   const buttonsTranslate = useSharedValue(100)
   const buttonsOpacity = useSharedValue(0)
 
-  // Handle video end - transition to blue gradient
+  // Animate content (logo and buttons) - called after video ends or immediately if video disabled
+  const animateContent = useCallback(() => {
+    'worklet'
+    // Logo drops down first
+    const logoDelay = 500 // Small delay after video ends for smooth transition
+    const logoDuration = 1200
+    logoOpacity.value = withDelay(logoDelay, withTiming(1, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
+    logoScale.value = withDelay(logoDelay, withTiming(1, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
+    logoTranslateY.value = withDelay(logoDelay, withTiming(0, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
+    
+    // Buttons animate after logo starts appearing
+    const buttonsDelay = logoDelay + 600 // Start as logo is coming in
+    buttonsOpacity.value = withDelay(buttonsDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
+    buttonsTranslate.value = withDelay(buttonsDelay, withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) }))
+  }, [])
+
+  // Handle video end - transition to blue gradient then show content
   const handleVideoEnd = useCallback(() => {
     setVideoEnded(true)
     
@@ -166,7 +182,9 @@ export default function GreetingScreen() {
       easing: Easing.inOut(Easing.ease) 
     })
     
-  }, [])
+    // Start content animations after video ends
+    animateContent()
+  }, [animateContent])
 
   // Create video player with expo-video
   const player = useVideoPlayer(ENABLE_VIDEO_BACKGROUND ? videoSource : null, (player) => {
@@ -196,18 +214,12 @@ export default function GreetingScreen() {
   }))
 
   useEffect(() => {
-    // Logo animates 4 seconds after video starts
-    const logoDelay = 4000
-    const logoDuration = 2200
-    logoOpacity.value = withDelay(logoDelay, withTiming(1, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
-    logoScale.value = withDelay(logoDelay, withTiming(1, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
-    logoTranslateY.value = withDelay(logoDelay, withTiming(0, { duration: logoDuration, easing: Easing.out(Easing.ease) }))
-    
-    // Buttons animate on mount (like before)
-    const buttonsDelay = 1200
-    buttonsOpacity.value = withDelay(buttonsDelay, withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) }))
-    buttonsTranslate.value = withDelay(buttonsDelay, withTiming(0, { duration: 800, easing: Easing.out(Easing.ease) }))
-  }, [])
+    // If video is disabled, animate content immediately on mount
+    if (!ENABLE_VIDEO_BACKGROUND) {
+      animateContent()
+    }
+    // When video is enabled, animations are triggered by handleVideoEnd
+  }, [animateContent])
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,

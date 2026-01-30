@@ -1,4 +1,4 @@
-import { View, Text, Dimensions, StatusBar, Image, Pressable, StyleSheet, Platform } from 'react-native'
+import { View, Text, Dimensions, StatusBar, Image, Pressable, StyleSheet, Platform, ActionSheetIOS, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { router, useLocalSearchParams, Link } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
@@ -151,6 +151,36 @@ const UserPlayListLectures = () => {
         router.back()
       }
     }
+
+    const showActionSheet = () => {
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', 'Delete From Library'],
+            destructiveButtonIndex: 1,
+            cancelButtonIndex: 0,
+            title: userPlayListInfo?.playlist_name,
+            message: 'This action cannot be undone',
+          },
+          (buttonIndex) => {
+            if (buttonIndex === 1) {
+              removeFromLibrary()
+            }
+          }
+        )
+      } else {
+        // Fallback for Android
+        Alert.alert(
+          'Delete Playlist',
+          `Are you sure you want to delete "${userPlayListInfo?.playlist_name}"?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: removeFromLibrary }
+          ]
+        )
+      }
+    }
+
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
         <Pressable
@@ -159,19 +189,12 @@ const UserPlayListLectures = () => {
         >
           <Icon source="plus" color="#000" size={28} />
         </Pressable>
-        <Menu>
-          <MenuTrigger>
-            <Icon source={"dots-horizontal"} color='#000' size={25} />
-          </MenuTrigger>
-          <MenuOptions customStyles={{ optionsContainer: { width: 200, borderRadius: 8, marginTop: 20, padding: 8 } }}>
-            <MenuOption onSelect={removeFromLibrary}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ color: 'red' }}>Delete From Library</Text>
-                <Icon source="delete" color='red' size={15} />
-              </View>
-            </MenuOption>
-          </MenuOptions>
-        </Menu>
+        <Pressable
+          onPress={showActionSheet}
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+        >
+          <Icon source={"dots-horizontal"} color='#000' size={25} />
+        </Pressable>
       </View>
     )
   }

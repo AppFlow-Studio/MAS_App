@@ -84,6 +84,7 @@ export default function MoreScreen() {
     
     const { data, error } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single();
     if (data) {
+      console.log('Profile data:', data);
       setProfile(data);
     }
     

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import DonationChart from '@/src/components/DonationChart'
 import { format } from 'date-fns'
 import Animated, { Extrapolation, interpolate, SharedValue, useAnimatedRef, useAnimatedStyle, useDerivedValue, useSharedValue, withSequence, withTiming } from 'react-native-reanimated'
-import { Canvas, SkFont, useFont } from '@shopify/react-native-skia'
+// import { Canvas, SkFont, useFont } from '@shopify/react-native-skia'
 import AnimatedDonationAmount from '@/src/components/AnimatedDonationText'
 import { LinearGradient } from 'expo-linear-gradient'
 import YoutubePlayer from "react-native-youtube-iframe"
@@ -220,7 +220,7 @@ const Donation = () => {
         </View>
         {/* Progress and Donation History*/}
         <View className='flex flex-row justify-between mt-7'>
-          <View className='items-center flex-row h-[90px]'  style={{ backgroundColor :"linear-gradient(180deg, #FFF 0%, rgba(140, 178, 222, 0.60) 100%)", width : '62%', alignSelf : 'start', marginTop : 2,  borderRadius : 15, paddingHorizontal : 8, paddingVertical : 8 }} >
+          <View className='items-center flex-row h-[90px]'  style={{ backgroundColor :"linear-gradient(180deg, #FFF 0%, rgba(140, 178, 222, 0.60) 100%)", width : '62%', alignSelf : 'flex-start', marginTop : 2,  borderRadius : 15, paddingHorizontal : 8, paddingVertical : 8 }} >
               
                 <View 
                 style={{ shadowColor : 'gray', shadowOffset : { width : 0, height : 2}, shadowOpacity : 1, shadowRadius : 2 }}
@@ -314,7 +314,7 @@ const Donation = () => {
                    source={require('@/assets/lottie/CopyAnimation.json')}
                    style={{width : 25, height : 25 }}
                    ref={VenmoCopyRef}
-                   progress={VenmoAnimationProgress}
+                   progress={VenmoAnimationProgress.value}
                   />
               </View>           
             </Pressable>
@@ -331,7 +331,7 @@ const Donation = () => {
                   style={{width : 25, height : 25 }}
                   loop={true}
                   ref={ZelleCopyRef}
-                  progress={ZelleAnimationProgress}
+                  progress={ZelleAnimationProgress.value}
                 /> 
               </View>           
           </Pressable>

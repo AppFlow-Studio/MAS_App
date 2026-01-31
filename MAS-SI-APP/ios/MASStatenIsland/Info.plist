@@ -29,7 +29,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myapp</string>
+          <string>MAS-SI-APP</string>
           <string>com.MAS-SI-APP</string>
         </array>
       </dict>

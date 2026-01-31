@@ -31,6 +31,19 @@ serve(async (req) => {
     console.log('Creating subscription checkout session for customer:', customerId);
     console.log('Price ID:', priceId);
 
+    // Use Universal Links (https) when domain is set; otherwise fall back to custom scheme for dev
+    const universalLinkDomain = Deno.env.get('UNIVERSAL_LINK_DOMAIN');
+    const successUrlFinal =
+      successUrl ||
+      (universalLinkDomain
+        ? `https://${universalLinkDomain}/subscription-success?session_id={CHECKOUT_SESSION_ID}`
+        : 'myapp://subscription-success?session_id={CHECKOUT_SESSION_ID}');
+    const cancelUrlFinal =
+      cancelUrl ||
+      (universalLinkDomain
+        ? `https://${universalLinkDomain}/subscription-cancel`
+        : 'myapp://subscription-cancel');
+
     // Create a Stripe Checkout Session for subscription
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -41,8 +54,8 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      success_url: successUrl || 'massi://subscription-success?session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: cancelUrl || 'massi://subscription-cancel',
+      success_url: successUrlFinal,
+      cancel_url: cancelUrlFinal,
       subscription_data: {
         metadata: {
           product_type: 'business_ad',

@@ -1,5 +1,5 @@
-import { View, Text, FlatList, Dimensions, Image, Pressable, Linking } from 'react-native';
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { View, Text, FlatList, Dimensions, Image, Pressable, Linking, InteractionManager } from 'react-native';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { ActivityIndicator, Icon } from 'react-native-paper';
 import { FlyerSkeleton } from './FlyerSkeleton';
@@ -50,11 +50,11 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
   const [items, setItems] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const flatListRef = useRef<FlatList>(null);
-  const [scrollX, setScrollX] = useState(0);
   const currentIndexRef = useRef<number>(0);
   const donationIndexRef = useRef<number>(-1);
   const volunteerIndexRef = useRef<number>(-1);
   const advertiseIndexRef = useRef<number>(-1);
+  const isScrollingFromTabRef = useRef(false);
 
   const fetchData = async () => {
     try {
@@ -174,24 +174,29 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
 
   const sideMargin = 12; // Space on left/right edges of screen
   const cardWidth = windowWidth - (sideMargin * 2); // Card fills screen minus margins
-
-  const handleScroll = (event: any) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    setScrollX(offsetX);
-  };
+  const itemWidth = cardWidth + sideMargin; // Card width + gap to next card
 
   // Only update tab when scroll settles to prevent flickering during fast swipes
-  const handleMomentumScrollEnd = (event: any) => {
+  const handleMomentumScrollEnd = useCallback((event: any) => {
+    // Skip if this scroll was triggered by tab press
+    if (isScrollingFromTabRef.current) {
+      isScrollingFromTabRef.current = false;
+      return;
+    }
     const offsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / itemWidth);
     if (newIndex !== currentIndexRef.current && newIndex >= 0 && newIndex < items.length) {
       currentIndexRef.current = newIndex;
       onIndexChange?.(newIndex);
     }
-  };
+  }, [items.length, onIndexChange, itemWidth]);
 
   // Also handle when user lifts finger without momentum (slow drag and release)
-  const handleScrollEndDrag = (event: any) => {
+  const handleScrollEndDrag = useCallback((event: any) => {
+    // Skip if this scroll was triggered by tab press
+    if (isScrollingFromTabRef.current) {
+      return;
+    }
     const offsetX = event.nativeEvent.contentOffset.x;
     const velocity = event.nativeEvent.velocity?.x || 0;
     
@@ -203,20 +208,20 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
         onIndexChange?.(newIndex);
       }
     }
-  };
-
-  const itemWidth = cardWidth + sideMargin; // Card width + gap to next card
+  }, [items.length, onIndexChange, itemWidth]);
   
-  const getItemLayout = (_data: any, index: number) => ({
+  const getItemLayout = useCallback((_data: any, index: number) => ({
     length: itemWidth,
     offset: itemWidth * index,
     index: index,
-  });
+  }), [itemWidth]);
 
   // Expose scroll methods to parent
   useImperativeHandle(ref, () => ({
     scrollToDonation: () => {
       if (donationIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
+        isScrollingFromTabRef.current = true;
+        currentIndexRef.current = 0;
         flatListRef.current.scrollToOffset({
           offset: 0,
           animated: true,
@@ -225,6 +230,8 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
     },
     scrollToVolunteer: () => {
       if (volunteerIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
+        isScrollingFromTabRef.current = true;
+        currentIndexRef.current = 1;
         flatListRef.current.scrollToOffset({
           offset: itemWidth,
           animated: true,
@@ -233,13 +240,15 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
     },
     scrollToAdvertise: () => {
       if (advertiseIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
+        isScrollingFromTabRef.current = true;
+        currentIndexRef.current = 2;
         flatListRef.current.scrollToOffset({
           offset: itemWidth * 2,
           animated: true,
         });
       }
     },
-  }));
+  }), [items.length, itemWidth]);
 
   if (loading) {
     return (
@@ -268,10 +277,9 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
           />
         )}
         horizontal
-        onScroll={handleScroll}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         onScrollEndDrag={handleScrollEndDrag}
-        scrollEventThrottle={16}
+        scrollEventThrottle={32}
         snapToInterval={itemWidth}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
@@ -279,6 +287,10 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
         getItemLayout={getItemLayout}
         ref={flatListRef}
         pagingEnabled={false}
+        removeClippedSubviews={true}
+        initialNumToRender={3}
+        maxToRenderPerBatch={3}
+        windowSize={3}
       />
     </View>
   );

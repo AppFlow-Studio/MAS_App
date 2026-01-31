@@ -18,6 +18,7 @@
       "bundleIdentifier": "com.MAS-SI-APP",
       "usesAppleSignIn": true,
       "newArchEnabled": true,
+      "associatedDomains": ["applinks:yourdomain.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

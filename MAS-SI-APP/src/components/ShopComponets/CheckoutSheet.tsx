@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image, TextInput } from 'react-native'
+import { View, Text, Pressable, Image, TextInput, Platform } from 'react-native'
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState, } from 'react'
 import BottomSheet, { BottomSheetModal, BottomSheetBackdrop, BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { Icon, Button, Divider } from 'react-native-paper';
@@ -72,8 +72,11 @@ const CheckoutSheet = forwardRef<Ref, CheckoutSheetProp>(({promo}, ref) => {
         index={0}
         snapPoints={snapPoints}
         enablePanDownToClose={true}
-        backgroundStyle={{backgroundColor: "white"}}
-        handleIndicatorStyle={{backgroundColor: "gray"}}
+        detached={true}
+        bottomInset={Platform.OS === 'ios' ? 12 : 10}
+        style={{ marginHorizontal: 10 }}
+        backgroundStyle={{ backgroundColor: "white", borderRadius: 40 }}
+        handleIndicatorStyle={{ backgroundColor: "gray" }}
         backdropComponent={renderBackDrop}
         >
             <View className='w-[90%] self-center flex-col h-[90%]' >

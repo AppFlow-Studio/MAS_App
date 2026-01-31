@@ -30,6 +30,7 @@ import Animated, {
   SlideInUp,
 } from 'react-native-reanimated';
 import { TaraweehSessionBottomSheet, TaraweehSessionBottomSheetRef, TaraweehSessionData } from '@/src/components/TaraweehSessionBottomSheet';
+import { TaraweehNotificationBottomSheet, TaraweehNotificationBottomSheetRef } from '@/src/components/TaraweehNotificationBottomSheet';
 
 // ============================================
 // TARAWEEH TIMELINE COMPONENT
@@ -75,7 +76,11 @@ type TaraweehState = 'before' | 'session_one' | 'break' | 'session_two' | 'compl
 
 const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, sessionTwoEnd, currentSurah, sessionOneLineup, sessionTwoLineup }: TaraweehTimelineProps) => {
   const sessionBottomSheetRef = useRef<TaraweehSessionBottomSheetRef>(null);
+  const notificationBottomSheetRef = useRef<TaraweehNotificationBottomSheetRef>(null);
+  const { session } = useAuth();
   const [now, setNow] = useState(new Date());
+  const [taraweeh1NotifEnabled, setTaraweeh1NotifEnabled] = useState(false);
+  const [taraweeh2NotifEnabled, setTaraweeh2NotifEnabled] = useState(false);
   
   // Update time every minute for live countdown
   useEffect(() => {
@@ -85,6 +90,55 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
     
     return () => clearInterval(interval);
   }, []);
+
+  // Load and listen for notification settings
+  useEffect(() => {
+    if (!session?.user.id) return;
+
+    const loadNotificationSettings = async () => {
+      const { data } = await supabase
+        .from('prayer_notification_settings')
+        .select('prayer, notification_settings')
+        .eq('user_id', session.user.id)
+        .in('prayer', ['taraweeh 1', 'taraweeh 2']);
+
+      if (data) {
+        data.forEach((item) => {
+          const isMuted = item.notification_settings?.includes('Mute');
+          const hasValidOptions = item.notification_settings && 
+            item.notification_settings.length > 0 && 
+            !isMuted;
+          
+          if (item.prayer === 'taraweeh 1') {
+            setTaraweeh1NotifEnabled(hasValidOptions);
+          } else if (item.prayer === 'taraweeh 2') {
+            setTaraweeh2NotifEnabled(hasValidOptions);
+          }
+        });
+      }
+    };
+
+    loadNotificationSettings();
+
+    // Listen for changes to notification settings
+    const subscription = supabase
+      .channel('taraweeh-notification-settings')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'prayer_notification_settings',
+          filter: `user_id=eq.${session.user.id}`,
+        },
+        () => loadNotificationSettings()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [session?.user.id]);
   
   // ⚠️ DEMO MODE - Change to null after testing to use real time
   // Options: 'before', 'session_one', 'break', 'session_two', 'completed', or null for real time
@@ -372,17 +426,15 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
               <Icon source="account-group-outline" size={14} color="#1d4681" />
               <Text style={styles.viewLineupBtnText}>Lineup</Text>
             </View>
-            <Link 
-              href={{
-                pathname: '/myPrograms/notifications/NotificationEvents',
-                params: { initialTab: 'prayer', openPrayer: 'Taraweeh 1' }
+            <Pressable 
+              style={styles.sessionNotificationBtn} 
+              onPress={(e) => {
+                e.stopPropagation();
+                notificationBottomSheetRef.current?.open('Taraweeh 1');
               }}
-              asChild
             >
-              <Pressable style={styles.sessionNotificationBtn} onPress={(e) => e.stopPropagation()}>
-                <Icon source="bell-outline" size={14} color="#1d4681" />
-              </Pressable>
-            </Link>
+              <Icon source={taraweeh1NotifEnabled ? "bell" : "bell-outline"} size={14} color="#1d4681" />
+            </Pressable>
           </View>
         </Pressable>
 
@@ -417,17 +469,15 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
               <Icon source="account-group-outline" size={14} color="#1d4681" />
               <Text style={styles.viewLineupBtnText}>Lineup</Text>
             </View>
-            <Link 
-              href={{
-                pathname: '/myPrograms/notifications/NotificationEvents',
-                params: { initialTab: 'prayer', openPrayer: 'Taraweeh 2' }
+            <Pressable 
+              style={styles.sessionNotificationBtn} 
+              onPress={(e) => {
+                e.stopPropagation();
+                notificationBottomSheetRef.current?.open('Taraweeh 2');
               }}
-              asChild
             >
-              <Pressable style={styles.sessionNotificationBtn} onPress={(e) => e.stopPropagation()}>
-                <Icon source="bell-outline" size={14} color="#1d4681" />
-              </Pressable>
-            </Link>
+              <Icon source={taraweeh2NotifEnabled ? "bell" : "bell-outline"} size={14} color="#1d4681" />
+            </Pressable>
           </View>
         </Pressable>
       </View>
@@ -435,10 +485,13 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
       {/* Taraweeh Session Bottom Sheet */}
       <TaraweehSessionBottomSheet ref={sessionBottomSheetRef} />
 
+      {/* Taraweeh Notification Bottom Sheet */}
+      <TaraweehNotificationBottomSheet ref={notificationBottomSheetRef} />
+
       {/* Compact Quran Tracker */}
       <LinearGradient
         colors={['#FFFFFF', '#D4F5E9', '#D4F5E9', '#FFFFFF']}
-        locations={[0, 0.05, 0.95, 1]}
+        locations={[0, 0.20, 0.80, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.compactQuranContainer}
@@ -1240,11 +1293,11 @@ export default function Index() {
           />
 
           {/* Ramadan Quran Tracker - Redesigned */}
-          <QuranTracker
+          {/* <QuranTracker
             currentSurah={currentSurah}
             showInfo={showRamadanTrackerInfo}
             onToggleInfo={() => setShowRamadanTrackerInfo(!showRamadanTrackerInfo)}
-          />
+          /> */}
              
               
 

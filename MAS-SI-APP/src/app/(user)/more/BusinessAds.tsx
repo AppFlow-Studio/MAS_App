@@ -3,10 +3,13 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { Icon, ActivityIndicator } from 'react-native-paper'
 import * as ImagePicker from "expo-image-picker"
 import * as FileSystem from 'expo-file-system';
+import { copyAsync as copyFileAsync, documentDirectory as legacyDocumentDirectory, readAsStringAsync as readFileAsStringAsync, deleteAsync as deleteFileAsync } from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 import { useAuth } from '@/src/providers/AuthProvider'
+import { useDeepLink } from '@/src/providers/DeepLinkProvider'
 import { supabase } from '@/src/lib/supabase'
 import { useRouter } from 'expo-router'
+import { useFocusEffect } from '@react-navigation/native'
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SubmissionFormSchema, submissionFormSchema, businessInfoSubmissions, BusinessInfoSchema } from '@/src/components/forms/Personal-Info'
@@ -23,11 +26,16 @@ import Toast from 'react-native-toast-message'
 import ValidatedInput from '@/src/components/BusinessAdsComponets/ValidatedInput'
 import BusinessAdPreview from '@/src/components/BusinessAdsComponets/BusinessAdPreview'
 import { setupStripePaymentSheet, openStripePaymentSheet, fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod, createBusinessSubscription } from '@/src/lib/StripePaySheet'
+import { savePendingBusinessAdSubmission } from '@/src/lib/businessAdsSubmission'
+import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
-import Confetti from '@/src/components/Confetti'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 
 const { width: screenWidth } = Dimensions.get('window')
+
+const PENDING_SUBMISSION_KEY = '@BusinessAds/pending_submission'
+const PENDING_FLYER_FILENAME = 'business_ads_pending_flyer.png'
 
 type FormField = {
     schemaId: string,
@@ -122,79 +130,6 @@ const StepIndicator = ({ currentStep, totalSteps }: { currentStep: number, total
     )
 }
 
-// Success screen component
-const SuccessScreen = ({ onDone }: { onDone: () => void }) => {
-    const confettiRef = React.useRef<{ fire: () => void }>(null)
-    
-    useEffect(() => {
-        // Fire confetti on mount
-        const timer = setTimeout(() => {
-            confettiRef.current?.fire()
-        }, 300)
-        return () => clearTimeout(timer)
-    }, [])
-    
-    return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#FFFFFF' }}>
-            <Confetti ref={confettiRef} />
-            
-            <Animated.View 
-                entering={FadeIn.duration(300)}
-                style={{
-                    width: 100,
-                    height: 100,
-                    borderRadius: 50,
-                    backgroundColor: '#DCFCE7',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginBottom: 32
-                }}
-            >
-                <Icon source="check" size={56} color="#22C55E" />
-            </Animated.View>
-            
-            <Animated.Text 
-                entering={FadeIn.delay(200)}
-                style={{ fontSize: 28, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 12 }}
-            >
-                Payment Successful!
-            </Animated.Text>
-            
-            <Animated.Text 
-                entering={FadeIn.delay(400)}
-                style={{ fontSize: 16, color: '#6B7280', textAlign: 'center', lineHeight: 24, marginBottom: 8 }}
-            >
-                Your business ad application has been submitted.
-            </Animated.Text>
-            
-            <Animated.Text 
-                entering={FadeIn.delay(600)}
-                style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 22, marginBottom: 40 }}
-            >
-                Our team will review your submission within 1-2 business days. You'll receive an email once your ad is approved.
-            </Animated.Text>
-            
-            <Animated.View entering={FadeIn.delay(800)} style={{ width: '100%' }}>
-                <Pressable
-                    onPress={onDone}
-                    style={({ pressed }) => ({
-                        backgroundColor: pressed ? '#1F2937' : '#111827',
-                        borderRadius: 16,
-                        paddingVertical: 18,
-                        flexDirection: 'row',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    })}
-                >
-                    <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF' }}>
-                        Done
-                    </Text>
-                </Pressable>
-            </Animated.View>
-        </View>
-    )
-}
-
 const BusinessAds = () => {
     const { session } = useAuth()
     const router = useRouter()
@@ -202,7 +137,6 @@ const BusinessAds = () => {
     const [currentStep, setCurrentStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false)
-    const [showSuccess, setShowSuccess] = useState(false)
     const [termsAccepted, setTermsAccepted] = useState(false)
     const [savedCards, setSavedCards] = useState<SavedPaymentMethod[]>([])
     const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null)
@@ -297,6 +231,28 @@ const BusinessAds = () => {
     const [selectedDuration, setSelectedDuration] = useState<string>('')
     const [businessFlyer, setBusinessFlyer] = useState<ImagePicker.ImagePickerAsset>()
 
+    const { paymentSuccessJustClosed, clearPaymentSuccessJustClosed, showPaymentSuccessPopup } = useDeepLink()
+
+    // When returning from subscription payment, popup closes; navigate to status page
+    useEffect(() => {
+        if (!paymentSuccessJustClosed) return
+        clearPaymentSuccessJustClosed()
+        // Navigate to status page so user can see their submission
+        router.replace('/more/BusinessStatus')
+    }, [paymentSuccessJustClosed, clearPaymentSuccessJustClosed, router])
+
+    // Fallback: if deep link was missed (e.g. app opened before URL was ready), show success popup when this screen focuses
+    useFocusEffect(
+        useCallback(() => {
+            Linking.getInitialURL().then((url) => {
+                if (!url || !url.includes('subscription-success')) return
+                const match = url.match(/session_id=([^&\s]+)/)
+                const sessionId = match ? decodeURIComponent(match[1].trim()) : null
+                if (sessionId) showPaymentSuccessPopup(sessionId)
+            })
+        }, [showPaymentSuccessPopup])
+    )
+
     // Watch form values for live preview
     const businessValues = businessMethods.watch()
     const personalValues = personalMethods.watch()
@@ -329,9 +285,13 @@ const BusinessAds = () => {
     }
 
     const saveSubmission = async () => {
-        if (!businessFlyer) return false
-
         try {
+            // When returning from Safari via deep link, state may be lost; use shared save from persisted data if present
+            const savedFromPending = await savePendingBusinessAdSubmission()
+            if (savedFromPending) return true
+
+            // In-app flow: use current state
+            if (!businessFlyer) return false
             const base64 = await FileSystem.readAsStringAsync(businessFlyer.uri, { encoding: 'base64' });
             const filePath = `${session?.user.id}/${new Date().getTime()}.${businessFlyer.type === 'image' ? 'png' : 'mp4'}`;
             const { data: image, error: image_upload_error } = await supabase.storage.from('business_flyers').upload(filePath, decode(base64));
@@ -414,32 +374,118 @@ const BusinessAds = () => {
             if (durationOption.isSubscription && durationOption.priceId) {
                 console.log('Processing subscription payment for price:', durationOption.priceId)
                 
-                const subscriptionResult = await createBusinessSubscription(durationOption.priceId)
+                // Generate redirect URLs that match what openAuthSessionAsync expects
+                const successRedirectUrl = Linking.createURL('subscription-success')
+                const cancelRedirectUrl = Linking.createURL('subscription-cancel')
+                console.log('Success redirect URL:', successRedirectUrl)
+                console.log('Cancel redirect URL:', cancelRedirectUrl)
+                
+                // Pass the redirect URLs to Stripe so they match what we're listening for
+                const subscriptionResult = await createBusinessSubscription(
+                    durationOption.priceId,
+                    successRedirectUrl + '?session_id={CHECKOUT_SESSION_ID}',
+                    cancelRedirectUrl
+                )
                 
                 if (!subscriptionResult.success || !subscriptionResult.url) {
                     Alert.alert('Subscription Error', subscriptionResult.error || 'Failed to create subscription. Please try again.')
                     setIsPaymentProcessing(false)
                     return
                 }
-
-                // Open Stripe Checkout in browser
-                const browserResult = await WebBrowser.openBrowserAsync(subscriptionResult.url, {
-                    dismissButtonStyle: 'cancel',
-                    presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-                })
-
-                console.log('Browser result:', browserResult.type)
-
-                // Check if user completed or cancelled
-                if (browserResult.type === 'cancel' || browserResult.type === 'dismiss') {
-                    console.log('User cancelled subscription checkout')
+                if (!businessFlyer) {
+                    Alert.alert('Error', 'Please upload a business flyer before continuing.')
                     setIsPaymentProcessing(false)
                     return
                 }
 
-                // For subscriptions, we assume success if the browser was closed normally
-                // The webhook will handle the actual subscription confirmation
-                success = true
+                // Persist submission data so it survives app background/kill when user goes to Safari
+                const flyerPath = legacyDocumentDirectory ? `${legacyDocumentDirectory}${PENDING_FLYER_FILENAME}` : null
+                if (!flyerPath) {
+                    Alert.alert('Error', 'Unable to prepare submission. Please try again.')
+                    setIsPaymentProcessing(false)
+                    return
+                }
+                await copyFileAsync({ from: businessFlyer.uri, to: flyerPath })
+                const personalInfo = personalMethods.getValues()
+                const businessInfo = businessMethods.getValues()
+                await AsyncStorage.setItem(
+                    PENDING_SUBMISSION_KEY,
+                    JSON.stringify({
+                        personalInfo: { name: personalInfo.name, phoneNumber: personalInfo.phoneNumber, email: personalInfo.email },
+                        businessInfo: {
+                            businessName: businessInfo.businessName,
+                            address: businessInfo.address,
+                            city: businessInfo.city,
+                            state: businessInfo.state,
+                            businessPhoneNumber: businessInfo.businessPhoneNumber,
+                            businessEmail: businessInfo.businessEmail,
+                        },
+                        selectedDuration,
+                        flyerPath,
+                        userId: session?.user.id ?? '',
+                    })
+                )
+                // Clear any existing pending session before opening browser (to prevent race condition with AppState)
+                await AsyncStorage.removeItem('@BusinessAds/pending_checkout_session_id')
+
+                // Open Stripe Checkout in an in-app browser (Safari View Controller)
+                // This returns the redirect URL directly when user completes payment
+                const browserResult = await WebBrowser.openAuthSessionAsync(
+                    subscriptionResult.url,
+                    successRedirectUrl
+                )
+
+                console.log('Browser result:', JSON.stringify(browserResult))
+
+                if (browserResult.type === 'success' && browserResult.url) {
+                    // User completed checkout - verify and navigate directly
+                    console.log('Checkout completed, URL:', browserResult.url)
+                    const match = browserResult.url.match(/session_id=([^&\s]+)/)
+                    const sessionId = match ? decodeURIComponent(match[1].trim()) : subscriptionResult.sessionId
+                    console.log('Parsed sessionId:', sessionId)
+                    
+                    if (sessionId) {
+                        // Import and call verification directly, then navigate
+                        const { verifySubscriptionSession } = await import('@/src/lib/StripePaySheet')
+                        const { savePendingBusinessAdSubmission } = await import('@/src/lib/businessAdsSubmission')
+                        
+                        console.log('Verifying payment...')
+                        const verificationResult = await verifySubscriptionSession(sessionId)
+                        
+                        if (verificationResult.success) {
+                            console.log('Payment verified, saving submission...')
+                            const saved = await savePendingBusinessAdSubmission()
+                            
+                            if (saved) {
+                                console.log('Submission saved, navigating to status page')
+                                setIsPaymentProcessing(false)
+                                Toast.show({
+                                    type: 'success',
+                                    text1: 'Application Complete!',
+                                    text2: 'Your business ad has been submitted for review.',
+                                })
+                                router.replace('/more/BusinessStatus')
+                                return
+                            } else {
+                                Alert.alert('Error', 'Payment succeeded but we could not save your submission. Please contact support.')
+                            }
+                        } else {
+                            Alert.alert('Verification Failed', verificationResult.error || 'Could not verify payment. Please contact support.')
+                        }
+                    }
+                } else if (browserResult.type === 'cancel' || browserResult.type === 'dismiss') {
+                    // User cancelled or dismissed - store session for fallback (e.g., if app was killed)
+                    // Only store AFTER browser closes so AppState doesn't race
+                    if (subscriptionResult.sessionId) {
+                        await AsyncStorage.setItem('@BusinessAds/pending_checkout_session_id', subscriptionResult.sessionId)
+                    }
+                    console.log('User cancelled/dismissed Stripe checkout, type:', browserResult.type)
+                } else {
+                    console.log('Unknown browser result type:', browserResult.type)
+                }
+
+                setIsPaymentProcessing(false)
+                return
             } else {
                 // Handle one-time payments with existing flow
                 // If a saved card is selected, charge it directly
@@ -481,7 +527,7 @@ const BusinessAds = () => {
                 const saved = await saveSubmission()
                 
                 if (saved) {
-                    setShowSuccess(true)
+                    router.replace('/more/BusinessStatus')
                 } else {
                     Alert.alert('Submission Error', 'Payment was successful but we failed to save your submission. Please contact support.')
                 }
@@ -556,11 +602,6 @@ const BusinessAds = () => {
 
     const goToStep = (step: number) => {
         setCurrentStep(step)
-    }
-
-    const handleSuccessDone = () => {
-        router.back()
-        router.back()
     }
 
     // Button is always enabled - validation happens on click
@@ -1339,11 +1380,6 @@ const BusinessAds = () => {
         )
     }
 
-    // Show success screen
-    if (showSuccess) {
-        return <SuccessScreen onDone={handleSuccessDone} />
-    }
-
     return (
         <KeyboardAvoidingView 
             style={{ flex: 1 }} 
@@ -1396,23 +1432,24 @@ const BusinessAds = () => {
                     </View>
                 </View>
 
-                {/* Step Content */}
-                <Animated.View 
+                {/* Step Content — layout animation on wrapper to avoid transform conflict with Reanimated */}
+                <Animated.View
                     key={currentStep}
-                    entering={FadeInRight.duration(250)} 
+                    entering={FadeInRight.duration(250)}
                     exiting={FadeOutLeft.duration(200)}
-                    style={{ paddingHorizontal: 24, paddingTop: 24 }}
                 >
-                    {/* Step Title */}
-                    <Text style={{ fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 }}>
-                        {currentConfig.title}
-                    </Text>
-                    <Text style={{ fontSize: 16, color: '#6B7280', marginBottom: 32, lineHeight: 24 }}>
-                        {currentConfig.subtitle}
-                    </Text>
+                    <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
+                        {/* Step Title */}
+                        <Text style={{ fontSize: 28, fontWeight: '700', color: '#111827', marginBottom: 8 }}>
+                            {currentConfig.title}
+                        </Text>
+                        <Text style={{ fontSize: 16, color: '#6B7280', marginBottom: 32, lineHeight: 24 }}>
+                            {currentConfig.subtitle}
+                        </Text>
 
-                    {/* Step Content */}
-                    {renderStepContent()}
+                        {/* Step Content */}
+                        {renderStepContent()}
+                    </View>
                 </Animated.View>
             </ScrollView>
 

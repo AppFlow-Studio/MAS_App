@@ -122,22 +122,23 @@ const ValidatedInput = ({
                 <Animated.View
                     entering={FadeIn.duration(150)}
                     exiting={FadeOut.duration(100)}
-                    style={{ 
-                        flexDirection: 'row', 
-                        alignItems: 'center', 
+                >
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
                         marginTop: 6,
                         paddingHorizontal: 4
-                    }}
-                >
-                    <Icon source="alert-circle" size={14} color="#EF4444" />
-                    <Text style={{ 
-                        color: '#EF4444', 
-                        fontSize: 12, 
-                        marginLeft: 4,
-                        fontWeight: '500'
                     }}>
-                        {error}
-                    </Text>
+                        <Icon source="alert-circle" size={14} color="#EF4444" />
+                        <Text style={{
+                            color: '#EF4444',
+                            fontSize: 12,
+                            marginLeft: 4,
+                            fontWeight: '500'
+                        }}>
+                            {error}
+                        </Text>
+                    </View>
                 </Animated.View>
             )}
         </View>

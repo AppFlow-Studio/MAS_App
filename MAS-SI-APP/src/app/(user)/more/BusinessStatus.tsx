@@ -39,6 +39,8 @@ const getStatusIndex = (status: string): number => {
             return 3
         case 'POSTED':
             return 4
+        case 'CANCELLED':
+            return 0
         default:
             return 1
     }
@@ -87,6 +89,14 @@ const getStatusDisplay = (status: string) => {
                 badgeBg: '#DCFCE7',
                 title: 'Your ad is live!',
                 subtitle: 'Visible to the community'
+            }
+        case 'CANCELLED':
+            return { 
+                badge: 'CANCELLED', 
+                badgeColor: '#6B7280', 
+                badgeBg: '#F3F4F6',
+                title: 'Application cancelled',
+                subtitle: 'You cancelled this application'
             }
         default:
             return { 
@@ -217,13 +227,17 @@ const ProcessTimeline = ({ status, createdAt }: { status: string; createdAt: str
 const ApplicationDetailView = ({ 
     submission, 
     onBack, 
-    onNewApplication 
+    onNewApplication,
+    onCancel,
 }: { 
     submission: BusinessSubmissionsProp
     onBack: () => void
-    onNewApplication: () => void 
+    onNewApplication: () => void
+    onCancel?: (submission: BusinessSubmissionsProp) => Promise<void>
 }) => {
     const insets = useSafeAreaInsets()
+    const [cancelling, setCancelling] = useState(false)
+    const canCancel = ['SUBMITTED', 'RECEIVED', 'REVIEW'].includes(submission.status)
     const statusDisplay = getStatusDisplay(submission.status)
     const currentStep = getStatusIndex(submission.status)
     const totalSteps = 4
@@ -375,6 +389,39 @@ const ApplicationDetailView = ({
                         imageUri={submission.business_flyer_img}
                     />
                 </View>
+
+                {/* Cancel application – only when still in queue / under review */}
+                {canCancel && onCancel && (
+                    <TouchableOpacity
+                        onPress={async () => {
+                            if (cancelling) return
+                            setCancelling(true)
+                            try {
+                                await onCancel(submission)
+                                onBack()
+                            } finally {
+                                setCancelling(false)
+                            }
+                        }}
+                        disabled={cancelling}
+                        activeOpacity={0.8}
+                        style={{
+                            marginTop: 32,
+                            paddingVertical: 14,
+                            paddingHorizontal: 24,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: '#E5E7EB',
+                            backgroundColor: '#FFFFFF',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#6B7280' }}>
+                            {cancelling ? 'Cancelling…' : 'Cancel application'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </ScrollView>
         </View>
     )
@@ -678,6 +725,21 @@ const BusinessStatus = () => {
         router.replace('/more/BusinessAds')
     }
     
+    const handleCancelApplication = useCallback(async (submission: BusinessSubmissionsProp) => {
+        if (!session?.user?.id) return
+        const { error } = await supabase
+            .from('business_ads_submissions')
+            .update({ status: 'CANCELLED' })
+            .eq('submission_id', submission.submission_id)
+            .eq('user_id', session.user.id)
+        if (error) {
+            console.log('Error cancelling application:', error)
+            return
+        }
+        setSelectedSubmission(null)
+        fetchSubmissions()
+    }, [session?.user?.id])
+    
     // Show demo view
     if (showDemo) {
         return (
@@ -696,6 +758,7 @@ const BusinessStatus = () => {
                 submission={selectedSubmission}
                 onBack={() => setSelectedSubmission(null)}
                 onNewApplication={handleStartApplication}
+                onCancel={handleCancelApplication}
             />
         )
     }
@@ -715,6 +778,7 @@ const BusinessStatus = () => {
                 submission={submissions[0]}
                 onBack={handleBack}
                 onNewApplication={handleStartApplication}
+                onCancel={handleCancelApplication}
             />
         )
     }

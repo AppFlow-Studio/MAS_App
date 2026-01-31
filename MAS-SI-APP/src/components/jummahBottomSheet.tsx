@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     backgroundColor: COLORS.white,
-    borderRadius: 32,
+    borderRadius: 40,
     maxHeight: SCREEN_HEIGHT * 0.7,
     overflow: 'hidden',
     shadowColor: '#000',

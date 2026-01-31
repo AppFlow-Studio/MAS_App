@@ -1,6 +1,6 @@
-import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, Linking, ActivityIndicator } from 'react-native';
+import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, Linking, ActivityIndicator, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback, useMemo } from 'react';
 import { gettingPrayerData, prayerTimesType, Profile } from '@/src/types';
 import { format, parse, setHours, setMinutes, subMinutes } from 'date-fns';
 import { usePrayerTimes } from '@/src/hooks/usePrayerTimes';
@@ -68,25 +68,36 @@ export default function homeScreen() {
   const donationVolunteerCarouselRef = useRef<DonationVolunteerCarouselRef>(null);
   const donationSheetRef = useRef<DonationBottomSheetRef>(null);
   const [activeButton, setActiveButton] = useState<'donate' | 'volunteer' | 'advertise'>('donate');
+  const activeButtonRef = useRef<'donate' | 'volunteer' | 'advertise'>('donate');
   const tabPosition = useSharedValue(0);
   const tabIndicatorWidthValue = useSharedValue(0);
+  const isAnimatingRef = useRef(false);
   
   const tabContainerPadding = 2;
   
-  const handleTabLayout = (e: { nativeEvent: { layout: { width: number } } }) => {
+  const handleTabLayout = useCallback((e: { nativeEvent: { layout: { width: number } } }) => {
     const containerWidth = e.nativeEvent.layout.width;
     const indicatorWidth = (containerWidth - tabContainerPadding * 2) / 3;
     tabIndicatorWidthValue.value = indicatorWidth;
-  };
+  }, []);
 
-  // Handle carousel index change from swiping
-  const handleCarouselIndexChange = (index: number) => {
+  // Handle carousel index change from swiping - debounced to prevent flickering
+  const handleCarouselIndexChange = useCallback((index: number) => {
     const tabs: ('donate' | 'volunteer' | 'advertise')[] = ['donate', 'volunteer', 'advertise'];
-    if (index >= 0 && index < tabs.length) {
-      setActiveButton(tabs[index]);
-      tabPosition.value = withTiming(index, { duration: 200 });
+    if (index >= 0 && index < tabs.length && !isAnimatingRef.current) {
+      const newTab = tabs[index];
+      // Only update if actually changed
+      if (activeButtonRef.current !== newTab) {
+        activeButtonRef.current = newTab;
+        // Animate tab indicator immediately (this runs on UI thread)
+        tabPosition.value = withTiming(index, { duration: 150 });
+        // Defer state update to avoid blocking the animation
+        InteractionManager.runAfterInteractions(() => {
+          setActiveButton(newTab);
+        });
+      }
     }
-  };
+  }, []);
   
   const tabAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -94,6 +105,52 @@ export default function homeScreen() {
       transform: [{ translateX: tabPosition.value * tabIndicatorWidthValue.value }]
     }
   });
+  
+  // Memoized tab press handlers for smooth transitions
+  const handleDonatePress = useCallback(() => {
+    if (activeButtonRef.current === 'donate') return;
+    isAnimatingRef.current = true;
+    activeButtonRef.current = 'donate';
+    // Start animation immediately on UI thread
+    tabPosition.value = withTiming(0, { duration: 150 });
+    // Scroll carousel
+    donationVolunteerCarouselRef.current?.scrollToDonation();
+    // Defer state update
+    InteractionManager.runAfterInteractions(() => {
+      setActiveButton('donate');
+      isAnimatingRef.current = false;
+    });
+  }, []);
+
+  const handleVolunteerPress = useCallback(() => {
+    if (activeButtonRef.current === 'volunteer') return;
+    isAnimatingRef.current = true;
+    activeButtonRef.current = 'volunteer';
+    // Start animation immediately on UI thread
+    tabPosition.value = withTiming(1, { duration: 150 });
+    // Scroll carousel
+    donationVolunteerCarouselRef.current?.scrollToVolunteer();
+    // Defer state update
+    InteractionManager.runAfterInteractions(() => {
+      setActiveButton('volunteer');
+      isAnimatingRef.current = false;
+    });
+  }, []);
+
+  const handleAdvertisePress = useCallback(() => {
+    if (activeButtonRef.current === 'advertise') return;
+    isAnimatingRef.current = true;
+    activeButtonRef.current = 'advertise';
+    // Start animation immediately on UI thread
+    tabPosition.value = withTiming(2, { duration: 150 });
+    // Scroll carousel
+    donationVolunteerCarouselRef.current?.scrollToAdvertise();
+    // Defer state update
+    InteractionManager.runAfterInteractions(() => {
+      setActiveButton('advertise');
+      isAnimatingRef.current = false;
+    });
+  }, []);
   const [isAtBottom, setIsAtBottom] = useState(false);
 
   const updateBottomState = (isBottom: boolean) => {
@@ -309,11 +366,7 @@ export default function homeScreen() {
           />
           {/* Donate Button */}
           <Pressable 
-            onPress={() => {
-              setActiveButton('donate');
-              tabPosition.value = withTiming(0, { duration: 200 });
-              donationVolunteerCarouselRef.current?.scrollToDonation();
-            }}
+            onPress={handleDonatePress}
             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
           >
             <View className="flex-row items-center">
@@ -333,11 +386,7 @@ export default function homeScreen() {
           
           {/* Volunteers Button */}
           <Pressable 
-            onPress={() => {
-              setActiveButton('volunteer');
-              tabPosition.value = withTiming(1, { duration: 200 });
-              donationVolunteerCarouselRef.current?.scrollToVolunteer();
-            }}
+            onPress={handleVolunteerPress}
             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
           >
             <View className="flex-row items-center">
@@ -357,11 +406,7 @@ export default function homeScreen() {
 
           {/* Advertise Button */}
           <Pressable 
-            onPress={() => {
-              setActiveButton('advertise');
-              tabPosition.value = withTiming(2, { duration: 200 });
-              donationVolunteerCarouselRef.current?.scrollToAdvertise();
-            }}
+            onPress={handleAdvertisePress}
             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
           >
             <View className="flex-row items-center">

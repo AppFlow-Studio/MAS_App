@@ -208,8 +208,9 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
                 <Animated.View
                     style={{
                         backgroundColor: '#ffffff',
-                        borderTopLeftRadius: 28,
-                        borderTopRightRadius: 28,
+                        borderRadius: 40,
+                        marginHorizontal: 10,
+                        marginBottom: Platform.OS === 'ios' ? 12 : 10,
                         maxHeight: height * 0.85,
                         transform: [
                             { translateY: slideAnim },

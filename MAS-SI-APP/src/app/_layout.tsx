@@ -102,7 +102,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView>
       <QueryClientProvider client={queryClient}>
-        <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
+        <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!} urlScheme="MAS-SI-APP">
           <AuthProvider>
             {/* <NotificationProvider> */}
             <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

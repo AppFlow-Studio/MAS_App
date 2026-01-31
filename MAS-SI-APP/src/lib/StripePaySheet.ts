@@ -119,7 +119,7 @@ export const setupStripePaymentSheet = async (totalAmount: number, saveCard: boo
                 name: 'always' as CollectionMode,
                 phone: 'always' as CollectionMode,
             },
-            // returnURL: '',
+            returnURL: 'MAS-SI-APP://stripe-redirect',
             appearance: {
                 colors: {
                     primary: '#214E91',

@@ -30,7 +30,7 @@ export const initializePaymentSheet = async ( amount : number ) => {
         defaultBillingDetails : {
             name : 'Jane Doe'
         },
-        returnURL:''
+        returnURL: 'MAS-SI-APP://stripe-redirect'
     })
     if (!error) {
         

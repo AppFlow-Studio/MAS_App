@@ -6,7 +6,7 @@
     "version": "1.0.11",
     "orientation": "portrait",
     "icon": "./assets/images/massicliquidglassicon.png",
-    "scheme": "myapp",
+    "scheme": "MAS-SI-APP",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/massicliquidglassicon.png",
@@ -40,7 +40,14 @@
         }
       ],
       "expo-web-browser",
-      "expo-video"
+      "expo-video",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.MAS-SI-APP",
+          "urlScheme": "MAS-SI-APP"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

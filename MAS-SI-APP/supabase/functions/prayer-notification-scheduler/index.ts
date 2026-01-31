@@ -1,642 +1,451 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+// supabase/functions/prayer-notification-scheduler/index.ts
+//
+// OPTIMIZED VERSION
+//
+// Before: ~42 DB calls per invocation
+// After:  ~6 DB calls per invocation
+//
+// Key optimizations:
+// 1. Fetch todays_prayers ONCE (was 3×)
+// 2. Fetch ALL prayer_notification_settings in ONE query (was 15×)
+// 3. Fetch ALL push tokens in ONE query (was 15×)
+// 4. Single bulk insert for all notification types
+// 5. Proper timezone handling (no +4 hack)
+// 6. Service role key instead of anon key
+//
 
-// Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import {Expo} from 'https://esm.sh/expo-server-sdk';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import {format} from 'https://esm.sh/date-fns@4.1.0/format.mjs'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { format } from 'https://esm.sh/date-fns@4.1.0/format.mjs'
 import { isBefore, isAfter } from 'https://esm.sh/date-fns@4.1.0'
 
-console.log("Hello from Functions!")
+// Use service role for admin operations (scheduling notifications for all users)
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
-const supabaseKey = Deno.env.get('EXPO_PUBLIC_SUPABASE_ANON');
-const supabase = createClient(supabaseUrl, supabaseKey);
+// ============================================================================
+// TIMEZONE CONFIGURATION
+// ============================================================================
+// Your mosque's UTC offset in hours. For EST = -5, so we add 5 to convert local → UTC.
+// For EDT = -4, so we add 4.
+// TODO: When scaling to multi-mosque, pull this from a mosque_settings table.
+const UTC_OFFSET_HOURS = 5 // EST (change to 4 for EDT)
 
-function setTimeToCurrentDate(timeString) {
-
- const currentDate = new Date(); // Get current date
-
-  // Split the time string into hours, minutes, and seconds
-  const [hours, minutes, seconds] = timeString.split(':').map(Number);
-
-  // Create a new Date object with the current date
-  const timestampWithTimeZone = new Date();
-
-  // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
-
-  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
-  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
-
-  return timestampISO
+function localTimeToUTC(timeString: string): Date {
+  const [hours, minutes, seconds] = timeString.split(':').map(Number)
+  const now = new Date()
+  const utcDate = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    hours + UTC_OFFSET_HOURS,
+    minutes,
+    seconds || 0,
+    0
+  ))
+  return utcDate
 }
-function chunkArray(array, size) {
-  const result = [];
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
+
+function formatLocalTime(utcDate: Date): string {
+  // Convert UTC timestamp back to local for display
+  const localDate = new Date(utcDate.getTime() - UTC_OFFSET_HOURS * 60 * 60 * 1000)
+  return format(localDate, 'h:mm a')
+}
+
+function capitalize(str: string): string {
+  if (str === 'dhuhr') return 'Dhuhr'
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+function normalizePrayer(name: string): string {
+  return name === 'zuhr' ? 'dhuhr' : name
+}
+
+// ============================================================================
+// TYPES
+// ============================================================================
+interface PrayerTime {
+  prayer_name: string
+  athan_time: string
+  iqamah_time: string
+}
+
+interface PrayerNotificationSetting {
+  user_id: string
+  prayer: string
+  notification_settings: string[]
+}
+
+interface JummahSetting {
+  user_id: string
+  jummah: string
+  notification_settings: string[]
+}
+
+interface NotificationRow {
+  user_id: string
+  notification_time: Date
+  prayer: string
+  message: string
+  push_notification_token: string
+  notification_type: string
+  title?: string
+}
+
+// ============================================================================
+// MAIN SCHEDULER
+// ============================================================================
+async function scheduleAllNotifications() {
+  const startTime = Date.now()
+  const todaysDate = new Date()
+  const isFriday = todaysDate.getDay() === 5
+
+  // ==========================================================================
+  // STEP 1: Fetch ALL data in parallel (3-4 queries instead of 42)
+  // ==========================================================================
+  const queries: Promise<any>[] = [
+    // Query 1: Today's prayer times (fetched ONCE, not 3×)
+    supabase.from('todays_prayers').select('prayer_name, athan_time, iqamah_time'),
+
+    // Query 2: ALL prayer notification settings (fetched ONCE, not 15×)
+    supabase.from('prayer_notification_settings').select('user_id, prayer, notification_settings'),
+  ]
+
+  // Query 3: Jummah settings (only on Fridays)
+  if (isFriday) {
+    queries.push(
+      supabase.from('jummah_notifications').select('user_id, jummah, notification_settings')
+    )
   }
-  return result;
-}
 
-async function fetchPushTokens(userIds) {
-  const chunks = chunkArray(userIds, 100); // adjust chunk size as needed
-  let combinedData = [];
-  
-  for (const chunk of chunks) {
-    const { data, error } = await supabase
+  const results = await Promise.all(queries)
+
+  const { data: prayers, error: prayerError } = results[0]
+  const { data: allSettings, error: settingsError } = results[1]
+
+  if (prayerError) {
+    console.error('Error fetching prayers:', prayerError)
+    return { error: 'Failed to fetch prayers' }
+  }
+  if (settingsError) {
+    console.error('Error fetching settings:', settingsError)
+    return { error: 'Failed to fetch settings' }
+  }
+  if (!prayers || prayers.length === 0) {
+    return { error: 'No prayer times found' }
+  }
+  if (!allSettings || allSettings.length === 0) {
+    return { scheduled: 0, message: 'No notification settings configured' }
+  }
+
+  // ==========================================================================
+  // STEP 2: Build lookup maps (pure computation, no DB calls)
+  // ==========================================================================
+
+  // Prayer time lookup: normalized name → prayer data
+  const prayerMap = new Map<string, PrayerTime>()
+  for (const p of prayers) {
+    prayerMap.set(normalizePrayer(p.prayer_name), p)
+  }
+
+  // Prayer order for "30 mins before next prayer"
+  const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
+
+  // Group settings by user for efficient token fetching
+  // Also collect ALL unique user IDs across all settings
+  const allUserIds = new Set<string>()
+  for (const setting of allSettings) {
+    allUserIds.add(setting.user_id)
+  }
+
+  // Add jummah user IDs
+  let jummahSettings: JummahSetting[] = []
+  if (isFriday && results[2]) {
+    const { data: jummahData, error: jummahError } = results[2]
+    if (!jummahError && jummahData) {
+      jummahSettings = jummahData
+      for (const j of jummahSettings) {
+        allUserIds.add(j.user_id)
+      }
+    }
+  }
+
+  // ==========================================================================
+  // STEP 3: Fetch ALL push tokens in ONE query (not 15×)
+  // ==========================================================================
+  const userIdArray = [...allUserIds]
+  const tokenMap = new Map<string, string>()
+
+  // Batch in chunks of 100 for Supabase .in() limit
+  for (let i = 0; i < userIdArray.length; i += 100) {
+    const chunk = userIdArray.slice(i, i + 100)
+    const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('id, push_notification_token')
-      .in('id', chunk);
-    if (error) {
-      console.error('Error fetching push tokens:', error);
-      continue;
+      .in('id', chunk)
+      .not('push_notification_token', 'is', null)
+
+    if (profileError) {
+      console.error('Error fetching profiles chunk:', profileError)
+      continue
     }
-    combinedData = combinedData.concat(data);
-  }
-  return combinedData;
-}
 
-async function ProcessAlertAtAthan() {
-  // Get today's prayers
-  const { data: todaysPrayers, error: todayError } = await supabase
-    .from('todays_prayers')
-    .select('*');
-  if (todayError) {
-    console.error('TodaysPrayers error:', todayError);
-    return;
-  }
-
-  const insertRows = [];
-
-  // Loop through today's prayers
-  for (const prayer of todaysPrayers) {
-    // Normalize prayer name: if 'zuhr' then use 'dhuhr'
-    const normalizedPrayer = prayer.prayer_name === 'zuhr' ? 'dhuhr' : prayer.prayer_name;
-    // Query all users with "Alert at Athan time" for this prayer
-    const { data: athanAlertOn, error: notifError } = await supabase
-      .from('prayer_notification_settings')
-      .select('*')
-      .eq('prayer', normalizedPrayer)
-      .contains('notification_settings', ['Alert at Athan time']);
-    if (notifError) {
-      console.error(`Error fetching notification settings for ${normalizedPrayer}:`, notifError);
-      continue;
-    }
-    if (!athanAlertOn || athanAlertOn.length === 0) continue;
-
-    // Collect user IDs for this prayer
-    const userIds = athanAlertOn.map((u) => u.user_id);
-    // Fetch all push tokens for these users in one query
-    const userPushTokens = await fetchPushTokens(userIds);
-
-    // Create a mapping from user id to push_notification_token
-    const pushTokenMap = {};
-    userPushTokens.forEach((user) => {
-      if (user.push_notification_token) {
-        pushTokenMap[user.id] = user.push_notification_token;
-      }
-    });
-
-      // For each user in athanAlertOn, if they have a push token, prepare an insert object
-       for (const user of athanAlertOn) {
-        const pushToken = pushTokenMap[user.user_id];
-        if (pushToken) {
-          const PrayerTime = setTimeToCurrentDate(prayer.athan_time);
-          const IqaPrayerTime = setTimeToCurrentDate(prayer.iqamah_time);
-          const TimeToFormat = new Date(PrayerTime);
-          const IqaTimeToFormat = new Date(IqaPrayerTime);
-          const FormatAthTime = format(TimeToFormat.setHours(TimeToFormat.getHours() - 4), 'p');
-          const FormatIqaTime = format(IqaTimeToFormat.setHours(IqaTimeToFormat.getHours() - 4), 'p');
-          const message = `Time to pray ${normalizedPrayer === 'dhuhr' ? 'Dhuhr' : normalizedPrayer[0].toUpperCase() + normalizedPrayer.slice(1)} ${FormatAthTime} \n Iqamah Time ${FormatIqaTime}`;
-  
-          insertRows.push({
-            user_id: user.user_id,
-            notification_time: PrayerTime,
-            prayer: normalizedPrayer,
-            message,
-            push_notification_token: pushToken,
-            notification_type: 'Alert at Athan time'
-          });
-        }
-      }
-    }
-    console.log(insertRows)
-    // Bulk insert into prayer_notification_schedule if there are rows to insert
-    if (insertRows.length > 0) {
-      const { error: insertError } = await supabase
-        .from('prayer_notification_schedule')
-        .insert(insertRows);
-      if (insertError) {
-        console.error('Error during bulk insert:', insertError);
-      }
-    }
-}
-
-async function ProcessAlertAtIqamah() {
-  // Get today's prayers
-  const { data: todaysPrayers, error: todayError } = await supabase
-    .from('todays_prayers')
-    .select('*');
-  if (todayError) {
-    console.error('TodaysPrayers error:', todayError);
-    return;
-  }
-
-  const insertRows = [];
-
-  // Loop through today's prayers
-  for (const prayer of todaysPrayers) {
-    // Normalize prayer name: if 'zuhr' then use 'dhuhr'
-    const normalizedPrayer = prayer.prayer_name === 'zuhr' ? 'dhuhr' : prayer.prayer_name;
-    // Query all users with "Alert at Athan time" for this prayer
-    const { data: athanAlertOn, error: notifError } = await supabase
-      .from('prayer_notification_settings')
-      .select('*')
-      .eq('prayer', normalizedPrayer)
-      .contains('notification_settings', ['Alert at Iqamah time']);
-    if (notifError) {
-      console.error(`Error fetching notification settings for ${normalizedPrayer}:`, notifError);
-      continue;
-    }
-    if (!athanAlertOn || athanAlertOn.length === 0) continue;
-
-    // Collect user IDs for this prayer
-    const userIds = athanAlertOn.map((u) => u.user_id);
-    // Fetch all push tokens for these users in one query
-    const userPushTokens = await fetchPushTokens(userIds);
-
-    // Create a mapping from user id to push_notification_token
-    const pushTokenMap = {};
-    userPushTokens.forEach((user) => {
-      if (user.push_notification_token) {
-        pushTokenMap[user.id] = user.push_notification_token;
-      }
-    });
-
-      // For each user in athanAlertOn, if they have a push token, prepare an insert object
-       for (const user of athanAlertOn) {
-        const pushToken = pushTokenMap[user.user_id];
-        if (pushToken) {
-          const PrayerTime = setTimeToCurrentDate(prayer.athan_time);
-          const IqaPrayerTime = setTimeToCurrentDate(prayer.iqamah_time);
-          const TimeToFormat = new Date(PrayerTime);
-          const IqaTimeToFormat = new Date(IqaPrayerTime);
-          const FormatAthTime = format(TimeToFormat.setHours(TimeToFormat.getHours() - 4), 'p');
-          const FormatIqaTime = format(IqaTimeToFormat.setHours(IqaTimeToFormat.getHours() - 4), 'p');
-          const message = `Iqamah Time for ${normalizedPrayer === 'dhuhr' ? 'Dhuhr' : normalizedPrayer[0].toUpperCase() + normalizedPrayer.slice(1)} at ${FormatIqaTime}`;
-  
-          insertRows.push({
-            user_id: user.user_id,
-            notification_time: IqaPrayerTime,
-            prayer: normalizedPrayer,
-            message,
-            push_notification_token: pushToken,
-            notification_type: 'Alert at Iqamah time'
-          });
-        }
-      }
-    }
-    console.log(insertRows)
-    // Bulk insert into prayer_notification_schedule if there are rows to insert
-    if (insertRows.length > 0) {
-      const { error: insertError } = await supabase
-        .from('prayer_notification_schedule')
-        .insert(insertRows);
-      if (insertError) {
-        console.error('Error during bulk insert:', insertError);
-      }
-    }
-}
-
-async function processPrayerNotifications30Mins() {
-  const { data: TodaysPrayers, error: todayError } = await supabase
-    .from('todays_prayers')
-    .select('*');
-  if (todayError) {
-    console.error('Error fetching today\'s prayers:', todayError);
-    return;
-  }
-
-  const insertRows = [];
-
-  for (const prayer of TodaysPrayers) {
-    // Normalize prayer name for settings lookup:
-    const normalizedPrayer = prayer.prayer_name === 'zuhr' ? 'dhuhr' : prayer.prayer_name;
-    const { data: AthanAlertOn, error: settingsError } = await supabase
-      .from('prayer_notification_settings')
-      .select('*')
-      .eq('prayer', normalizedPrayer)
-      .contains('notification_settings', ['Alert 30 mins before next prayer']);
-    if (settingsError) {
-      console.error(`Error fetching settings for ${normalizedPrayer}:`, settingsError);
-      continue;
-    }
-    if (!AthanAlertOn || AthanAlertOn.length === 0) continue;
-
-    // Batch query profiles for push tokens.
-    const userIds = AthanAlertOn.map(u => u.user_id);
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, push_notification_token')
-      .in('id', userIds);
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      continue;
-    }
-    // Create mapping from user_id to push token.
-    const tokenMap = {};
-    profilesData.forEach(profile => {
+    for (const profile of profiles || []) {
       if (profile.push_notification_token) {
-        tokenMap[profile.id] = profile.push_notification_token;
+        tokenMap.set(profile.id, profile.push_notification_token)
       }
-    });
-
-    // Process each user in the current prayer's settings.
-    for (const userSetting of AthanAlertOn) {
-      const pushToken = tokenMap[userSetting.user_id];
-      if (!pushToken) continue;
-
-      let nextPrayerTime;
-      let message = '';
-      if (prayer.prayer_name === 'fajr') {
-        // Next prayer: zuhr
-        const nextPrayer = TodaysPrayers.find(p => p.prayer_name === 'zuhr');
-        if (!nextPrayer) continue;
-        nextPrayerTime = setTimeToCurrentDate(nextPrayer.athan_time);
-        nextPrayerTime.setMinutes(nextPrayerTime.getMinutes() - 30);
-        message = '30 mins before Dhuhr!';
-      } else if (prayer.prayer_name === 'zuhr') {
-        // Next prayer: asr
-        const nextPrayer = TodaysPrayers.find(p => p.prayer_name === 'asr');
-        if (!nextPrayer) continue;
-        nextPrayerTime = setTimeToCurrentDate(nextPrayer.athan_time);
-        nextPrayerTime.setMinutes(nextPrayerTime.getMinutes() - 30);
-        message = '30 mins before Asr!';
-      } else if (prayer.prayer_name === 'asr') {
-        // Next prayer: maghrib
-        const nextPrayer = TodaysPrayers.find(p => p.prayer_name === 'maghrib');
-        if (!nextPrayer) continue;
-        nextPrayerTime = setTimeToCurrentDate(nextPrayer.athan_time);
-        nextPrayerTime.setMinutes(nextPrayerTime.getMinutes() - 30);
-        message = '30 mins before Maghrib!';
-      } else if (prayer.prayer_name === 'maghrib') {
-        // Next prayer: isha
-        const nextPrayer = TodaysPrayers.find(p => p.prayer_name === 'isha');
-        if (!nextPrayer) continue;
-        nextPrayerTime = setTimeToCurrentDate(nextPrayer.athan_time);
-        nextPrayerTime.setMinutes(nextPrayerTime.getMinutes() - 30);
-        message = '30 mins before Isha!';
-      }  else {
-        continue;
-      }
-      
-      insertRows.push({
-        user_id: userSetting.user_id,
-        notification_time: nextPrayerTime,
-        prayer: prayer.prayer_name === 'zuhr' ? 'dhuhr' : prayer.prayer_name,
-        message,
-        push_notification_token: pushToken,
-        notification_type: 'Alert 30mins before next prayer'
-      });
     }
   }
 
-  if (insertRows.length > 0) {
-    const { error: insertError } = await supabase
-      .from('prayer_notification_schedule')
-      .insert(insertRows);
-    if (insertError) {
-      console.error('Error during bulk insert:', insertError);
-    }
-  }
-}
-async function processTaraweehNotifications(todaysDate : Date) {
-  if (!isBefore(todaysDate, new Date(2025, 2, 28))) return;
-
-  // Fetch all notification settings for tarawih one and two at both alert types.
-  const [
-    { data: UsersWithAlertOnFirst, error: err1 },
-    { data: Users30MinsBeforeFirst, error: err2 },
-    { data: UsersWithAlertOnSecond, error: err3 },
-    { data: Users30MinsBeforeSecond, error: err4 },
-    { data: IshaTime, error: errIsha }
-  ] = await Promise.all([
-    supabase.from('prayer_notification_settings')
-      .select('*')
-      .eq('prayer', 'tarawih one')
-      .contains('notification_settings', ['Alert at Athan time']),
-    supabase.from('prayer_notification_settings')
-      .select('*')
-      .eq('prayer', 'tarawih one')
-      .contains('notification_settings', ['Alert 30 Mins Before']),
-    supabase.from('prayer_notification_settings')
-      .select('*')
-      .eq('prayer', 'tarawih two')
-      .contains('notification_settings', ['Alert at Athan time']),
-    supabase.from('prayer_notification_settings')
-      .select('*')
-      .eq('prayer', 'tarawih two')
-      .contains('notification_settings', ['Alert 30 Mins Before']),
-    supabase.from('todays_prayers')
-      .select('*')
-      .eq('prayer_name', 'isha')
-      .single()
-  ]);
-  if (err1 || err2 || err3 || err4 || errIsha) {
-    console.error(err1, err2, err3, err4, errIsha);
-    return;
+  if (tokenMap.size === 0) {
+    return { scheduled: 0, message: 'No users with push tokens' }
   }
 
-  // Pre-calculate times and formatted strings.
-  const FirstTaraweehTime = setTimeToCurrentDate(IshaTime.iqamah_time);
-  let FirstTaraweehTime30MinBefore = setTimeToCurrentDate(IshaTime.iqamah_time);
-  FirstTaraweehTime30MinBefore.setMinutes(FirstTaraweehTime30MinBefore.getMinutes() - 30);
+  // ==========================================================================
+  // STEP 4: Build ALL notification rows (pure computation, no DB calls)
+  // ==========================================================================
+  const insertRows: NotificationRow[] = []
 
-  const SecondTaraweehTime = setTimeToCurrentDate(IshaTime.iqamah_time);
-  SecondTaraweehTime.setHours(SecondTaraweehTime.getHours() + 1, SecondTaraweehTime.getMinutes() + 20);
-  let SecondTaraweehTime30MinBefore = new Date(SecondTaraweehTime);
-  SecondTaraweehTime30MinBefore.setMinutes(SecondTaraweehTime30MinBefore.getMinutes() - 30);
+  for (const setting of allSettings as PrayerNotificationSetting[]) {
+    const pushToken = tokenMap.get(setting.user_id)
+    if (!pushToken) continue
 
-  let FormattedFirst = setTimeToCurrentDate(IshaTime.iqamah_time)
-  let FormattedFirst30 = setTimeToCurrentDate(IshaTime.iqamah_time)
-  FormattedFirst30.setMinutes(FormattedFirst30.getMinutes() - 30);
+    const normalizedPrayer = normalizePrayer(setting.prayer)
 
-  let FormattedSecond = setTimeToCurrentDate(IshaTime.iqamah_time);
-  FormattedSecond.setHours(FormattedSecond.getHours() + 1, FormattedSecond.getMinutes() + 20);
-  let FormattedSecond30 = new Date(SecondTaraweehTime);
-  FormattedSecond30.setMinutes(FormattedSecond30.getMinutes() - 30);
+    // Skip tarawih - handled separately
+    if (normalizedPrayer.startsWith('tarawih')) continue
 
-  FormattedFirst = format(FormattedFirst.setHours(FormattedFirst.getHours() - 4), 'p');
-  FormattedFirst30 = format(FormattedFirst30.setHours(FormattedFirst30.getHours() - 4), 'p');
-  FormattedSecond = format(FormattedSecond.setHours(FormattedSecond.getHours() - 4), 'p');
-  FormattedSecond30 = format(FormattedSecond30.setHours(FormattedSecond30.getHours() - 4), 'p');
+    const prayer = prayerMap.get(normalizedPrayer)
+    if (!prayer) continue
 
-  // Helper to process each notification group.
-  async function processNotificationGroup(users, notificationTime, prayerName, message, notificationType) {
-    if (!users || users.length === 0) return;
-    const userIds = users.map(u => u.user_id);
-    const profilesData = await fetchPushTokens(userIds)
-    if (!profilesData) {
-      console.error('Error fetching profiles:', !profilesData);
-      return;
-    }
-    const insertRows = [];
-    profilesData.forEach(profile => {
-      if (profile.push_notification_token) {
+    const athanUTC = localTimeToUTC(prayer.athan_time)
+    const iqamahUTC = localTimeToUTC(prayer.iqamah_time)
+    const displayName = capitalize(normalizedPrayer)
+    const athanDisplay = formatLocalTime(athanUTC)
+    const iqamahDisplay = formatLocalTime(iqamahUTC)
+
+    for (const notifType of setting.notification_settings || []) {
+
+      // --- Alert at Athan Time ---
+      if (notifType === 'Alert at Athan time') {
         insertRows.push({
-          user_id: profile.id,
-          notification_time: notificationTime,
-          prayer: prayerName,
-          message,
-          push_notification_token: profile.push_notification_token,
-          notification_type: notificationType
-        });
+          user_id: setting.user_id,
+          notification_time: athanUTC,
+          prayer: normalizedPrayer,
+          message: `Time to pray ${displayName} ${athanDisplay} \n Iqamah Time ${iqamahDisplay}`,
+          push_notification_token: pushToken,
+          notification_type: 'Alert at Athan time',
+        })
       }
-    });
-    if (insertRows.length > 0) {
+
+      // --- Alert at Iqamah Time ---
+      if (notifType === 'Alert at Iqamah time') {
+        insertRows.push({
+          user_id: setting.user_id,
+          notification_time: iqamahUTC,
+          prayer: normalizedPrayer,
+          message: `Iqamah Time for ${displayName} at ${iqamahDisplay}`,
+          push_notification_token: pushToken,
+          notification_type: 'Alert at Iqamah time',
+        })
+      }
+
+      // --- Alert 30 Mins Before Next Prayer ---
+      if (notifType === 'Alert 30 mins before next prayer') {
+        const currentIndex = prayerOrder.indexOf(normalizedPrayer)
+        if (currentIndex === -1 || currentIndex >= prayerOrder.length - 1) continue
+
+        const nextPrayerName = prayerOrder[currentIndex + 1]
+        const nextPrayer = prayerMap.get(nextPrayerName)
+        if (!nextPrayer) continue
+
+        const nextAthanUTC = localTimeToUTC(nextPrayer.athan_time)
+        const alertTime = new Date(nextAthanUTC.getTime() - 30 * 60 * 1000)
+
+        insertRows.push({
+          user_id: setting.user_id,
+          notification_time: alertTime,
+          prayer: normalizedPrayer,
+          message: `30 mins before ${capitalize(nextPrayerName)}!`,
+          push_notification_token: pushToken,
+          notification_type: 'Alert 30mins before next prayer',
+        })
+      }
+    }
+  }
+
+  // ==========================================================================
+  // STEP 5: Jummah notifications (Friday only)
+  // ==========================================================================
+  if (isFriday && jummahSettings.length > 0) {
+    const jummahTimes: Record<string, string> = {
+      first: '12:15:00',
+      second: '13:00:00',
+      third: '13:45:00',
+    }
+    const jummahDisplayTimes: Record<string, string> = {
+      first: '12:15 PM',
+      second: '1:00 PM',
+      third: '1:45 PM',
+    }
+    const defaultTime = '15:45:00'
+    const defaultDisplay = '3:45 PM'
+
+    for (const setting of jummahSettings) {
+      const pushToken = tokenMap.get(setting.user_id)
+      if (!pushToken) continue
+
+      const timeStr = jummahTimes[setting.jummah] || defaultTime
+      const displayTime = jummahDisplayTimes[setting.jummah] || defaultDisplay
+      const jummahUTC = localTimeToUTC(timeStr)
+      const jummahLabel = capitalize(setting.jummah)
+
+      for (const notifType of setting.notification_settings || []) {
+        if (notifType === 'Alert at Athan Time') {
+          insertRows.push({
+            user_id: setting.user_id,
+            notification_time: jummahUTC,
+            prayer: `${setting.jummah} jummah`,
+            message: `${jummahLabel} Jummah Prayer Starting Now!\n${displayTime} Jummah`,
+            push_notification_token: pushToken,
+            notification_type: 'Alert at Athan Time',
+            title: `${displayTime} Jummah`,
+          })
+        }
+
+        if (notifType === 'Alert 30 Mins Before') {
+          const alertTime = new Date(jummahUTC.getTime() - 30 * 60 * 1000)
+          insertRows.push({
+            user_id: setting.user_id,
+            notification_time: alertTime,
+            prayer: `${setting.jummah} jummah`,
+            message: `${jummahLabel} Jummah Prayer will begin in 30 minutes`,
+            push_notification_token: pushToken,
+            notification_type: 'Alert 30 Mins Before',
+            title: `${displayTime} Jummah`,
+          })
+        }
+      }
+    }
+  }
+
+  // ==========================================================================
+  // STEP 6: Taraweeh notifications (Ramadan only)
+  // ==========================================================================
+  const ramadanEnd = new Date(2026, 2, 20) // March 28, 2026
+  const ramadanStart = new Date(2026, 1, 17) // Feb 17th, 2026
+  if (isBefore(todaysDate, ramadanEnd) && isAfter(todaysDate, ramadanStart)) {
+    const ishaData = prayerMap.get('isha')
+    if (ishaData) {
+      const ishaIqamahUTC = localTimeToUTC(ishaData.iqamah_time)
+
+      // First Taraweeh = at Isha iqamah
+      const firstTime = ishaIqamahUTC
+      const firstTimeMinus30 = new Date(firstTime.getTime() - 30 * 60 * 1000)
+
+      // Second Taraweeh = 1 hour 20 min after Isha iqamah
+      const secondTime = new Date(ishaIqamahUTC.getTime() + 80 * 60 * 1000)
+      const secondTimeMinus30 = new Date(secondTime.getTime() - 30 * 60 * 1000)
+
+      const firstDisplay = formatLocalTime(firstTime)
+      const secondDisplay = formatLocalTime(secondTime)
+
+      // Filter tarawih settings from allSettings
+      const tarawihSettings = (allSettings as PrayerNotificationSetting[]).filter(
+        s => s.prayer === 'tarawih one' || s.prayer === 'tarawih two'
+      )
+
+      for (const setting of tarawihSettings) {
+        const pushToken = tokenMap.get(setting.user_id)
+        if (!pushToken) continue
+
+        const isFirst = setting.prayer === 'tarawih one'
+        const atTime = isFirst ? firstTime : secondTime
+        const beforeTime = isFirst ? firstTimeMinus30 : secondTimeMinus30
+        const display = isFirst ? firstDisplay : secondDisplay
+        const label = isFirst ? 'First' : 'Second'
+
+        for (const notifType of setting.notification_settings || []) {
+          if (notifType === 'Alert at Athan time') {
+            insertRows.push({
+              user_id: setting.user_id,
+              notification_time: atTime,
+              prayer: setting.prayer,
+              message: `${label} Taraweeh Starting Now!\n${display}`,
+              push_notification_token: pushToken,
+              notification_type: 'Alert at Athan time',
+            })
+          }
+
+          if (notifType === 'Alert 30 Mins Before') {
+            insertRows.push({
+              user_id: setting.user_id,
+              notification_time: beforeTime,
+              prayer: setting.prayer,
+              message: `${label} Taraweeh Starting in 30 Mins!\n${display}`,
+              push_notification_token: pushToken,
+              notification_type: 'Alert 30 Mins Before',
+            })
+          }
+        }
+      }
+    }
+  }
+
+  // ==========================================================================
+  // STEP 7: Single bulk insert (not 4 separate inserts)
+  // ==========================================================================
+  let insertedCount = 0
+
+  if (insertRows.length > 0) {
+    // Supabase handles large inserts fine, but chunk at 1000 for safety
+    for (let i = 0; i < insertRows.length; i += 1000) {
+      const chunk = insertRows.slice(i, i + 1000)
       const { error: insertError } = await supabase
         .from('prayer_notification_schedule')
-        .insert(insertRows);
-      if (insertError) console.error('Error inserting notifications:', insertError);
+        .insert(chunk)
+
+      if (insertError) {
+        console.error(`Error inserting chunk ${i / 1000 + 1}:`, insertError)
+      } else {
+        insertedCount += chunk.length
+      }
     }
   }
 
-  // Process each group.
-  await Promise.all([
-    processNotificationGroup(
-      UsersWithAlertOnFirst,
-      FirstTaraweehTime,
-      'tarawih one',
-      `First Taraweeh Starting Now!\n${FormattedFirst}`,
-      'Alert at Athan time'
-    ),
-    processNotificationGroup(
-      Users30MinsBeforeFirst,
-      FirstTaraweehTime30MinBefore,
-      'tarawih one',
-      `First Taraweeh Starting in 30 Mins!\n${FormattedFirst30}`,
-      'Alert 30 Mins Before'
-    ),
-    processNotificationGroup(
-      UsersWithAlertOnSecond,
-      SecondTaraweehTime,
-      'tarawih two',
-      `Second Taraweeh Starting Now!\n${FormattedSecond}`,
-      'Alert at Athan time'
-    ),
-    processNotificationGroup(
-      Users30MinsBeforeSecond,
-      SecondTaraweehTime30MinBefore,
-      'tarawih two',
-      `Second Taraweeh Starting in 30 Mins!\n${FormattedSecond30}`,
-      'Alert 30 Mins Before'
-    )
-  ]);
+  const duration = Date.now() - startTime
+  const result = {
+    scheduled: insertedCount,
+    total_built: insertRows.length,
+    users_with_tokens: tokenMap.size,
+    is_friday: isFriday,
+    jummah_users: jummahSettings.length,
+    duration_ms: duration,
+    db_calls: 3 + Math.ceil(userIdArray.length / 100) + Math.ceil(insertRows.length / 1000),
+  }
+
+  console.log('Scheduler complete:', result)
+  return result
 }
 
-serve(async (req) => {
-  const scheduler = async () => {
-    const todaysDate = new Date()
-    // if( todaysDate.getDay() == 5 ){
-    //   //Get the 2 Diff Settings at Athan Time & 30 Mins Before
-    //   const { data : JummahAthanNotifications, error } = await supabase.from('jummah_notifications').select('*').contains('notification_settings', ['Alert at Athan Time'])
-    //   const { data : Jummah30MinsNotifications, error: Jummah30MinsNotificationsError } = await supabase.from('jummah_notifications').select('*').contains('notification_settings', ['Alert 30 Mins Before'])
+// ============================================================================
+// HTTP HANDLER
+// ============================================================================
+Deno.serve(async (req) => {
+  try {
+    const result = await scheduleAllNotifications()
 
-    //   await Promise.all(
-    //     JummahAthanNotifications.map( async (JummahDetails : { jummah : string, user_id : string }) => {
-    //       const JummahTime = JummahDetails.jummah == 'first' ? '12:15:00' : JummahDetails.jummah == 'second' ? '13:00:00' : JummahDetails.jummah == 'third' ? '13:45:00' : '15:45:00'
-    //       // Get Push Token From USER_ID
-    //       const { data : push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', JummahDetails.user_id).single()
-    //       const PushToken = push_token.push_notification_token
-    //       if( PushToken ){ 
-    //         const JummahNotificationTime = setTimeToCurrentDate(JummahTime)
-    //         // schedule the notification at the jummah time assigned to the proper user
-    //         const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
-    //           user_id : JummahDetails.user_id, 
-    //           prayer : `${JummahDetails.jummah} jummah`, 
-    //           notification_time : JummahNotificationTime, 
-    //           message : `${JummahDetails.jummah[0].toUpperCase() + JummahDetails.jummah.slice(1)} Jummah Prayer ${ JummahDetails.jummah == 'first' ? '12:15 PM' : JummahDetails.jummah == 'second' ? '1:00 PM' : JummahDetails.jummah == 'third' ? '1:45 PM' : '3:45 PM'}`,
-    //           push_notification_token : PushToken,
-    //           notification_type : 'Alert at Athan Time',
-    //           title : JummahDetails.jummah == 'first' ? '12:15 PM Jummah' : JummahDetails.jummah == 'second' ? '1:00 PM Jummah' : JummahDetails.jummah == 'third' ? '1:45 PM Jummah' : '3:45 PM Jummah'
-    //         })
-    //       } 
-    //     })
-    //   )
-
-    //   await Promise.all(
-    //     Jummah30MinsNotifications.map( async (JummahDetails : { jummah : string, user_id : string }) => {
-    //       const JummahTime = JummahDetails.jummah == 'first' ? '12:15:00' : JummahDetails.jummah == 'second' ? '13:00:00' : JummahDetails.jummah == 'third' ? '13:45:00' : '15:45:00'
-    //        // Get Push Token From USER_ID
-    //        const { data : push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', JummahDetails.user_id).single()
-    //        const PushToken = push_token.push_notification_token
-    //        if ( PushToken ){
-    //         const JummahNotificationTime = setTimeToCurrentDate(JummahTime)
-    //         // schedule the notification at the jummah time assigned to the proper user
-    //         JummahNotificationTime.setMinutes(JummahNotificationTime.getMinutes() - 30)
-    //         const { error : ScheduleJummahNotification } = await supabase.from('prayer_notification_schedule').insert({ 
-    //           user_id : JummahDetails.user_id, 
-    //           prayer : `${JummahDetails.jummah} jummah`, 
-    //           notification_time : JummahNotificationTime, 
-    //           message : `${JummahDetails.jummah[0].toUpperCase() + JummahDetails.jummah.slice(1)} Jummah Prayer will begin in 30 minutes`,
-    //           push_notification_token : PushToken,
-    //           notification_type : 'Alert 30 Mins Before',
-    //           title : JummahDetails.jummah == 'first' ? '12:15 PM Jummah' : JummahDetails.jummah == 'second' ? '1:00 PM Jummah' : JummahDetails.jummah == 'third' ? '1:45 PM Jummah' : '3:45 PM Jummah'
-    //         })
-    //       }
-    //     })
-    //   )
-
-    // }
-
-    await Promise.all(
-      [
-        ProcessAlertAtAthan(),
-        ProcessAlertAtIqamah(),
-        processPrayerNotifications30Mins(),
-        // processTaraweehNotifications(todaysDate),
-        processJummahNotifications(todaysDate)
-      ]
+    return new Response(
+      JSON.stringify(result),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
-}
+  } catch (error) {
+    console.error('Scheduler fatal error:', error)
 
-  await scheduler()
-
-  return new Response(
-    JSON.stringify(''),
-    { headers: { "Content-Type": "application/json" } },
-  )
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
 })
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/prayer-notification-scheduler' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' 
-*/
-
-
-// Helper: batch process a notification group
-async function processJummahNotificationsForGroup(groupData, notificationType) {
-  if (!groupData || groupData.length === 0) return;
-
-  // Batch fetch push tokens for all users in this group.
-  const userIds = groupData.map(j => j.user_id);
-  const profiles = await fetchPushTokens(userIds)
-  if (!profiles) {
-    console.error('Error fetching profiles:', !profiles);
-    return;
-  }
-
-  // Create a mapping: user_id -> push_notification_token
-  const tokenMap = {};
-  profiles.forEach(profile => {
-    if (profile.push_notification_token) {
-      tokenMap[profile.id] = profile.push_notification_token;
-    }
-  });
-
-  // Define a mapping for jummah time strings.
-  const timeMapping = {
-    first: '12:15:00',
-    second: '13:00:00',
-    third: '13:45:00'
-  };
-  const defaultTime = '15:45:00';
-
-  // Build bulk insert rows.
-  const insertRows = groupData.map(jummah => {
-    const token = tokenMap[jummah.user_id];
-    if (!token) return null;
-
-    const timeStr = timeMapping[jummah.jummah] || defaultTime;
-    let notificationTime = setTimeToCurrentDate(timeStr);
-    // For 30 Mins Before alerts, subtract 30 minutes.
-    if (notificationType === 'Alert 30 Mins Before') {
-      notificationTime.setMinutes(notificationTime.getMinutes() - 30);
-    }
-
-    // Determine message and title based on jummah type.
-    let title = '';
-    let message = '';
-    if (jummah.jummah === 'first') {
-      title = '12:15 PM Jummah';
-      message =
-        notificationType === 'Alert at Athan Time'
-          ? 'First Jummah Prayer Starting Now!\n12:15 PM Jummah'
-          : 'First Jummah Prayer will begin in 30 minutes';
-    } else if (jummah.jummah === 'second') {
-      title = '1:00 PM Jummah';
-      message =
-        notificationType === 'Alert at Athan Time'
-          ? 'Second Jummah Prayer Starting Now!\n1:00 PM Jummah'
-          : 'Second Jummah Prayer will begin in 30 minutes';
-    } else if (jummah.jummah === 'third') {
-      title = '1:45 PM Jummah';
-      message =
-        notificationType === 'Alert at Athan Time'
-          ? 'Third Jummah Prayer Starting Now!\n1:45 PM Jummah'
-          : 'Third Jummah Prayer will begin in 30 minutes';
-    } else {
-      title = '3:45 PM Jummah';
-      message =
-        notificationType === 'Alert at Athan Time'
-          ? 'Fourth Jummah Prayer Starting Now!\n3:45 PM Jummah'
-          : 'Fourth Jummah Prayer will begin in 30 minutes';
-    }
-
-    return {
-      user_id: jummah.user_id,
-      notification_time: notificationTime,
-      prayer: `${jummah.jummah} jummah`,
-      message,
-      push_notification_token: token,
-      notification_type: notificationType,
-      title,
-    };
-  }).filter(Boolean);
-
-  // Perform bulk insert if there are any rows.
-  if (insertRows.length > 0) {
-    const { error: insertError } = await supabase
-      .from('prayer_notification_schedule')
-      .insert(insertRows);
-    if (insertError) {
-      console.error('Error inserting jummah notifications:', insertError);
-    }
-  }
-}
-
-// Main function
-async function processJummahNotifications(todaysDate : Date) {
-  if (todaysDate.getDay() !== 5) return; // Only on Fridays
-
-  // Get Jummah notification settings for both alert types.
-  const [
-    { data: JummahAthanNotifications, error: athanError },
-    { data: Jummah30MinsNotifications, error: minsError }
-  ] = await Promise.all([
-    supabase
-      .from('jummah_notifications')
-      .select('*')
-      .contains('notification_settings', ['Alert at Athan Time']),
-    supabase
-      .from('jummah_notifications')
-      .select('*')
-      .contains('notification_settings', ['Alert 30 Mins Before'])
-  ]);
-  if (athanError) console.error('Error fetching Athan notifications:', athanError);
-  if (minsError) console.error('Error fetching 30 Mins notifications:', minsError);
-
-  await Promise.all([
-    processJummahNotificationsForGroup(JummahAthanNotifications, 'Alert at Athan Time'),
-    processJummahNotificationsForGroup(Jummah30MinsNotifications, 'Alert 30 Mins Before')
-  ]);
-}

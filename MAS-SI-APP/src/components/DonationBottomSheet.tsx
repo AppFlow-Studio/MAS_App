@@ -634,6 +634,20 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 <RNText style={styles.customLinkText}>Enter custom amount</RNText>
               </Pressable>
 
+              {/* Save Card Checkbox */}
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSaveCardForFuture(!saveCardForFuture);
+                }}
+                style={styles.saveCardRow}
+              >
+                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
+                  {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
+                </View>
+                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
+              </Pressable>
+
               {/* Pay Button */}
               <Pressable
                 style={[styles.donateButton, isProcessing && styles.donateButtonDisabled]}
@@ -705,6 +719,20 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   <RNText style={styles.quickChipBtnTextActive}>Other</RNText>
                 </View>
               </View>
+
+              {/* Save Card Checkbox */}
+              <Pressable 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSaveCardForFuture(!saveCardForFuture);
+                }}
+                style={styles.saveCardRowCustom}
+              >
+                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
+                  {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
+                </View>
+                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
+              </Pressable>
 
               {/* Review Button */}
               <Pressable

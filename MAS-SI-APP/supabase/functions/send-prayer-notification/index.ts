@@ -1,18 +1,70 @@
-// supabase/functions/send-prayer-notification-safe/index.ts
-// 
-// TIMEOUT-SAFE QUICK FIX
-// Works with your existing prayer_notification_schedule and program_notification_schedule tables
-// 
-// Key features:
-// 1. Parallel chunk sending (not sequential)
-// 2. Hard timeout protection
-// 3. Graceful degradation
-//
+// // supabase/functions/send-prayer-notification-safe/index.ts
+// // 
+// // TIMEOUT-SAFE QUICK FIX
+// // Works with your existing prayer_notification_schedule and program_notification_schedule tables
+// // 
+// // Key features:
+// // 1. Parallel chunk sending (not sequential)
+// // 2. Hard timeout protection
+// // 3. Graceful degradation
+// //
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { Expo, ExpoPushMessage, ExpoPushTicket } from 'https://esm.sh/expo-server-sdk'
+async function sendToExpo(
+  messages: {
+    to: string,
+    title: string,
+    sound: string,
+    body: string,
+    data?: {
+      [key: string]: string
+    }
+  }[], 
+  accessToken?: string
+): Promise<{
+  status: 'ok' | 'error',
+  id?: string,
+  details?: {
+    error?: string
+  }
+}[]> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`
+  }
 
-const expoPushToken = Deno.env.get('EXPO_PUBLIC_PRAYER_PUSH_TOKEN')
+  const response = await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(messages),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Expo API ${response.status}: ${text}`)
+  }
+
+  const result = await response.json()
+  return result.data // Array of tickets
+}
+
+// Token validation (replaces Expo.isExpoPushToken):
+function isExpoPushToken(token: string): boolean {
+  return typeof token === 'string' && 
+    (token.startsWith('ExponentPushToken[') || token.startsWith('ExpoPushToken['))
+}
+
+// Chunking (replaces expo.chunkPushNotifications):
+function chunkArray<T>(array: T[], size = 100): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
 
 // ============================================================================
 // CONFIGURATION
@@ -53,6 +105,23 @@ interface SendResult {
   duration_ms: number
 }
 
+interface ExpoPushMessage {
+  to: string,
+  title: string,
+  sound: string,
+  body: string,
+  data?: {
+    [key: string]: string
+  }
+}
+
+interface ExpoPushTicket {
+  status: 'ok' | 'error',
+  id?: string,
+  details?: {
+    error?: string
+  }
+}
 // ============================================================================
 // TIMEOUT UTILITIES
 // ============================================================================
@@ -82,8 +151,8 @@ async function withTimeout<T>(
 // PARALLEL PROCESSING
 // ============================================================================
 async function processChunksParallel(
-  chunks: ExpoPushMessage[][],
-  expo: Expo,
+    chunks:ExpoPushMessage[][],
+  // expo: Expo,
   maxParallel: number,
   timeoutMs: number
 ): Promise<{ allTickets: ExpoPushTicket[][]; errors: string[] }> {
@@ -97,7 +166,7 @@ async function processChunksParallel(
     const batchPromises = batch.map(async (chunk, idx) => {
       try {
         const { result, timedOut } = await withTimeout(
-          expo.sendPushNotificationsAsync(chunk),
+          sendToExpo(chunk),
           timeoutMs,
           [] as ExpoPushTicket[]
         )
@@ -108,7 +177,7 @@ async function processChunksParallel(
         
         return result
       } catch (error) {
-        errors.push(`Chunk ${i + idx}: ${error.message}`)
+        errors.push(`Chunk ${i + idx}: ${error?.details?.error || 'Unknown error'}`)
         return [] as ExpoPushTicket[]
       }
     })
@@ -165,7 +234,7 @@ Deno.serve(async (req) => {
       )
     }
     
-    const expo = new Expo({ accessToken: expoPushToken })
+    // const expo = new Expo({ accessToken: expoPushToken })
     
     // Build messages, tracking which index maps to which notification
     const messages: ExpoPushMessage[] = []
@@ -179,7 +248,7 @@ Deno.serve(async (req) => {
         continue
       }
       
-      if (!Expo.isExpoPushToken(notification.push_notification_token)) {
+      if (!isExpoPushToken(notification.push_notification_token)) {
         result.failed++
         result.invalidTokens.push(notification.push_notification_token)
         result.errors.push(`ID ${notification.id}: Invalid token format`)
@@ -193,12 +262,12 @@ Deno.serve(async (req) => {
         title: notification.title || 'MAS Staten Island',
         body: notification.message,
         sound: 'default',
-        priority: 'high',
-        data: { 
-          notificationId: notification.id,
-          prayer: notification.prayer,
-          program: notification.program_event_name
-        },
+        // priority: 'high',
+        // data: { 
+        //   notificationId: notification.id,
+        //   prayer: notification.prayer,
+        //   program: notification.program_event_name
+        // },
       })
     }
     
@@ -222,7 +291,7 @@ Deno.serve(async (req) => {
     }
     
     // Chunk messages (Expo limit is 100 per request)
-    const chunks = expo.chunkPushNotifications(messages)
+    const chunks = chunkArray(messages)
     
     console.log(`Sending ${messages.length} notifications in ${chunks.length} chunks (parallel: ${CONFIG.MAX_PARALLEL})`)
     
@@ -231,7 +300,6 @@ Deno.serve(async (req) => {
     // =========================================================================
     const { allTickets, errors: chunkErrors } = await processChunksParallel(
       chunks,
-      expo,
       CONFIG.MAX_PARALLEL,
       CONFIG.EXPO_CALL_TIMEOUT_MS
     )
@@ -261,7 +329,7 @@ Deno.serve(async (req) => {
           result.failed++
           
           if (notification) {
-            result.errors.push(`ID ${notification.id}: ${ticket.message || 'Unknown error'}`)
+            result.errors.push(`ID ${notification.id}: ${ticket?.details?.error || 'Unknown error'}`)
             
             if (ticket.details?.error === 'DeviceNotRegistered') {
               result.invalidTokens.push(notification.push_notification_token)
@@ -306,29 +374,37 @@ Deno.serve(async (req) => {
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
+
 // import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 // import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-// import {Expo} from 'https://esm.sh/expo-server-sdk';
+// // import {Expo} from 'https://esm.sh/expo-server-sdk@3.7.0';
 // console.log("Hello from Functions!")
 
+
 // serve(async (req) => {
-//   const prayer_push_token = Deno.env.get('EXPO_PUBLIC_PRAYER_PUSH_TOKEN')
+//   // const prayer_push_token = Deno.env.get('EXPO_PUBLIC_PRAYER_PUSH_TOKEN')
 //   const {  notifications_batch } = await req.json()
-//   let expo = new Expo({
-//     accessToken : prayer_push_token
-//   })
-//   const messages = notifications_batch.map(( notification ) => (
+//   // let expo = new Expo({
+//   //   accessToken : prayer_push_token
+//   // })
+//   console.log(notifications_batch)
+//   const messages = notifications_batch?.map(( notification : { push_notification_token: string, title: string, message: string } ) => (
 //     {
 //       to: notification.push_notification_token,
 //       title : notification.title ? notification.title : 'MAS Staten Island',
 //       sound: 'default',
 //       body: notification.message,
-//       data: { withSome: 'data' },
 //     }
 //   ))  
   
+//   if( !messages || messages?.length === 0 ){
+//     return new Response(
+//       JSON.stringify({ message: 'No notifications to send' }),
+//       { headers: { 'Content-Type': 'application/json' } }
+//     )
+//   }
 
-//   let chunks = expo.chunkPushNotifications(messages);
+//   let chunks = chunkArray(messages);
 //   let tickets = [];
 //   (async () => {
 //     // Send the chunks to the Expo push notification service. There are
@@ -337,7 +413,7 @@ Deno.serve(async (req) => {
 //     for (let chunk of chunks) {
 //       console.log(chunk)
 //       try {
-//         let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+//         let ticketChunk = await sendToExpo(chunk);
 //         console.log(ticketChunk);
 //         tickets.push(...ticketChunk);
 //         // NOTE: If a ticket contains an error code in ticket.details.error, you
@@ -348,25 +424,6 @@ Deno.serve(async (req) => {
 //         console.log(error);
 //       }
 //     }
-// {  /*  console.log(tickets)
-//     let response = "";
-
-//     for (const ticket of tickets) {
-//       if(ticket.details.error ){
-//         console.log(ticket.details.error)
-//       }
-//         if (ticket.status === "error") {
-//             if (ticket.details && ticket.details.error === "DeviceNotRegistered") {
-//                 response = "DeviceNotRegistered";
-//             }
-//         }
-
-//         if (ticket.status === "ok") {
-//             response = ticket.id;
-//         }
-//     }
-
-//     console.log(response) */}
 //   })();
 //   const data = {
 //     message: `${notifications_batch}`,

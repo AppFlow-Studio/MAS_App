@@ -13,7 +13,7 @@ import { MenuProvider } from "react-native-popup-menu";
 import AuthProvider from '../providers/AuthProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// import NotificationProvider from '../providers/NotificationProvider';
+import { NotificationProvider } from '../providers/NotificationProvider';
 import { Text } from 'react-native';
 import LottieView from 'lottie-react-native';
 import Animated, { useSharedValue, withTiming, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
@@ -104,7 +104,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!} urlScheme="MAS-SI-APP">
           <AuthProvider>
-            {/* <NotificationProvider> */}
+            <NotificationProvider>
             <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
               <BottomSheetModalProvider>
                 <MenuProvider>
@@ -134,7 +134,7 @@ export default function RootLayout() {
                 </MenuProvider>
               </BottomSheetModalProvider>
             </ThemeProvider>
-            {/* </NotificationProvider>  */}
+            </NotificationProvider>
           </AuthProvider>
         </StripeProvider>
       </QueryClientProvider>

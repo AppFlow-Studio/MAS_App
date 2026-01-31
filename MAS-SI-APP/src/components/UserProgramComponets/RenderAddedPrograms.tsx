@@ -20,7 +20,7 @@ interface RenderAddedProgramsProps {
   onHeroPress?: (program: Program, layout: LayoutInfo) => void;
 }
 
-export default function RenderAddedPrograms({ programInfo, onHeroPress }: RenderAddedProgramsProps) {
+const RenderAddedPrograms = React.memo(function RenderAddedPrograms({ programInfo, onHeroPress }: RenderAddedProgramsProps) {
     const imageRef = useRef<View>(null);
 
     const handlePress = () => {
@@ -79,7 +79,9 @@ export default function RenderAddedPrograms({ programInfo, onHeroPress }: Render
         </Link>
     </View>
     )
-}
+})
+
+export default RenderAddedPrograms
 
 const styles = StyleSheet.create({
     gradientBorder: {

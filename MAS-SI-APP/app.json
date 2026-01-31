@@ -42,6 +42,13 @@
       "expo-web-browser",
       "expo-video",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/massicliquidglassicon.png",
+          "color": "#1d4681"
+        }
+      ],
+      [
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "merchant.com.MAS-SI-APP",

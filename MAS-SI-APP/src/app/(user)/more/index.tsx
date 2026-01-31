@@ -34,6 +34,7 @@ import { Profile } from '@/src/types';
 import SignInAnonModal from '@/src/components/SignInAnonModal';
 import { useOnboarding } from '@/src/providers/OnboardingProvider';
 import ProfilePictureBottomSheet from '@/src/components/ProfilePictureBottomSheet';
+import { useNotifications } from '@/src/providers/NotificationProvider';
 
 // const Index = () => {
 //   const router = useRouter();
@@ -74,6 +75,7 @@ export default function MoreScreen() {
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
   const [guestAuthModalVisible, setGuestAuthModalVisible] = useState(false);
   const profilePictureSheetRef = useRef<{ present: () => void; dismiss: () => void }>(null);
+  const { isEnabled: notificationsEnabled } = useNotifications();
 
   const handleProfilePicUpdated = (newUrl: string | null) => {
     setProfile(prev => prev ? { ...prev, profile_pic: newUrl || undefined } : prev);
@@ -526,6 +528,18 @@ export default function MoreScreen() {
 
           {/* NOTIFICATIONS */}
           <Text style={styles.sectionLabel}>NOTIFICATIONS</Text>
+              {!anonStatus && !notificationsEnabled && (
+                <TouchableOpacity
+                  style={styles.notificationBanner}
+                  onPress={() => router.push('/more/NotificationSettings')}
+                >
+                  <Bell color="white" size={16} strokeWidth={2.5} style={{ marginRight: 8 }} />
+                  <Text style={styles.notificationBannerText}>
+                    Notifications are off — tap to enable
+                  </Text>
+                  <ChevronRight color="#92400E" size={16} style={{ marginLeft: 'auto' }} />
+                </TouchableOpacity>
+              )}
               <View style={styles.menuCard}>
                 <MenuButton icon={Bell} label="Prayer" />
                 <MenuButton
@@ -534,7 +548,7 @@ export default function MoreScreen() {
                   onPress={() => router.push('/myPrograms/notifications')}
                 />
                 <MenuButton icon={PartyPopper} label="Event" />
-                <MenuButton icon={Settings} label="Settings" />
+                <MenuButton icon={Settings} label="Settings" onPress={() => router.push('/more/NotificationSettings')} />
               </View>
 
           {/* DONATION */}
@@ -1239,6 +1253,22 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '700',
     fontSize: 17,
+  },
+  notificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(251, 191, 36, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.4)',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  notificationBannerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FDE68A',
   },
   contentSections: {
     paddingHorizontal: 12,

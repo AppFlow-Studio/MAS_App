@@ -348,3 +348,57 @@ export const createBusinessSubscription = async (
         return { success: false, error: error?.message || 'Failed to create subscription' }
     }
 }
+
+// Type for subscription verification result
+export interface SubscriptionVerificationResult {
+    success: boolean;
+    subscriptionId?: string;
+    customerId?: string;
+    status?: string;
+    paymentStatus?: string;
+    error?: string;
+}
+
+/**
+ * Verify a Stripe Checkout Session was completed successfully
+ * @param sessionId The Stripe Checkout Session ID to verify
+ * @returns SubscriptionVerificationResult with verification status
+ */
+export const verifySubscriptionSession = async (sessionId: string): Promise<SubscriptionVerificationResult> => {
+    console.log('Verifying subscription session:', sessionId)
+
+    // Do not require client session here: on cold start after Safari redirect, auth may not be restored yet.
+    // The edge function only needs sessionId; saveSubmission() in BusinessAds will use session when it runs.
+    try {
+        const { data, error } = await supabase.functions.invoke('verify-checkout-session', {
+            body: { sessionId }
+        })
+        
+        if (error) {
+            console.log('Error verifying session:', error)
+            return { success: false, error: error.message || 'Verification failed' }
+        }
+        
+        if (!data?.success) {
+            console.log('Session verification failed:', data?.error || 'Payment not completed')
+            return { 
+                success: false, 
+                error: data?.error || 'Payment not completed',
+                status: data?.status,
+                paymentStatus: data?.paymentStatus
+            }
+        }
+        
+        console.log('Session verified successfully:', data)
+        return {
+            success: true,
+            subscriptionId: data?.subscriptionId,
+            customerId: data?.customerId,
+            status: data?.status,
+            paymentStatus: data?.paymentStatus
+        }
+    } catch (error: any) {
+        console.log('Exception verifying session:', error)
+        return { success: false, error: error?.message || 'Verification failed' }
+    }
+}

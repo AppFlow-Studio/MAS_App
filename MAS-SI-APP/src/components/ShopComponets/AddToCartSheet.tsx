@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image } from 'react-native'
+import { View, Text, Pressable, Image, Platform } from 'react-native'
 import React, {forwardRef, useCallback, useEffect, useMemo, useRef, useState, } from 'react'
 import BottomSheet, { BottomSheetModal, BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 import { Icon, Button } from 'react-native-paper';
@@ -50,8 +50,11 @@ const AddToCartProgramSheet = forwardRef<Ref, AddtoCartProgramProp>(({program_id
         index={0}
         snapPoints={snapPoints}
         enablePanDownToClose={true}
-        backgroundStyle={{backgroundColor: "white"}}
-        handleIndicatorStyle={{backgroundColor: "gray"}}
+        detached={true}
+        bottomInset={Platform.OS === 'ios' ? 12 : 10}
+        style={{ marginHorizontal: 10 }}
+        backgroundStyle={{ backgroundColor: "white", borderRadius: 40 }}
+        handleIndicatorStyle={{ backgroundColor: "gray" }}
         backdropComponent={renderBackDrop}
         onDismiss={() => setQuantity(1)}
         >

@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { MenuProvider } from "react-native-popup-menu";
 import AuthProvider from '../providers/AuthProvider';
+import DeepLinkProvider from '../providers/DeepLinkProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationProvider } from '../providers/NotificationProvider';
@@ -104,37 +105,39 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!} urlScheme="MAS-SI-APP">
           <AuthProvider>
-            <NotificationProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <BottomSheetModalProvider>
-                <MenuProvider>
-                  <PaperProvider>
-                    {/* ✅ Show animated logo once */}
-                    {/* {showLogo && (
-                      <Animated.View style={[{ position: 'absolute', zIndex: 10, width: '100%', height: '100%' }, logoAnimation]}>
-                        <LottieView
-                          autoPlay
-                          loop={false}
-                          source={require("@/assets/lottie/MASLogoAnimation3.json")}
-                          style={{ width: '100%', height: '100%', backgroundColor: 'white' }}
-                          speed={1.5}
-                        />
-                      </Animated.View>
-                    )} */}
-                    <RootLayoutNav />
-                    <Toast 
-                      config={glassyToastConfig}
-                      position="top"
-                      topOffset={110}
-                      visibilityTime={3000}
-                      autoHide={true}
-                      swipeable={true}
-                    />
-                  </PaperProvider>
-                </MenuProvider>
-              </BottomSheetModalProvider>
-            </ThemeProvider>
-            </NotificationProvider>
+            <DeepLinkProvider>
+              {/* <NotificationProvider> */}
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <BottomSheetModalProvider>
+                  <MenuProvider>
+                    <PaperProvider>
+                      {/* ✅ Show animated logo once */}
+                      {/* {showLogo && (
+                        <Animated.View style={[{ position: 'absolute', zIndex: 10, width: '100%', height: '100%' }, logoAnimation]}>
+                          <LottieView
+                            autoPlay
+                            loop={false}
+                            source={require("@/assets/lottie/MASLogoAnimation3.json")}
+                            style={{ width: '100%', height: '100%', backgroundColor: 'white' }}
+                            speed={1.5}
+                          />
+                        </Animated.View>
+                      )} */}
+                      <RootLayoutNav />
+                      <Toast 
+                        config={glassyToastConfig}
+                        position="top"
+                        topOffset={110}
+                        visibilityTime={3000}
+                        autoHide={true}
+                        swipeable={true}
+                      />
+                    </PaperProvider>
+                  </MenuProvider>
+                </BottomSheetModalProvider>
+              </ThemeProvider>
+              {/* </NotificationProvider>  */}
+            </DeepLinkProvider>
           </AuthProvider>
         </StripeProvider>
       </QueryClientProvider>

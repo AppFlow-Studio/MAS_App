@@ -454,10 +454,11 @@ const SelectPreferencesBottomSheet = ({
           <View 
             style={{
               backgroundColor: 'white',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
+              borderRadius: 40,
+              marginHorizontal: 10,
+              marginBottom: Platform.OS === 'ios' ? 12 : 10,
               height: '80%',
-              width: '100%',
+              width: undefined,
             }}
           >
             {/* Header */}

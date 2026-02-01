@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { supabase } from "@/src/lib/supabase";
 import Svg, { Path } from "react-native-svg";
 import { BlurView } from "expo-blur";
 import Toast from "react-native-toast-message";
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, Easing } from "react-native-reanimated";
 
 // Types
 interface ProgramTag {
@@ -327,7 +328,7 @@ const ManagePreferencesScreen = () => {
     <Modal
       visible={modalVisible}
       transparent={true}
-      animationType="slide"
+      animationType="none"
       onRequestClose={() => setModalVisible(false)}
     >
       <KeyboardAvoidingView
@@ -335,23 +336,47 @@ const ManagePreferencesScreen = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={{ flex: 1, justifyContent: "flex-end" }}>
-          <Pressable
+          {/* Backdrop with delayed fade in */}
+          <Animated.View
+            entering={FadeIn.duration(200).delay(150)}
+            exiting={FadeOut.duration(150)}
             style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0 }}
-            onPress={() => setModalVisible(false)}
           >
-            <BlurView intensity={20} style={{ flex: 1 }} tint="dark" />
-          </Pressable>
+            <Pressable
+              style={{ flex: 1 }}
+              onPress={() => setModalVisible(false)}
+            >
+              <BlurView intensity={20} style={{ flex: 1 }} tint="dark" />
+            </Pressable>
+          </Animated.View>
 
-          <View
+          {/* Sheet */}
+          <Animated.View
+            entering={SlideInDown.duration(350).easing(Easing.out(Easing.cubic))}
+            exiting={SlideOutDown.duration(250).easing(Easing.in(Easing.cubic))}
             style={{
+              position: 'absolute',
+              bottom: 12,
+              left: 12,
+              right: 12,
               backgroundColor: "white",
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
+              borderRadius: 40,
               maxHeight: "80%",
+              overflow: 'hidden',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 12,
+              elevation: 8,
             }}
           >
+            {/* Handle */}
+            <View className="items-center pt-3 pb-1">
+              <View style={{ width: 40, height: 4, backgroundColor: '#D1D5DB', borderRadius: 2 }} />
+            </View>
+
             {/* Header */}
-            <View className="px-6 pt-4 pb-3 border-b border-gray-100">
+            <View className="px-6 pt-2 pb-3 border-b border-gray-100">
               <View className="flex-row items-center justify-between">
                 <Text className="text-xl font-bold text-gray-900">
                   {editingItem ? "Edit" : "Add New"}{" "}
@@ -591,7 +616,7 @@ const ManagePreferencesScreen = () => {
                 </Text>
               </Pressable>
             </View>
-          </View>
+          </Animated.View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -730,7 +755,7 @@ const ManagePreferencesScreen = () => {
         {/* FAB */}
         <Pressable
           onPress={handleAdd}
-          className="absolute bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full items-center justify-center"
+          className="absolute bottom-10 right-6 w-14 h-14 bg-blue-600 rounded-full items-center justify-center"
           style={{
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },

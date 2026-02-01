@@ -37,12 +37,12 @@ serve(async (req) => {
       successUrl ||
       (universalLinkDomain
         ? `https://${universalLinkDomain}/subscription-success?session_id={CHECKOUT_SESSION_ID}`
-        : 'myapp://subscription-success?session_id={CHECKOUT_SESSION_ID}');
+        : 'MAS-SI-APP://subscription-success?session_id={CHECKOUT_SESSION_ID}');
     const cancelUrlFinal =
       cancelUrl ||
       (universalLinkDomain
         ? `https://${universalLinkDomain}/subscription-cancel`
-        : 'myapp://subscription-cancel');
+        : 'MAS-SI-APP://subscription-cancel');
 
     // Create a Stripe Checkout Session for subscription
     const session = await stripe.checkout.sessions.create({

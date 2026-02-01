@@ -33,9 +33,10 @@ export default function NotificationsIndex() {
           style={styles.container}
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
+          className='border-2 border-red-500'
         >
           {/* Custom Header */}
-          <View style={{ paddingTop: 30, paddingHorizontal: 0, flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+          <View style={{ paddingTop: 0, paddingHorizontal: 0, flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
             {isLiquidGlassSupported ? (
               <LiquidGlassView
                 style={{
@@ -92,107 +93,107 @@ export default function NotificationsIndex() {
             </Text>
           </View>
 
-        {/* Notification Cards */}
-        <View style={styles.notificationCards}>
-          {isLiquidGlassSupported ? (
-            <LiquidGlassView style={styles.notificationCardGlass} interactive effect="clear">
-              <View style={styles.notificationCardInner}>
+          {/* Notification Cards */}
+          <View style={styles.notificationCards}>
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView style={styles.notificationCardGlass} interactive effect="clear">
+                <View style={styles.notificationCardInner}>
+                  <Image 
+                    source={require('@/assets/images/glowingTree.png')} 
+                    style={styles.cardIconImage}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitleGlass}>Tonight's Isha is at 9:15 PM</Text>
+                    <Text style={styles.cardSubtitleGlass}>Tap to view full prayer times.</Text>
+                  </View>
+                  <Text style={styles.cardTimeGlass}>1h ago</Text>
+                </View>
+              </LiquidGlassView>
+            ) : (
+              <View style={styles.notificationCard}>
                 <Image 
                   source={require('@/assets/images/glowingTree.png')} 
                   style={styles.cardIconImage}
                   resizeMode="contain"
                 />
                 <View style={styles.cardContent}>
-                  <Text style={styles.cardTitleGlass}>Tonight's Isha is at 9:15 PM</Text>
-                  <Text style={styles.cardSubtitleGlass}>Tap to view full prayer times.</Text>
+                  <Text style={styles.cardTitle}>Tonight's Isha is at 9:15 PM</Text>
+                  <Text style={styles.cardSubtitle}>Tap to view full prayer times.</Text>
                 </View>
-                <Text style={styles.cardTimeGlass}>1h ago</Text>
+                <Text style={styles.cardTime}>1h ago</Text>
               </View>
-            </LiquidGlassView>
-          ) : (
-            <View style={styles.notificationCard}>
-              <Image 
-                source={require('@/assets/images/glowingTree.png')} 
-                style={styles.cardIconImage}
-                resizeMode="contain"
-              />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Tonight's Isha is at 9:15 PM</Text>
-                <Text style={styles.cardSubtitle}>Tap to view full prayer times.</Text>
-              </View>
-              <Text style={styles.cardTime}>1h ago</Text>
-            </View>
-          )}
+            )}
 
-          {isLiquidGlassSupported ? (
-            <LiquidGlassView style={styles.notificationCardGlass} interactive effect="clear">
-              <View style={styles.notificationCardInner}>
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView style={styles.notificationCardGlass} interactive effect="clear">
+                <View style={styles.notificationCardInner}>
+                  <Image 
+                    source={require('@/assets/images/glowingTree.png')} 
+                    style={styles.cardIconImage}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitleGlass}>Community event this weekend</Text>
+                    <Text style={styles.cardSubtitleGlass}>Tap to see details for the Family Night program.</Text>
+                  </View>
+                  <Text style={styles.cardTimeGlass}>Yesterday</Text>
+                </View>
+              </LiquidGlassView>
+            ) : (
+              <View style={styles.notificationCard}>
                 <Image 
                   source={require('@/assets/images/glowingTree.png')} 
                   style={styles.cardIconImage}
                   resizeMode="contain"
                 />
                 <View style={styles.cardContent}>
-                  <Text style={styles.cardTitleGlass}>Community event this weekend</Text>
-                  <Text style={styles.cardSubtitleGlass}>Tap to see details for the Family Night program.</Text>
+                  <Text style={styles.cardTitle}>Community event this weekend</Text>
+                  <Text style={styles.cardSubtitle}>Tap to see details for the Family Night program.</Text>
                 </View>
-                <Text style={styles.cardTimeGlass}>Yesterday</Text>
+                <Text style={styles.cardTime}>Yesterday</Text>
               </View>
-            </LiquidGlassView>
-          ) : (
-            <View style={styles.notificationCard}>
-              <Image 
-                source={require('@/assets/images/glowingTree.png')} 
-                style={styles.cardIconImage}
-                resizeMode="contain"
-              />
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>Community event this weekend</Text>
-                <Text style={styles.cardSubtitle}>Tap to see details for the Family Night program.</Text>
-              </View>
-              <Text style={styles.cardTime}>Yesterday</Text>
-            </View>
-          )}
-        </View>
+            )}
+          </View>
 
-        {/* Main Content */}
-        <View style={styles.mainContent}>
-          <Text style={styles.noNotificationsText}>No Notifications Yet</Text>
-          
-          <Text style={styles.descriptionText}>
-            You'll get updates here for prayer time changes, community announcements, upcoming events, and new messages from MAS SI.
-          </Text>
-          
-          <Text style={styles.instructionText}>
-            To get push notifications on your device, go to settings and enable Push Notifications.
-          </Text>
+          {/* Main Content */}
+          <View style={styles.mainContent}>
+            <Text style={styles.noNotificationsText}>No Notifications Yet</Text>
+            
+            <Text style={styles.descriptionText}>
+              You'll get updates here for prayer time changes, community announcements, upcoming events, and new messages from MAS SI.
+            </Text>
+            
+            <Text style={styles.instructionText}>
+              To get push notifications on your device, go to settings and enable Push Notifications.
+            </Text>
 
-          {/* Enable Push Notifications Button - with Liquid Glass effect */}
-          {isLiquidGlassSupported ? (
-            <LiquidGlassView
-              style={styles.liquidGlassButton}
-              interactive
-              effect="clear"
-            >
+            {/* Enable Push Notifications Button - with Liquid Glass effect */}
+            {isLiquidGlassSupported ? (
+              <LiquidGlassView
+                style={styles.liquidGlassButton}
+                interactive
+                effect="clear"
+              >
+                <TouchableOpacity 
+                  style={styles.enableButtonInner}
+                  onPress={handleEnableNotifications}
+                >
+                  <Bell color="white" size={20} strokeWidth={2.5} style={{ marginRight: 10 }} />
+                  <Text style={styles.enableButtonTextGlass}>Enable Push Notifications</Text>
+                </TouchableOpacity>
+              </LiquidGlassView>
+            ) : (
               <TouchableOpacity 
-                style={styles.enableButtonInner}
+                style={styles.enableButton}
                 onPress={handleEnableNotifications}
               >
-                <Bell color="white" size={20} strokeWidth={2.5} style={{ marginRight: 10 }} />
-                <Text style={styles.enableButtonTextGlass}>Enable Push Notifications</Text>
+                <Bell color="#6EE7B7" size={20} strokeWidth={2.5} style={{ marginRight: 10 }} />
+                <Text style={styles.enableButtonText}>Enable Push Notifications</Text>
               </TouchableOpacity>
-            </LiquidGlassView>
-          ) : (
-            <TouchableOpacity 
-              style={styles.enableButton}
-              onPress={handleEnableNotifications}
-            >
-              <Bell color="#6EE7B7" size={20} strokeWidth={2.5} style={{ marginRight: 10 }} />
-              <Text style={styles.enableButtonText}>Enable Push Notifications</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
+            )}
+          </View>
+        </ScrollView>
       </LinearGradient>
     </>
   );

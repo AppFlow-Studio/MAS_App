@@ -24,13 +24,21 @@ const MoreLayout = () => {
             animation: 'slide_from_bottom',
           }} 
         />
-        <Stack.Screen 
-          name='BusinessAds' 
-          options={{ 
+        <Stack.Screen
+          name='NotificationSettings'
+          options={{
+            headerShown: false,
+            presentation: 'card',
+            animation: 'default',
+          }}
+        />
+        <Stack.Screen
+          name='BusinessAds'
+          options={{
             headerShown: false,
             presentation: 'fullScreenModal',
             animation: 'slide_from_bottom',
-          }} 
+          }}
         />
         <Stack.Screen 
           name='BusinessStatus' 

@@ -417,7 +417,7 @@ const NotificationPrayerTable = ({
 
   return (
     <>
-    <View style={{ width: width, backgroundColor: 'transparent', flex: 1 }}>
+    <View style={{ width: width, flex: 1 }} className="">
       <View style={{ width: "100%", paddingHorizontal: 20, paddingTop: 10 }}>
         <ScrollView
           style={{ width: "100%" }}
@@ -429,7 +429,7 @@ const NotificationPrayerTable = ({
               const isEnabled = prayerSettings[prayer.PrayerCap]?.enabled || false;
               
               return (
-                <View key={prayer.PrayerCap} style={styles.prayerCardOffWhite}>
+                <View key={prayer.PrayerCap} style={styles.prayerCardOffWhite} >
                   <View style={styles.prayerCard}>
                     {/* Icon Container */}
                     <Image 

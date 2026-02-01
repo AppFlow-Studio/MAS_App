@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, useWindowDimensions, Button, FlatList, Pressable, ImageBackground, StyleSheet, Modal, Animated, Image } from 'react-native'
-import React, { useEffect, useRef, useState, useCallback, memo } from 'react'
+import React, { useEffect, useRef, useState, useCallback, useMemo, memo } from 'react'
 import { Redirect, Stack, useLocalSearchParams } from 'expo-router'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { supabase } from '@/src/lib/supabase'
 import { useAuth } from "@/src/providers/AuthProvider"
 import { EventsType, Program } from '@/src/types'
@@ -21,122 +21,6 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass'
 import HeroTransitionModal, { LayoutInfo } from '@/src/components/HeroTransitionModal'
 
-// Commented out - NotificationPaidScreen component (unused)
-/*
-  const NotificationPaidScreen = () => {
-    return(
-      <ScrollView>
-        <View className='px-7'>
-          <View className='items-center'>
-            <Text className='font-bold text-2xl text-center'>Start adding flyers to make your notifications list</Text>
-            <Icon source={"bell"} color="#007AFF" size={40}/>
-          </View>
-          <View className='pb-[50%]'/>
-          <View className='items-center px-4'>
-            <View className='flex-row items-center justify-center flex-wrap'>
-              <Text className='font-bold text-xl text-center'>Add programs and events by tapping the </Text>
-              <Icon source={"bell"} color="#007AFF" size={20}/>
-              <Text className='font-bold text-xl text-center'> or sliding right on the flyer name</Text>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-    )
-  }
-*/
-
-type NotificationEventsScreenProp = {
-  addedEvents: EventsType[] | null
-  layout: number
-}
-const NotificationEventsScreen = ({ addedEvents, layout }: NotificationEventsScreenProp) => {
-  return (
-    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", paddingBottom: 0 }}>
-      {
-        addedEvents && addedEvents.length > 0 ? addedEvents.map((item, index) => {
-            return (
-            <View key={index} style={{ width: layout / 2, justifyContent: "center", alignItems: "center", paddingTop: 10 }}>
-              <RenderAddedEvents eventsInfo={item} />
-            </View>
-          )
-          }) :  
-          ( 
-            <View className='px-7'>
-            <View className='items-center'>
-              <Text className='font-bold text-2xl text-center'>Start adding flyers to make your notifications list</Text>
-                <Icon source={"bell"} color="#007AFF" size={40} />
-            </View>
-              <View className='pb-[50%]' />
-            <View>
-                <Text className='font-bold text-xl text-center'>Add programs and events by tapping the <Icon source={"bell"} color="#007AFF" size={20} /> or sliding right on the flyer name</Text>
-            </View>
-          </View>
-          )
-        }
-    </ScrollView>
-  )
-}
-type ClassesScreenProp = {
-  addedPrograms: Program[]
-  layout: number
-}
-
-const ClassesScreen = ({ addedPrograms, layout }: ClassesScreenProp) => {
-  return (
-    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", paddingBottom: 0 }}>
-      {
-        addedPrograms && addedPrograms.length > 0 ? addedPrograms.map((item) => {
-          return (
-            <View style={{ width: layout / 2, justifyContent: "center", alignItems: "center", paddingTop: 10 }}>
-              <RenderAddedPrograms programInfo={item} />
-              </View>
-            )
-          }) : 
-          ( 
-          <View className='px-7'>
-            <View className='items-center'>
-              <Text className='font-bold text-2xl text-center'>Start adding flyers to make your notifications list</Text>
-                <Icon source={"bell"} color="#007AFF" size={40} />
-            </View>
-              <View className='pb-[50%]' />
-            <View>
-                <Text className='font-bold text-xl text-center'>Add programs and events by tapping the <Icon source={"bell"} color="#007AFF" size={20} /> or sliding right on the flyer name</Text>
-            </View>
-          </View>
-          )
-        }
-    </ScrollView>
-  )
-}
-
-const LecturesScreen = ({ addedPrograms, layout }: ClassesScreenProp) => {
-  return (
-    <ScrollView className='w-[100%]' contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", paddingBottom: 0 }}>
-      {
-        addedPrograms.length > 0 ? addedPrograms.map((item) => {
-          return (
-            <View style={{ width: layout / 2, justifyContent: "center", alignItems: "center", paddingTop: 10 }}>
-              <RenderAddedPrograms programInfo={item} />
-              </View>
-            )
-          }) : 
-          ( 
-          <View className='px-7'>
-            <View className='items-center'>
-              <Text className='font-bold text-2xl text-center'>Start adding flyers to make your notifications list</Text>
-                <Icon source={"bell"} color="#007AFF" size={40} />
-            </View>
-              <View className='pb-[50%]' />
-            <View>
-                <Text className='font-bold text-xl text-center'>Add programs and events by tapping the <Icon source={"bell"} color="#007AFF" size={20} /> or sliding right on the flyer name</Text>
-            </View>
-          </View>
-          )
-        }
-    </ScrollView>
-  )
-}
-
 type ProgramsScreenProp = {
   addedPrograms: Program[]
   addedLecturePrograms: Program[]
@@ -146,104 +30,76 @@ type ProgramsScreenProp = {
   onEventHeroPress?: (event: EventsType, layout: LayoutInfo) => void
 }
 
+const SectionTitle = ({ title }: { title: string }) => (
+  <Text style={{ fontSize: 18, fontWeight: '700', color: 'white', marginBottom: 12, marginTop: 20, paddingHorizontal: 20 }}>
+    {title}
+  </Text>
+)
+
+const EmptyState = () => (
+  <View style={{ paddingHorizontal: 28, paddingTop: 40 }}>
+    <View style={{ alignItems: 'center' }}>
+      <Text style={{ fontWeight: 'bold', fontSize: 24, textAlign: 'center', marginBottom: 16, color: 'white' }}>
+        Start adding programs to your notifications
+      </Text>
+      <Icon source={"bell"} color="#6EE7B7" size={40} />
+    </View>
+    <View style={{ height: 40 }} />
+    <View>
+      <Text style={{ fontWeight: 'bold', fontSize: 18, textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
+        Add programs and events by tapping the bell icon or sliding right on the flyer name
+      </Text>
+    </View>
+  </View>
+)
+
+type SectionItem = {
+  type: 'classes' | 'lectures' | 'events'
+  title: string
+  data: any[]
+}
+
 const ProgramsScreen = ({ addedPrograms, addedLecturePrograms, addedEvents, layout, onProgramHeroPress, onEventHeroPress }: ProgramsScreenProp) => {
   const tabBarHeight = 120
 
-  const hasClasses = addedPrograms && addedPrograms.length > 0
-  const hasLectures = addedLecturePrograms && addedLecturePrograms.length > 0
-  const hasEvents = addedEvents && addedEvents.length > 0
-  const hasAnyContent = hasClasses || hasLectures || hasEvents
+  const sections = useMemo(() => {
+    const result: SectionItem[] = []
+    if (addedPrograms && addedPrograms.length > 0) result.push({ type: 'classes', title: 'Classes', data: addedPrograms })
+    if (addedLecturePrograms && addedLecturePrograms.length > 0) result.push({ type: 'lectures', title: 'Lectures', data: addedLecturePrograms })
+    if (addedEvents && addedEvents.length > 0) result.push({ type: 'events', title: 'Events', data: addedEvents })
+    return result
+  }, [addedPrograms, addedLecturePrograms, addedEvents])
 
-  const SectionTitle = ({ title }: { title: string }) => (
-    <Text style={{ fontSize: 18, fontWeight: '700', color: 'white', marginBottom: 12, marginTop: 20, paddingHorizontal: 20 }}>
-      {title}
-    </Text>
-  )
+  const renderSection = useCallback(({ item }: { item: SectionItem }) => (
+    <>
+      <SectionTitle title={item.title} />
+      <FlatList
+        horizontal
+        data={item.data}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 20 }}
+        renderItem={({ item: innerItem }) => (
+          <View style={{ width: 160 }}>
+            {item.type === 'events'
+              ? <RenderAddedEvents eventsInfo={innerItem} onHeroPress={onEventHeroPress} />
+              : <RenderAddedPrograms programInfo={innerItem} onHeroPress={onProgramHeroPress} />}
+          </View>
+        )}
+        keyExtractor={(innerItem) => `${item.type}-${innerItem.program_id || innerItem.event_id}`}
+      />
+    </>
+  ), [onProgramHeroPress, onEventHeroPress])
 
-  const EmptyState = () => (
-    <View style={{ paddingHorizontal: 28, paddingTop: 40 }}>
-      <View style={{ alignItems: 'center' }}>
-        <Text style={{ fontWeight: 'bold', fontSize: 24, textAlign: 'center', marginBottom: 16, color: 'white' }}>
-          Start adding programs to your notifications
-        </Text>
-        <Icon source={"bell"} color="#6EE7B7" size={40} />
-      </View>
-      <View style={{ height: 40 }} />
-      <View>
-        <Text style={{ fontWeight: 'bold', fontSize: 18, textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
-          Add programs and events by tapping the bell icon or sliding right on the flyer name
-        </Text>
-      </View>
-    </View>
-  )
-
-  if (!hasAnyContent) {
-    return <EmptyState />
-  }
+  if (sections.length === 0) return <EmptyState />
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: 'transparent' }}
+    <FlatList
+      data={sections}
+      renderItem={renderSection}
+      keyExtractor={(item) => item.type}
       contentContainerStyle={{ paddingBottom: tabBarHeight }}
       showsVerticalScrollIndicator={false}
-    >
-      {/* Classes Section */}
-      {hasClasses && (
-        <>
-          <SectionTitle title="Classes" />
-          <FlatList
-            horizontal
-            data={addedPrograms}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 20 }}
-            renderItem={({ item }) => (
-              <View style={{ width: 160 }}>
-                <RenderAddedPrograms programInfo={item} onHeroPress={onProgramHeroPress} />
-              </View>
-            )}
-            keyExtractor={(item, index) => `class-${index}`}
-          />
-        </>
-      )}
-
-      {/* Lectures Section */}
-      {hasLectures && (
-        <>
-          <SectionTitle title="Lectures" />
-          <FlatList
-            horizontal
-            data={addedLecturePrograms}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 20 }}
-            renderItem={({ item }) => (
-              <View style={{ width: 160 }}>
-                <RenderAddedPrograms programInfo={item} onHeroPress={onProgramHeroPress} />
-              </View>
-            )}
-            keyExtractor={(item, index) => `lecture-${index}`}
-          />
-        </>
-      )}
-
-      {/* Events Section */}
-      {hasEvents && (
-        <>
-          <SectionTitle title="Events" />
-          <FlatList
-            horizontal
-            data={addedEvents}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, gap: 20 }}
-            renderItem={({ item }) => (
-              <View style={{ width: 160 }}>
-                <RenderAddedEvents eventsInfo={item} onHeroPress={onEventHeroPress} />
-              </View>
-            )}
-            keyExtractor={(item, index) => `event-${index}`}
-          />
-        </>
-      )}
-    </ScrollView>
+    />
   )
 }
 type SalahTimesScreenProps = {
@@ -883,13 +739,9 @@ const NotificationEvents = () => {
         end={{ x: 0, y: 1 }}
         style={{ flex: 1 }}
       >
-        <ScrollView 
-          style={{ flex: 1 }} 
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
+        <SafeAreaView style={{ flex: 1 }}>
           {/* Custom Header */}
-          <View style={{ paddingTop: 10, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ paddingTop: 0, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center' }}>
             {isLiquidGlassSupported ? (
               <LiquidGlassView
                 style={{
@@ -926,11 +778,11 @@ const NotificationEvents = () => {
                 <Icon source="chevron-left" color="white" size={28} />
               </Pressable>
             )}
-            <Text style={{ 
-              color: 'white', 
-              fontSize: 20, 
-              fontWeight: '600', 
-              flex: 1, 
+            <Text style={{
+              color: 'white',
+              fontSize: 20,
+              fontWeight: '600',
+              flex: 1,
               textAlign: 'center',
               marginRight: 40,
             }}>
@@ -951,12 +803,12 @@ const NotificationEvents = () => {
                       borderRadius: 999,
                       paddingVertical: 12,
                       paddingHorizontal: 24,
-                      backgroundColor: isActive 
-                        ? 'rgba(110, 231, 183, 0.25)' 
+                      backgroundColor: isActive
+                        ? 'rgba(110, 231, 183, 0.25)'
                         : 'rgba(255, 255, 255, 0.15)',
                       borderWidth: 1.5,
-                      borderColor: isActive 
-                        ? 'rgba(110, 231, 183, 0.5)' 
+                      borderColor: isActive
+                        ? 'rgba(110, 231, 183, 0.5)'
                         : 'rgba(255, 255, 255, 0.25)',
                     }}
                   >
@@ -973,8 +825,8 @@ const NotificationEvents = () => {
             </View>
           </View>
 
-          {/* Content based on selected tab */}
-          <View style={{ flex: 1, minHeight: 500 }}>
+          {/* Content based on selected tab - each handles own scrolling */}
+          <View style={{ flex: 1 }}>
             {index === 0 && <SalahTimesScreen openPrayer={openPrayer} />}
             {index === 1 && (
               <ProgramsScreen
@@ -988,7 +840,7 @@ const NotificationEvents = () => {
             )}
             {index === 2 && <JummahScreen />}
           </View>
-        </ScrollView>
+        </SafeAreaView>
       </LinearGradient>
 
       {/* Hero Transition Modal */}
@@ -1004,46 +856,6 @@ const NotificationEvents = () => {
     />
     </>
   )
-}
-
-
-{
-  /*
-        <ScrollView className='bg-white flex-1'>
-      <Stack.Screen options={{title : 'Notification Center', headerBackTitleVisible : false}}/>
-      <View className='flex-col w-[100%] flex-wrap justify-center mt-5' >
-        <View>
-          <Text className='text-2xl font-bold'>Events :</Text>
-        </View> 
-
-        <View className='mt-2 flex-row w-[100%] flex-wrap justify-center' >
-        {addedEvents ? addedEvents.map((event, index) => {
-          return(
-            <View className='pb-5 justify-between mx-2' key={index}>
-              <RenderAddedEvents event_id={event.event_id} />
-            </View>
-          )
-        }) : <></>}
-        </View>
-
-
-        <View>
-          <Text className='text-2xl font-bold'>Programs :</Text>
-        </View> 
-
-        <View className='mt-2 flex-row w-[100%] flex-wrap justify-center' >
-        {addedPrograms ? addedPrograms.map((program, index) => {
-          return(
-            <View className='pb-5 justify-between mx-2' key={index}>
-              <RenderAddedPrograms program_id={program.program_id} />
-            </View>
-          )
-        }) : <></>}
-        </View>
-
-      </View>
-    </ScrollView>
-  */
 }
 
 export default NotificationEvents

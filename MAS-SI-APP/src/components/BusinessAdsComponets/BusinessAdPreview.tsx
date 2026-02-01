@@ -62,21 +62,21 @@ const BusinessAdPreview = ({
     )
 
     return (
-        <Animated.View 
-            entering={FadeIn.duration(250)}
-            style={{ 
-                width: compact ? screenWidth * 0.85 : screenWidth - 48,
-                borderRadius: 16,
-                backgroundColor: 'white',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 12,
-                elevation: 5,
-                overflow: 'hidden',
-                alignSelf: 'center'
-            }}
-        >
+        <Animated.View entering={FadeIn.duration(250)}>
+            <View
+                style={{
+                    width: compact ? screenWidth * 0.85 : screenWidth - 48,
+                    borderRadius: 16,
+                    backgroundColor: 'white',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 12,
+                    elevation: 5,
+                    overflow: 'hidden',
+                    alignSelf: 'center'
+                }}
+            >
             {/* Image Section */}
             <View style={{ 
                 width: '100%', 
@@ -234,6 +234,7 @@ const BusinessAdPreview = ({
                     </View>
                     <Icon source="chevron-right" size={20} color='#D1D5DB' />
                 </View>
+            </View>
             </View>
         </Animated.View>
     )

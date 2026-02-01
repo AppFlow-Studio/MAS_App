@@ -136,16 +136,34 @@ export const NotificationProvider = ({ children }: PropsWithChildren) => {
     }
   }, [session?.user.id]);
 
-  // Check initial permission status
+  // Check initial permission status and recover missing tokens
   useEffect(() => {
-    const checkPermission = async () => {
+    const checkPermissionAndRecoverToken = async () => {
       const { status } = await Notifications.getPermissionsAsync();
       if (status !== 'granted') {
         setIsEnabled(false);
+        return;
+      }
+
+      // If permissions are granted and user is logged in, check if their profile is missing a token
+      if (session?.user.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('push_notification_token')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile && !profile.push_notification_token) {
+          // User has granted permissions but has no token stored — recover it
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            await savePushToken(token);
+          }
+        }
       }
     };
-    checkPermission();
-  }, []);
+    checkPermissionAndRecoverToken();
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (session) {

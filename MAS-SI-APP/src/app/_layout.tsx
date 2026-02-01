@@ -106,7 +106,7 @@ export default function RootLayout() {
         <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!} urlScheme="MAS-SI-APP">
           <AuthProvider>
             <DeepLinkProvider>
-              {/* <NotificationProvider> */}
+              <NotificationProvider>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                 <BottomSheetModalProvider>
                   <MenuProvider>
@@ -136,7 +136,7 @@ export default function RootLayout() {
                   </MenuProvider>
                 </BottomSheetModalProvider>
               </ThemeProvider>
-              {/* </NotificationProvider>  */}
+              </NotificationProvider> 
             </DeepLinkProvider>
           </AuthProvider>
         </StripeProvider>

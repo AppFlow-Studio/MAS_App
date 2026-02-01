@@ -1,248 +1,433 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+// supabase/functions/program-notification-scheduler/index.ts
+//
+// OPTIMIZED VERSION
+//
+// Before: ~300+ DB calls (N+1 on tokens, programs, events, and inserts)
+// After:  ~6 DB calls total
+//
+// Bugs fixed:
+// 1. Cache check used = (assignment) instead of === (comparison)
+// 2. "Day Before" broke on Sunday: (-1) % 7 = -1 in JS, not 6
+// 3. Operator precedence: (event_day) - 1 % 7 ≠ (event_day - 1) % 7
+// 4. Copy-paste error: 30 Mins Before had wrong message/type for events
+// 5. Service role key instead of anon key for admin operations
+//
 
-// Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import {Expo} from 'https://esm.sh/expo-server-sdk';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-console.log("Hello from Functions!")
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const supabaseUrl = Deno.env.get('EXPO_PUBLIC_SUPABASE_URL');
-const supabaseKey = Deno.env.get('EXPO_PUBLIC_SUPABASE_ANON');
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-const schedule_notification = async ( user_id, push_notification_token, message, notification_type, program_event_name, notification_time ) => {
-  const { error } = await supabase.from('program_notification_schedule').insert({ user_id : user_id, push_notification_token : push_notification_token, message : message, notification_type : notification_type, program_event_name : program_event_name, notification_time : notification_time, title : program_event_name})
-  if( error ){
-    console.log(error)
-  }
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const UTC_OFFSET_HOURS = 5 // EST. Change to 4 for EDT.
+
+// ============================================================================
+// TYPES
+// ============================================================================
+interface ProgramSetting {
+  user_id: string
+  program_id: string
+  notification_settings: string[]
 }
 
-function setTimeToCurrentDate(timeString : string ) {
-
-  // Split the time string into hours, minutes, and seconds
-  const [hours, minutes, seconds] = timeString.split(':').map(Number);
-
-  // Create a new Date object with the current date
-  const timestampWithTimeZone = new Date();
-
-  // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours + 4, minutes, seconds, 0); // No milliseconds
-
-  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
-  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
-
-  return timestampISO
+interface EventSetting {
+  user_id: string
+  event_id: string
+  notification_settings: string[]
 }
 
-serve(async (req) => {
-  const scheduler = async () => {
-    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+interface ProgramInfo {
+  program_id: string
+  program_name: string
+  program_days: string[]
+  program_start_time: string
+}
 
-    const { data : UserSettings, error : UserSettingsError } = await supabase.from('program_notifications_settings').select('*')
-    const { data : UserSettingsEvents, error : UserSettingsEventsError } = await supabase.from('event_notification_settings').select('*')
-    const UserSignedUpPrograms : any[] = []
-    const UserSignedUpEvents : any[] = []
+interface EventInfo {
+  event_id: string
+  event_name: string
+  event_days: string[]
+  event_start_time: string
+}
 
-    if( UserSettings ){
-      await Promise.all(UserSettings.map( async ( program ) => {
-        const { data : user_push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', program.user_id).single()
-        if( !user_push_token.push_notification_token ){
-          return
+interface NotificationRow {
+  user_id: string
+  push_notification_token: string
+  message: string
+  notification_type: string
+  program_event_name: string
+  notification_time: Date
+  title: string
+  is_event: boolean
+}
+
+// ============================================================================
+// UTILITIES
+// ============================================================================
+function localTimeToUTC(timeString: string): Date {
+  const [hours, minutes, seconds] = timeString.split(':').map(Number)
+  const now = new Date()
+  return new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    hours + UTC_OFFSET_HOURS,
+    minutes,
+    seconds || 0,
+    0
+  ))
+}
+
+// Correct "day before" calculation that handles Sunday properly
+function isDayBefore(today: number, targetDay: number): boolean {
+  // Returns true if today is the day before targetDay
+  // Uses +7 to avoid negative modulo: (0 - 1 + 7) % 7 = 6 (Saturday)
+  return today === ((targetDay - 1 + 7) % 7)
+}
+
+function isToday(today: number, dayName: string): boolean {
+  return DAYS_OF_WEEK[today] === dayName
+}
+
+// ============================================================================
+// NOTIFICATION BUILDER
+// Generic function that handles both programs and events identically
+// ============================================================================
+function buildNotifications(
+  settings: Array<{ user_id: string; item_id: string; notification_settings: string[] }>,
+  itemMap: Map<string, { name: string; days: string[]; start_time: string }>,
+  tokenMap: Map<string, string>,
+  today: number,
+  isEvent: boolean
+): NotificationRow[] {
+  const rows: NotificationRow[] = []
+
+  for (const setting of settings) {
+    const pushToken = tokenMap.get(setting.user_id)
+    if (!pushToken) continue
+
+    const item = itemMap.get(setting.item_id)
+    if (!item) continue
+
+    const startTimeUTC = localTimeToUTC(item.start_time)
+    const itemName = item.name
+
+    for (const notifType of setting.notification_settings || []) {
+
+      // --- Day Before ---
+      if (notifType === 'Day Before') {
+        for (const dayName of item.days) {
+          const targetDay = DAYS_OF_WEEK.indexOf(dayName)
+          if (targetDay === -1) continue
+
+          if (isDayBefore(today, targetDay)) {
+            rows.push({
+              user_id: setting.user_id,
+              push_notification_token: pushToken,
+              message: `${itemName} is Tomorrow, Don't Forget!`,
+              notification_type: 'Day Before',
+              program_event_name: itemName,
+              notification_time: startTimeUTC,
+              title: itemName,
+              is_event: isEvent,
+            })
+          }
         }
-        // if program dosnt exist in usersignedupprograms call it and get its info 
-        if( !UserSignedUpPrograms.some(e => e.program_id = program.program_id) ){
-          // Get Program Info and Current Day 
-          const { data : program_info, error } = await supabase.from('programs').select('*').eq('program_id', program.program_id).single() 
-          const currentDate = new Date()
-          const day = currentDate.getDay()
-          
-          const program_days = program_info.program_days
-          // Run Through User Settings for this program
-          await Promise.all(program.notification_settings.map( async ( setting : string ) => {
+      }
 
-              if( setting == 'Day Before' ){
-                await Promise.all( program_days.map( async ( days : string ) => {
-                    const program_day = daysOfWeek.indexOf(days)
-                    
-                    if( day == ( (program_day - 1) % 7 ) ){
-                      
-                      // schedule notification
-                      const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                      await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', program_info.program_name, start_time)  
-                    }
-                  }) 
-                )
-              } 
+      // Only schedule "When Starts" and "30 Mins Before" if the item runs today
+      const runsToday = item.days.some(dayName => isToday(today, dayName))
+      if (!runsToday) continue
 
-              if( program_days.includes( daysOfWeek[day] ) ){
-                if( setting == 'When Program Starts' ){
-                  const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                  await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
-                }
-                else if( setting == '30 Mins Before' ){
-                  const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                  start_time.setMinutes(start_time.getMinutes() - 30)
-                  await schedule_notification(program.user_id, user_push_token.push_notification_token, `${program_info.program_name} is Starting in 30 Mins!`, '30 Mins Before', program_info.program_name, start_time)
-                }
-              }
-              else{
-                return
-              }
-          }))
-          UserSignedUpPrograms.push(program_info)
-        }
+      // --- When Program/Event Starts ---
+      if (notifType === 'When Program Starts') {
+        rows.push({
+          user_id: setting.user_id,
+          push_notification_token: pushToken,
+          message: `${itemName} is Starting Now!`,
+          notification_type: 'When Program Starts',
+          program_event_name: itemName,
+          notification_time: startTimeUTC,
+          title: itemName,
+          is_event: isEvent,
+        })
+      }
 
-        else{
-          const program_info_array = UserSignedUpPrograms.filter(obj => {
-            return obj.program_id == program.program_id
-          })
-          const program_info = program_info_array[0]
-          await Promise.all(program.notification_settings.map( async ( setting : string ) => {
-            const program_days = program_info.program_days
-            const currentDate = new Date()
-            const day = currentDate.getDay()
-            if( setting == 'Day Before' ){
-              const program_days = program_info.program_days
-           
-              await Promise.all( program_days.map( async ( days : string ) => {
-                  const program_day = daysOfWeek.indexOf(days)
-                  
-                  if( day == ( (program_day - 1) % 7 ) ){
-                    // schedule notification
-                    const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                    await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Tomorrow, Don't Forget!`, 'Day Before', program_info.program_name, start_time)  
-                  }
-                }) 
-              )
-            }
-
-            if( program_days.includes( daysOfWeek[day] ) ){
-              if( setting == 'When Program Starts' ){
-                const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                await schedule_notification(program.user_id, user_push_token.push_notification_token,  `${program_info.program_name} is Starting Now!`, 'When Program Starts', program_info.program_name, start_time)
-              }
-              else if( setting == '30 Mins Before' ){
-                const start_time = setTimeToCurrentDate(program_info.program_start_time)
-                start_time.setMinutes(start_time.getMinutes() - 30)
-                await schedule_notification(program.user_id, user_push_token.push_notification_token, `${program_info.program_name} is Starting in 30 Mins!`, '30 Mins Before', program_info.program_name, start_time)
-              }
-            }
-            else{
-              return
-            }
-        }))
-        } 
-
-      }))
-    }
-
-    if( UserSettingsEvents ){
-       await Promise.all(UserSettingsEvents.map( async ( event ) => {
-        const { data : user_push_token , error } = await supabase.from('profiles').select('push_notification_token').eq('id', event.user_id).single()
-        console.log('User Push Token', user_push_token)
-        if( !user_push_token.push_notification_token ){
-          return
-        }
-        // if program dosnt exist in usersignedupprograms call it and get its info 
-        if( !UserSignedUpEvents.some(e => e.event_id == event.event_id) ){
-          // Get Program Info and Current Day 
-          const { data : event_info, error } = await supabase.from('events').select('*').eq('event_id', event.event_id).single() 
-          const currentDate = new Date()
-          const day = currentDate.getDay()
-          const event_days = event_info.event_days
-          // Run Through User Settings for this program
-          await Promise.all(event.notification_settings.map( async ( setting : string ) => {
-
-              if( setting == 'Day Before' ){
-                await Promise.all( event_days.map( async ( days : string ) => {
-                    const event_day = daysOfWeek.indexOf(days)
-                    if( day == ( (event_day - 1) % 7 ) ){
-                      
-                      // schedule notification
-                      const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                      await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Tomorrow, Don't Forget!`, 'Day Before', event_info.event_name, start_time)  
-                    }
-                  }) 
-                )
-              } 
-
-              if( event_days.includes( daysOfWeek[day] ) ){
-                if( setting == 'When Program Starts' ){
-                  const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                  await schedule_notification(event.user_id, user_push_token.push_notification_token,`${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
-                }
-                else if( setting == '30 Mins Before' ){
-                  const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                  start_time.setMinutes(start_time.getMinutes() - 30)
-                  await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting in 30 Mins!`, '30 Mins Before', event_info.event_name, start_time)
-                }
-              }
-              else{
-                return
-              }
-          }))
-          UserSignedUpEvents.push(event_info)
-        }
-
-        else{
-          const event_info_array = UserSignedUpEvents.filter(obj => {
-            return obj.event_id == event.event_id
-          })
-          const event_info = event_info_array[0]
-          await Promise.all(event.notification_settings.map( async ( setting : string ) => {
-            const event_days = event_info.event_days
-            const currentDate = new Date()
-            const day = currentDate.getDay()
-            if( setting == 'Day Before' ){           
-              await Promise.all( event_days.map( async ( days : string ) => {
-                  const event_day = daysOfWeek.indexOf(days)
-                  if( day  == ( (event_day) - 1 % 7 ) ){
-                    // schedule notification
-                    const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                    await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Tomorrow, Don't Forget!`, 'Day Before', event_info.event_name, start_time)
-                  }
-                }) 
-              )
-            }
-
-            if( event_days.includes( daysOfWeek[day] ) ){
-              if( setting == 'When Program Starts' ){
-                  const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                  await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)
-              }
-              else if( setting == '30 Mins Before' ){
-                const start_time = setTimeToCurrentDate(event_info.event_start_time)
-                start_time.setMinutes(start_time.getMinutes() - 30)
-                await schedule_notification(event.user_id, user_push_token.push_notification_token, `${event_info.event_name} is Starting Now!`, 'When Program Starts', event_info.event_name, start_time)              }
-            }
-            else{
-              return
-            }
-        }))
-        } 
-
-      }))
+      // --- 30 Mins Before ---
+      if (notifType === '30 Mins Before') {
+        const thirtyBefore = new Date(startTimeUTC.getTime() - 30 * 60 * 1000)
+        rows.push({
+          user_id: setting.user_id,
+          push_notification_token: pushToken,
+          message: `${itemName} is Starting in 30 Mins!`,
+          notification_type: '30 Mins Before',
+          program_event_name: itemName,
+          notification_time: thirtyBefore,
+          title: itemName,
+          is_event: isEvent,
+        })
+      }
     }
   }
 
-  await scheduler()
-  return new Response(
-    JSON.stringify(''),
-    { headers: { "Content-Type": "application/json" } },
-  )
+  return rows
+}
+
+// ============================================================================
+// MAIN SCHEDULER
+// ============================================================================
+async function scheduleAllNotifications() {
+  const startTime = Date.now()
+  const today = new Date().getDay()
+
+  // ==========================================================================
+  // STEP 1: Fetch all settings in parallel (2 queries)
+  // ==========================================================================
+  const [
+    { data: programSettings, error: progSettingsErr },
+    { data: eventSettings, error: eventSettingsErr }
+  ] = await Promise.all([
+    supabase.from('program_notifications_settings').select('user_id, program_id, notification_settings'),
+    supabase.from('event_notification_settings').select('user_id, event_id, notification_settings'),
+  ])
+
+  if (progSettingsErr) console.error('Error fetching program settings:', progSettingsErr)
+  if (eventSettingsErr) console.error('Error fetching event settings:', eventSettingsErr)
+
+  const allProgramSettings = (programSettings || []) as ProgramSetting[]
+  const allEventSettings = (eventSettings || []) as EventSetting[]
+
+  // Early exit if no settings
+  if (allProgramSettings.length === 0 && allEventSettings.length === 0) {
+    return { scheduled: 0, message: 'No notification settings configured', duration_ms: Date.now() - startTime }
+  }
+
+  // ==========================================================================
+  // STEP 2: Collect unique IDs for batch fetching
+  // ==========================================================================
+  const uniqueUserIds = new Set<string>()
+  const uniqueProgramIds = new Set<string>()
+  const uniqueEventIds = new Set<string>()
+
+  for (const s of allProgramSettings) {
+    uniqueUserIds.add(s.user_id)
+    uniqueProgramIds.add(s.program_id)
+  }
+  for (const s of allEventSettings) {
+    uniqueUserIds.add(s.user_id)
+    uniqueEventIds.add(s.event_id)
+  }
+
+  // ==========================================================================
+  // STEP 3: Fetch all data in parallel (tokens + programs + events)
+  // ==========================================================================
+  const fetchPromises: Promise<any>[] = []
+
+  // Fetch push tokens in chunks of 100
+  const userIdArray = [...uniqueUserIds]
+  const tokenChunkPromises = []
+  for (let i = 0; i < userIdArray.length; i += 100) {
+    const chunk = userIdArray.slice(i, i + 100)
+    tokenChunkPromises.push(
+      supabase
+        .from('profiles')
+        .select('id, push_notification_token')
+        .in('id', chunk)
+        .not('push_notification_token', 'is', null)
+    )
+  }
+
+  // Fetch all relevant programs in ONE query
+  const programIdArray = [...uniqueProgramIds]
+  let programPromise: Promise<any> | null = null
+  if (programIdArray.length > 0) {
+    // Chunk if > 100 programs (unlikely but safe)
+    const programChunks = []
+    for (let i = 0; i < programIdArray.length; i += 100) {
+      programChunks.push(
+        supabase
+          .from('programs')
+          .select('program_id, program_name, program_days, program_start_time')
+          .in('program_id', programIdArray.slice(i, i + 100))
+          .gte('program_end_date', new Date().toISOString())
+      )
+    }
+    programPromise = Promise.all(programChunks)
+  }
+
+  // Fetch all relevant events in ONE query
+  const eventIdArray = [...uniqueEventIds]
+  let eventPromise: Promise<any> | null = null
+  if (eventIdArray.length > 0) {
+    const eventChunks = []
+    for (let i = 0; i < eventIdArray.length; i += 100) {
+      eventChunks.push(
+        supabase
+          .from('events')
+          .select('event_id, event_name, event_days, event_start_time')
+          .in('event_id', eventIdArray.slice(i, i + 100))
+          .gte('event_end_date', new Date().toISOString())
+      )
+    }
+    eventPromise = Promise.all(eventChunks)
+  }
+
+  // Execute all fetches in parallel
+  const [tokenResults, programResults, eventResults] = await Promise.all([
+    Promise.all(tokenChunkPromises),
+    programPromise,
+    eventPromise,
+  ])
+
+  // ==========================================================================
+  // STEP 4: Build lookup maps (pure computation, no DB calls)
+  // ==========================================================================
+
+  // Token map: user_id → push_token
+  const tokenMap = new Map<string, string>()
+  for (const { data, error } of tokenResults) {
+    if (error) {
+      console.error('Error fetching tokens:', error)
+      continue
+    }
+    for (const profile of data || []) {
+      if (profile.push_notification_token) {
+        tokenMap.set(profile.id, profile.push_notification_token)
+      }
+    }
+  }
+
+  // Program map: program_id → { name, days, start_time }
+  const programMap = new Map<string, { name: string; days: string[]; start_time: string }>()
+  if (programResults) {
+    for (const { data, error } of programResults) {
+      if (error) {
+        console.error('Error fetching programs:', error)
+        continue
+      }
+      for (const p of (data || []) as ProgramInfo[]) {
+        programMap.set(p.program_id, {
+          name: p.program_name,
+          days: p.program_days || [],
+          start_time: p.program_start_time,
+        })
+      }
+    }
+  }
+
+  // Event map: event_id → { name, days, start_time }
+  const eventMap = new Map<string, { name: string; days: string[]; start_time: string }>()
+  if (eventResults) {
+    for (const { data, error } of eventResults) {
+      if (error) {
+        console.error('Error fetching events:', error)
+        continue
+      }
+      for (const e of (data || []) as EventInfo[]) {
+        eventMap.set(e.event_id, {
+          name: e.event_name,
+          days: e.event_days || [],
+          start_time: e.event_start_time,
+        })
+      }
+    }
+  }
+
+  if (tokenMap.size === 0) {
+    return { scheduled: 0, message: 'No users with push tokens', duration_ms: Date.now() - startTime }
+  }
+
+  // ==========================================================================
+  // STEP 5: Build all notification rows (pure computation)
+  // ==========================================================================
+
+  // Normalize program settings to generic format
+  const normalizedProgramSettings = allProgramSettings.map(s => ({
+    user_id: s.user_id,
+    item_id: s.program_id,
+    notification_settings: s.notification_settings,
+  }))
+
+  const normalizedEventSettings = allEventSettings.map(s => ({
+    user_id: s.user_id,
+    item_id: s.event_id,
+    notification_settings: s.notification_settings,
+  }))
+
+  const programRows = buildNotifications(normalizedProgramSettings, programMap, tokenMap, today, false)
+  const eventRows = buildNotifications(normalizedEventSettings, eventMap, tokenMap, today, true)
+
+  const allRows = [...programRows, ...eventRows]
+
+  // ==========================================================================
+  // STEP 6: Single bulk insert (not 150 individual inserts)
+  // ==========================================================================
+  let insertedCount = 0
+
+  if (allRows.length > 0) {
+    for (let i = 0; i < allRows.length; i += 1000) {
+      const chunk = allRows.slice(i, i + 1000)
+      const { error: insertError } = await supabase
+        .from('program_notification_schedule')
+        .insert(chunk)
+
+      if (insertError) {
+        console.error(`Error inserting chunk ${i / 1000 + 1}:`, insertError)
+      } else {
+        insertedCount += chunk.length
+      }
+    }
+  }
+
+  // ==========================================================================
+  // STEP 7: Return metrics
+  // ==========================================================================
+  const duration = Date.now() - startTime
+  const dbCalls = 2
+    + Math.ceil(userIdArray.length / 100)
+    + (programIdArray.length > 0 ? Math.ceil(programIdArray.length / 100) : 0)
+    + (eventIdArray.length > 0 ? Math.ceil(eventIdArray.length / 100) : 0)
+    + Math.ceil(allRows.length / 1000)
+
+  const result = {
+    scheduled: insertedCount,
+    total_built: allRows.length,
+    programs: programRows.length,
+    events: eventRows.length,
+    unique_users: uniqueUserIds.size,
+    unique_programs: uniqueProgramIds.size,
+    unique_events: uniqueEventIds.size,
+    users_with_tokens: tokenMap.size,
+    db_calls: dbCalls,
+    duration_ms: duration,
+  }
+
+  console.log('Program scheduler complete:', result)
+  return result
+}
+
+// ============================================================================
+// HTTP HANDLER
+// ============================================================================
+Deno.serve(async (req) => {
+  try {
+    const result = await scheduleAllNotifications()
+
+    return new Response(
+      JSON.stringify(result),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('Scheduler fatal error:', error)
+
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
 })
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/program-notification-scheduler' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/

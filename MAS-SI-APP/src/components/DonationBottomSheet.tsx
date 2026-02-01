@@ -259,6 +259,11 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
       console.log('Calling confirmPayment...');
       const { error, paymentIntent } = await confirmPayment(paymentIntentClientSecret, {
         paymentMethodType: 'Card',
+        paymentMethodData: {
+          billingDetails: {},
+        },
+      }, {
+        returnURL: 'MAS-SI-APP://stripe-redirect',
       });
 
       console.log('confirmPayment result - error:', JSON.stringify(error));

@@ -1,4 +1,3 @@
-import { center } from "@shopify/react-native-skia";
 import React, { useState } from "react";
 import { View, Text, Image, Modal, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { number } from "zod";

@@ -19,7 +19,7 @@ interface RenderAddedEventsProps {
   onHeroPress?: (event: EventsType, layout: LayoutInfo) => void;
 }
 
-const RenderAddedEvents = ({ eventsInfo, onHeroPress }: RenderAddedEventsProps) => {
+const RenderAddedEvents = React.memo(({ eventsInfo, onHeroPress }: RenderAddedEventsProps) => {
   const imageRef = useRef<View>(null);
 
   const handlePress = () => {
@@ -77,7 +77,7 @@ const RenderAddedEvents = ({ eventsInfo, onHeroPress }: RenderAddedEventsProps) 
         </Link>
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   gradientBorder: {

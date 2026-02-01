@@ -14,7 +14,7 @@ import AuthProvider from '../providers/AuthProvider';
 import DeepLinkProvider from '../providers/DeepLinkProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// import NotificationProvider from '../providers/NotificationProvider';
+import { NotificationProvider } from '../providers/NotificationProvider';
 import { Text } from 'react-native';
 import LottieView from 'lottie-react-native';
 import Animated, { useSharedValue, withTiming, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
@@ -103,7 +103,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView>
       <QueryClientProvider client={queryClient}>
-        <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}>
+        <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!} urlScheme="MAS-SI-APP">
           <AuthProvider>
             <DeepLinkProvider>
               {/* <NotificationProvider> */}

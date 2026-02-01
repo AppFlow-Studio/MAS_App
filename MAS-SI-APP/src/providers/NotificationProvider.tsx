@@ -1,109 +1,193 @@
 import { registerForPushNotificationsAsync } from '../lib/notifications';
-import { ExpoPushToken, NotificationTriggerInput } from 'expo-notifications';
-import { PropsWithChildren, useEffect, useRef, useState } from 'react';
+import { ExpoPushToken } from 'expo-notifications';
+import { PropsWithChildren, createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
-import * as TaskManager from 'expo-task-manager';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
-import { format, setHours, setMinutes, subMinutes } from 'date-fns';
-import { Alert } from 'react-native';
+import { Alert, Platform, Linking } from 'react-native';
 import { Session } from '@supabase/supabase-js';
 
 export type PrayerNotificationTemplateProp = {
-  prayer_name : string
-  hour : number
-  minute : number
-  body : string
-  title : string
-}
-export type ProgramNotificationTemplate = {
-  program_name : string
-  hour : number
-  minute : number
-  body : string
-  title : string
-}
-Notifications.setNotificationHandler({
-  handleNotification : async () =>({
-    shouldShowAlert : true,
-    shouldPlaySound : false,
-    shouldSetBadge : false
-  })
-})
+  prayer_name: string;
+  hour: number;
+  minute: number;
+  body: string;
+  title: string;
+};
 
-const NotificationProvider = ({ children }: PropsWithChildren) => {
-  const [expoPushToken, setExpoPushToken] = useState<
-    ExpoPushToken | undefined
-  >();
-  const { session } = useAuth()
-  const [ CurrentSession, setCurrentSession ] = useState<Session | null>()
-  const [notification, setNotification] =
-    useState<Notifications.Notification>();
+export type ProgramNotificationTemplate = {
+  program_name: string;
+  hour: number;
+  minute: number;
+  body: string;
+  title: string;
+};
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+type NotificationContextType = {
+  isEnabled: boolean;
+  pushToken: string | null;
+  requestPermission: () => Promise<void>;
+};
+
+const NotificationContext = createContext<NotificationContextType>({
+  isEnabled: false,
+  pushToken: null,
+  requestPermission: async () => {},
+});
+
+export const useNotifications = () => useContext(NotificationContext);
+
+export const NotificationProvider = ({ children }: PropsWithChildren) => {
+  const [pushToken, setPushToken] = useState<string | null>(null);
+  const [isEnabled, setIsEnabled] = useState(false);
+  const { session } = useAuth();
+  const [currentSession, setCurrentSession] = useState<Session | null>(null);
+  const [notification, setNotification] = useState<Notifications.Notification>();
   const notificationListener = useRef<Notifications.EventSubscription>(null);
   const responseListener = useRef<Notifications.EventSubscription>(null);
 
-  const savePushToken = async ( newToken : ExpoPushToken | undefined ) => {
-    setExpoPushToken(newToken)
-    if( !newToken ){
+  const savePushToken = async (newToken: string | undefined) => {
+    if (!newToken) {
+      setPushToken(null);
+      setIsEnabled(false);
       return;
     }
-    if( session?.user.id ){
-      console.log('session exists')
-      const { error } = await supabase.from('profiles').update({  push_notification_token : newToken }).eq('id', session?.user.id)
-      if( error ){
-        Alert.alert(error.message)
+    setPushToken(newToken);
+    if (session?.user.id) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ push_notification_token: newToken })
+        .eq('id', session.user.id);
+      if (error) {
+        Alert.alert(error.message);
+        setIsEnabled(false);
+      } else {
+        setIsEnabled(true);
+      }
+    } else {
+      setIsEnabled(false);
+    }
+  };
+
+  const clearPushToken = async () => {
+    if (session?.user.id) {
+      await supabase
+        .from('profiles')
+        .update({ push_notification_token: null })
+        .eq('id', session.user.id);
+    }
+    setPushToken(null);
+    setIsEnabled(false);
+  };
+
+  const deleteOldPushToken = async () => {
+    if (currentSession?.user.id) {
+      await supabase
+        .from('profiles')
+        .update({ push_notification_token: null })
+        .eq('id', currentSession.user.id);
+    }
+  };
+
+  const deleteGuestAcc = async () => {
+    if (currentSession?.user.id) {
+      await supabase.functions.invoke('delete-user', {
+        body: { user_id: currentSession.user.id },
+      });
+    }
+  };
+
+  const requestPermission = useCallback(async () => {
+    if (!session?.user.id) return;
+
+    // Check current permission status first
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+
+    if (existingStatus === 'denied') {
+      // iOS won't re-prompt after denial, so open system settings
+      if (Platform.OS === 'ios') {
+        Alert.alert(
+          'Notifications Disabled',
+          'You previously denied notification permissions. Please enable them in Settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
       }
     }
-    else{
-      console.log('session fail')
-    }
-  }
 
-  const DeleteOldPushToken = async () => {
-    const { data , error } = await supabase.from('profiles').update({ 'push_notification_token' : null }).eq('id', CurrentSession?.user.id)
-  }
-  const DeleteGuestAcc = async() => {
-    const { data, error } = await supabase.functions.invoke('delete-user', {
-      body : { user_id : CurrentSession?.user.id }
-    })
-  }
+    const token = await registerForPushNotificationsAsync();
+    if (token) {
+      await savePushToken(token);
+    } else {
+      setIsEnabled(false);
+    }
+  }, [session?.user.id]);
+
+  // Check initial permission status
   useEffect(() => {
-    if( session ){
-      registerForPushNotificationsAsync().then( (token : any) => savePushToken(token) );
-      if( session?.user.id != CurrentSession?.user.id && CurrentSession != null ){
-        //Delete Push Token
-        DeleteOldPushToken()
-        if( CurrentSession?.user.is_anonymous ){
-          DeleteGuestAcc()
+    const checkPermission = async () => {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        setIsEnabled(false);
+      }
+    };
+    checkPermission();
+  }, []);
+
+  useEffect(() => {
+    if (session) {
+      registerForPushNotificationsAsync().then((token: any) => savePushToken(token));
+
+      if (session.user.id !== currentSession?.user.id && currentSession != null) {
+        deleteOldPushToken();
+        if (currentSession.user.is_anonymous) {
+          deleteGuestAcc();
         }
       }
-      notificationListener.current =
-        Notifications.addNotificationReceivedListener((notification) => {
+
+      notificationListener.current = Notifications.addNotificationReceivedListener(
+        (notification) => {
           setNotification(notification);
-        });
-  
-      responseListener.current =
-        Notifications.addNotificationResponseReceivedListener((response) => {
+        }
+      );
+
+      responseListener.current = Notifications.addNotificationResponseReceivedListener(
+        (response) => {
           console.log('response', response);
-        });
-        setCurrentSession(session)  
+        }
+      );
+
+      setCurrentSession(session);
+
       return () => {
         if (notificationListener.current) {
-          Notifications.removeNotificationSubscription(
-            notificationListener.current
-          );
+          notificationListener.current.remove();
         }
         if (responseListener.current) {
-          Notifications.removeNotificationSubscription(responseListener.current);
+          responseListener.current.remove();
         }
       };
     }
   }, [session]);
-  return <>{children}</>;
-};
 
-export const SetNotificationOptions = async () => {
-  
-}
+  return (
+    <NotificationContext.Provider value={{ isEnabled, pushToken, requestPermission }}>
+      {children}
+    </NotificationContext.Provider>
+  );
+};
 
 export default NotificationProvider;

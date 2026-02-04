@@ -58,6 +58,14 @@ const MoreLayout = () => {
             animation: 'default',
           }} 
         />
+        <Stack.Screen
+          name='ProfilePage'
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
     </Stack>
   )
 }

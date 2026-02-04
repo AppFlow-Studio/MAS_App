@@ -11,7 +11,7 @@ import RenderAddedPrograms from '@/src/components/UserProgramComponets/RenderAdd
 import { TabView, TabBarProps } from 'react-native-tab-view';
 import { Dialog, Icon, IconButton, Switch } from 'react-native-paper'
 import { BlurView } from 'expo-blur'
-import { X, Check } from 'lucide-react-native'
+import { X, Check, Pencil } from 'lucide-react-native'
 import { usePrayerTimes } from '@/src/hooks/usePrayerTimes'
 import NotificationPrayerTable from '@/src/components/notificationPrayerTimeTable'
 import { useRouter, Link } from 'expo-router'
@@ -282,11 +282,12 @@ const NotificationEvents = () => {
   }, [])
 
   // Memoized JummahCard component to prevent re-renders when modal state changes
-  const JummahCard = memo(({ time, index, isEnabled, onToggle }: { 
+  const JummahCard = memo(({ time, index, isEnabled, onToggle, onEdit }: { 
     time: string, 
     index: number, 
     isEnabled: boolean, 
-    onToggle: (index: number) => void 
+    onToggle: (index: number) => void,
+    onEdit: (index: number) => void 
   }) => {
     return (
       <View
@@ -327,6 +328,24 @@ const NotificationEvents = () => {
             {time}
           </Text>
         </View>
+        {/* Edit Button */}
+        <Pressable 
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 8,
+            overflow: 'hidden',
+          }}
+          onPress={() => onEdit(index + 1)}
+        >
+          <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
+          </View>
+        </Pressable>
         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
           <Switch
             value={isEnabled}
@@ -497,6 +516,13 @@ const NotificationEvents = () => {
         }))
       }
     }, [jummahSettings, session?.user.id])
+
+    // Handle edit button press - opens modal for editing notification preferences
+    const handleEdit = useCallback((jummahIndex: number) => {
+      setSelectedJummah(jummahIndex)
+      setModalOptions(jummahSettings[jummahIndex]?.options || [])
+      setJummahModalVisible(true)
+    }, [jummahSettings])
     
     // Handle option selection - only updates modal state, not card state
     const handleOptionSelect = useCallback((option: string) => {
@@ -581,6 +607,7 @@ const NotificationEvents = () => {
               index={idx} 
               isEnabled={jummahSettings[idx + 1]?.enabled || false}
               onToggle={handleToggle}
+              onEdit={handleEdit}
             />
           ))}
         </ScrollView>

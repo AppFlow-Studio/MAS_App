@@ -31,6 +31,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { TaraweehSessionBottomSheet, TaraweehSessionBottomSheetRef, TaraweehSessionData } from '@/src/components/TaraweehSessionBottomSheet';
 import { TaraweehNotificationBottomSheet, TaraweehNotificationBottomSheetRef } from '@/src/components/TaraweehNotificationBottomSheet';
+import { CapacityStatusLight, CapacityStatus } from '@/src/components/CapacityStatusLight';
 
 // ============================================
 // TARAWEEH TIMELINE COMPONENT
@@ -63,12 +64,14 @@ interface TaraweehTimelineProps {
     speaker?: TaraweehSpeaker;
     secondFourImam?: TaraweehImam;
     witrImam?: TaraweehImam;
+    capacity_status?: CapacityStatus;
   };
   sessionTwoLineup?: {
     firstFourImam?: TaraweehImam;
     speaker?: TaraweehSpeaker;
     secondFourImam?: TaraweehImam;
     witrImam?: TaraweehImam;
+    capacity_status?: CapacityStatus;
   };
 }
 
@@ -393,6 +396,24 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
         )}
       </View>
 
+      {/* Capacity Legend - only show if any status is set */}
+      {(sessionOneLineup?.capacity_status || sessionTwoLineup?.capacity_status) && (
+        <View style={styles.taraweehCapacityLegend}>
+          <View style={styles.taraweehLegendItem}>
+            <View style={[styles.taraweehLegendDot, { backgroundColor: '#22C55E' }]} />
+            <Text style={styles.taraweehLegendText}>Space</Text>
+          </View>
+          <View style={styles.taraweehLegendItem}>
+            <View style={[styles.taraweehLegendDot, { backgroundColor: '#F59E0B' }]} />
+            <Text style={styles.taraweehLegendText}>Filling</Text>
+          </View>
+          <View style={styles.taraweehLegendItem}>
+            <View style={[styles.taraweehLegendDot, { backgroundColor: '#EF4444' }]} />
+            <Text style={styles.taraweehLegendText}>Full</Text>
+          </View>
+        </View>
+      )}
+
       {/* Session Cards */}
       <View style={styles.sessionCardsContainer}>
         {/* Session One Card */}
@@ -407,6 +428,7 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
             <Text style={styles.sessionNumber}>1</Text>
             <Text style={styles.sessionLabel}>Session One</Text>
           </View>
+          <CapacityStatusLight status={sessionOneLineup?.capacity_status} size={8} style={styles.capacityLight} />
           <Text style={[
             styles.sessionTime,
             currentState === 'session_one' && styles.sessionTimeActive
@@ -450,6 +472,7 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
             <Text style={styles.sessionNumber}>2</Text>
             <Text style={styles.sessionLabel}>Session Two</Text>
           </View>
+          <CapacityStatusLight status={sessionTwoLineup?.capacity_status} size={8} style={styles.capacityLight} />
           <Text style={[
             styles.sessionTime,
             currentState === 'session_two' && styles.sessionTimeActive
@@ -1246,7 +1269,7 @@ export default function Index() {
     >
       <StatusBar barStyle={"dark-content"} />
       
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 150 }} bounces={false}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 80 }} bounces={false}>
         {/* Header */}
         <View style={{ paddingTop: 10, paddingBottom: 8, alignItems: 'center' }}>
           <Text style={{ color: '#1d4681', fontSize: 24, fontWeight: '700' }}>Prayer Times</Text>
@@ -1620,6 +1643,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
+  },
+  capacityLight: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  taraweehCapacityLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    gap: 16,
+    backgroundColor: 'rgba(29, 70, 129, 0.08)',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    alignSelf: 'center',
+  },
+  taraweehLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  taraweehLegendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  taraweehLegendText: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '500',
   },
   nowBadgeText: {
     fontSize: 8,

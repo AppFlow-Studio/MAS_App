@@ -350,7 +350,6 @@ const styles = StyleSheet.create({
     right: 12,
     backgroundColor: COLORS.sheetBg,
     borderRadius: 40,
-    maxHeight: SHEET_HEIGHT,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
@@ -385,11 +384,11 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   contentContainer: {
-    flex: 1,
+    // Removed flex: 1 to let content size naturally
   },
   contentContainerStyle: {
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingBottom: 16,
     gap: 20,
   },
   optionRow: {

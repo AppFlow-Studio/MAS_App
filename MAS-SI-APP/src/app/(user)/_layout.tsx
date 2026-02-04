@@ -27,8 +27,6 @@ import { CreateProfilePopup } from '@/src/components/CreateProfilePopup';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { supabase } from '@/src/lib/supabase';
 import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingProvider';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
-import { userSignedInThisSession } from '../(auth)/_layout';
 
 // const toastConfig = {
 //   addProgramToNotificationsToast: ({ props }: any) => (
@@ -255,23 +253,6 @@ const UserLayoutContent = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
 
-  // Video intro state - only show if user was already signed in on app startup (not fresh sign-in)
-  // userSignedInThisSession is true if user went through auth flow (signed in fresh)
-  const [showVideoIntro, setShowVideoIntro] = useState(false);
-  const videoOpacity = useSharedValue(1);
-  const hasCheckedInitialSession = useRef(false);
-
-  // Only show video intro if user was already signed in when app started (not a fresh sign-in)
-  useEffect(() => {
-    if (!authLoading && !hasCheckedInitialSession.current) {
-      hasCheckedInitialSession.current = true;
-      // Only show video if session exists AND user didn't just sign in from auth flow
-      if (session && !userSignedInThisSession) {
-        setShowVideoIntro(true);
-      }
-    }
-  }, [authLoading, session]);
-
   // Check for incomplete items in More screen (profile + preferences)
   useEffect(() => {
     const checkIncompleteItems = async () => {
@@ -292,15 +273,13 @@ const UserLayoutContent = () => {
         const hasCompletedPreferences = !!(userInterests && userInterests.length > 0);
         setPreferencesCompleted(hasCompletedPreferences);
         
-        // Count incomplete items: profile onboarding + preferences
+        // Count incomplete items for badge
         let count = 0;
         if (isOnboardingIncomplete) count += 1;
         if (!hasCompletedPreferences) count += 1;
-        
         setNotificationCount(count);
       } catch (error) {
-        // On error, just check onboarding status
-        setNotificationCount(isOnboardingIncomplete ? 1 : 0);
+        setNotificationCount(0);
       }
     };
 
@@ -353,19 +332,9 @@ const UserLayoutContent = () => {
   //   setShowTutorial(false);
   // };
 
-  // Video intro animated style and handler
-  const videoAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: videoOpacity.value,
-  }));
-
-  const handleVideoEnd = () => {
-    videoOpacity.value = withTiming(0, { duration: 500 }, () => {
-      runOnJS(setShowVideoIntro)(false);
-    });
-  };
-
   // Check onboarding status for non-anonymous users
   // This only tracks the state for the badge - popup is shown from More screen only
+  // Onboarding is complete if user has a phone_number
   useEffect(() => {
     const checkOnboarding = async () => {
       if (!session?.user || authLoading) return;
@@ -376,19 +345,21 @@ const UserLayoutContent = () => {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('onboarding_completed')
+          .select('phone_number')
           .eq('id', session.user.id)
           .single();
 
         // Track onboarding status for badge display
-        // 1. Profile doesn't exist (error) - shouldn't happen for logged in users
-        // 2. Profile exists but onboarding_completed is false or null
-        const isIncomplete = error || !profile || !profile.onboarding_completed;
+        // Onboarding is incomplete if phone_number is null or empty
+        const isIncomplete = error || !profile || !profile.phone_number;
         
         if (isIncomplete) {
           setShowOnboarding(true);
           setOnboardingIncomplete(true);
           // Don't auto-present - user will access from More screen
+        } else {
+          setShowOnboarding(false);
+          setOnboardingIncomplete(false);
         }
       } catch (error) {
         // On error, mark as incomplete for badge
@@ -440,7 +411,7 @@ const UserLayoutContent = () => {
     }, 100);
   };
 
-  // Show nothing while checking authentication
+  // Show nothing while checking authentication (intro video is shown at root)
   if (authLoading) {
     return null;
   }
@@ -452,44 +423,6 @@ const UserLayoutContent = () => {
 
   return (
     <BottomSheetModalProvider>
-      {/* Old Lottie Animation - kept for reference */}
-      {/* {loading && (
-        <Animated.View style={[{ zIndex: 1, position: 'absolute', width: '100%', height: '100%' }, playMASAnimation]}>
-          <LottieView
-            autoPlay
-            loop={false}
-            style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'white',
-            }}
-            source={require('@/assets/lottie/MASLogoAnimation3.json')}
-            onAnimationFinish={() => {
-              fadeOutAnimation();
-            }}
-            speed={1.5}
-          />
-        </Animated.View>
-      )} */}
-
-      {/* Video Intro - plays once on app startup for signed-in users */}
-      {showVideoIntro && (
-        <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 100 }, videoAnimatedStyle]}>
-          <Video
-            source={require('@/assets/videos/TestIntro.mp4')}
-            style={{ flex: 1 }}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay
-            isLooping={false}
-            onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-              if (status.isLoaded && status.didJustFinish) {
-                handleVideoEnd();
-              }
-            }}
-          />
-        </Animated.View>
-      )}
-
       <NativeTabs>
         {/* {TabArray.map((tab, i) => (
           <NativeTabs.Trigger key={i} name={`${tab.name}`} >
@@ -515,13 +448,7 @@ const UserLayoutContent = () => {
         </NativeTabs.Trigger>
       </NativeTabs>
 
-      {(showOnboarding || isOnboardingIncomplete) && (
-        <PersonalizedAccount
-          ref={onboardingSheetRef}
-          onComplete={handleOnboardingComplete}
-          onSkip={handleOnboardingSkip}
-        />
-      )}
+      {/* Complete profile bottom sheet - moved to more/index.tsx */}
 
       {/* Create Profile popup for guest users - DISABLED */}
       {/* {showGuestPopup && (
@@ -531,8 +458,8 @@ const UserLayoutContent = () => {
         />
       )} */}
 
-      {/* Enhanced Badge indicator with notification count - hide during video intro */}
-      {notificationCount > 0 && !showVideoIntro && (
+      {/* Enhanced Badge indicator with notification count */}
+      {notificationCount > 0 && (
         <NotificationBadge count={notificationCount} />
       )}
     </BottomSheetModalProvider>

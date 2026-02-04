@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, Pressable, Dimensions, Modal, KeyboardAvoidingView, Platform, Image, TextInput, Alert } from 'react-native'
-import React, { forwardRef, useState, useImperativeHandle, useEffect, useRef } from 'react'
+import { View, Text, ScrollView, Pressable, Dimensions, Modal, KeyboardAvoidingView, Platform, Image, Alert } from 'react-native'
+import React, { forwardRef, useState, useImperativeHandle, useEffect } from 'react'
 import { Icon, TextInput as PaperTextInput, ActivityIndicator } from 'react-native-paper'
 import { supabase } from '@/src/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
@@ -26,10 +26,9 @@ interface PersonalizedAccountProps {
   onSkip?: () => void
 }
 
-// Step info with icons and emojis
+// Step info with icons
 const stepInfo = [
   { icon: 'phone', title: 'Phone' },
-  { icon: 'shield-check', title: 'Verify' },
   { icon: 'camera', title: 'Photo' },
 ]
 
@@ -37,8 +36,7 @@ const stepInfo = [
 const getStepHeight = (step: number, hasImage: boolean = false) => {
   switch (step) {
     case 1: return SCREEN_HEIGHT * 0.42  // Phone - professional input
-    case 2: return SCREEN_HEIGHT * 0.46  // Verification code
-    case 3: return hasImage ? SCREEN_HEIGHT * 0.46 : SCREEN_HEIGHT * 0.42  // Photo (minimal)
+    case 2: return hasImage ? SCREEN_HEIGHT * 0.46 : SCREEN_HEIGHT * 0.42  // Photo
     default: return SCREEN_HEIGHT * 0.42
   }
 }
@@ -56,13 +54,6 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
     const [profileImage, setProfileImage] = useState<string | null>(null)
     const [currentStep, setCurrentStep] = useState(1)
     const [loading, setLoading] = useState(false)
-    
-    // Verification code states
-    const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', ''])
-    const [generatedCode, setGeneratedCode] = useState('')
-    const [codeError, setCodeError] = useState(false)
-    const [resendCountdown, setResendCountdown] = useState(0)
-    const codeInputRefs = useRef<(TextInput | null)[]>([])
 
     // Animate height smoothly when step or profile image changes
     useEffect(() => {
@@ -73,70 +64,6 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
         mass: 0.5,
       })
     }, [currentStep, profileImage])
-
-    // Countdown timer for resend
-    useEffect(() => {
-      if (resendCountdown > 0) {
-        const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000)
-        return () => clearTimeout(timer)
-      }
-    }, [resendCountdown])
-
-    // Generate and "send" verification code
-    const sendVerificationCode = () => {
-      const code = Math.floor(100000 + Math.random() * 900000).toString()
-      setGeneratedCode(code)
-      setResendCountdown(30)
-      setCodeError(false)
-      setVerificationCode(['', '', '', '', '', ''])
-      // In production, you would send this via SMS using Twilio, etc.
-      console.log('Verification code:', code) // For testing
-      alert(`Your verification code is: ${code}`) // For demo - remove in production
-    }
-
-    // Handle code input
-    const handleCodeInput = (text: string, index: number) => {
-      setCodeError(false)
-      const newCode = [...verificationCode]
-      
-      // Handle paste of full code
-      if (text.length > 1) {
-        const pastedCode = text.replace(/\D/g, '').slice(0, 6).split('')
-        pastedCode.forEach((digit, i) => {
-          if (i < 6) newCode[i] = digit
-        })
-        setVerificationCode(newCode)
-        if (pastedCode.length === 6) {
-          codeInputRefs.current[5]?.blur()
-        }
-        return
-      }
-      
-      newCode[index] = text.replace(/\D/g, '')
-      setVerificationCode(newCode)
-      
-      // Auto-focus next input
-      if (text && index < 5) {
-        codeInputRefs.current[index + 1]?.focus()
-      }
-    }
-
-    // Handle backspace
-    const handleCodeKeyPress = (key: string, index: number) => {
-      if (key === 'Backspace' && !verificationCode[index] && index > 0) {
-        codeInputRefs.current[index - 1]?.focus()
-      }
-    }
-
-    // Verify the code
-    const verifyCode = () => {
-      const enteredCode = verificationCode.join('')
-      if (enteredCode === generatedCode) {
-        setCurrentStep(3) // Move to photo step
-      } else {
-        setCodeError(true)
-      }
-    }
 
     const pickImage = async () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -158,7 +85,7 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
     }
 
 
-    const totalSteps = 3
+    const totalSteps = 2
 
     const closeSheet = () => {
       setVisible(false)
@@ -245,33 +172,16 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
           // Require full 10-digit phone number
           return phoneNumber.replace(/\D/g, '').length === 10
         case 2:
-          // Require all 6 digits entered
-          return verificationCode.every(digit => digit !== '')
-        case 3:
           return true // Photo is optional
         default:
           return false
       }
     }
 
-    // Check if verification code is correct
-    const isCodeCorrect = () => {
-      if (currentStep !== 2) return false
-      const enteredCode = verificationCode.join('')
-      return enteredCode.length === 6 && enteredCode === generatedCode
-    }
-
     const handleNext = () => {
       if (!canProceed()) return
 
-      if (currentStep === 1) {
-        // Send verification code and move to step 2
-        sendVerificationCode()
-        setCurrentStep(2)
-      } else if (currentStep === 2) {
-        // Verify the code
-        verifyCode()
-      } else if (currentStep < totalSteps) {
+      if (currentStep < totalSteps) {
         setCurrentStep(prev => prev + 1)
       } else {
         handleSubmit()
@@ -385,7 +295,7 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                   textAlign: 'center',
                   marginBottom: 24,
                 }}>
-                  We'll use this to keep your account secure
+                  So the mosque can reach you when needed
                 </Text>
               </View>
 
@@ -497,126 +407,10 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                 </View>
               </View>
 
-              {/* Helper text */}
-              <Text style={{
-                fontSize: 12,
-                color: 'rgba(255, 255, 255, 0.5)',
-                textAlign: 'center',
-                marginTop: 12,
-              }}>
-                Standard messaging rates may apply
-              </Text>
             </>
           )
 
         case 2:
-          return (
-            <>
-              <View style={{ alignItems: 'center', marginTop: 16 }}>
-                <Text style={{
-                  fontSize: 24,
-                  color: '#ffffff',
-                  fontWeight: '700',
-                  textAlign: 'center',
-                  marginBottom: 8,
-                }}>
-                  Verify Your Number
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  textAlign: 'center',
-                  marginBottom: 6,
-                }}>
-                  Enter the 6-digit code sent to
-                </Text>
-                <Text style={{
-                  fontSize: 15,
-                  color: '#ffffff',
-                  fontWeight: '600',
-                  textAlign: 'center',
-                  marginBottom: 24,
-                }}>
-                  +1 {phoneNumber}
-                </Text>
-              </View>
-
-              {/* Code Input Boxes */}
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: 8,
-                marginBottom: 16,
-              }}>
-                {verificationCode.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(ref) => { codeInputRefs.current[index] = ref }}
-                    value={digit}
-                    onChangeText={(text) => handleCodeInput(text, index)}
-                    onKeyPress={({ nativeEvent }) => handleCodeKeyPress(nativeEvent.key, index)}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    selectTextOnFocus
-                    style={{
-                      width: 48,
-                      height: 56,
-                      backgroundColor: codeError ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.95)',
-                      borderRadius: 12,
-                      borderWidth: 2,
-                      borderColor: codeError 
-                        ? '#ef4444' 
-                        : digit 
-                          ? '#22c55e' 
-                          : 'rgba(255, 255, 255, 0.3)',
-                      fontSize: 24,
-                      fontWeight: '700',
-                      textAlign: 'center',
-                      color: codeError ? '#ef4444' : '#0f172a',
-                    }}
-                  />
-                ))}
-              </View>
-
-              {/* Error Message */}
-              {codeError && (
-                <Text style={{
-                  fontSize: 13,
-                  color: '#fca5a5',
-                  textAlign: 'center',
-                  marginBottom: 12,
-                }}>
-                  Incorrect code. Please try again.
-                </Text>
-              )}
-
-              {/* Resend Code */}
-              <View style={{ alignItems: 'center' }}>
-                {resendCountdown > 0 ? (
-                  <Text style={{
-                    fontSize: 13,
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    textAlign: 'center',
-                  }}>
-                    Resend code in {resendCountdown}s
-                  </Text>
-                ) : (
-                  <Pressable onPress={sendVerificationCode}>
-                    <Text style={{
-                      fontSize: 14,
-                      color: '#ffffff',
-                      fontWeight: '600',
-                      textAlign: 'center',
-                    }}>
-                      Resend Code
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            </>
-          )
-
-        case 3:
           return (
             <>
               {/* Profile Picture */}
@@ -806,11 +600,9 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                     style={{
                       flex: 1,
                       height: 50,
-                      backgroundColor: isCodeCorrect() 
-                        ? '#22C55E' 
-                        : canProceed() 
-                          ? 'rgba(255, 255, 255, 0.95)' 
-                          : 'rgba(255, 255, 255, 0.3)',
+                      backgroundColor: canProceed() 
+                        ? 'rgba(255, 255, 255, 0.95)' 
+                        : 'rgba(255, 255, 255, 0.3)',
                       borderRadius: 25,
                       alignItems: 'center',
                       flexDirection: 'row',
@@ -819,25 +611,18 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
                     }}
                   >
                     {loading ? (
-                      <ActivityIndicator size="small" color={isCodeCorrect() ? '#ffffff' : '#0E519F'} />
+                      <ActivityIndicator size="small" color="#0E519F" />
                     ) : (
                       <>
                         <Text style={{
                           fontSize: 16,
-                          color: isCodeCorrect() ? '#ffffff' : '#0E519F',
+                          color: '#0E519F',
                           fontWeight: '600',
                         }}>
-                          {currentStep === totalSteps 
-                            ? 'Complete Setup' 
-                            : currentStep === 2 
-                              ? (isCodeCorrect() ? 'Verified!' : 'Verify')
-                              : 'Continue'}
+                          {currentStep === totalSteps ? 'Complete Setup' : 'Continue'}
                         </Text>
-                        {currentStep < totalSteps && currentStep !== 2 && (
+                        {currentStep < totalSteps && (
                           <Icon source="arrow-right" size={20} color="#0E519F" />
-                        )}
-                        {currentStep === 2 && (
-                          <Icon source={isCodeCorrect() ? "check-circle" : "shield-check"} size={20} color={isCodeCorrect() ? '#ffffff' : '#0E519F'} />
                         )}
                       </>
                     )}

@@ -451,6 +451,20 @@ const NotificationPrayerTable = ({
                       </View>
                     </View>
 
+                    {/* Edit Button */}
+                    <Pressable 
+                      style={styles.editIconBlurSmall}
+                      onPress={() => {
+                        setSelectedPrayer(prayer.PrayerCap);
+                        setModalVisible(true);
+                      }}
+                    >
+                      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+                      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                        <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
+                      </View>
+                    </Pressable>
+
                     {/* Toggle Switch */}
                     <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                       <Switch
@@ -484,6 +498,19 @@ const NotificationPrayerTable = ({
                   <Text style={styles.timeValue}>{format(FirstTaraweehTime, 'h:mma')}</Text>
                 </View>
               </View>
+              {/* Edit Button */}
+              <Pressable 
+                style={styles.editIconBlurSmall}
+                onPress={() => {
+                  setSelectedPrayer('Taraweeh 1');
+                  setModalVisible(true);
+                }}
+              >
+                <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
+                </View>
+              </Pressable>
               <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                 <Switch
                   value={prayerSettings['Taraweeh 1']?.enabled || false}
@@ -513,6 +540,19 @@ const NotificationPrayerTable = ({
                   <Text style={styles.timeValue}>{format(SecondTaraweehTime, 'h:mma')}</Text>
                 </View>
               </View>
+              {/* Edit Button */}
+              <Pressable 
+                style={styles.editIconBlurSmall}
+                onPress={() => {
+                  setSelectedPrayer('Taraweeh 2');
+                  setModalVisible(true);
+                }}
+              >
+                <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
+                </View>
+              </Pressable>
               <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                 <Switch
                   value={prayerSettings['Taraweeh 2']?.enabled || false}
@@ -802,25 +842,28 @@ const NotificationPrayerTable = ({
               </Pressable>
             </View>
 
-            {/* Apply to All Prayers Button */}
-            <Pressable style={styles.applyAllButton} onPress={handleApplyToAll}>
-              <Text style={styles.applyAllButtonText}>Apply to All Prayers</Text>
-            </Pressable>
-
-            {/* Save Button */}
-            {isLiquidGlassSupported ? (
-              <LiquidGlassView style={styles.saveButtonGlass} interactive effect="regular">
-                <Pressable style={styles.saveButtonInner} onPress={handleSave}>
-                  <Check color="white" size={20} strokeWidth={2.5} style={{ marginRight: 8 }} />
-                  <Text style={styles.saveButtonTextGlass}>Save</Text>
-                </Pressable>
-              </LiquidGlassView>
-            ) : (
-              <Pressable style={styles.saveButton} onPress={handleSave}>
-                <Check color="#6EE7B7" size={20} strokeWidth={2.5} style={{ marginRight: 8 }} />
-                <Text style={styles.saveButtonText}>Save</Text>
+            {/* Buttons Container - pushed to bottom */}
+            <View style={styles.buttonsContainer}>
+              {/* Apply to All Prayers Button */}
+              <Pressable style={styles.applyAllButton} onPress={handleApplyToAll}>
+                <Text style={styles.applyAllButtonText}>Apply to All Prayers</Text>
               </Pressable>
-            )}
+
+              {/* Save Button */}
+              {isLiquidGlassSupported ? (
+                <LiquidGlassView style={styles.saveButtonGlass} interactive effect="regular">
+                  <Pressable style={styles.saveButtonInner} onPress={handleSave}>
+                    <Check color="white" size={20} strokeWidth={2.5} style={{ marginRight: 8 }} />
+                    <Text style={styles.saveButtonTextGlass}>Save</Text>
+                  </Pressable>
+                </LiquidGlassView>
+              ) : (
+                <Pressable style={styles.saveButton} onPress={handleSave}>
+                  <Check color="#6EE7B7" size={20} strokeWidth={2.5} style={{ marginRight: 8 }} />
+                  <Text style={styles.saveButtonText}>Save</Text>
+                </Pressable>
+              )}
+            </View>
           </View>
         </View>
       </Modal>
@@ -1049,6 +1092,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
+  editIconBlurSmall: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+  },
   editIconGlass: {
     width: 36,
     height: 36,
@@ -1102,8 +1154,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 50,
-    maxHeight: '70%',
+    paddingBottom: 40,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
@@ -1184,13 +1235,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  buttonsContainer: {
+    paddingTop: 20,
+  },
   applyAllButton: {
     backgroundColor: 'transparent',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
     marginBottom: 8,
     borderWidth: 1.5,
     borderColor: 'rgba(59, 130, 246, 0.6)',

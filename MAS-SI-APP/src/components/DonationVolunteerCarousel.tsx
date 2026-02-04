@@ -1,8 +1,7 @@
-import { View, Text, FlatList, Dimensions, Image, Pressable, Linking, InteractionManager } from 'react-native';
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { View, Text, FlatList, Dimensions, Pressable } from 'react-native';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, memo } from 'react';
 import { supabase } from '../lib/supabase';
 import { ActivityIndicator, Icon } from 'react-native-paper';
-import { FlyerSkeleton } from './FlyerSkeleton';
 import Animated from 'react-native-reanimated';
 import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
@@ -222,30 +221,21 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
       if (donationIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
         isScrollingFromTabRef.current = true;
         currentIndexRef.current = 0;
-        flatListRef.current.scrollToOffset({
-          offset: 0,
-          animated: true,
-        });
+        flatListRef.current.scrollToOffset({ offset: 0, animated: true });
       }
     },
     scrollToVolunteer: () => {
       if (volunteerIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
         isScrollingFromTabRef.current = true;
         currentIndexRef.current = 1;
-        flatListRef.current.scrollToOffset({
-          offset: itemWidth,
-          animated: true,
-        });
+        flatListRef.current.scrollToOffset({ offset: itemWidth, animated: true });
       }
     },
     scrollToAdvertise: () => {
       if (advertiseIndexRef.current >= 0 && flatListRef.current && items.length > 0) {
         isScrollingFromTabRef.current = true;
         currentIndexRef.current = 2;
-        flatListRef.current.scrollToOffset({
-          offset: itemWidth * 2,
-          animated: true,
-        });
+        flatListRef.current.scrollToOffset({ offset: itemWidth * 2, animated: true });
       }
     },
   }), [items.length, itemWidth]);
@@ -266,20 +256,20 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
     <View style={{ height: 260, marginBottom: 8, overflow: 'hidden' }}>
       <AnimatedFlatList
         data={items}
-        renderItem={({ item, index }) => (
+        keyExtractor={(item: CardItem) => item.type === 'donation' ? (item as DonationCategory).project_id : item.type === 'volunteer' ? (item as VolunteerOpportunity).id : 'advertise'}
+        renderItem={({ item, index }: { item: CardItem; index: number }) => (
           <CardItem
             item={item}
             index={index}
             cardWidth={cardWidth}
             spacing={sideMargin}
-            isFirst={index === 0}
             onDonationPress={onDonationPress}
           />
         )}
         horizontal
         onMomentumScrollEnd={handleMomentumScrollEnd}
         onScrollEndDrag={handleScrollEndDrag}
-        scrollEventThrottle={32}
+        scrollEventThrottle={16}
         snapToInterval={itemWidth}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
@@ -287,10 +277,10 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
         getItemLayout={getItemLayout}
         ref={flatListRef}
         pagingEnabled={false}
-        removeClippedSubviews={true}
+        removeClippedSubviews={false}
         initialNumToRender={3}
         maxToRenderPerBatch={3}
-        windowSize={3}
+        windowSize={5}
       />
     </View>
   );
@@ -305,12 +295,11 @@ type CardItemProps = {
   index: number;
   cardWidth: number;
   spacing: number;
-  isFirst: boolean;
   onDonationPress?: () => void;
 };
 
-function CardItem({ item, cardWidth, spacing, isFirst, onDonationPress }: CardItemProps) {
-  const [imageReady, setImageReady] = useState(false);
+// Memoized CardItem for better performance during scrolling
+const CardItem = memo(function CardItem({ item, cardWidth, spacing, onDonationPress }: CardItemProps) {
   const router = useRouter();
 
   // Each card has right margin for spacing, first card starts at container padding
@@ -408,7 +397,6 @@ function CardItem({ item, cardWidth, spacing, isFirst, onDonationPress }: CardIt
   }
 
   if (item.type === 'donation') {
-    const donation = item as DonationCategory;
     return (
       <View style={{ width: cardWidth, marginRight }}>
         <Pressable 
@@ -422,42 +410,65 @@ function CardItem({ item, cardWidth, spacing, isFirst, onDonationPress }: CardIt
               shadowColor: 'black',
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.6,
-              justifyContent: 'center',
-              alignItems: 'center',
               borderRadius: 20,
               elevation: 8,
-              position: 'relative',
-              overflow: 'hidden',
+              backgroundColor: '#16A34A',
+              padding: 20,
+              justifyContent: 'space-between',
             }}
           >
-            {!imageReady && (
-              <FlyerSkeleton
-                width={cardWidth}
-                height={200}
-                style={{ position: 'absolute', top: 0, zIndex: 2 }}
-              />
-            )}
-            <Image
-              source={
-                donation.thumbnail
-                  ? { uri: donation.thumbnail }
-                  : require('@/assets/images/Donations5.png')
-              }
-              style={{
-                width: '100%',
-                height: '100%',
-                resizeMode: 'cover',
-              }}
-              onLoad={() => setImageReady(true)}
-              onError={() => setImageReady(false)}
-            />
+            {/* Top row: Heart icon */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+              {/* Heart icon container */}
+              <View
+                style={{
+                  backgroundColor: '#22C55E',
+                  borderRadius: 16,
+                  width: 56,
+                  height: 56,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Icon source="hand-heart" size={28} color="#FFFFFF" />
+              </View>
+            </View>
+
+            {/* Bottom content: Title, subtitle, and arrow */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 4 }}>
+                  Support Your
+                </Text>
+                <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>
+                  Masjid
+                </Text>
+                <Text style={{ color: '#DCFCE7', fontSize: 14 }}>
+                  Help us serve the community
+                </Text>
+              </View>
+              
+              {/* Arrow button */}
+              <View
+                style={{
+                  backgroundColor: '#22C55E',
+                  borderRadius: 24,
+                  width: 48,
+                  height: 48,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Icon source="arrow-right" size={24} color="#FFFFFF" />
+              </View>
+            </View>
           </View>
           <Text
             className="mt-3 font-bold"
             numberOfLines={2}
             style={{ color: '#000000', width: '100%', textAlign: 'left', marginBottom: 4 }}
           >
-            {donation.project_name}
+            Support Your Masjid
           </Text>
         </Pressable>
       </View>
@@ -489,54 +500,69 @@ function CardItem({ item, cardWidth, spacing, isFirst, onDonationPress }: CardIt
               shadowColor: 'black',
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.6,
-              justifyContent: 'center',
-              alignItems: 'center',
               borderRadius: 20,
               elevation: 8,
               backgroundColor: '#214E91',
+              padding: 20,
+              justifyContent: 'space-between',
             }}
           >
-            {volunteer.thumbnail ? (
-              <Image
-                source={{ uri: volunteer.thumbnail }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  resizeMode: 'cover',
-                  borderRadius: 20,
-                }}
-                onLoad={() => setImageReady(true)}
-                onError={() => setImageReady(false)}
-              />
-            ) : (
+            {/* Top row: People icon */}
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+              {/* People icon container */}
               <View
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  backgroundColor: '#3B82F6',
+                  borderRadius: 16,
+                  width: 56,
+                  height: 56,
                   justifyContent: 'center',
                   alignItems: 'center',
-                  borderRadius: 20,
                 }}
               >
-                <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>
+                <Icon source="account-group" size={28} color="#FFFFFF" />
+              </View>
+            </View>
+
+            {/* Bottom content: Title, subtitle, and arrow */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 4 }}>
                   Volunteer
                 </Text>
-                <Text style={{ color: 'white', fontSize: 16, marginTop: 8, textAlign: 'center', paddingHorizontal: 20 }}>
-                  Join Our Community
+                <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>
+                  With Us
+                </Text>
+                <Text style={{ color: '#BFDBFE', fontSize: 14 }}>
+                  Join our community efforts
                 </Text>
               </View>
-            )}
+              
+              {/* Arrow button */}
+              <View
+                style={{
+                  backgroundColor: '#3B82F6',
+                  borderRadius: 24,
+                  width: 48,
+                  height: 48,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Icon source="arrow-right" size={24} color="#FFFFFF" />
+              </View>
+            </View>
           </View>
           <Text
             className="mt-3 font-bold"
             numberOfLines={2}
             style={{ color: '#000000', width: '100%', textAlign: 'left', marginBottom: 4 }}
           >
-            {volunteer.title}
+            Volunteer With Us
           </Text>
         </Pressable>
       </View>
     );
   }
-}
+});
 

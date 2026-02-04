@@ -213,7 +213,7 @@ export const TaraweehSessionBottomSheet = forwardRef<TaraweehSessionBottomSheetR
         {/* Sheet Content */}
         <GestureDetector gesture={panGesture}>
           <Animated.View
-            style={[styles.sheetContainer, { paddingBottom: insets.bottom + 12 }, animatedSheetStyle]}
+            style={[styles.sheetContainer, animatedSheetStyle]}
           >
             {/* Header */}
             <View style={styles.header}>
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   contentContainerStyle: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 16,
   },
   sectionHeader: {
     flexDirection: 'row',

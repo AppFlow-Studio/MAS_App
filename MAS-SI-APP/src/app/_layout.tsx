@@ -15,11 +15,14 @@ import DeepLinkProvider from '../providers/DeepLinkProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationProvider } from '../providers/NotificationProvider';
-import { Text } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import LottieView from 'lottie-react-native';
 import Animated, { useSharedValue, withTiming, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import { glassyToastConfig } from '../lib/toastConfig';
+import { useAuth } from '../providers/AuthProvider';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { userSignedInThisSession } from './(auth)/_layout';
 import "@/global.css"
 
 // Create a QueryClient instance
@@ -41,6 +44,49 @@ const RootLayoutNav = () => {
       <Stack.Screen name="+not-found" options={{ animation: 'none' }} />
     </Stack>
   )
+}
+
+// Intro video overlay - shown on top of the whole app during load and for returning signed-in users
+function IntroVideoOverlay() {
+  const { session, loading: authLoading } = useAuth();
+  const [videoDismissed, setVideoDismissed] = useState(false);
+  const videoOpacity = useSharedValue(1);
+
+  // Show video: during auth load, or for returning user (session + didn't just sign in) until dismissed
+  const showVideo =
+    (authLoading || (session && !userSignedInThisSession)) &&
+    !videoDismissed;
+
+  const videoStyle = useAnimatedStyle(() => ({ opacity: videoOpacity.value }));
+
+  const handleVideoEnd = () => {
+    videoOpacity.value = withTiming(0, { duration: 500 }, () => {
+      runOnJS(setVideoDismissed)(true);
+    });
+  };
+
+  if (!showVideo) return null;
+
+  return (
+    <Animated.View
+      pointerEvents="box-none"
+      style={[StyleSheet.absoluteFill, { zIndex: 9999 }, videoStyle]}
+    >
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]} />
+      <Video
+        source={require('@/assets/videos/TestIntro.mp4')}
+        style={StyleSheet.absoluteFill}
+        resizeMode={ResizeMode.COVER}
+        shouldPlay
+        isLooping={false}
+        onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+          if (status.isLoaded && status.didJustFinish) {
+            handleVideoEnd();
+          }
+        }}
+      />
+    </Animated.View>
+  );
 }
 
 SplashScreen.preventAutoHideAsync()
@@ -124,6 +170,7 @@ export default function RootLayout() {
                         </Animated.View>
                       )} */}
                       <RootLayoutNav />
+                      <IntroVideoOverlay />
                       <Toast 
                         config={glassyToastConfig}
                         position="top"

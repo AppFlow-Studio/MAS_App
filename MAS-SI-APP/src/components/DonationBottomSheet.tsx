@@ -1,4 +1,4 @@
-import { View, StyleSheet, Modal, Pressable, Dimensions, ActivityIndicator, Platform, Text as RNText, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, Modal, Pressable, Dimensions, ActivityIndicator, Platform, Text as RNText, Alert, ScrollView, KeyboardAvoidingView, Keyboard } from 'react-native';
 import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { Text, Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,9 +24,10 @@ import * as Haptics from 'expo-haptics';
 import { fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod } from '@/src/lib/StripePaySheet';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLLAPSED_HEIGHT = 340;
+const COLLAPSED_HEIGHT = 390;
 const EXPANDED_HEIGHT = 540;
 const PAYMENT_HEIGHT = 560;
+const PAYMENT_HEIGHT_WITH_KEYBOARD = SCREEN_HEIGHT * 0.92; // Almost full screen when keyboard is open
 const SAVED_CARDS_HEIGHT = 450;
 const SUCCESS_HEIGHT = 360;
 
@@ -50,6 +51,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null);
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
   const [saveCardForFuture, setSaveCardForFuture] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const { confirmPayment, loading: confirmLoading } = useConfirmPayment();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(0);
@@ -60,7 +62,44 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const savedCardsContentOpacity = useSharedValue(0);
   const successContentOpacity = useSharedValue(0);
 
+  // Keyboard event listeners to expand sheet when keyboard is visible
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+        if (viewState === 'payment') {
+          sheetHeight.value = withSpring(PAYMENT_HEIGHT_WITH_KEYBOARD, {
+            damping: 20,
+            stiffness: 150,
+            mass: 0.8,
+          });
+        }
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+        if (viewState === 'payment') {
+          sheetHeight.value = withSpring(PAYMENT_HEIGHT, {
+            damping: 20,
+            stiffness: 150,
+            mass: 0.8,
+          });
+        }
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, [viewState]);
+
   const closeSheet = () => {
+    Keyboard.dismiss(); // Dismiss keyboard when closing
     setIsVisible(false);
     setViewState('select');
     setCustomAmount('');
@@ -107,6 +146,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const handleSelectAmount = (amount: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedAmount(amount);
+    setCustomAmount(''); // Clear custom amount when selecting a preset
   };
 
   const handleEnterCustomAmount = () => {
@@ -164,8 +204,10 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   };
 
   const getFinalAmount = () => {
-    if (viewState === 'custom' && customAmount) {
-      return parseInt(customAmount, 10);
+    // If user entered a custom amount, use it regardless of current view state
+    if (customAmount) {
+      const parsed = parseInt(customAmount, 10);
+      if (parsed > 0) return parsed;
     }
     return selectedAmount;
   };
@@ -308,6 +350,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
 
   // Go back from payment view
   const handleBackFromPayment = () => {
+    Keyboard.dismiss(); // Dismiss keyboard first
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     paymentContentOpacity.value = withTiming(0, { duration: 150 });
     sheetHeight.value = withSpring(COLLAPSED_HEIGHT, { 
@@ -760,87 +803,125 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 <Icon source="chevron-left" size={24} color="#6B7280" />
               </Pressable>
 
-              {/* Label */}
-              <RNText style={styles.label}>ENTER CARD DETAILS</RNText>
-
-              {/* Amount Display */}
-              <RNText style={styles.paymentAmount}>${getFinalAmount()}</RNText>
-
-              {/* Card Form */}
-              <View style={styles.cardFormContainer}>
-                <CardForm
-                  placeholders={{
-                    number: '4242 4242 4242 4242',
-                    expiration: 'MM/YY',
-                    cvc: 'CVC',
-                    postalCode: 'ZIP',
-                  }}
-                  cardStyle={{
-                    backgroundColor: '#FFFFFF',
-                    textColor: '#111827',
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: '#E5E7EB',
-                    fontSize: 16,
-                    placeholderColor: '#9CA3AF',
-                    cursorColor: '#214E91',
-                    textErrorColor: '#EF4444',
-                  }}
-                  style={styles.cardForm}
-                  onFormComplete={(cardDetails) => {
-                    setCardComplete(cardDetails.complete);
-                  }}
-                />
-              </View>
-
-              {/* Save Card Checkbox */}
-              <Pressable 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSaveCardForFuture(!saveCardForFuture);
-                }}
-                style={styles.saveCardRowPayment}
+              <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardAvoidingView}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
               >
-                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
-                  {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
-                </View>
-                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
-              </Pressable>
+                <ScrollView 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.paymentScrollContent}
+                  keyboardShouldPersistTaps="handled"
+                  bounces={false}
+                >
+                  {/* Label */}
+                  <RNText style={styles.label}>ENTER CARD DETAILS</RNText>
 
-              {/* Pay Button */}
-              <Pressable
-                style={[
-                  styles.payButton, 
-                  (!cardComplete || confirmLoading) && styles.payButtonDisabled
-                ]}
-                onPress={handleConfirmPayment}
-                disabled={!cardComplete || confirmLoading}
-              >
-                {confirmLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <RNText style={styles.payButtonText}>
-                    Pay ${getFinalAmount()}
-                  </RNText>
-                )}
-              </Pressable>
+                  {/* Amount Display */}
+                  <RNText style={styles.paymentAmount}>${getFinalAmount()}</RNText>
 
-              {/* Pay with Saved Card Option */}
-              {savedCards.length > 0 && (
-                <Pressable onPress={handleShowSavedCardsFromPayment} style={styles.cardRow}>
-                  <Icon source="credit-card-outline" size={18} color="#6B7280" />
-                  <RNText style={styles.cardRowText}>
-                    Pay with saved card ({savedCards.length})
-                  </RNText>
-                  <Icon source="chevron-right" size={16} color="#9CA3AF" />
-                </Pressable>
-              )}
+                  {/* Scan Card Hint - iOS only */}
+                  {Platform.OS === 'ios' && (
+                    <View style={styles.scanCardHintRow}>
+                      <View style={{ flex: 1 }} />
+                      <Pressable style={styles.scanCardHint}>
+                        <Icon source="camera" size={14} color="#2563EB" />
+                        <RNText style={styles.scanCardHintText}>Scan card</RNText>
+                      </Pressable>
+                    </View>
+                  )}
 
-              {/* Secured Footer */}
-              <View style={styles.securedRow}>
-                <Icon source="shield-check" size={14} color="#10B981" />
-                <RNText style={styles.securedRowText}>SECURED BY STRIPE</RNText>
-              </View>
+                  {/* Card Form */}
+                  <View style={styles.cardFormContainer}>
+                    <CardForm
+                      autofocus={true}
+                      placeholders={{
+                        number: '4242 4242 4242 4242',
+                        expiration: 'MM/YY',
+                        cvc: 'CVC',
+                        postalCode: 'ZIP',
+                      }}
+                      cardStyle={Platform.select({
+                        ios: {
+                          backgroundColor: '#FFFFFF',
+                          textColor: '#000000',
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: '#D1D5DB',
+                          fontSize: 16,
+                          placeholderColor: '#6B7280',
+                          cursorColor: '#214E91',
+                          textErrorColor: '#EF4444',
+                        },
+                        android: {
+                          backgroundColor: '#FFFFFF',
+                          textColor: '#000000',
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: '#D1D5DB',
+                          fontSize: 16,
+                          placeholderColor: '#6B7280',
+                          cursorColor: '#214E91',
+                          textErrorColor: '#EF4444',
+                        },
+                      })}
+                      style={styles.cardForm}
+                      onFormComplete={(cardDetails) => {
+                        setCardComplete(cardDetails.complete);
+                      }}
+                    />
+                  </View>
+
+                  {/* Save Card Checkbox */}
+                  <Pressable 
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSaveCardForFuture(!saveCardForFuture);
+                    }}
+                    style={styles.saveCardRowPayment}
+                  >
+                    <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
+                      {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
+                    </View>
+                    <RNText style={styles.saveCardText}>Save card for future donations</RNText>
+                  </Pressable>
+
+                  {/* Pay Button */}
+                  <Pressable
+                    style={[
+                      styles.payButton, 
+                      (!cardComplete || confirmLoading) && styles.payButtonDisabled
+                    ]}
+                    onPress={handleConfirmPayment}
+                    disabled={!cardComplete || confirmLoading}
+                  >
+                    {confirmLoading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <RNText style={styles.payButtonText}>
+                        Pay ${getFinalAmount()}
+                      </RNText>
+                    )}
+                  </Pressable>
+
+                  {/* Pay with Saved Card Option */}
+                  {savedCards.length > 0 && (
+                    <Pressable onPress={handleShowSavedCardsFromPayment} style={styles.cardRow}>
+                      <Icon source="credit-card-outline" size={18} color="#6B7280" />
+                      <RNText style={styles.cardRowText}>
+                        Pay with saved card ({savedCards.length})
+                      </RNText>
+                      <Icon source="chevron-right" size={16} color="#9CA3AF" />
+                    </Pressable>
+                  )}
+
+                  {/* Secured Footer */}
+                  <View style={styles.securedRow}>
+                    <Icon source="shield-check" size={14} color="#10B981" />
+                    <RNText style={styles.securedRowText}>SECURED BY STRIPE</RNText>
+                  </View>
+                </ScrollView>
+              </KeyboardAvoidingView>
             </Animated.View>
           ) : viewState === 'savedCards' ? (
             /* SAVED CARDS VIEW */
@@ -1225,6 +1306,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 8,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  paymentScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 10,
+  },
   paymentAmount: {
     fontSize: 36,
     fontWeight: '700',
@@ -1234,13 +1322,34 @@ const styles = StyleSheet.create({
   },
   cardFormContainer: {
     marginBottom: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 4,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   cardForm: {
     width: '100%',
     height: 200,
+  },
+  scanCardHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  scanCardHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 20,
+  },
+  scanCardHintText: {
+    fontSize: 13,
+    color: '#2563EB',
+    marginLeft: 5,
+    fontWeight: '600',
   },
   payButton: {
     backgroundColor: '#2563EB',

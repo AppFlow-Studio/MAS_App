@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { CapacityStatusLight, CapacityStatus } from './CapacityStatusLight';
 
 const { width } = Dimensions.get('window');
 
@@ -77,9 +78,10 @@ interface JummahCardProps {
   index: number;
   onPress: () => void;
   speakerName?: string;
+  capacityStatus?: CapacityStatus;
 }
 
-const JummahCard = ({ card, index, onPress, speakerName }: JummahCardProps) => {
+const JummahCard = ({ card, index, onPress, speakerName, capacityStatus }: JummahCardProps) => {
   const scale = useSharedValue(1);
   
   const animatedStyle = useAnimatedStyle(() => ({
@@ -119,7 +121,10 @@ const JummahCard = ({ card, index, onPress, speakerName }: JummahCardProps) => {
         
         {/* Content */}
         <View style={styles.cardContent}>
-          <Text style={styles.timeText}>{card.time}</Text>
+          <View style={styles.timeRow}>
+            <Text style={styles.timeText}>{card.time}</Text>
+            <CapacityStatusLight status={capacityStatus} size={8} />
+          </View>
           <Text style={styles.labelText}>{card.label}</Text>
           {speakerName && (
             <View style={styles.speakerContainer}>
@@ -230,9 +235,31 @@ export const JummahTable = forwardRef<Ref, {}>((_, ref) => {
                 index={index}
                 onPress={() => handlePresentModalPress(index)}
                 speakerName={speakerInfo[index]?.speaker_name}
+                capacityStatus={jummah[index]?.capacity_status}
               />
             ))}
           </View>
+
+          {/* Capacity Legend - only show if any status is set */}
+          {jummah.some(j => j?.capacity_status) && (
+            <Animated.View 
+              entering={FadeInUp.delay(450).duration(400)}
+              style={styles.capacityLegend}
+            >
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
+                <Text style={styles.legendText}>Space</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
+                <Text style={styles.legendText}>Filling</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                <Text style={styles.legendText}>Full</Text>
+              </View>
+            </Animated.View>
+          )}
 
           {/* Footer hint */}
           <Animated.View 
@@ -332,6 +359,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 16,
   },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   timeText: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.8)',
@@ -385,6 +417,33 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     color: COLORS.white,
+    fontWeight: '500',
+  },
+  capacityLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    gap: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    alignSelf: 'center',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.9)',
     fontWeight: '500',
   },
 });

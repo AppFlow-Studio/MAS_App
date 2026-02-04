@@ -20,9 +20,6 @@ import {
   RecommendedEvent
 } from '@/src/hooks/usePreferences'
 import { FlyerSkeleton } from '@/src/components/FlyerSkeleton'
-import FlyerImageComponent from '@/src/components/FlyerImageComponent'
-import EventImageComponent from '@/src/components/EventImageComponent'
-import { Program, EventsType } from '@/src/types'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass'
 import * as Haptics from 'expo-haptics'
@@ -487,237 +484,6 @@ const SectionHeader = ({
   </View>
 )
 
-// Demo data for preview - set to true to see UI with sample content
-const DEMO_MODE = true
-
-// Helper to get date strings relative to today
-const getDateString = (daysFromNow: number): string => {
-  const date = new Date()
-  date.setDate(date.getDate() + daysFromNow)
-  return date.toISOString().split('T')[0]
-}
-
-// Full Program objects for the bottom sheet modal
-const DEMO_PROGRAM_DATA: Program[] = [
-  {
-    id: 1,
-    program_id: 'demo-1',
-    program_name: 'Fiqh Essentials: A Journey Through Islamic Jurisprudence',
-    program_desc: 'Master the fundamentals of Islamic jurisprudence through comprehensive lessons. This program covers the essential principles of fiqh including purification, prayer, fasting, zakat, and hajj. Perfect for those looking to strengthen their understanding of daily Islamic practices.',
-    program_img: 'https://images.unsplash.com/photo-1585036156171-384164a8c675?w=400',
-    program_speaker: null,
-    lectures: [],
-    has_lectures: false,
-    program_is_paid: false,
-    program_price: 0,
-    is_paid: false,
-    is_kids: false,
-    is_fourteen_plus: false,
-    is_education: true,
-    program_start_date: getDateString(0), // Today
-    program_end_date: getDateString(60),
-    program_days: ['Monday', 'Wednesday'],
-    program_start_time: '19:00:00',
-    paid_link: '',
-  },
-  {
-    id: 2,
-    program_id: 'demo-2', 
-    program_name: 'Tajweed Mastery Program',
-    program_desc: 'Perfect your Quran recitation with expert guidance from certified instructors. Learn the rules of tajweed, proper pronunciation, and beautify your recitation. Suitable for all levels from beginner to advanced.',
-    program_img: 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=400',
-    program_speaker: null,
-    lectures: [],
-    has_lectures: false,
-    program_is_paid: true,
-    program_price: 50,
-    is_paid: true,
-    is_kids: false,
-    is_fourteen_plus: false,
-    is_education: true,
-    program_start_date: getDateString(2), // In 2 days
-    program_end_date: getDateString(90),
-    program_days: ['Saturday'],
-    program_start_time: '10:00:00',
-    paid_link: 'https://example.com/register',
-  },
-  {
-    id: 3,
-    program_id: 'demo-3',
-    program_name: 'Youth Leadership Initiative',
-    program_desc: 'Developing tomorrow\'s Muslim leaders through mentorship, workshops, and hands-on community service projects. Build confidence, public speaking skills, and a strong Islamic identity.',
-    program_img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400',
-    program_speaker: null,
-    lectures: [],
-    has_lectures: false,
-    program_is_paid: false,
-    program_price: 0,
-    is_paid: false,
-    is_kids: false,
-    is_fourteen_plus: true,
-    is_education: false,
-    program_start_date: getDateString(5), // In 5 days
-    program_end_date: getDateString(150),
-    program_days: ['Friday'],
-    program_start_time: '18:30:00',
-    paid_link: '',
-  },
-  {
-    id: 4,
-    program_id: 'demo-4',
-    program_name: 'Sisters Circle: Spiritual Growth',
-    program_desc: 'A supportive community for sisters to grow in faith together. Weekly halaqas covering topics of spirituality, self-improvement, and strengthening one\'s relationship with Allah.',
-    program_img: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400',
-    program_speaker: null,
-    lectures: [],
-    has_lectures: false,
-    program_is_paid: false,
-    program_price: 0,
-    is_paid: false,
-    is_kids: false,
-    is_fourteen_plus: false,
-    is_education: true,
-    program_start_date: getDateString(10), // In 10 days (outside 1 week)
-    program_end_date: getDateString(365),
-    program_days: ['Sunday'],
-    program_start_time: '11:00:00',
-    paid_link: '',
-  },
-]
-
-// Full Event objects for the bottom sheet modal
-const DEMO_EVENT_DATA: EventsType[] = [
-  {
-    id: 1,
-    event_id: 'demo-e1',
-    event_name: 'Family Fun Night: Eid Celebration',
-    event_desc: 'Join us for games, food, and community bonding! Activities for all ages including bounce houses, face painting, henna, and delicious food from local vendors. A celebration for the whole family!',
-    event_img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400',
-    event_speaker: '',
-    has_lecture: false,
-    event_price: 0,
-    is_paid: false,
-    is_kids: true,
-    is_fourteen_plus: false,
-    is_education: false,
-    event_start_date: getDateString(0), // Today
-    event_end_date: getDateString(0),
-    event_start_time: '17:00:00',
-    event_days: ['Friday'],
-    pace: false,
-    paid_link: '',
-  },
-  {
-    id: 2,
-    event_id: 'demo-e2',
-    event_name: 'Community Iftar Gathering',
-    event_desc: 'Break your fast with the community during Ramadan. Enjoy a delicious meal, pray Maghrib together, and strengthen the bonds of brotherhood and sisterhood.',
-    event_img: 'https://images.unsplash.com/photo-1567521464027-f127ff144326?w=400',
-    event_speaker: '',
-    has_lecture: false,
-    event_price: 0,
-    is_paid: false,
-    is_kids: false,
-    is_fourteen_plus: false,
-    is_education: false,
-    event_start_date: getDateString(1), // Tomorrow
-    event_end_date: getDateString(1),
-    event_start_time: '18:30:00',
-    event_days: ['Saturday'],
-    pace: false,
-    paid_link: '',
-  },
-  {
-    id: 3,
-    event_id: 'demo-e3',
-    event_name: 'Islamic Finance Workshop',
-    event_desc: 'Learn halal investment strategies and financial planning from certified Islamic finance experts. Topics include halal investing, avoiding riba, zakat calculation, and building wealth the Islamic way.',
-    event_img: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400',
-    event_speaker: '',
-    has_lecture: true,
-    event_price: 25,
-    is_paid: true,
-    is_kids: false,
-    is_fourteen_plus: true,
-    is_education: true,
-    event_start_date: getDateString(3), // In 3 days
-    event_end_date: getDateString(3),
-    event_start_time: '14:00:00',
-    event_days: ['Saturday'],
-    pace: false,
-    paid_link: 'https://example.com/finance-workshop',
-  },
-  {
-    id: 4,
-    event_id: 'demo-e4',
-    event_name: 'Quran Competition 2026',
-    event_desc: 'Annual Quran memorization and recitation competition for all ages. Categories include Juz Amma, 5 Juz, 10 Juz, and full Quran. Prizes and certificates for all participants!',
-    event_img: 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=400',
-    event_speaker: '',
-    has_lecture: false,
-    event_price: 0,
-    is_paid: false,
-    is_kids: true,
-    is_fourteen_plus: false,
-    is_education: true,
-    event_start_date: getDateString(6), // In 6 days
-    event_end_date: getDateString(6),
-    event_start_time: '09:00:00',
-    event_days: ['Sunday'],
-    pace: false,
-    paid_link: '',
-  },
-  {
-    id: 5,
-    event_id: 'demo-e5',
-    event_name: 'Marriage & Family Seminar',
-    event_desc: 'Building strong Muslim families in the modern world. Topics include selecting a spouse, rights and responsibilities, communication skills, and raising righteous children.',
-    event_img: 'https://images.unsplash.com/photo-1529634597503-139d3726fed5?w=400',
-    event_speaker: '',
-    has_lecture: true,
-    event_price: 20,
-    is_paid: true,
-    is_kids: false,
-    is_fourteen_plus: true,
-    is_education: true,
-    event_start_date: getDateString(14), // In 2 weeks (outside filter)
-    event_end_date: getDateString(15),
-    event_start_time: '10:00:00',
-    event_days: ['Saturday', 'Sunday'],
-    pace: false,
-    paid_link: 'https://example.com/marriage-seminar',
-  },
-]
-
-const DEMO_PROGRAMS: RecommendedProgram[] = DEMO_PROGRAM_DATA.map((p, idx) => ({
-  program_id: p.program_id,
-  program_name: p.program_name,
-  program_desc: p.program_desc,
-  program_img: p.program_img,
-  matchedInterests: idx === 0 ? [1, 3] : idx === 1 ? [2] : idx === 2 ? [4, 5, 6] : [1],
-  matchScore: idx === 0 ? 2 : idx === 1 ? 1 : idx === 2 ? 3 : 1,
-}))
-
-const DEMO_EVENTS: RecommendedEvent[] = DEMO_EVENT_DATA.map((e, idx) => ({
-  event_id: e.event_id,
-  event_name: e.event_name,
-  event_desc: e.event_desc,
-  event_img: e.event_img,
-  matchedInterests: idx === 0 ? [4, 7] : idx === 1 ? [1, 4] : idx === 2 ? [8] : idx === 3 ? [2, 3] : [5, 6],
-  matchScore: idx === 2 ? 1 : 2,
-}))
-
-const DEMO_INTERESTS = [
-  { id: 1, category_name: 'Spirituality' },
-  { id: 2, category_name: 'Quran' },
-  { id: 3, category_name: 'Fiqh' },
-  { id: 4, category_name: 'Community' },
-  { id: 5, category_name: 'Marriage' },
-  { id: 6, category_name: 'Parenting' },
-  { id: 7, category_name: 'Youth' },
-  { id: 8, category_name: 'Finance' },
-]
-
 // Time filter options
 type TimeFilter = 'all' | 'today' | '3days' | '1week'
 
@@ -736,19 +502,9 @@ export default function RecommendedForYou() {
   const userId = session?.user?.id
   const [refreshing, setRefreshing] = useState(false)
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
-  
-  // State for selected program/event to show in bottom sheet
-  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null)
-  const [selectedEvent, setSelectedEvent] = useState<EventsType | null>(null)
 
-  const { programs: realPrograms, events: realEvents, isLoading: realLoading, hasPreferences: realHasPreferences } = useRecommendedContent(userId)
+  const { programs, events, isLoading, hasPreferences } = useRecommendedContent(userId)
   const { data: allInterests } = useIslamicInterests()
-
-  // Use demo data if DEMO_MODE is enabled
-  const programs = DEMO_MODE ? DEMO_PROGRAMS : realPrograms
-  const events = DEMO_MODE ? DEMO_EVENTS : realEvents
-  const isLoading = DEMO_MODE ? false : realLoading
-  const hasPreferences = DEMO_MODE ? true : realHasPreferences
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -761,59 +517,20 @@ export default function RecommendedForYou() {
     router.push('/myPrograms/PreferencesOnboardingModal')
   }
 
-  const interestsMap = DEMO_MODE ? DEMO_INTERESTS : (allInterests?.map(i => ({ id: i.id, category_name: i.category_name })) ?? [])
-
-  // Helper function to check if a date falls within the filter range
-  const isDateInRange = useCallback((dateString: string | undefined, filter: TimeFilter): boolean => {
-    if (!dateString || filter === 'all') return true
-    
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    const targetDate = new Date(dateString)
-    targetDate.setHours(0, 0, 0, 0)
-    
-    const diffTime = targetDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    switch (filter) {
-      case 'today':
-        return diffDays === 0
-      case '3days':
-        return diffDays >= 0 && diffDays <= 3
-      case '1week':
-        return diffDays >= 0 && diffDays <= 7
-      default:
-        return true
-    }
-  }, [])
+  const interestsMap = allInterests?.map(i => ({ id: i.id, category_name: i.category_name })) ?? []
 
   // Filter programs and events based on time filter
   const filteredPrograms = useMemo(() => {
     if (timeFilter === 'all') return programs
-    
-    if (DEMO_MODE) {
-      return programs.filter(program => {
-        const fullProgram = DEMO_PROGRAM_DATA.find(p => p.program_id === program.program_id)
-        return fullProgram && isDateInRange(fullProgram.program_start_date, timeFilter)
-      })
-    }
-    
+    // Note: Time filtering requires program_start_date which may need to be added to the hook
     return programs
-  }, [programs, timeFilter, isDateInRange])
+  }, [programs, timeFilter])
 
   const filteredEvents = useMemo(() => {
     if (timeFilter === 'all') return events
-    
-    if (DEMO_MODE) {
-      return events.filter(event => {
-        const fullEvent = DEMO_EVENT_DATA.find(e => e.event_id === event.event_id)
-        return fullEvent && isDateInRange(fullEvent.event_start_date, timeFilter)
-      })
-    }
-    
+    // Note: Time filtering requires event_start_date which may need to be added to the hook
     return events
-  }, [events, timeFilter, isDateInRange])
+  }, [events, timeFilter])
 
   const hasContent = programs.length > 0 || events.length > 0
   const hasFilteredContent = filteredPrograms.length > 0 || filteredEvents.length > 0
@@ -1132,34 +849,7 @@ export default function RecommendedForYou() {
                   program={program} 
                   interests={interestsMap}
                   onPress={() => {
-                    // Find full program data (from demo or real data)
-                    if (DEMO_MODE) {
-                      const fullProgram = DEMO_PROGRAM_DATA.find(p => p.program_id === program.program_id)
-                      if (fullProgram) setSelectedProgram(fullProgram)
-                    } else {
-                      // For real data, create a Program object from the recommendation
-                      setSelectedProgram({
-                        id: 0,
-                        program_id: program.program_id,
-                        program_name: program.program_name || '',
-                        program_img: program.program_img || null,
-                        program_desc: program.program_desc || null,
-                        program_speaker: null,
-                        lectures: [],
-                        has_lectures: false,
-                        program_is_paid: false,
-                        program_price: 0,
-                        is_paid: false,
-                        is_kids: false,
-                        is_fourteen_plus: false,
-                        is_education: false,
-                        program_start_date: '',
-                        program_end_date: '',
-                        program_days: [],
-                        program_start_time: '',
-                        paid_link: '',
-                      })
-                    }
+                    router.push(`/menu/program/${program.program_id}`)
                   }}
                 />
               ))}
@@ -1186,33 +876,7 @@ export default function RecommendedForYou() {
                   event={event} 
                   interests={interestsMap}
                   onPress={() => {
-                    // Find full event data (from demo or real data)
-                    if (DEMO_MODE) {
-                      const fullEvent = DEMO_EVENT_DATA.find(e => e.event_id === event.event_id)
-                      if (fullEvent) setSelectedEvent(fullEvent)
-                    } else {
-                      // For real data, create an EventsType object from the recommendation
-                      setSelectedEvent({
-                        id: 0,
-                        event_id: event.event_id,
-                        event_name: event.event_name || '',
-                        event_speaker: '',
-                        event_desc: event.event_desc || '',
-                        event_img: event.event_img || '',
-                        has_lecture: false,
-                        event_price: 0,
-                        is_paid: false,
-                        is_kids: false,
-                        is_fourteen_plus: false,
-                        is_education: false,
-                        event_start_date: '',
-                        event_end_date: '',
-                        event_start_time: '',
-                        event_days: [],
-                        pace: false,
-                        paid_link: '',
-                      })
-                    }
+                    router.push(`/menu/program/events/${event.event_id}`)
                   }}
                 />
               ))}
@@ -1257,23 +921,6 @@ export default function RecommendedForYou() {
         )}
       </ScrollView>
 
-      {/* Program Bottom Sheet Modal */}
-      {selectedProgram && (
-        <FlyerImageComponent 
-          item={selectedProgram} 
-          autoOpen={true}
-          onModalClose={() => setSelectedProgram(null)}
-        />
-      )}
-
-      {/* Event Bottom Sheet Modal */}
-      {selectedEvent && (
-        <EventImageComponent 
-          item={selectedEvent} 
-          autoOpen={true}
-          onModalClose={() => setSelectedEvent(null)}
-        />
-      )}
     </View>
   )
 }

@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react'
 import Svg, { Path } from 'react-native-svg'
 import { Stack } from 'expo-router'
 import { supabase } from '@/src/lib/supabase'
-import Toast from 'react-native-toast-message'
 import SelectSpeakerBottomSheet from '@/src/components/AdminComponents/SelectSpeakerBottomSheet'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { format } from 'date-fns'
@@ -40,16 +39,6 @@ const emptyLineup: SessionLineup = {
 }
 
 const TaraweehLineupAdmin = () => {
-  const handleSubmit = (message: string) => {
-    Toast.show({
-      type: "success",
-      text1: message,
-      position: "top",
-      topOffset: 50,
-      visibilityTime: 2000,
-    });
-  };
-  
   // Date state
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isLoading, setIsLoading] = useState(false)
@@ -182,20 +171,23 @@ const TaraweehLineupAdmin = () => {
         .eq('date', dateStr)
       
       if (!error) {
-        handleSubmit(`Lineup for ${formatDateDisplay(selectedDate)} Updated`)
+        Alert.alert('Success', `Lineup for ${formatDateDisplay(selectedDate)} Updated`)
       } else {
-        Alert.alert('Error', 'Failed to update lineup')
+        console.log('Update error:', error)
+        Alert.alert('Error', `Failed to update lineup: ${error.message}`)
       }
     } else {
       // Insert new entry
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('taraweeh_lineup')
-        .insert({ date: dateStr, lineup })
+        .insert([{ date: dateStr, lineup }])
+        .select()
       
       if (!error) {
-        handleSubmit(`Lineup for ${formatDateDisplay(selectedDate)} Created`)
+        Alert.alert('Success', `Lineup for ${formatDateDisplay(selectedDate)} Created`)
       } else {
-        Alert.alert('Error', 'Failed to create lineup')
+        console.log('Insert error:', error)
+        Alert.alert('Error', `Failed to create lineup: ${error.message}`)
       }
     }
   }

@@ -428,7 +428,7 @@ const ApplicationDetailView = ({
 }
 
 // Empty state component
-const EmptyState = ({ onStartApplication, onPreviewDemo }: { onStartApplication: () => void; onPreviewDemo: () => void }) => (
+const EmptyState = ({ onStartApplication }: { onStartApplication: () => void }) => (
     <ScrollView 
         contentContainerStyle={{ 
             flexGrow: 1, 
@@ -510,30 +510,6 @@ const EmptyState = ({ onStartApplication, onPreviewDemo }: { onStartApplication:
                         Start Application
                     </Text>
                 </TouchableOpacity>
-                
-                {/* Demo Preview Button */}
-                <TouchableOpacity
-                    onPress={onPreviewDemo}
-                    activeOpacity={0.8}
-                    style={{
-                        backgroundColor: 'transparent',
-                        borderRadius: 50,
-                        borderWidth: 2,
-                        borderColor: '#E5E7EB',
-                        paddingVertical: 14,
-                        paddingHorizontal: 28,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '100%',
-                        marginTop: 12,
-                    }}
-                >
-                    <Icon source="eye-outline" size={20} color="#6B7280" />
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#6B7280', marginLeft: 8 }}>
-                        Preview Demo
-                    </Text>
-                </TouchableOpacity>
             </View>
         </Animated.View>
     </ScrollView>
@@ -552,88 +528,80 @@ const SubmissionListItem = ({
     const statusDisplay = getStatusDisplay(submission.status)
     
     return (
-        <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
-            <Pressable
+        <Animated.View entering={FadeInDown.delay(index * 50).duration(300)}>
+            <TouchableOpacity
                 onPress={onPress}
-                style={({ pressed }) => ({
-                    backgroundColor: pressed ? '#F9FAFB' : '#FFFFFF',
+                activeOpacity={0.7}
+                style={{
+                    backgroundColor: '#FFFFFF',
                     borderRadius: 16,
                     marginBottom: 12,
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 8,
-                    elevation: 2,
-                    padding: 16,
+                    shadowOpacity: 0.08,
+                    shadowRadius: 12,
+                    elevation: 3,
+                    borderWidth: 1,
+                    borderColor: '#F0F0F0',
+                    overflow: 'hidden',
+                }}
+            >
+                <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                })}
-            >
-                {/* Flyer thumbnail */}
-                <View style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 12,
-                    backgroundColor: '#F3F4F6',
-                    overflow: 'hidden',
+                    padding: 14,
                 }}>
-                    {submission.business_flyer_img ? (
-                        <Image
-                            source={{ uri: submission.business_flyer_img }}
-                            style={{ width: '100%', height: '100%' }}
-                            resizeMode="cover"
-                        />
-                    ) : (
-                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                            <Icon source="image" size={24} color="#9CA3AF" />
-                        </View>
-                    )}
-                </View>
-                
-                {/* Business info */}
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }} numberOfLines={1}>
-                        {submission.business_name || 'Untitled Business'}
-                    </Text>
-                    <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
-                        {format(new Date(submission.created_at), 'MMM d, yyyy')}
-                    </Text>
-                </View>
-                
-                {/* Status badge and chevron */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    {/* Flyer thumbnail */}
                     <View style={{
-                        backgroundColor: statusDisplay.badgeBg,
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
+                        width: 64,
+                        height: 64,
                         borderRadius: 12,
+                        backgroundColor: '#F3F4F6',
+                        overflow: 'hidden',
                     }}>
-                        <Text style={{ fontSize: 11, fontWeight: '600', color: statusDisplay.badgeColor }}>
-                            {statusDisplay.badge}
-                        </Text>
+                        {submission.business_flyer_img ? (
+                            <Image
+                                source={{ uri: submission.business_flyer_img }}
+                                style={{ width: 64, height: 64 }}
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                <Icon source="store" size={28} color="#9CA3AF" />
+                            </View>
+                        )}
                     </View>
-                    <Icon source="chevron-right" size={20} color="#9CA3AF" />
+                    
+                    {/* Business info */}
+                    <View style={{ flex: 1, marginLeft: 14 }}>
+                        <Text style={{ fontSize: 17, fontWeight: '600', color: '#111827', marginBottom: 4 }} numberOfLines={1}>
+                            {submission.business_name || 'Untitled Business'}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 8 }}>
+                            {format(new Date(submission.created_at), 'MMM d, yyyy')}
+                        </Text>
+                        {/* Status badge */}
+                        <View style={{
+                            backgroundColor: statusDisplay.badgeBg,
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 8,
+                            alignSelf: 'flex-start',
+                        }}>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: statusDisplay.badgeColor, letterSpacing: 0.3 }}>
+                                {statusDisplay.badge}
+                            </Text>
+                        </View>
+                    </View>
+                    
+                    {/* Chevron */}
+                    <View style={{ marginLeft: 8 }}>
+                        <Icon source="chevron-right" size={24} color="#D1D5DB" />
+                    </View>
                 </View>
-            </Pressable>
+            </TouchableOpacity>
         </Animated.View>
     )
-}
-
-// Demo data for preview
-const DEMO_SUBMISSION: BusinessSubmissionsProp = {
-    personal_full_name: 'John Doe',
-    personal_phone_number: '(555) 123-4567',
-    personal_email: 'john@example.com',
-    business_name: "Joe's Pizza & Grill",
-    business_address: '123 Victory Blvd, Staten Island, NY 10301',
-    business_phone_number: '(718) 555-1234',
-    business_flyer_duration: '3 Months',
-    business_flyer_location: '',
-    business_flyer_img: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop',
-    user_id: 'demo',
-    status: 'REVIEW',
-    created_at: new Date().toISOString(),
-    submission_id: 'demo-1234',
 }
 
 const BusinessStatus = () => {
@@ -645,7 +613,6 @@ const BusinessStatus = () => {
     const [isLoading, setIsLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [selectedSubmission, setSelectedSubmission] = useState<BusinessSubmissionsProp | null>(null)
-    const [showDemo, setShowDemo] = useState(false)
     
     const fetchSubmissions = async () => {
         if (!session?.user?.id) {
@@ -740,17 +707,6 @@ const BusinessStatus = () => {
         fetchSubmissions()
     }, [session?.user?.id])
     
-    // Show demo view
-    if (showDemo) {
-        return (
-            <ApplicationDetailView 
-                submission={DEMO_SUBMISSION}
-                onBack={() => setShowDemo(false)}
-                onNewApplication={handleStartApplication}
-            />
-        )
-    }
-    
     // If a submission is selected, show detail view
     if (selectedSubmission) {
         return (
@@ -784,15 +740,15 @@ const BusinessStatus = () => {
     }
     
     return (
-        <View style={{ flex: 1, backgroundColor: submissions.length === 0 ? '#F9FAFB' : '#FFFFFF' }}>
+        <View style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
             <StatusBar barStyle="dark-content" />
             
             {submissions.length === 0 ? (
-                <EmptyState onStartApplication={handleStartApplication} onPreviewDemo={() => setShowDemo(true)} />
+                <EmptyState onStartApplication={handleStartApplication} />
             ) : (
                 <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16 }}
+                    style={{ flex: 1, backgroundColor: '#F8F9FA' }}
+                    contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl
@@ -802,11 +758,14 @@ const BusinessStatus = () => {
                         />
                     }
                 >
-                    {/* Applications list */}
-                    <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
-                        {submissions.length} application{submissions.length !== 1 ? 's' : ''}
-                    </Text>
+                    {/* Header section */}
+                    <View style={{ marginBottom: 20 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '500', color: '#6B7280' }}>
+                            {submissions.length} application{submissions.length !== 1 ? 's' : ''}
+                        </Text>
+                    </View>
                     
+                    {/* Applications list */}
                     {submissions.map((submission, index) => (
                         <SubmissionListItem
                             key={submission.submission_id || index}
@@ -817,26 +776,27 @@ const BusinessStatus = () => {
                     ))}
                     
                     {/* New application button */}
-                    <Pressable
+                    <TouchableOpacity
                         onPress={handleStartApplication}
-                        style={({ pressed }) => ({
-                            backgroundColor: pressed ? '#F3F4F6' : '#FFFFFF',
-                            borderRadius: 14,
+                        activeOpacity={0.7}
+                        style={{
+                            backgroundColor: '#FFFFFF',
+                            borderRadius: 16,
                             borderWidth: 2,
                             borderColor: '#E5E7EB',
                             borderStyle: 'dashed',
-                            paddingVertical: 16,
+                            paddingVertical: 18,
                             flexDirection: 'row',
                             justifyContent: 'center',
                             alignItems: 'center',
-                            marginTop: 4,
-                        })}
+                            marginTop: 8,
+                        }}
                     >
-                        <Icon source="plus" size={20} color="#6B7280" />
-                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#6B7280', marginLeft: 8 }}>
+                        <Icon source="plus-circle-outline" size={22} color="#6B7280" />
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#6B7280', marginLeft: 10 }}>
                             New Application
                         </Text>
-                    </Pressable>
+                    </TouchableOpacity>
                 </ScrollView>
             )}
         </View>

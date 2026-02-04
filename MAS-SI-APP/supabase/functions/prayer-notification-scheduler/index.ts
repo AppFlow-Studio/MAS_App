@@ -17,7 +17,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { format } from 'https://esm.sh/date-fns@4.1.0/format.mjs'
-import { isBefore, isAfter } from 'https://esm.sh/date-fns@4.1.0'
+import { isBefore } from 'https://esm.sh/date-fns@4.1.0'
 
 // Use service role for admin operations (scheduling notifications for all users)
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -102,40 +102,65 @@ async function scheduleAllNotifications() {
   const isFriday = todaysDate.getDay() === 5
 
   // ==========================================================================
-  // STEP 1: Fetch ALL data in parallel (3-4 queries instead of 42)
+  // STEP 1: Fetch ALL data (with pagination to bypass row limits)
   // ==========================================================================
-  const queries: Promise<any>[] = [
-    // Query 1: Today's prayer times (fetched ONCE, not 3×)
-    supabase.from('todays_prayers').select('prayer_name, athan_time, iqamah_time'),
-
-    // Query 2: ALL prayer notification settings (fetched ONCE, not 15×)
-    supabase.from('prayer_notification_settings').select('user_id, prayer, notification_settings'),
-  ]
-
-  // Query 3: Jummah settings (only on Fridays)
-  if (isFriday) {
-    queries.push(
-      supabase.from('jummah_notifications').select('user_id, jummah, notification_settings')
-    )
-  }
-
-  const results = await Promise.all(queries)
-
-  const { data: prayers, error: prayerError } = results[0]
-  const { data: allSettings, error: settingsError } = results[1]
+  
+  // Fetch today's prayers (small table, no pagination needed)
+  const { data: prayers, error: prayerError } = await supabase
+    .from('todays_prayers')
+    .select('prayer_name, athan_time, iqamah_time')
 
   if (prayerError) {
     console.error('Error fetching prayers:', prayerError)
     return { error: 'Failed to fetch prayers' }
   }
-  if (settingsError) {
-    console.error('Error fetching settings:', settingsError)
-    return { error: 'Failed to fetch settings' }
-  }
   if (!prayers || prayers.length === 0) {
     return { error: 'No prayer times found' }
   }
-  if (!allSettings || allSettings.length === 0) {
+
+  // Paginate prayer_notification_settings (can be 8,000+ rows)
+  const allSettings: any[] = []
+  const PAGE_SIZE = 1000
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('prayer_notification_settings')
+      .select('user_id, prayer, notification_settings')
+      .range(from, from + PAGE_SIZE - 1)
+    
+    if (error) {
+      console.error('Error fetching settings page:', error)
+      break
+    }
+    if (!data || data.length === 0) break
+    allSettings.push(...data)
+    if (data.length < PAGE_SIZE) break // last page
+    from += PAGE_SIZE
+  }
+  console.log(`Fetched ${allSettings.length} notification settings (${Math.ceil(from / PAGE_SIZE) + 1} pages)`)
+
+  // Fetch jummah settings (only on Fridays)
+  let jummahSettings: JummahSetting[] = []
+  if (isFriday) {
+    let jFrom = 0
+    while (true) {
+      const { data, error } = await supabase
+        .from('jummah_notifications')
+        .select('user_id, jummah, notification_settings')
+        .range(jFrom, jFrom + PAGE_SIZE - 1)
+      
+      if (error) {
+        console.error('Error fetching jummah settings:', error)
+        break
+      }
+      if (!data || data.length === 0) break
+      jummahSettings.push(...data)
+      if (data.length < PAGE_SIZE) break
+      jFrom += PAGE_SIZE
+    }
+  }
+
+  if (allSettings.length === 0) {
     return { scheduled: 0, message: 'No notification settings configured' }
   }
 
@@ -159,16 +184,9 @@ async function scheduleAllNotifications() {
     allUserIds.add(setting.user_id)
   }
 
-  // Add jummah user IDs
-  let jummahSettings: JummahSetting[] = []
-  if (isFriday && results[2]) {
-    const { data: jummahData, error: jummahError } = results[2]
-    if (!jummahError && jummahData) {
-      jummahSettings = jummahData
-      for (const j of jummahSettings) {
-        allUserIds.add(j.user_id)
-      }
-    }
+  // Add jummah user IDs (already fetched above via pagination)
+  for (const j of jummahSettings) {
+    allUserIds.add(j.user_id)
   }
 
   // ==========================================================================
@@ -333,9 +351,8 @@ async function scheduleAllNotifications() {
   // ==========================================================================
   // STEP 6: Taraweeh notifications (Ramadan only)
   // ==========================================================================
-  const ramadanEnd = new Date(2026, 2, 20) // March 28, 2026
-  const ramadanStart = new Date(2026, 1, 17) // Feb 17th, 2026
-  if (isBefore(todaysDate, ramadanEnd) && isAfter(todaysDate, ramadanStart)) {
+  const ramadanEnd = new Date(2025, 2, 28) // March 28, 2025
+  if (isBefore(todaysDate, ramadanEnd)) {
     const ishaData = prayerMap.get('isha')
     if (ishaData) {
       const ishaIqamahUTC = localTimeToUTC(ishaData.iqamah_time)

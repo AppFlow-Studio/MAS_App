@@ -186,21 +186,49 @@ async function scheduleAllNotifications() {
   const today = new Date().getDay()
 
   // ==========================================================================
-  // STEP 1: Fetch all settings in parallel (2 queries)
+  // STEP 1: Fetch all settings with pagination (PostgREST caps at 1000 rows)
   // ==========================================================================
-  const [
-    { data: programSettings, error: progSettingsErr },
-    { data: eventSettings, error: eventSettingsErr }
-  ] = await Promise.all([
-    supabase.from('program_notifications_settings').select('user_id, program_id, notification_settings'),
-    supabase.from('event_notification_settings').select('user_id, event_id, notification_settings'),
-  ])
+  const PAGE_SIZE = 1000
 
-  if (progSettingsErr) console.error('Error fetching program settings:', progSettingsErr)
-  if (eventSettingsErr) console.error('Error fetching event settings:', eventSettingsErr)
+  // Paginate program_notifications_settings
+  const allProgramSettings: ProgramSetting[] = []
+  let progFrom = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('program_notifications_settings')
+      .select('user_id, program_id, notification_settings')
+      .range(progFrom, progFrom + PAGE_SIZE - 1)
+    
+    if (error) {
+      console.error('Error fetching program settings page:', error)
+      break
+    }
+    if (!data || data.length === 0) break
+    allProgramSettings.push(...data)
+    if (data.length < PAGE_SIZE) break
+    progFrom += PAGE_SIZE
+  }
+  console.log(`Fetched ${allProgramSettings.length} program notification settings`)
 
-  const allProgramSettings = (programSettings || []) as ProgramSetting[]
-  const allEventSettings = (eventSettings || []) as EventSetting[]
+  // Paginate event_notification_settings
+  const allEventSettings: EventSetting[] = []
+  let eventFrom = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('event_notification_settings')
+      .select('user_id, event_id, notification_settings')
+      .range(eventFrom, eventFrom + PAGE_SIZE - 1)
+    
+    if (error) {
+      console.error('Error fetching event settings page:', error)
+      break
+    }
+    if (!data || data.length === 0) break
+    allEventSettings.push(...data)
+    if (data.length < PAGE_SIZE) break
+    eventFrom += PAGE_SIZE
+  }
+  console.log(`Fetched ${allEventSettings.length} event notification settings`)
 
   // Early exit if no settings
   if (allProgramSettings.length === 0 && allEventSettings.length === 0) {

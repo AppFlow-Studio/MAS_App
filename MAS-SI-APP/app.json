@@ -3,7 +3,7 @@
     "name": "MAS Staten Island",
     "owner": "appflow-studios",
     "slug": "MAS-SI-APP",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "orientation": "portrait",
     "icon": "./assets/images/massicliquidglassicon.png",
     "scheme": "MAS-SI-APP",

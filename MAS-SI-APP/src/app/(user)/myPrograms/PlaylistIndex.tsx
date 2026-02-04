@@ -2,6 +2,8 @@ import { View, Text, Pressable, ScrollView, useWindowDimensions, Image, StyleShe
 import { Link, Stack, useRouter } from 'expo-router'
 import React, { useEffect, useRef, useState } from 'react'
 import { Icon } from "react-native-paper"
+import { Ionicons } from '@expo/vector-icons'
+import { TouchableOpacity } from 'react-native-gesture-handler'
 import { supabase } from '@/src/lib/supabase'
 import { useAuth } from "@/src/providers/AuthProvider"
 import { UserPlaylistType } from '@/src/types'
@@ -225,11 +227,18 @@ const PlaylistIndex = () => {
       <Stack.Screen 
         options={{ 
           title: '',
-          headerBackTitleVisible: false,
-          headerTintColor: '#0E519F',
           headerStyle: { backgroundColor: 'transparent' },
           headerTransparent: true,
           headerShadowVisible: false,
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()}
+              activeOpacity={0.5}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="chevron-back" size={28} color="#000000" />
+            </TouchableOpacity>
+          ),
         }} 
       />
       

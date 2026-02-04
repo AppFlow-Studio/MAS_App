@@ -3,6 +3,9 @@ import { Stack } from "expo-router";
 export default function MyProgramsStack(){
     return(
         <Stack
+            screenOptions={{
+                headerBackTitleVisible: false,
+            }}
         >
             <Stack.Screen name="index" options={{headerShown: false}}/>
             <Stack.Screen name="notifications" options={{ headerShown : false}}/>
@@ -16,6 +19,16 @@ export default function MyProgramsStack(){
                 headerShown: false,
                 presentation: 'fullScreenModal',
                 animation: 'slide_from_bottom',
+              }} 
+            />
+            <Stack.Screen 
+              name="PlaylistIndex" 
+              options={{ 
+                headerShown: true,
+                headerBackVisible: false,
+                title: '',
+                headerTransparent: true,
+                headerShadowVisible: false,
               }} 
             />
        </Stack>

@@ -41,6 +41,11 @@ const AdminOptions : { title : string, screens : { buttonTitle : string, link : 
   }
   */
   {
+    title : 'Capacity Status', screens : [
+      { buttonTitle : 'Manage Capacity Lights', link : '/more/Admin/CapacityStatusAdmin'},
+    ]
+  },
+  {
     title : 'Jummah', screens : [
       { buttonTitle : 'First Jummah', link : '/more/Admin/JummahDetails/1'},
       { buttonTitle : 'Second Jummah', link : '/more/Admin/JummahDetails/2'},

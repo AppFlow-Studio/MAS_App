@@ -7,27 +7,29 @@ import { BaseToast, ErrorToast, ToastConfig } from 'react-native-toast-message';
 import Animated, { SlideInUp, SlideOutUp, Easing } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const TOAST_WIDTH = SCREEN_WIDTH - 32; // 16px padding on each side
+const TOAST_WIDTH = Math.min(SCREEN_WIDTH * 0.85, 340); // Shorter, max 340px
 
 // Glassy Toast Wrapper Component with smooth animation
 const GlassyToastWrapper = ({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) => (
-  <Animated.View 
-    entering={SlideInUp.duration(350).easing(Easing.out(Easing.cubic))}
-    exiting={SlideOutUp.duration(250).easing(Easing.in(Easing.cubic))}
-    style={styles.animatedContainer}
-  >
-    <Pressable onPress={onPress} style={styles.toastPressable}>
-      <BlurView 
-        intensity={80} 
-        tint="dark" 
-        style={styles.blurView}
-      >
-        <View style={styles.glassOverlay}>
-          {children}
-        </View>
-      </BlurView>
-    </Pressable>
-  </Animated.View>
+  <View style={styles.toastOuterContainer}>
+    <Animated.View 
+      entering={SlideInUp.duration(350).easing(Easing.out(Easing.cubic))}
+      exiting={SlideOutUp.duration(250).easing(Easing.in(Easing.cubic))}
+      style={styles.animatedContainer}
+    >
+      <Pressable onPress={onPress} style={styles.toastPressable}>
+        <BlurView 
+          intensity={80} 
+          tint="dark" 
+          style={styles.blurView}
+        >
+          <View style={styles.glassOverlay}>
+            {children}
+          </View>
+        </BlurView>
+      </Pressable>
+    </Animated.View>
+  </View>
 );
 
 // Glassy Toast Configuration
@@ -177,9 +179,13 @@ export const glassyToastConfig: ToastConfig = {
 };
 
 const styles = StyleSheet.create({
+  toastOuterContainer: {
+    width: SCREEN_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   animatedContainer: {
     width: TOAST_WIDTH,
-    alignSelf: 'center',
   },
   toastPressable: {
     width: '100%',

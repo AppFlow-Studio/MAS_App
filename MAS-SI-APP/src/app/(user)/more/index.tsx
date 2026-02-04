@@ -21,9 +21,7 @@ import {
   MessageSquare,
   Bug,
   Lightbulb,
-  ShoppingBag,
   User,
-  Lock,
   Store,
   Briefcase,
   Camera
@@ -35,6 +33,8 @@ import SignInAnonModal from '@/src/components/SignInAnonModal';
 import { useOnboarding } from '@/src/providers/OnboardingProvider';
 import ProfilePictureBottomSheet from '@/src/components/ProfilePictureBottomSheet';
 import { useNotifications } from '@/src/providers/NotificationProvider';
+import { PersonalizedAccount } from '@/src/components/PersonalizedAccount';
+import * as WebBrowser from 'expo-web-browser';
 
 // const Index = () => {
 //   const router = useRouter();
@@ -70,12 +70,33 @@ export default function MoreScreen() {
   const [profile, setProfile] = useState<Profile>();
   const [anonStatus, setAnonStatus] = useState(true);
   const [signInModalVisible, setSignInModalVisible] = useState(false);
-  const { isOnboardingIncomplete, showOnboardingSheet } = useOnboarding();
+  const { isOnboardingIncomplete, setOnboardingIncomplete, onboardingSheetRef } = useOnboarding();
   const [visible, setVisible] = useState(false);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
   const [guestAuthModalVisible, setGuestAuthModalVisible] = useState(false);
   const profilePictureSheetRef = useRef<{ present: () => void; dismiss: () => void }>(null);
   const { isEnabled: notificationsEnabled } = useNotifications();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const handleOnboardingComplete = async () => {
+    setShowOnboarding(false);
+    setOnboardingIncomplete(false);
+    // Refresh profile to get updated phone number
+    await getProfile();
+    console.log('Profile personalization completed successfully');
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+    setOnboardingIncomplete(true);
+  };
+
+  const showOnboardingSheet = () => {
+    setShowOnboarding(true);
+    setTimeout(() => {
+      onboardingSheetRef.current?.present();
+    }, 100);
+  };
 
   const handleProfilePicUpdated = (newUrl: string | null) => {
     setProfile(prev => prev ? { ...prev, profile_pic: newUrl || undefined } : prev);
@@ -175,11 +196,15 @@ export default function MoreScreen() {
   };
 
   const handleInviteFriends = async () => {
+    const appStoreUrl = 'https://apps.apple.com/us/app/mas-si/id6683310989';
+    
     try {
       await Share.share({
-        message: '🕌 Join me at MAS Staten Island! Download the app to stay connected with our community, prayer times, events, and more!',
-        url: 'https://massic.org',
-        title: 'Join MAS Staten Island'
+        message: Platform.OS === 'android' 
+          ? `🕌 Join me at MAS Staten Island! Download the app to stay connected with our community, prayer times, events, and more!\n\n${appStoreUrl}`
+          : '🕌 Join me at MAS Staten Island! Download the app to stay connected with our community, prayer times, events, and more!',
+        url: Platform.OS === 'ios' ? appStoreUrl : undefined,
+        title: 'Download MAS Staten Island App'
       });
     } catch (error) {
       console.error(error);
@@ -206,11 +231,6 @@ export default function MoreScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Account</Text>
-          {!anonStatus && (
-            <TouchableOpacity style={styles.logoutButtonSmall} onPress={handleLogout}>
-              <LogOut color="white" size={16} strokeWidth={2.5} />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Profile Section */}
@@ -297,12 +317,10 @@ export default function MoreScreen() {
             )}
           </View>
 
-          {/* Setup Cards - Profile & Preferences - Only show if something is incomplete */}
+          {/* Setup Cards - Profile & Preferences */}
           {!anonStatus && (isOnboardingIncomplete || !preferencesCompleted) && (
             <View style={{ paddingTop: 8, width: '100%' }}>
-              {/* Show pill-style buttons when only one item, cards when both */}
               {isOnboardingIncomplete && preferencesCompleted ? (
-                // Single full-width button for Complete Profile with subtitle
                 <TouchableOpacity 
                   style={{
                     width: '100%',
@@ -316,7 +334,6 @@ export default function MoreScreen() {
                   }}
                   onPress={() => showOnboardingSheet()}
                 >
-                  {/* Icon container */}
                   <View style={{
                     width: 28,
                     height: 28,
@@ -328,12 +345,10 @@ export default function MoreScreen() {
                   }}>
                     <User color="#ffffff" size={14} strokeWidth={2} />
                   </View>
-                  {/* Text container */}
                   <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ color: 'white', fontWeight: '700', fontSize: 17 }}>Complete Profile</Text>
                     <Text style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 13, marginLeft: 8 }}>Phone & details</Text>
                   </View>
-                  {/* Red notification dot */}
                   <View style={{
                     position: 'absolute',
                     top: 8,
@@ -345,7 +360,6 @@ export default function MoreScreen() {
                   }} />
                 </TouchableOpacity>
               ) : !isOnboardingIncomplete && !preferencesCompleted ? (
-                // Single full-width button for Personalize with subtitle
                 <TouchableOpacity 
                   style={{
                     width: '100%',
@@ -359,7 +373,6 @@ export default function MoreScreen() {
                   }}
                   onPress={() => router.push('/more/PreferencesOnboarding')}
                 >
-                  {/* Icon container */}
                   <View style={{
                     width: 48,
                     height: 48,
@@ -371,12 +384,10 @@ export default function MoreScreen() {
                   }}>
                     <Sparkles color="#ffffff" size={24} strokeWidth={2} />
                   </View>
-                  {/* Text container */}
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: 'white', fontWeight: '700', fontSize: 17 }}>Personalize Experience</Text>
                     <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 14, marginTop: 3 }}>Interests & times</Text>
                   </View>
-                  {/* Red notification dot */}
                   <View style={{
                     position: 'absolute',
                     top: 10,
@@ -388,7 +399,6 @@ export default function MoreScreen() {
                   }} />
                 </TouchableOpacity>
               ) : (
-                // Both cards when both are incomplete
                 <View style={styles.setupCardsRow}>
                   {isOnboardingIncomplete && (
                     <TouchableOpacity
@@ -522,8 +532,8 @@ export default function MoreScreen() {
           {/* MY ACTIVITY */}
           <Text style={styles.sectionLabel}>MY ACTIVITY</Text>
               <View style={styles.menuCard}>
-                <MenuButton icon={Bookmark} label="Saved Programs/Events" />
-                <MenuButton icon={ListVideo} label="Playlist" />
+                <MenuButton icon={Bookmark} label="Saved Programs/Events" onPress={() => router.push('/myPrograms')} />
+                <MenuButton icon={ListVideo} label="Playlist" onPress={() => router.push('/myPrograms/PlaylistIndex')} />
               </View>
 
           {/* NOTIFICATIONS */}
@@ -541,29 +551,34 @@ export default function MoreScreen() {
                 </TouchableOpacity>
               )}
               <View style={styles.menuCard}>
-                <MenuButton icon={Bell} label="Prayer" />
+                <MenuButton 
+                  icon={Bell} 
+                  label="Prayer" 
+                  onPress={() => router.push({ pathname: '/myPrograms/notifications/NotificationEvents', params: { initialTab: 'prayer' } })}
+                />
                 <MenuButton
                   icon={Calendar}
                   label="Program"
-                  onPress={() => router.push('/myPrograms/notifications')}
+                  onPress={() => router.push({ pathname: '/myPrograms/notifications/NotificationEvents', params: { initialTab: 'programs' } })}
                 />
-                <MenuButton icon={PartyPopper} label="Event" />
+                <MenuButton 
+                  icon={PartyPopper} 
+                  label="Event" 
+                  onPress={() => router.push({ pathname: '/myPrograms/notifications/NotificationEvents', params: { initialTab: 'programs' } })}
+                />
                 <MenuButton icon={Settings} label="Settings" onPress={() => router.push('/more/NotificationSettings')} />
               </View>
 
           {/* DONATION */}
           <Text style={styles.sectionLabel}>DONATION</Text>
               <View style={styles.menuCard}>
-                <MenuButton icon={Heart} label="Phase 1" />
                 <MenuButton icon={Heart} label="Phase 2" />
-                <MenuButton icon={Eye} label="View Full Project" />
               </View>
 
           {/* MAS SHOP */}
           <Text style={styles.sectionLabel}>MAS SHOP</Text>
           <View style={styles.menuCard}>
-            <MenuButton icon={ShoppingBag} label="Merch" />
-            <MenuButton icon={Store} label="Programs/Events" />
+            <MenuButton icon={Store} label="Programs/Events" onPress={() => WebBrowser.openBrowserAsync('https://massic.shop')} />
           </View>
 
           {/* BUSINESS ADS */}
@@ -586,8 +601,6 @@ export default function MoreScreen() {
               label="Personalize Preferences" 
               onPress={() => router.push('/more/PreferencesOnboarding')} 
             />
-            <MenuButton icon={Lock} label="Username and Password" />
-            <MenuButton icon={Lock} label="Change Password" />
           </View>
 
           {/* LEAVE A COMMENT */}
@@ -659,6 +672,15 @@ export default function MoreScreen() {
         currentProfilePic={profile?.profile_pic}
         onProfilePicUpdated={handleProfilePicUpdated}
       />
+
+      {/* Complete Profile Bottom Sheet */}
+      {(showOnboarding || isOnboardingIncomplete) && (
+        <PersonalizedAccount
+          ref={onboardingSheetRef}
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
     </LinearGradient>
   );
 };

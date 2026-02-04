@@ -1,4 +1,4 @@
-import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, Linking, ActivityIndicator, InteractionManager } from 'react-native';
+import { Image, StyleSheet, View, Text, FlatList, ScrollView, Dimensions, useWindowDimensions, ImageBackground, StatusBar, Pressable, RefreshControl, Linking, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useRef, useContext, useCallback, useMemo } from 'react';
 import { gettingPrayerData, prayerTimesType, Profile } from '@/src/types';
@@ -10,7 +10,7 @@ import ProgramsCircularCarousel from '@/src/components/programsCircularCarousel'
 import BottomSheet, { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { JummahBottomSheetProp } from '@/src/types';
 import LinkToVolunteersModal from '@/src/components/linkToVolunteersModal';
-import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useScrollViewOffset, useSharedValue, useAnimatedScrollHandler, withTiming, Easing, FadeIn, runOnJS } from 'react-native-reanimated';
+import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useSharedValue, useAnimatedScrollHandler, withTiming, runOnJS } from 'react-native-reanimated';
 import { Button, TextInput, Portal, Modal, Icon } from 'react-native-paper';
 import { Link, useRouter } from 'expo-router';
 import LinkToDonationModal from '@/src/components/LinkToDonationModal';
@@ -24,8 +24,8 @@ import IconsMarquee from '@/src/components/Marquee';
 import MASQuestionaire from '@/src/components/MASQuestionaire';
 import DailyProgramsWidget from '@/src/components/DailyProgramsWidget';
 import OverlappingWidget from '@/src/components/OverlappingWidget';
-import DonationVolunteerCarousel, { DonationVolunteerCarouselRef } from '@/src/components/DonationVolunteerCarousel';
 import DonationBottomSheet, { DonationBottomSheetRef } from '@/src/components/DonationBottomSheet';
+import SuggestionsGrid from '@/src/components/SuggestionsGrid';
 
 // Color Theme based on Figma design
 const COLORS = {
@@ -61,96 +61,7 @@ export default function homeScreen() {
   const { width } = Dimensions.get("window")
   const scrollRef = useAnimatedRef<Animated.ScrollView>()
   const scrollOffset = useSharedValue(0)
-  const donationCarouselRef = useRef<View>(null);
-  const exploreFeaturesRef = useRef<View>(null);
-  const [exploreFeaturesY, setExploreFeaturesY] = useState(0);
-  const [donationCarouselRelativeY, setDonationCarouselRelativeY] = useState(0);
-  const donationVolunteerCarouselRef = useRef<DonationVolunteerCarouselRef>(null);
   const donationSheetRef = useRef<DonationBottomSheetRef>(null);
-  const [activeButton, setActiveButton] = useState<'donate' | 'volunteer' | 'advertise'>('donate');
-  const activeButtonRef = useRef<'donate' | 'volunteer' | 'advertise'>('donate');
-  const tabPosition = useSharedValue(0);
-  const tabIndicatorWidthValue = useSharedValue(0);
-  const isAnimatingRef = useRef(false);
-  
-  const tabContainerPadding = 2;
-  
-  const handleTabLayout = useCallback((e: { nativeEvent: { layout: { width: number } } }) => {
-    const containerWidth = e.nativeEvent.layout.width;
-    const indicatorWidth = (containerWidth - tabContainerPadding * 2) / 3;
-    tabIndicatorWidthValue.value = indicatorWidth;
-  }, []);
-
-  // Handle carousel index change from swiping - debounced to prevent flickering
-  const handleCarouselIndexChange = useCallback((index: number) => {
-    const tabs: ('donate' | 'volunteer' | 'advertise')[] = ['donate', 'volunteer', 'advertise'];
-    if (index >= 0 && index < tabs.length && !isAnimatingRef.current) {
-      const newTab = tabs[index];
-      // Only update if actually changed
-      if (activeButtonRef.current !== newTab) {
-        activeButtonRef.current = newTab;
-        // Animate tab indicator immediately (this runs on UI thread)
-        tabPosition.value = withTiming(index, { duration: 150 });
-        // Defer state update to avoid blocking the animation
-        InteractionManager.runAfterInteractions(() => {
-          setActiveButton(newTab);
-        });
-      }
-    }
-  }, []);
-  
-  const tabAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      width: tabIndicatorWidthValue.value,
-      transform: [{ translateX: tabPosition.value * tabIndicatorWidthValue.value }]
-    }
-  });
-  
-  // Memoized tab press handlers for smooth transitions
-  const handleDonatePress = useCallback(() => {
-    if (activeButtonRef.current === 'donate') return;
-    isAnimatingRef.current = true;
-    activeButtonRef.current = 'donate';
-    // Start animation immediately on UI thread
-    tabPosition.value = withTiming(0, { duration: 150 });
-    // Scroll carousel
-    donationVolunteerCarouselRef.current?.scrollToDonation();
-    // Defer state update
-    InteractionManager.runAfterInteractions(() => {
-      setActiveButton('donate');
-      isAnimatingRef.current = false;
-    });
-  }, []);
-
-  const handleVolunteerPress = useCallback(() => {
-    if (activeButtonRef.current === 'volunteer') return;
-    isAnimatingRef.current = true;
-    activeButtonRef.current = 'volunteer';
-    // Start animation immediately on UI thread
-    tabPosition.value = withTiming(1, { duration: 150 });
-    // Scroll carousel
-    donationVolunteerCarouselRef.current?.scrollToVolunteer();
-    // Defer state update
-    InteractionManager.runAfterInteractions(() => {
-      setActiveButton('volunteer');
-      isAnimatingRef.current = false;
-    });
-  }, []);
-
-  const handleAdvertisePress = useCallback(() => {
-    if (activeButtonRef.current === 'advertise') return;
-    isAnimatingRef.current = true;
-    activeButtonRef.current = 'advertise';
-    // Start animation immediately on UI thread
-    tabPosition.value = withTiming(2, { duration: 150 });
-    // Scroll carousel
-    donationVolunteerCarouselRef.current?.scrollToAdvertise();
-    // Defer state update
-    InteractionManager.runAfterInteractions(() => {
-      setActiveButton('advertise');
-      isAnimatingRef.current = false;
-    });
-  }, []);
   const [isAtBottom, setIsAtBottom] = useState(false);
 
   const updateBottomState = (isBottom: boolean) => {
@@ -286,7 +197,7 @@ export default function homeScreen() {
       <Animated.ScrollView
         ref={scrollRef}
         style={{ backgroundColor: 'transparent', zIndex: 1 }}
-        contentContainerStyle={{ backgroundColor: COLORS.background, minHeight: '100%', paddingBottom: 100 + 20 }}
+        contentContainerStyle={{ backgroundColor: COLORS.background, minHeight: '100%', paddingBottom: 80 }}
         className="h-full"
         bounces={true}
         alwaysBounceVertical={true}
@@ -337,104 +248,11 @@ export default function homeScreen() {
       {/* Ads */}
       <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true)} />
 
-      {/* Explore Features Section */}
-      <View className='pt-4 px-3'>
-        <View className='flex-row items-center mb-2'>
-          <Pressable onPress={() => router.push('/(user)/more')}>
-            <Text style={{ color: COLORS.primary }} className='font-bold text-lg'>Explore features</Text>
-          </Pressable>
-        </View>
-
-        {/* Tab Bar - matching Recorded Lectures style */}
-        <View 
-          className="flex-row relative" 
-          style={{ backgroundColor: '#F3F4F6', borderRadius: 20, padding: tabContainerPadding }}
-          onLayout={handleTabLayout}
-        >
-          <Animated.View 
-            style={[
-              {
-                position: 'absolute',
-                backgroundColor: 'rgba(33, 78, 145, 0.15)',
-                borderRadius: 18,
-                top: tabContainerPadding,
-                bottom: tabContainerPadding,
-                left: tabContainerPadding,
-              },
-              tabAnimatedStyle
-            ]}
-          />
-          {/* Donate Button */}
-          <Pressable 
-            onPress={handleDonatePress}
-            style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
-          >
-            <View className="flex-row items-center">
-              <Icon 
-                source="hand-heart" 
-                size={18} 
-                color={activeButton === 'donate' ? '#214E91' : '#6B7280'} 
-              />
-              <Text 
-                className="font-semibold ml-2"
-                style={{ color: activeButton === 'donate' ? '#214E91' : '#6B7280', fontSize: 14 }}
-              >
-                Donate
-              </Text>
-            </View>
-          </Pressable>
-          
-          {/* Volunteers Button */}
-          <Pressable 
-            onPress={handleVolunteerPress}
-            style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
-          >
-            <View className="flex-row items-center">
-              <Icon 
-                source="account-group" 
-                size={18} 
-                color={activeButton === 'volunteer' ? '#214E91' : '#6B7280'} 
-              />
-              <Text 
-                className="font-semibold ml-2"
-                style={{ color: activeButton === 'volunteer' ? '#214E91' : '#6B7280', fontSize: 14 }}
-              >
-                Volunteers
-              </Text>
-            </View>
-          </Pressable>
-
-          {/* Advertise Button */}
-          <Pressable 
-            onPress={handleAdvertisePress}
-            style={{ flex: 1, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}
-          >
-            <View className="flex-row items-center">
-              <Icon 
-                source="bullhorn" 
-                size={18} 
-                color={activeButton === 'advertise' ? '#214E91' : '#6B7280'} 
-              />
-              <Text 
-                className="font-semibold ml-2"
-                style={{ color: activeButton === 'advertise' ? '#214E91' : '#6B7280', fontSize: 14 }}
-              >
-                Advertise
-              </Text>
-            </View>
-          </Pressable>
-        </View>
-
-      </View>
-
-      {/* Donation and Volunteer Cards Carousel */}
-      <View className='pt-3'>
-        <DonationVolunteerCarousel 
-          ref={donationVolunteerCarouselRef} 
-          onDonationPress={() => donationSheetRef.current?.open()}
-          onIndexChange={handleCarouselIndexChange}
-        />
-      </View>
+      {/* Suggestions Grid - Uber-style icons */}
+      <SuggestionsGrid 
+        onDonatePress={() => donationSheetRef.current?.open()}
+        onAdvertisePress={() => router.push('/more/BusinessAds')}
+      />
 
       {/* Jummah Schedule */}
       <View className='pt-6'>
@@ -514,7 +332,6 @@ export default function homeScreen() {
                 </Portal>
                 */}
 
-      <View style={[{ paddingBottom: 100 }]}></View>
       </Animated.ScrollView>
 
       {/* Donation Bottom Sheet */}

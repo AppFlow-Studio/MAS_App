@@ -1,19 +1,62 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Pressable, Platform, Image, Dimensions } from 'react-native';
-import { Stack, useRouter, useNavigation } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Pressable, Platform, Image, Dimensions, Linking, ActivityIndicator } from 'react-native';
+import { Stack, useRouter, useNavigation, Redirect } from 'expo-router';
 import { Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass';
 import { Bell } from 'lucide-react-native';
+import * as Notifications from 'expo-notifications';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
 
 export default function NotificationsIndex() {
   const router = useRouter();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const [notificationStatus, setNotificationStatus] = useState<'loading' | 'granted' | 'denied'>('loading');
 
-  const handleEnableNotifications = () => {
-    router.push('/myPrograms/notifications/NotificationEvents');
+  // Check notification permission status
+  useEffect(() => {
+    const checkPermissions = async () => {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status === 'granted') {
+        setNotificationStatus('granted');
+      } else {
+        setNotificationStatus('denied');
+      }
+    };
+    checkPermissions();
+  }, []);
+
+  // If notifications are enabled, redirect to the Notification Center
+  if (notificationStatus === 'granted') {
+    return <Redirect href="/myPrograms/notifications/NotificationEvents" />;
+  }
+
+  // Show loading while checking permissions
+  if (notificationStatus === 'loading') {
+    return (
+      <LinearGradient
+        colors={['#1d4681', '#3183bf']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+      >
+        <ActivityIndicator size="large" color="white" />
+      </LinearGradient>
+    );
+  }
+
+  const handleEnableNotifications = async () => {
+    // Request permissions
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status === 'granted') {
+      router.replace('/myPrograms/notifications/NotificationEvents');
+    } else {
+      // If denied, open settings so user can enable manually
+      Linking.openSettings();
+    }
   };
 
   return (
@@ -31,9 +74,8 @@ export default function NotificationsIndex() {
       >
         <ScrollView 
           style={styles.container}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top }]}
           showsVerticalScrollIndicator={false}
-          className='border-2 border-red-500'
         >
           {/* Custom Header */}
           <View style={{ paddingTop: 0, paddingHorizontal: 0, flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>

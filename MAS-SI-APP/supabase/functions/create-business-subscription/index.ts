@@ -31,18 +31,19 @@ serve(async (req) => {
     console.log('Creating subscription checkout session for customer:', customerId);
     console.log('Price ID:', priceId);
 
-    // Use Universal Links (https) when domain is set; otherwise fall back to custom scheme for dev
+    // Use Universal Links (https) when domain is set; otherwise use a neutral page
+    // that won't try to redirect back to the app (user returns manually)
     const universalLinkDomain = Deno.env.get('UNIVERSAL_LINK_DOMAIN');
     const successUrlFinal =
       successUrl ||
       (universalLinkDomain
         ? `https://${universalLinkDomain}/subscription-success?session_id={CHECKOUT_SESSION_ID}`
-        : 'MAS-SI-APP://subscription-success?session_id={CHECKOUT_SESSION_ID}');
+        : 'https://example.com/?payment=success');
     const cancelUrlFinal =
       cancelUrl ||
       (universalLinkDomain
         ? `https://${universalLinkDomain}/subscription-cancel`
-        : 'MAS-SI-APP://subscription-cancel');
+        : 'https://example.com/?payment=cancelled');
 
     // Create a Stripe Checkout Session for subscription
     const session = await stripe.checkout.sessions.create({

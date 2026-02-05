@@ -19,12 +19,11 @@ import {
   ChevronRight,
   Star,
   MessageSquare,
-  Bug,
-  Lightbulb,
   User,
   Store,
   Briefcase,
-  Camera
+  Camera,
+  CreditCard
 } from 'lucide-react-native';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
@@ -35,6 +34,8 @@ import ProfilePictureBottomSheet from '@/src/components/ProfilePictureBottomShee
 import { useNotifications } from '@/src/providers/NotificationProvider';
 import { PersonalizedAccount } from '@/src/components/PersonalizedAccount';
 import * as WebBrowser from 'expo-web-browser';
+import DonationBottomSheet, { DonationBottomSheetRef } from '@/src/components/DonationBottomSheet';
+import FeedbackBottomSheet, { FeedbackBottomSheetRef } from '@/src/components/FeedbackBottomSheet';
 
 // const Index = () => {
 //   const router = useRouter();
@@ -75,6 +76,8 @@ export default function MoreScreen() {
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
   const [guestAuthModalVisible, setGuestAuthModalVisible] = useState(false);
   const profilePictureSheetRef = useRef<{ present: () => void; dismiss: () => void }>(null);
+  const donationSheetRef = useRef<DonationBottomSheetRef>(null);
+  const feedbackSheetRef = useRef<FeedbackBottomSheetRef>(null);
   const { isEnabled: notificationsEnabled } = useNotifications();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -212,7 +215,12 @@ export default function MoreScreen() {
   };
 
   const MenuButton = ({ icon: IconComponent, label, onPress }: { icon: any; label: string; onPress?: () => void }) => (
-    <TouchableOpacity style={styles.menuButton} onPress={onPress}>
+    <TouchableOpacity 
+      style={styles.menuButton} 
+      onPress={onPress}
+      activeOpacity={0.6}
+      delayPressIn={0}
+    >
       <IconComponent color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
       <Text style={styles.menuButtonText}>{label}</Text>
       <ChevronRight color="rgba(255,255,255,0.5)" size={18} style={{ marginLeft: 'auto' }} />
@@ -572,7 +580,7 @@ export default function MoreScreen() {
           {/* DONATION */}
           <Text style={styles.sectionLabel}>DONATION</Text>
               <View style={styles.menuCard}>
-                <MenuButton icon={Heart} label="Phase 2" />
+                <MenuButton icon={Heart} label="Phase 2" onPress={() => donationSheetRef.current?.open()} />
               </View>
 
           {/* MAS SHOP */}
@@ -586,6 +594,7 @@ export default function MoreScreen() {
           <View style={styles.menuCard}>
             <MenuButton icon={Briefcase} label="Start an Application" onPress={() => router.push('/more/BusinessAds')} />
             <MenuButton icon={Eye} label="Check the Status" onPress={() => router.push('/more/BusinessStatus')} />
+            <MenuButton icon={CreditCard} label="Manage Subscriptions" onPress={() => router.push('/more/BusinessSubscriptions')} />
           </View>
 
           {/* EDIT PROFILE */}
@@ -606,9 +615,7 @@ export default function MoreScreen() {
           {/* LEAVE A COMMENT */}
           <Text style={styles.sectionLabel}>LEAVE A COMMENT</Text>
           <View style={styles.menuCard}>
-            <MenuButton icon={Lightbulb} label="Feature Request" />
-            <MenuButton icon={Bug} label="Report a Bug" />
-            <MenuButton icon={MessageSquare} label="Other Comments" />
+            <MenuButton icon={MessageSquare} label="Send Feedback" onPress={() => feedbackSheetRef.current?.open()} />
           </View>
 
           {/* Admin Panel - Only show for admins */}
@@ -681,6 +688,12 @@ export default function MoreScreen() {
           onSkip={handleOnboardingSkip}
         />
       )}
+
+      {/* Donation Bottom Sheet */}
+      <DonationBottomSheet ref={donationSheetRef} />
+
+      {/* Feedback Bottom Sheet */}
+      <FeedbackBottomSheet ref={feedbackSheetRef} userProfile={profile} />
     </LinearGradient>
   );
 };

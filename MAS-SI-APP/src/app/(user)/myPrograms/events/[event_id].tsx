@@ -638,6 +638,13 @@ async function getUserPlaylists(){
                } else {
                  await supabase.from("added_events").insert({ user_id: session?.user.id, event_id: event_id });
                  setEventInEvents(true);
+                 // Show toast notification
+                 Toast.show({
+                   type: 'EventAddedToLibrary',
+                   props: { props: event, onPress: () => navigation.navigate('myPrograms') },
+                   position: 'top',
+                   topOffset: 50,
+                 });
                }
                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
              }}
@@ -648,7 +655,15 @@ async function getUserPlaylists(){
        }} 
      />
      <StatusBar barStyle={"light-content"}/>
-      <Animated.ScrollView ref={scrollRef}  scrollEventThrottle={16} contentContainerStyle={{justifyContent: "flex-start", alignItems: "stretch" }} style={{ flex: 1 }}>
+      <Animated.ScrollView 
+        ref={scrollRef}  
+        scrollEventThrottle={16} 
+        contentContainerStyle={{justifyContent: "flex-start", alignItems: "stretch", paddingBottom: 120 }} 
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
+        nestedScrollEnabled={true}
+      >
           <View className=' relative' style={{width: '100%', height: height * 0.5, borderBottomLeftRadius: 20, borderBottomRightRadius: 10, overflow: 'hidden', alignSelf: 'stretch' }}>
             {selectedLecture && selectedLecture.event_lecture_link && selectedLecture.event_lecture_link.trim() !== '' && selectedLecture.event_lecture_link !== 'N/A' ? (
               <YoutubePlayer 

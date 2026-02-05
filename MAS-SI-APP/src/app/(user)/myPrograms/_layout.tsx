@@ -5,10 +5,19 @@ export default function MyProgramsStack(){
         <Stack
             screenOptions={{
                 headerBackTitleVisible: false,
+                animation: 'slide_from_right',
+                animationDuration: 200,
             }}
         >
             <Stack.Screen name="index" options={{headerShown: false}}/>
-            <Stack.Screen name="notifications" options={{ headerShown : false}}/>
+            <Stack.Screen 
+              name="notifications" 
+              options={{ 
+                headerShown: false,
+                animation: 'slide_from_right',
+                animationDuration: 200,
+              }}
+            />
             <Stack.Screen name="recordedLectures" options={{ headerShown: true }}/>
             <Stack.Screen name="RecommendedForYou" options={{ headerShown: false }}/>
             <Stack.Screen name="events/[event_id]" options={{ headerShown: true }}/>

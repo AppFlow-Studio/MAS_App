@@ -40,6 +40,15 @@ const MoreLayout = () => {
             animation: 'slide_from_bottom',
           }}
         />
+        <Stack.Screen
+          name='PaymentProcessing'
+          options={{
+            headerShown: false,
+            presentation: 'fullScreenModal',
+            animation: 'fade',
+            gestureEnabled: false,
+          }}
+        />
         <Stack.Screen 
           name='BusinessStatus' 
           options={{ 

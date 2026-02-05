@@ -114,6 +114,26 @@ export const glassyToastConfig: ToastConfig = {
     </GlassyToastWrapper>
   ),
 
+  // Event added to library
+  EventAddedToLibrary: ({ props }: any) => (
+    <GlassyToastWrapper onPress={props?.onPress}>
+      <View style={styles.toastContent}>
+        <Image 
+          source={props?.props?.event_img ? { uri: props.props.event_img } : require("@/assets/images/MASHomeLogo.png")} 
+          style={styles.toastImage}
+        />
+        <View style={styles.toastTextContainer}>
+          <View style={styles.toastLabelRow}>
+            <Icon source={'book-check'} size={14} color="#6EE7B7" />
+            <Text style={styles.toastLabel}>Added to Library</Text>
+          </View>
+          <Text style={styles.toastTitle} numberOfLines={1}>{props?.props?.event_name}</Text>
+        </View>
+        <Icon source={'chevron-right'} size={20} color="rgba(255,255,255,0.5)" />
+      </View>
+    </GlassyToastWrapper>
+  ),
+
   // Confirm notification option
   ConfirmNotificationOption: ({ props }: any) => (
     <GlassyToastWrapper>

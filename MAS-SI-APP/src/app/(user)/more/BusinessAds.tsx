@@ -1,15 +1,13 @@
 import { View, Text, ScrollView, Pressable, Dimensions, Image, Alert, StatusBar, KeyboardAvoidingView, Platform } from 'react-native'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { Icon, ActivityIndicator } from 'react-native-paper'
 import * as ImagePicker from "expo-image-picker"
 import * as FileSystem from 'expo-file-system';
 import { copyAsync as copyFileAsync, documentDirectory as legacyDocumentDirectory, readAsStringAsync as readFileAsStringAsync, deleteAsync as deleteFileAsync } from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 import { useAuth } from '@/src/providers/AuthProvider'
-import { useDeepLink } from '@/src/providers/DeepLinkProvider'
 import { supabase } from '@/src/lib/supabase'
 import { useRouter } from 'expo-router'
-import { useFocusEffect } from '@react-navigation/native'
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SubmissionFormSchema, submissionFormSchema, businessInfoSubmissions, BusinessInfoSchema } from '@/src/components/forms/Personal-Info'
@@ -27,7 +25,6 @@ import ValidatedInput from '@/src/components/BusinessAdsComponets/ValidatedInput
 import BusinessAdPreview from '@/src/components/BusinessAdsComponets/BusinessAdPreview'
 import { setupStripePaymentSheet, openStripePaymentSheet, fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod, createBusinessSubscription } from '@/src/lib/StripePaySheet'
 import { savePendingBusinessAdSubmission } from '@/src/lib/businessAdsSubmission'
-import * as Linking from 'expo-linking'
 import * as WebBrowser from 'expo-web-browser'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
@@ -231,27 +228,8 @@ const BusinessAds = () => {
     const [selectedDuration, setSelectedDuration] = useState<string>('')
     const [businessFlyer, setBusinessFlyer] = useState<ImagePicker.ImagePickerAsset>()
 
-    const { paymentSuccessJustClosed, clearPaymentSuccessJustClosed, showPaymentSuccessPopup } = useDeepLink()
-
-    // When returning from subscription payment, popup closes; navigate to status page
-    useEffect(() => {
-        if (!paymentSuccessJustClosed) return
-        clearPaymentSuccessJustClosed()
-        // Navigate to status page so user can see their submission
-        router.replace('/more/BusinessStatus')
-    }, [paymentSuccessJustClosed, clearPaymentSuccessJustClosed, router])
-
-    // Fallback: if deep link was missed (e.g. app opened before URL was ready), show success popup when this screen focuses
-    useFocusEffect(
-        useCallback(() => {
-            Linking.getInitialURL().then((url) => {
-                if (!url || !url.includes('subscription-success')) return
-                const match = url.match(/session_id=([^&\s]+)/)
-                const sessionId = match ? decodeURIComponent(match[1].trim()) : null
-                if (sessionId) showPaymentSuccessPopup(sessionId)
-            })
-        }, [showPaymentSuccessPopup])
-    )
+    // Note: Payment processing is now handled by the PaymentProcessing screen
+    // The useDeepLink hook is no longer needed here for subscription payments
 
     // Watch form values for live preview
     const businessValues = businessMethods.watch()
@@ -374,17 +352,11 @@ const BusinessAds = () => {
             if (durationOption.isSubscription && durationOption.priceId) {
                 console.log('Processing subscription payment for price:', durationOption.priceId)
                 
-                // Generate redirect URLs that match what openAuthSessionAsync expects
-                const successRedirectUrl = Linking.createURL('subscription-success')
-                const cancelRedirectUrl = Linking.createURL('subscription-cancel')
-                console.log('Success redirect URL:', successRedirectUrl)
-                console.log('Cancel redirect URL:', cancelRedirectUrl)
-                
-                // Pass the redirect URLs to Stripe so they match what we're listening for
+                // Don't pass custom redirect URLs - Stripe will show its default success page
+                // User manually returns to app, and our fallback mechanism handles verification
                 const subscriptionResult = await createBusinessSubscription(
-                    durationOption.priceId,
-                    successRedirectUrl + '?session_id={CHECKOUT_SESSION_ID}',
-                    cancelRedirectUrl
+                    durationOption.priceId
+                    // No success/cancel URLs - stay on Stripe's page after payment
                 )
                 
                 if (!subscriptionResult.success || !subscriptionResult.url) {
@@ -425,65 +397,34 @@ const BusinessAds = () => {
                         userId: session?.user.id ?? '',
                     })
                 )
-                // Clear any existing pending session before opening browser (to prevent race condition with AppState)
-                await AsyncStorage.removeItem('@BusinessAds/pending_checkout_session_id')
-
-                // Open Stripe Checkout in an in-app browser (Safari View Controller)
-                // This returns the redirect URL directly when user completes payment
-                const browserResult = await WebBrowser.openAuthSessionAsync(
-                    subscriptionResult.url,
-                    successRedirectUrl
-                )
-
-                console.log('Browser result:', JSON.stringify(browserResult))
-
-                if (browserResult.type === 'success' && browserResult.url) {
-                    // User completed checkout - verify and navigate directly
-                    console.log('Checkout completed, URL:', browserResult.url)
-                    const match = browserResult.url.match(/session_id=([^&\s]+)/)
-                    const sessionId = match ? decodeURIComponent(match[1].trim()) : subscriptionResult.sessionId
-                    console.log('Parsed sessionId:', sessionId)
-                    
-                    if (sessionId) {
-                        // Import and call verification directly, then navigate
-                        const { verifySubscriptionSession } = await import('@/src/lib/StripePaySheet')
-                        const { savePendingBusinessAdSubmission } = await import('@/src/lib/businessAdsSubmission')
-                        
-                        console.log('Verifying payment...')
-                        const verificationResult = await verifySubscriptionSession(sessionId)
-                        
-                        if (verificationResult.success) {
-                            console.log('Payment verified, saving submission...')
-                            const saved = await savePendingBusinessAdSubmission()
-                            
-                            if (saved) {
-                                console.log('Submission saved, navigating to status page')
-                                setIsPaymentProcessing(false)
-                                Toast.show({
-                                    type: 'success',
-                                    text1: 'Application Complete!',
-                                    text2: 'Your business ad has been submitted for review.',
-                                })
-                                router.replace('/more/BusinessStatus')
-                                return
-                            } else {
-                                Alert.alert('Error', 'Payment succeeded but we could not save your submission. Please contact support.')
-                            }
-                        } else {
-                            Alert.alert('Verification Failed', verificationResult.error || 'Could not verify payment. Please contact support.')
-                        }
-                    }
-                } else if (browserResult.type === 'cancel' || browserResult.type === 'dismiss') {
-                    // User cancelled or dismissed - store session for fallback (e.g., if app was killed)
-                    // Only store AFTER browser closes so AppState doesn't race
-                    if (subscriptionResult.sessionId) {
-                        await AsyncStorage.setItem('@BusinessAds/pending_checkout_session_id', subscriptionResult.sessionId)
-                    }
-                    console.log('User cancelled/dismissed Stripe checkout, type:', browserResult.type)
-                } else {
-                    console.log('Unknown browser result type:', browserResult.type)
+                // Store session ID for fallback recovery BEFORE opening browser
+                // (in case app is killed while user is in Safari)
+                if (subscriptionResult.sessionId) {
+                    await AsyncStorage.setItem('@BusinessAds/pending_checkout_session_id', subscriptionResult.sessionId)
                 }
 
+                // Open Stripe Checkout in slide-up in-app browser
+                // After payment, user closes the browser and we check for the pending session
+                console.log('Opening Stripe checkout in-app browser:', subscriptionResult.url)
+                
+                const result = await WebBrowser.openBrowserAsync(subscriptionResult.url, {
+                    presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+                    controlsColor: '#6366f1',
+                })
+                
+                console.log('Browser closed with result:', result.type)
+                
+                // When browser is dismissed, navigate to PaymentProcessing screen
+                if (subscriptionResult.sessionId) {
+                    console.log('Browser closed, navigating to PaymentProcessing screen')
+                    setIsPaymentProcessing(false)
+                    router.replace({
+                        pathname: '/more/PaymentProcessing',
+                        params: { sessionId: subscriptionResult.sessionId }
+                    })
+                    return
+                }
+                
                 setIsPaymentProcessing(false)
                 return
             } else {

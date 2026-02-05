@@ -12,7 +12,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
-import PaymentSuccessPopup from '@/src/components/PaymentSuccessPopup';
 
 const PENDING_CHECKOUT_SESSION_KEY = '@BusinessAds/pending_checkout_session_id';
 
@@ -23,11 +22,7 @@ type SubscriptionState = {
 type DeepLinkContextData = {
     subscriptionState: SubscriptionState;
     clearSubscriptionState: () => void;
-    /** True after the subscription payment-success popup was closed (so BusinessAds can reset form). */
-    paymentSuccessJustClosed: boolean;
-    clearPaymentSuccessJustClosed: () => void;
-    /** Fallback: show payment-success popup when BusinessAds focuses and launch URL is subscription-success (in case deep link was missed). */
-    showPaymentSuccessPopup: (sessionId: string) => void;
+    navigateToPaymentProcessing: (sessionId: string) => void;
 };
 
 const initialSubscriptionState: SubscriptionState = {
@@ -54,70 +49,68 @@ function isSubscriptionCancelUrl(url: string): boolean {
 const DeepLinkContext = createContext<DeepLinkContextData>({
     subscriptionState: initialSubscriptionState,
     clearSubscriptionState: () => {},
-    paymentSuccessJustClosed: false,
-    clearPaymentSuccessJustClosed: () => {},
-    showPaymentSuccessPopup: () => {},
+    navigateToPaymentProcessing: () => {},
 });
 
 export default function DeepLinkProvider({ children }: PropsWithChildren) {
     const [subscriptionState, setSubscriptionState] = useState<SubscriptionState>(initialSubscriptionState);
-    const [paymentSuccessSessionId, setPaymentSuccessSessionId] = useState<string | null>(null);
-    const [paymentSuccessJustClosed, setPaymentSuccessJustClosed] = useState(false);
     const router = useRouter();
     const hasHandledInitialUrl = useRef(false);
-    const lastShownSessionIdRef = useRef<string | null>(null);
+    const lastHandledSessionIdRef = useRef<string | null>(null);
 
     const clearSubscriptionState = useCallback(() => {
         setSubscriptionState(initialSubscriptionState);
     }, []);
 
-    const clearPaymentSuccessJustClosed = useCallback(() => {
-        setPaymentSuccessJustClosed(false);
-    }, []);
-
-    const showPaymentSuccessPopup = useCallback((sessionId: string) => {
-        console.log('showPaymentSuccessPopup called with:', sessionId);
-        console.log('lastShownSessionIdRef:', lastShownSessionIdRef.current);
-        if (lastShownSessionIdRef.current === sessionId) {
-            console.log('Skipping - already shown this session');
+    // Navigate to PaymentProcessing screen with the session ID
+    const navigateToPaymentProcessing = useCallback((sessionId: string) => {
+        console.log('DeepLinkProvider: Navigating to PaymentProcessing with session:', sessionId);
+        if (lastHandledSessionIdRef.current === sessionId) {
+            console.log('DeepLinkProvider: Skipping - already handled this session');
             return;
         }
-        lastShownSessionIdRef.current = sessionId;
-        console.log('Setting paymentSuccessSessionId to show popup');
-        setPaymentSuccessSessionId(sessionId);
-    }, []);
+        lastHandledSessionIdRef.current = sessionId;
+        
+        // Clear the pending session from AsyncStorage
+        AsyncStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY).catch(() => {});
+        
+        // Navigate to PaymentProcessing screen
+        router.replace({
+            pathname: '/more/PaymentProcessing',
+            params: { sessionId }
+        });
+    }, [router]);
 
     const handleDeepLink = useCallback((url: string) => {
         console.log('DeepLinkProvider: Received URL:', url);
 
-        // Handle subscription success: show popup and call verifySubscriptionSession (in PaymentSuccessPopup)
+        // Handle subscription success via deep link
         if (isSubscriptionSuccessUrl(url)) {
             const sessionId = extractSessionIdFromUrl(url);
-            console.log('DeepLinkProvider: Showing payment success popup with sessionId:', sessionId ?? 'null');
+            console.log('DeepLinkProvider: Subscription success URL with sessionId:', sessionId ?? 'null');
             if (sessionId) {
-                // Clear pending session since deep link fired successfully
-                AsyncStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY).catch(() => {});
-                lastShownSessionIdRef.current = sessionId;
-                setPaymentSuccessSessionId(sessionId);
+                WebBrowser.dismissBrowser().catch(() => {});
+                navigateToPaymentProcessing(sessionId);
             }
-            WebBrowser.dismissBrowser().catch(() => {});
             return;
         }
 
+        // Handle subscription cancel
         if (isSubscriptionCancelUrl(url)) {
             console.log('DeepLinkProvider: Subscription cancelled');
-            // Clear pending session on cancel too
             AsyncStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY).catch(() => {});
             setSubscriptionState({ wasCancelled: true });
+            WebBrowser.dismissBrowser().catch(() => {});
         }
-    }, []);
+    }, [navigateToPaymentProcessing]);
 
+    // Listen for deep links
     useEffect(() => {
         const subscription = Linking.addEventListener('url', ({ url }) => {
             handleDeepLink(url);
         });
 
-        // Cold start: getInitialURL() is the only way to get the URL that launched the app
+        // Check for initial URL on cold start
         Linking.getInitialURL().then((url) => {
             if (url && !hasHandledInitialUrl.current) {
                 hasHandledInitialUrl.current = true;
@@ -129,17 +122,15 @@ export default function DeepLinkProvider({ children }: PropsWithChildren) {
         return () => subscription.remove();
     }, [handleDeepLink]);
 
-    // Fallback: When app becomes active, check for pending checkout session (in case deep link didn't fire)
+    // Fallback: When app becomes active, check for pending checkout session
+    // This handles the case where the app was killed while user was in Safari
     useEffect(() => {
         const checkPendingCheckoutSession = async () => {
             try {
                 const pendingSessionId = await AsyncStorage.getItem(PENDING_CHECKOUT_SESSION_KEY);
-                if (pendingSessionId && lastShownSessionIdRef.current !== pendingSessionId) {
-                    console.log('DeepLinkProvider: Found pending checkout session:', pendingSessionId);
-                    // Clear it first to prevent re-triggering
-                    await AsyncStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY);
-                    lastShownSessionIdRef.current = pendingSessionId;
-                    setPaymentSuccessSessionId(pendingSessionId);
+                if (pendingSessionId && lastHandledSessionIdRef.current !== pendingSessionId) {
+                    console.log('DeepLinkProvider: Found pending checkout session on app active:', pendingSessionId);
+                    navigateToPaymentProcessing(pendingSessionId);
                 }
             } catch (error) {
                 console.log('DeepLinkProvider: Error checking pending session:', error);
@@ -149,47 +140,35 @@ export default function DeepLinkProvider({ children }: PropsWithChildren) {
         const handleAppStateChange = (nextAppState: AppStateStatus) => {
             if (nextAppState === 'active') {
                 console.log('DeepLinkProvider: App became active, checking for pending checkout session');
-                checkPendingCheckoutSession();
+                // Small delay to let navigation settle
+                setTimeout(() => {
+                    checkPendingCheckoutSession();
+                }, 500);
             }
         };
 
-        // Check on mount too (in case app was killed and relaunched)
-        checkPendingCheckoutSession();
+        // Check on mount (in case app was restored)
+        const initialCheck = setTimeout(() => {
+            checkPendingCheckoutSession();
+        }, 1000);
 
         const appStateSub = AppState.addEventListener('change', handleAppStateChange);
-        return () => appStateSub.remove();
-    }, []);
-
-    const closePopup = useCallback(() => {
-        // Just close the popup (used on error - user can retry)
-        setPaymentSuccessSessionId(null);
-    }, []);
-
-    const goToStatus = useCallback(() => {
-        // Close popup and signal success (triggers navigation in BusinessAds)
-        setPaymentSuccessSessionId(null);
-        setPaymentSuccessJustClosed(true);
-        router.replace('/more/BusinessStatus');
-    }, [router]);
+        
+        return () => {
+            clearTimeout(initialCheck);
+            appStateSub.remove();
+        };
+    }, [navigateToPaymentProcessing]);
 
     return (
         <DeepLinkContext.Provider
             value={{ 
                 subscriptionState, 
                 clearSubscriptionState,
-                paymentSuccessJustClosed,
-                clearPaymentSuccessJustClosed,
-                showPaymentSuccessPopup,
+                navigateToPaymentProcessing,
             }}
         >
             {children}
-            {paymentSuccessSessionId !== null && (
-                <PaymentSuccessPopup
-                    sessionId={paymentSuccessSessionId}
-                    onClose={closePopup}
-                    onGoToStatus={goToStatus}
-                />
-            )}
         </DeepLinkContext.Provider>
     );
 }

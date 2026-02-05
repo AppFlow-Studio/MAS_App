@@ -1,4 +1,4 @@
-import { Tabs, Redirect, useSegments } from "expo-router";
+import { Tabs, Redirect, useSegments, router } from "expo-router";
 import * as Animatable from 'react-native-animatable';
 import { Pressable, TouchableOpacity, Modal, StyleSheet, Platform, useWindowDimensions } from "react-native";
 import { useEffect, useRef, useState } from "react";
@@ -27,6 +27,9 @@ import { CreateProfilePopup } from '@/src/components/CreateProfilePopup';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { supabase } from '@/src/lib/supabase';
 import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { WHATS_NEW_VERSION_KEY } from '../_layout';
 
 // const toastConfig = {
 //   addProgramToNotificationsToast: ({ props }: any) => (
@@ -252,6 +255,32 @@ const UserLayoutContent = () => {
   const guestPopupRef = useRef<{ present: () => void; dismiss: () => void }>(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
+  const whatsNewCheckedRef = useRef(false);
+
+  // Check if user needs to see What's New screen (after app update)
+  useEffect(() => {
+    const checkWhatsNew = async () => {
+      // Only check once, and only for authenticated users
+      if (whatsNewCheckedRef.current || authLoading || !session) return;
+      
+      whatsNewCheckedRef.current = true; // Mark as checked immediately to prevent re-runs
+      
+      try {
+        const currentVersion = Constants.expoConfig?.version || '1.0.0';
+        const seenVersion = await AsyncStorage.getItem(WHATS_NEW_VERSION_KEY);
+        
+        // If user hasn't seen this version's What's New, redirect them
+        if (seenVersion !== currentVersion) {
+          router.replace('/WhatsNew');
+          return;
+        }
+      } catch (error) {
+        console.log('Error checking What\'s New version:', error);
+      }
+    };
+
+    checkWhatsNew();
+  }, [authLoading, session]);
 
   // Check for incomplete items in More screen (profile + preferences)
   useEffect(() => {

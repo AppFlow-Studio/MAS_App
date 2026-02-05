@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
@@ -15,7 +15,8 @@ import DeepLinkProvider from '../providers/DeepLinkProvider';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationProvider } from '../providers/NotificationProvider';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, StyleSheet, View, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LottieView from 'lottie-react-native';
 import Animated, { useSharedValue, withTiming, runOnJS, useAnimatedStyle } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
@@ -23,7 +24,11 @@ import { glassyToastConfig } from '../lib/toastConfig';
 import { useAuth } from '../providers/AuthProvider';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { userSignedInThisSession } from './(auth)/_layout';
+import Constants from 'expo-constants';
 import "@/global.css"
+
+// Version tracking key for What's New screen
+export const WHATS_NEW_VERSION_KEY = 'whats_new_seen_version';
 
 // Create a QueryClient instance
 const queryClient = new QueryClient({
@@ -41,6 +46,7 @@ const RootLayoutNav = () => {
     <Stack key="main-app" >
       <Stack.Screen name="(user)" options={{ headerShown: false, animation: 'none' }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'none' }} />
+      <Stack.Screen name="WhatsNew" options={{ headerShown: false, animation: 'fade' }} />
       <Stack.Screen name="+not-found" options={{ animation: 'none' }} />
     </Stack>
   )
@@ -51,6 +57,7 @@ function IntroVideoOverlay() {
   const { session, loading: authLoading } = useAuth();
   const [videoDismissed, setVideoDismissed] = useState(false);
   const videoOpacity = useSharedValue(1);
+  const insets = useSafeAreaInsets();
 
   // Show video: during auth load, or for returning user (session + didn't just sign in) until dismissed
   const showVideo =
@@ -59,7 +66,7 @@ function IntroVideoOverlay() {
 
   const videoStyle = useAnimatedStyle(() => ({ opacity: videoOpacity.value }));
 
-  const handleVideoEnd = () => {
+  const handleDismiss = () => {
     videoOpacity.value = withTiming(0, { duration: 500 }, () => {
       runOnJS(setVideoDismissed)(true);
     });
@@ -81,13 +88,37 @@ function IntroVideoOverlay() {
         isLooping={false}
         onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
           if (status.isLoaded && status.didJustFinish) {
-            handleVideoEnd();
+            handleDismiss();
           }
         }}
       />
+      <Pressable
+        onPress={handleDismiss}
+        style={[
+          styles.skipButton,
+          { top: insets.top + 8, right: Math.max(insets.right, 12) + 8 },
+        ]}
+      >
+        <Text style={styles.skipButtonText}>Skip</Text>
+      </Pressable>
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  skipButton: {
+    position: 'absolute',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: 'rgba(100, 100, 100, 0.85)',
+  },
+  skipButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
 
 SplashScreen.preventAutoHideAsync()
 export default function RootLayout() {

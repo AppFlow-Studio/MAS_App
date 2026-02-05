@@ -428,7 +428,7 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
             <Text style={styles.sessionNumber}>1</Text>
             <Text style={styles.sessionLabel}>Session One</Text>
           </View>
-          <CapacityStatusLight status={sessionOneLineup?.capacity_status} size={8} style={styles.capacityLight} />
+          <CapacityStatusLight status={sessionOneLineup?.capacity_status} size={10} style={styles.capacityLight} />
           <Text style={[
             styles.sessionTime,
             currentState === 'session_one' && styles.sessionTimeActive
@@ -438,11 +438,6 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
           <Text style={styles.sessionEndTime}>
             ends {format(sessionOneEnd, 'h:mm a')}
           </Text>
-          {currentState === 'session_one' && (
-            <View style={styles.nowBadge}>
-              <Text style={styles.nowBadgeText}>NOW</Text>
-            </View>
-          )}
           <View style={styles.sessionActionRow}>
             <View style={styles.viewLineupBtn}>
               <Icon source="account-group-outline" size={14} color="#1d4681" />
@@ -472,7 +467,7 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
             <Text style={styles.sessionNumber}>2</Text>
             <Text style={styles.sessionLabel}>Session Two</Text>
           </View>
-          <CapacityStatusLight status={sessionTwoLineup?.capacity_status} size={8} style={styles.capacityLight} />
+          <CapacityStatusLight status={sessionTwoLineup?.capacity_status} size={10} style={styles.capacityLight} />
           <Text style={[
             styles.sessionTime,
             currentState === 'session_two' && styles.sessionTimeActive
@@ -482,11 +477,6 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
           <Text style={styles.sessionEndTime}>
             ends {format(sessionTwoEnd, 'h:mm a')}
           </Text>
-          {currentState === 'session_two' && (
-            <View style={styles.nowBadge}>
-              <Text style={styles.nowBadgeText}>NOW</Text>
-            </View>
-          )}
           <View style={styles.sessionActionRow}>
             <View style={styles.viewLineupBtn}>
               <Icon source="account-group-outline" size={14} color="#1d4681" />
@@ -1112,12 +1102,14 @@ export default function Index() {
       speaker?: { speaker_name: string; speaker_img?: string };
       secondFourImam?: { imam_name: string; imam_img?: string };
       witrImam?: { imam_name: string; imam_img?: string };
+      capacity_status?: CapacityStatus;
     };
     sessionTwo?: {
       firstFourImam?: { imam_name: string; imam_img?: string };
       speaker?: { speaker_name: string; speaker_img?: string };
       secondFourImam?: { imam_name: string; imam_img?: string };
       witrImam?: { imam_name: string; imam_img?: string };
+      capacity_status?: CapacityStatus;
     };
   } | null>(null);
   const { height } = Dimensions.get('window');
@@ -1146,7 +1138,7 @@ export default function Index() {
 
   const getTaraweehLineup = async () => {
     // Fetch today's taraweeh lineup from supabase
-    const today = new Date().toISOString().split('T')[0];
+    const today = format(new Date(), 'yyyy-MM-dd');
     const { data, error } = await supabase
       .from('taraweeh_lineup')
       .select('*')

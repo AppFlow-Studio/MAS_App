@@ -2,54 +2,27 @@ import { StyleSheet, View, FlatList, Button, Text, ScrollView, TouchableOpacity,
 import { Link, Stack } from "expo-router";
 import ProgramsListProgram from "../../../../components/ProgramsListProgram"
 import { Divider, Searchbar } from 'react-native-paper';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Program } from "@/src/types"
-import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
+import { useCurrentPrograms, usePastRecordedPrograms } from '@/src/hooks/usePrograms';
 
 export default function ProgramsScreen() {
   const { session } = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [shownData, setShownData] = useState<Program[]>()
-  const [prevRecordedPrograms, setPrevRecordedPrograms] = useState<Program[]>()
+  const { data: shownData, isLoading: currentLoading, refetch: refetchCurrent } = useCurrentPrograms()
+  const { data: prevRecordedPrograms, isLoading: pastLoading, refetch: refetchPast } = usePastRecordedPrograms()
   const [searchBarInput, setSearchBarInput] = useState('')
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false)
+  const loading = currentLoading || pastLoading
 
-  async function getPrograms() {
+  const onRefreshPrograms = async () => {
+    setRefreshing(true)
     try {
-      setLoading(true)
-      setRefreshing(true)
-      if (!session?.user) throw new Error('No user on the session!')
-      const date = new Date()
-      const isoString = date.toISOString()
-      const { data: CurrentPrograms, error } = await supabase
-        .from("programs")
-        .select("*").gte('program_end_date', isoString).eq('is_kids', false)
-
-      const { data: PrevPrograms, error: prevError } = await supabase.from('programs').select('*').lte('program_end_date', isoString).eq('has_lectures', true)
-      if (PrevPrograms) {
-        setPrevRecordedPrograms(PrevPrograms)
-      }
-      if (error) {
-        throw error
-      }
-
-      if (CurrentPrograms) {
-        setShownData(CurrentPrograms)
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        alert(error.message)
-      }
-    }
-    finally {
-      setLoading(false)
+      await Promise.all([refetchCurrent(), refetchPast()])
+    } finally {
       setRefreshing(false)
     }
   }
-  useEffect(() => {
-    getPrograms()
-  }, [session])
   const tabBarHeight = 20;
   const filterTestFunc = (searchParam: string) => {
     setSearchBarInput(searchParam)
@@ -69,7 +42,7 @@ export default function ProgramsScreen() {
       <ScrollView style={{ borderTopLeftRadius: 40, borderTopRightRadius: 40, height: '100%', backgroundColor: 'white' }} contentContainerStyle={{
         paddingTop: 2, backgroundColor: 'white', paddingBottom: 50
       }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => await getPrograms()} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefreshPrograms} />}
       >
         <View className='mt-5 w-[100%]'>
           <Text className='font-bold text-black text-lg ml-3 mb-8'>Current Programs</Text>

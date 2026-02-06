@@ -1,5 +1,5 @@
 import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, Easing, Alert, StatusBar, Linking, Platform, ImageBackground, ScrollView as RNScrollView } from 'react-native'
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -11,6 +11,9 @@ import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, use
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { UserPlaylistType } from '@/src/types';
+import { useProgramDetail, useProgramLectures } from '@/src/hooks/usePrograms';
+import { useSpeakers } from '@/src/hooks/useSpeakers';
+import { useUserPlaylists } from '@/src/hooks/useUserLibrary';
 import RenderAddToUserPlaylistsListProgram from '@/src/components/RenderAddToUserPlaylistsList';
 import { withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -51,8 +54,8 @@ const ProgramLectures = () => {
   const { session } = useAuth()
   const router = useRouter()
   const { programId } = useLocalSearchParams();
-  const [ lectures, setLectures ] = useState<Lectures[] | null>(null)
-  const [ program, setProgram ] = useState<Program>()
+  const { data: program } = useProgramDetail(programId as string)
+  const { data: lectures = null } = useProgramLectures(programId as string)
   const [ visible, setVisible ] = useState(false);
   const [imageReady, setImageReady] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -63,9 +66,12 @@ const ProgramLectures = () => {
   const [ addToPlaylistVisible, setAddToPlaylistVisible ] = useState(false)
   const [ lectureToBeAddedToPlaylist, setLectureToBeAddedToPlaylist ] = useState<string>("")
   const [ playlistAddingTo, setPlaylistAddingTo ] = useState<string[]>([])
-  const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>()
-  const [ usersPlaylists, setUsersPlaylists ] = useState<UserPlaylistType[]>()
-  const [ speakerString, setSpeakerString ] = useState('')
+  const { data: speakerData } = useSpeakers(program?.program_speaker)
+  const { data: usersPlaylists } = useUserPlaylists(session?.user.id)
+  const speakerString = useMemo(() => {
+    if (!speakerData || speakerData.length === 0) return ''
+    return speakerData.map((s, i) => i === speakerData.length - 1 ? s.speaker_name : s.speaker_name + ' & ').join('')
+  }, [speakerData])
   const [ selectedLecture, setSelectedLecture ] = useState<Lectures | null>(null)
   const [ playing, setPlaying ] = useState(false)
   const [ watchedLectures, setWatchedLectures ] = useState<Set<string>>(new Set())
@@ -99,67 +105,23 @@ const ProgramLectures = () => {
       // ]
     }
   })
- async function getProgram(){
-  const { data, error } = await supabase.from("programs").select("*").eq("program_id", programId).single()
-
-  if( error ) {
-    alert(error)
-  }
-  if ( data ) {
-    const { data : checkIfExists , error } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq("program_id", programId).single()
-    const { data : programExists , error : programError } = await supabase.from('added_programs').select('*').eq('user_id', session?.user.id).eq('program_id', programId).single()
-    const speakers : any[] = []
-    let speaker_string : string[] = []
-    
-    // Check if program_speaker exists and is an array
-    if (data.program_speaker && Array.isArray(data.program_speaker) && data.program_speaker.length > 0) {
-      speaker_string = data.program_speaker.map(() => {return ''})
-      await Promise.all(
-        data.program_speaker.map( async ( speaker_id : string, index : number) => {
-          const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
-          if ( speakerInfo ){
-            if (index == data.program_speaker.length - 1 ){
-              speaker_string[index]=speakerInfo.speaker_name
-            }
-            else {
-              speaker_string[index]= speakerInfo.speaker_name + ' & '
-            }
-            speakers.push(speakerInfo)
-          }
-        })
-      )
+ // Check notification/library membership when program loads
+  useEffect(() => {
+    if (!program || !session?.user.id) return
+    const checkMembership = async () => {
+      const { data: checkIfExists } = await supabase.from("added_notifications_programs").select("*").eq("user_id", session?.user.id).eq("program_id", programId).single()
+      const { data: programExists } = await supabase.from('added_programs').select('*').eq('user_id', session?.user.id).eq('program_id', programId).single()
+      if (checkIfExists) setProgramInNotifications(true)
+      if (programExists) setProgramInPrograms(true)
     }
-    
-    setSpeakerData(speakers)
-    setSpeakerString(speaker_string.join(''))
-    if( checkIfExists ){
-      setProgramInNotifications(true)
+    checkMembership()
+  }, [program, session?.user.id])
+  // Check watched status when lectures load
+  useEffect(() => {
+    if (lectures && lectures.length > 0) {
+      checkWatchedStatus(lectures)
     }
-    if( programExists ){
-      setProgramInPrograms(true)
-    }
-    setProgram(data)
-  }
- }
- async function getProgramLectures() {
-  const { data, error } = await supabase.from("program_lectures").select("*").eq("lecture_program", programId).order('lecture_date', { ascending : false })
-  if( error ) {
-    alert(error)
-  }
-  if ( data ) {
-    setLectures(data)
-    // Check watched status after lectures are loaded
-    checkWatchedStatus(data)
-    
-    // Count lectures with YouTube links
-    const lecturesWithLinks = data.filter(lecture => lecture.lecture_link && lecture.lecture_link.trim() !== '' && lecture.lecture_link !== 'N/A')
-    console.log(`\n=== Lecture YouTube Links Report ===`)
-    console.log(`Total lectures: ${data.length}`)
-    console.log(`Lectures with YouTube links: ${lecturesWithLinks.length}`)
-    console.log(`Lectures without YouTube links: ${data.length - lecturesWithLinks.length}`)
-    console.log(`Percentage with links: ${data.length > 0 ? ((lecturesWithLinks.length / data.length) * 100).toFixed(1) : 0}%`)
-  }
-}
+  }, [lectures])
 
   const checkWatchedStatus = async (lecturesData: Lectures[]) => {
     try {
@@ -189,15 +151,6 @@ const ProgramLectures = () => {
       console.log('Error checking watched status:', error);
     }
   };
-async function getUserPlaylists(){
-  const { data, error } = await supabase.from("user_playlist").select("*").eq("user_id", session?.user.id)
-  if( error ){
-    console.log( error )
-  }
-  if( data ){
-    setUsersPlaylists(data)
-  }
-}
   const fadeOutNotification = useAnimatedStyle(() => ({
   opacity : notifade.value
 }))
@@ -260,26 +213,7 @@ async function getUserPlaylists(){
   }, [programId]);
 
   useEffect(() => {
-    getProgram()
-    getProgramLectures()
-    getUserPlaylists()
     notifade.value = withTiming(0, {duration : 6000})
-
-    const listenForUserPlaylistChanges = supabase
-    .channel('listen for user playlist adds')
-    .on(
-     'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: "user_playlist",
-      filter: `user_id=eq.${session?.user.id}`
-    },
-    (payload) => getUserPlaylists()
-    )
-    .subscribe()
-
-    return () => { supabase.removeChannel( listenForUserPlaylistChanges )}
   }, [])
 
   useEffect(() => {

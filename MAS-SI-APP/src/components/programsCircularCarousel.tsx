@@ -3,20 +3,13 @@ import Animated, { runOnJS } from 'react-native-reanimated';
 import React, {useRef, useState, useEffect, useCallback }from 'react';
 import { Program } from '../types';
 import ProgramsCircularCarouselCard from './programsCircularCarouselCard';
-import { supabase } from '../lib/supabase';
-import { ActivityIndicator } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../providers/AuthProvider';
 import SignInAnonModal from './SignInAnonModal';
-import moment from 'moment';
-type ProgramsCircularProp = {
-  sideCardLength : number,
-  spaceing : number,
-  cardLength : number
-}
+import { useCurrentPrograms } from '../hooks/usePrograms';
 
 export default function ProgramsCircularCarousel(  ) {
     const { session } = useAuth()
+    const { data: programsData } = useCurrentPrograms()
     const [scrollX, setScrollX] = useState(0);
     const [ anonStatus, setAnonStatus ] = useState(true)
     const [ canPressFlyers, setCanPressFlyers ] = useState(false)
@@ -24,22 +17,9 @@ export default function ProgramsCircularCarousel(  ) {
     const windowWidth = Dimensions.get("window").width;
     const flatListRef = useRef<FlatList>(null);
     const [active, setActive] = useState(0);
-    const [ programsData, setProgramsData ] = useState<Program[]>()
     const indexRef = useRef(active);
     indexRef.current = active;
 
-
-    const fetchProgramsData = async () => {
-      const currDate = new Date().toISOString()
-      
-      const { data, error } = await supabase.from("programs").select("*").range(0, 7).gte('program_end_date', currDate)
-      if( error ){
-        console.log(error)
-      }
-      if( data ){
-        setProgramsData(data)
-      }
-    }
     const checkIfAnon = async () => {
       if( session?.user.is_anonymous ){
         setAnonStatus(true)
@@ -56,69 +36,77 @@ export default function ProgramsCircularCarousel(  ) {
         return
       }
     }
-   
+
 
     useEffect(() => {
-      fetchProgramsData()
       checkIfAnon()
-      const listenforprograms = supabase
-      .channel('listen for programs change')
-      .on(
-        'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: "programs",
-      },
-      async (payload) => await fetchProgramsData()
-      )
-      .subscribe()
-  
-      return () => { supabase.removeChannel( listenforprograms )}
     }, [session])
     
-     useEffect(() => {
-      if( programsData && programsData?.length > 0){
-      let interval =  setInterval(() =>{
-        if (active < Number(endOfList) - 1) {
-          flatListRef.current?.scrollToIndex({
-            index : active + 1,
-            animated : true,
-            viewOffset : -7,
-            
-          })
-          setActive(active + 1);
-      } else {
-        // Smooth transition back to beginning using scrollToOffset
-        flatListRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        });
-        setActive(0);
+    // Auto-scroll effect - FIXED: Added dependency array to prevent interval recreation on every render
+    useEffect(() => {
+      if (programsData && programsData.length > 0) {
+        const interval = setInterval(() => {
+          setActive(currentActive => {
+            const endOfListValue = programsData.length;
+            if (currentActive < endOfListValue - 1) {
+              flatListRef.current?.scrollToIndex({
+                index: currentActive + 1,
+                animated: true,
+                viewOffset: -7,
+              });
+              return currentActive + 1;
+            } else {
+              // Smooth transition back to beginning using scrollToOffset
+              flatListRef.current?.scrollToOffset({
+                offset: 0,
+                animated: true,
+              });
+              return 0;
+            }
+          });
+        }, 5000);
+
+        return () => clearInterval(interval);
       }
-      }, 5000);
-      
-      return () => clearInterval(interval);
-    }
-    });
+    }, [programsData?.length]);
   
   
-    const getItemLayout = (data : any,index : any) => ({
-      length : listItemWidth,
-      offset : listItemWidth * index,
-      index : index
-    })
-  
-  const handleScroll = (event : any) =>{
-    const scrollPositon = event.nativeEvent.contentOffset.x;
-    const index = scrollPositon / listItemWidth;
-    setActive(index)
-  }
-  0
     const SPACEING = windowWidth * 0.02;
     const listItemWidth = windowWidth * 0.6;
     const endOfList = programsData?.length;
     const SIDE_CARD_LENGTH = (windowWidth * 0.25) / 2;
+
+    // Memoized getItemLayout
+    const getItemLayout = useCallback((data: any, index: number) => ({
+      length: listItemWidth,
+      offset: listItemWidth * index,
+      index: index
+    }), [listItemWidth]);
+
+    // Memoized handleScroll
+    const handleScroll = useCallback((event: any) => {
+      const scrollPosition = event.nativeEvent.contentOffset.x;
+      const index = scrollPosition / listItemWidth;
+      setActive(index);
+      setScrollX(scrollPosition);
+    }, [listItemWidth]);
+
+    // Memoized keyExtractor
+    const keyExtractor = useCallback((item: Program) => item.program_id, []);
+
+    // Memoized renderItem
+    const renderItem = useCallback(({ item, index }: { item: Program; index: number }) => (
+      <ProgramsCircularCarouselCard
+        scrollX={scrollX}
+        listItemWidth={listItemWidth}
+        program={item}
+        index={index}
+        itemSpacer={SIDE_CARD_LENGTH}
+        spacing={SPACEING}
+        lastIndex={endOfList}
+        disabled={canPressFlyers}
+      />
+    ), [scrollX, listItemWidth, SIDE_CARD_LENGTH, SPACEING, endOfList, canPressFlyers]);
   
 
   return (
@@ -126,23 +114,25 @@ export default function ProgramsCircularCarousel(  ) {
     <View>
     <Animated.View className='' style={{height: 300, position: 'relative'}}>
       <Pressable onPress={SignInModalCheck}>
-        <Animated.FlatList 
+        <Animated.FlatList
                   data={programsData}
-                  renderItem={({item, index}) =>  <ProgramsCircularCarouselCard scrollX={scrollX} listItemWidth={listItemWidth} program={item} index={index} itemSpacer={SIDE_CARD_LENGTH} spacing={SPACEING} lastIndex={endOfList} disabled={canPressFlyers}/>}
+                  renderItem={renderItem}
+                  keyExtractor={keyExtractor}
                   horizontal
-                  onScroll={(event) =>{
-                    handleScroll(event);
-                    setScrollX(event.nativeEvent.contentOffset.x);
-                  }}
+                  onScroll={handleScroll}
                   snapToInterval={listItemWidth + (SPACEING * 1.5)}
                   scrollEventThrottle={16}
                   decelerationRate={0.6}
                   disableIntervalMomentum={true}
                   disableScrollViewPanResponder={true}
-                  snapToAlignment={"start"}
+                  snapToAlignment="start"
                   showsHorizontalScrollIndicator={false}
                   getItemLayout={getItemLayout}
                   ref={flatListRef}
+                  // Performance optimizations
+                  initialNumToRender={3}
+                  maxToRenderPerBatch={2}
+                  windowSize={5}
         />
        </Pressable>
     </Animated.View>

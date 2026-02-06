@@ -15,9 +15,9 @@ import { Button, TextInput, Portal, Modal, Icon } from 'react-native-paper';
 import { Link, useRouter } from 'expo-router';
 import LinkToDonationModal from '@/src/components/LinkToDonationModal';
 import LottieView from 'lottie-react-native';
-import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
+import { useProfile } from '@/src/hooks/useProfile';
 import { BlurView } from 'expo-blur';
 import SocialPlatforms from '@/src/components/SocialPlatforms';
 import IconsMarquee from '@/src/components/Marquee';
@@ -44,8 +44,10 @@ export default function homeScreen() {
   const { data: prayerTimesWeek, isLoading: prayerTimesLoading, refetch: refetchPrayerTimes } = usePrayerTimes()
   const router = useRouter()
   const { session } = useAuth()
+  const { data: profile, refetch: refetchProfile } = useProfile(
+    session?.user.is_anonymous ? undefined : session?.user.id
+  )
   const [isRendered, setIsRendered] = useState(false)
-  const [profile, setProfile] = useState<Profile>()
   const [profileFirstName, setProfileFirstName] = useState('')
   const [profileLastName, setProfileLastName] = useState('')
   const [profileEmail, setProfileEmail] = useState('')
@@ -113,44 +115,23 @@ export default function homeScreen() {
     }
   })
 
-  const getProfile = async () => {
-    if (session?.user.is_anonymous) {
-      return
+  // Show profile completion modal if needed
+  useEffect(() => {
+    if (profile && (!profile.first_name || !profile.last_name || !profile.profile_email)) {
+      setTimeout(() => { setVisible(true) }, 4150)
     }
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single()
-    if (data) {
-      if (!data?.first_name || !data?.last_name || !data?.profile_email) {
-        setTimeout(() => { setVisible(true) }, 4150)
-      }
-      setProfile(data)
-    }
-  }
-  // const onConfirmButton = async () => {
-  //   console.log(profileFirstName, profileLastName, profileEmail)
-  //   const { data, error } = await supabase.from('profiles').update({ first_name : profileFirstName, last_name : profileLastName, profile_email : profileEmail}).eq('id', session?.user.id)
-  //   if( data ){
-  //     console.log(data)
-  //   }
-  //   if( error ){
-  //     console.log(error)
-  //   }
-  //   else{
-  //   setVisible(false)
-  //   }
-  // }
+  }, [profile])
+
   const onRefresh = async () => {
     setRefreshing(true)
     try {
-      await Promise.all([refetchPrayerTimes(), getProfile()])
+      await Promise.all([refetchPrayerTimes(), refetchProfile()])
     } catch (error) {
       console.error('Error refreshing:', error)
     } finally {
       setRefreshing(false)
     }
   }
-  useEffect(() => {
-    getProfile();
-  }, [session])
 
   useEffect(() => {
     if (!prayerTimesLoading && !refreshing) {

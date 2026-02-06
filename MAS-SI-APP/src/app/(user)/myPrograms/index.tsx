@@ -5,6 +5,7 @@ import RenderMyLibraryProgram from '@/src/components/UserProgramComponets/render
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
 import { Program, UserPlaylistType } from '@/src/types';
+import { useUserPrograms } from '@/src/hooks/useUserLibrary';
 import { Button, Divider, Icon, TextInput } from 'react-native-paper';
 import { Link, useRouter } from 'expo-router';
 import RenderLikedLectures from '@/src/components/UserProgramComponets/RenderLikedLectures';
@@ -32,7 +33,7 @@ export default function userPrograms() {
   const [ loading, setLoading ] = useState(false)
   const [ name, setName ] = useState('')
   
-  const [ userPrograms, setUserPrograms ] = useState<program_id[]>()
+  const { data: userProgramsData, refetch: refetchUserPrograms } = useUserPrograms(session?.user.id)
   const [ userPlaylists, setUserPlaylists ] = useState<UserPlaylistType[]>()
   const [ latestFlier, setLatestFlier ] = useState<Program>()
   const [ anonStatus, setAnonStatus ] = useState(true)
@@ -97,16 +98,7 @@ export default function userPrograms() {
       setAnonStatus(false)
     }
   }
-  async function getUserProgramLibrary(){
-    setUserPrograms([])
-    const {data, error} = await supabase.from("added_programs").select("program_id").eq("user_id", session?.user.id)
-    if(error){
-      console.log(error)
-    }
-    if(data){
-      setUserPrograms(data)
-    }
-  }
+  const userPrograms = userProgramsData?.map(p => ({ program_id: p.program_id })) || []
 
  
 
@@ -125,22 +117,6 @@ export default function userPrograms() {
     }, [session])
   );
 
-  useEffect(() => {
-    getUserProgramLibrary()
-    const channel = supabase.channel("user_programs").on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table : "added_programs",
-        filter : `user_id=eq.${session?.user.id}`
-      },
-      async (payload) => await getUserProgramLibrary()
-    )
-    .subscribe()
-
-    return() => { supabase.removeChannel(channel);  }
-  }, [])
   async function signInWithEmail() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
@@ -150,12 +126,12 @@ export default function userPrograms() {
   
     if (error) alert(error.message);
     setLoading(false);
-    await getUserProgramLibrary()
+    await refetchUserPrograms()
     checkIfAnon()
   }  
   const tabBarHeight = 20
   const onRefresh = async () => {
-    await getUserProgramLibrary()
+    await refetchUserPrograms()
   }
 async function signUpWithEmail() {
     setLoading(true)

@@ -10,10 +10,10 @@ import ApprovedAds from '@/src/components/BusinessAdsComponets/ApprovedAds';
 import { BlurView } from 'expo-blur';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
+import { usePrayerNotificationSettings } from '@/src/hooks/usePrayerSettings';
 import { ScrollView } from 'react-native';
 import { format, isAfter, isBefore } from 'date-fns';
 import Svg, { Path, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import moment from 'moment';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -1095,7 +1095,7 @@ export default function Index() {
   const [currentSurah, setCurrentSurah] = useState({ surah: 1, ayah_num: 1, ayah: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', surah_name: 'Surah Al-Fatiha' });
   const [showRamadanTrackerInfo, setShowRamadanTrackerInfo] = useState(false);
   const [tableIndex, setTableIndex] = useState(0);
-  const [UserSettings, setUserSettings] = useState<{ prayer: string, notification_settings: string[] }[]>();
+  const { data: UserSettings } = usePrayerNotificationSettings(session?.user.id);
   const [taraweehLineup, setTaraweehLineup] = useState<{
     sessionOne?: {
       firstFourImam?: { imam_name: string; imam_img?: string };
@@ -1116,18 +1116,6 @@ export default function Index() {
   const tableWidth = Dimensions.get('screen').width * .95;
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
   const flatlistRef = useRef<FlatList>(null);
-
-  // Helper functions for useEffect (defined before useEffect hooks)
-  const getUserSetting = async () => {
-    if (!session?.user.id) return;
-    const { data, error } = await supabase.from('prayer_notification_settings').select('*').eq('user_id', session.user.id);
-    if (data) {
-      setUserSettings(data);
-    }
-    if (error) {
-      console.log(error);
-    }
-  };
 
   const GetRamadanTracker = async () => {
     const { data, error } = await supabase.from('ramadan_quran_tracker').select('*').eq('id', 1).single();
@@ -1178,20 +1166,8 @@ export default function Index() {
   useEffect(() => {
     if (!session?.user.id) return;
 
-    getUserSetting();
     GetRamadanTracker();
     getTaraweehLineup();
-
-    const listenForSettings = supabase.channel('Listen for user settings change').on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'prayer_notification_settings',
-        filter: `user_id=eq.${session.user.id}`
-      },
-      async (payload) => await getUserSetting()
-    ).subscribe();
 
     const listenForQuranTrackerChanges = supabase.channel('Listen for Quran Tracker Changes').on(
       'postgres_changes',
@@ -1215,7 +1191,6 @@ export default function Index() {
     ).subscribe();
 
     return () => {
-      supabase.removeChannel(listenForSettings);
       supabase.removeChannel(listenForQuranTrackerChanges);
       supabase.removeChannel(listenForTaraweehLineupChanges);
     };

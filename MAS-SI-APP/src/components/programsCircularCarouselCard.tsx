@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity,  Image, useWindowDimensions, Pressable} from 'react-native'
-import React, {useRef, useState, useEffect}from 'react';
+import { View, Text, TouchableOpacity, Image, useWindowDimensions, Pressable} from 'react-native'
+import React, {useRef, useState, useEffect, memo}from 'react';
 import { Program } from '../types';
 import { Link, useRouter } from 'expo-router';
 import Animated, {interpolate, Extrapolation, useSharedValue, useAnimatedStyle, withTiming} from "react-native-reanimated";
@@ -16,7 +16,8 @@ type ProgramsCircularCarouselCardProp = {
     disabled : boolean
 }
 
-export default function ProgramsCircularCarouselCard( {program, index, listItemWidth, scrollX, itemSpacer, spacing, lastIndex, disabled}: ProgramsCircularCarouselCardProp) {
+// Memoized component to prevent unnecessary re-renders during carousel scrolling
+const ProgramsCircularCarouselCard = memo(function ProgramsCircularCarouselCard({ program, index, listItemWidth, scrollX, itemSpacer, spacing, lastIndex, disabled }: ProgramsCircularCarouselCardProp) {
     const {width : windowWidth} = useWindowDimensions();
     const [ imageReady, setImageReady ] = useState(false)
     const scrollXShared = useSharedValue(scrollX);
@@ -77,9 +78,9 @@ export default function ProgramsCircularCarouselCard( {program, index, listItemW
          { !imageReady && 
          <FlyerSkeleton width={listItemWidth} height={200} style={{position : 'absolute', top : 0, zIndex : 2}}/>
          }
-         <Image 
-          source={ program.program_img ?  { uri: program.program_img } : require("@/assets/images/MASHomeLogo.png")}
-          style={{width: "100%", height: "100%", resizeMode: "stretch", overflow :"hidden", borderRadius: 20}} 
+         <Image
+          source={program.program_img ? { uri: program.program_img } : require("@/assets/images/MASHomeLogo.png")}
+          style={{ width: "100%", height: "100%", resizeMode: "stretch", overflow: "hidden", borderRadius: 20 }}
           width={listItemWidth}
           height={200}
           onLoad={() => setImageReady(true)}
@@ -90,4 +91,18 @@ export default function ProgramsCircularCarouselCard( {program, index, listItemW
       </Pressable>
     </Animated.View>
   )
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if critical props change
+  return (
+    prevProps.index === nextProps.index &&
+    prevProps.program.program_id === nextProps.program.program_id &&
+    prevProps.listItemWidth === nextProps.listItemWidth &&
+    prevProps.disabled === nextProps.disabled &&
+    // Allow scrollX changes to still trigger animation updates
+    Math.abs(prevProps.scrollX - nextProps.scrollX) < 5
+  );
+});
+
+ProgramsCircularCarouselCard.displayName = 'ProgramsCircularCarouselCard';
+
+export default ProgramsCircularCarouselCard;

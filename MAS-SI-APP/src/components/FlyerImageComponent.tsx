@@ -7,8 +7,7 @@ import { Link, useRouter } from 'expo-router'
 import { FlyerSkeleton } from './FlyerSkeleton'
 import { Program, Lectures, SheikDataType } from '../types'
 import { Icon, Portal, Modal, Button } from 'react-native-paper'
-import { parse, format } from 'date-fns'
-import moment from 'moment'
+import { parse, format, isValid } from 'date-fns'
 import { BlurView } from 'expo-blur'
 import { LinearGradient } from 'expo-linear-gradient'
 import { supabase } from '@/src/lib/supabase'
@@ -289,58 +288,40 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         }
     };
 
-    // Helper function to convert time string to moment and format as 12-hour
-    const parseTimeToMoment = (timeString: string) => {
-        if (!timeString) return moment();
-        
-        try {
-            const parsed12 = parse(timeString, 'h:mm a', new Date());
-            if (!isNaN(parsed12.getTime())) {
-                return moment(parsed12);
+    // Helper function to parse time string to Date using date-fns
+    const parseTimeToDate = (timeString: string): Date | null => {
+        if (!timeString) return null;
+
+        const formats = ['h:mm a', 'HH:mm', 'HH:mm:ss', 'h:mm:ss a'];
+        const baseDate = new Date();
+
+        for (const fmt of formats) {
+            try {
+                const parsed = parse(timeString, fmt, baseDate);
+                if (isValid(parsed)) {
+                    return parsed;
+                }
+            } catch (error) {
+                // Continue to try other formats
             }
-        } catch (error) {
-            // Continue to try other formats
         }
-        
-        try {
-            const parsed24 = parse(timeString, 'HH:mm', new Date());
-            if (!isNaN(parsed24.getTime())) {
-                return moment(parsed24);
-            }
-        } catch (error) {
-            // Continue to try other formats
-        }
-        
-        try {
-            const parsed24Sec = parse(timeString, 'HH:mm:ss', new Date());
-            if (!isNaN(parsed24Sec.getTime())) {
-                return moment(parsed24Sec);
-            }
-        } catch (error) {
-            // Continue
-        }
-        
-        const momentTime = moment(timeString, ['h:mm a', 'HH:mm', 'HH:mm:ss', 'h:mm:ss a'], true);
-        if (momentTime.isValid()) {
-            return momentTime;
-        }
-        
-        return moment();
+
+        return null;
     };
-    
-    // Helper function to format time as 12-hour format
+
+    // Helper function to format time as 12-hour format using date-fns
     const formatTime12Hour = (timeString: string): string => {
         if (!timeString) return 'TBD';
-        
+
         try {
-            const time = parseTimeToMoment(timeString);
-            if (time.isValid()) {
-                return time.format('h:mm A');
+            const parsedDate = parseTimeToDate(timeString);
+            if (parsedDate && isValid(parsedDate)) {
+                return format(parsedDate, 'h:mm a');
             }
         } catch (error) {
             console.error('Error formatting time:', error);
         }
-        
+
         return timeString;
     };
 

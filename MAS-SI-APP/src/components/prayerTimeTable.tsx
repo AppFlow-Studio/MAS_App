@@ -6,7 +6,7 @@ import AlertBell from '../app/(user)/prayersTable/alertBell';
 import { useCurrentPrayer } from '../hooks/usePrayerTimes';
 import { FajrIcon, DhuhrIcon, AsrIcon, MaghribIcon, IshaIcon } from './SalahIcons/FajrIcon';
 import { Link } from 'expo-router';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { BlurView } from 'expo-blur';
 import { X, Check } from 'lucide-react-native';
 import { supabase } from '@/src/lib/supabase';
@@ -53,7 +53,7 @@ const dbValueToOption: { [key: string]: NotificationOption } = {
   'Mute': 'mute',
 };
 
-const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: prayerDataProp) => {
+const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings }: prayerDataProp) => {
   const currentPrayer = useCurrentPrayer()
   const { width, height } = useWindowDimensions();
   const { session } = useAuth();
@@ -174,9 +174,9 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
     }
   }, [modalVisible]);
 
-  const handleBellPress = async (salah: string) => {
+  const handleBellPress = useCallback(async (salah: string) => {
     setSelectedPrayer(salah);
-    
+
     // Fetch current settings from database to ensure we show the latest
     if (session?.user.id) {
       const { data, error } = await supabase
@@ -185,12 +185,12 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
         .eq('user_id', session.user.id)
         .eq('prayer', salah.toLowerCase())
         .single();
-      
+
       if (data && !error) {
         const options: NotificationOption[] = (data.notification_settings || [])
           .map((s: string) => dbValueToOption[s])
           .filter((opt: NotificationOption | undefined): opt is NotificationOption => opt !== undefined);
-        
+
         setPrayerSettings(prev => ({
           ...prev,
           [salah]: {
@@ -200,9 +200,9 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
         }));
       }
     }
-    
+
     setModalVisible(true);
-  };
+  }, [session?.user.id]);
 
   const handleOptionSelect = (option: NotificationOption) => {
     if (selectedPrayer) {
@@ -325,13 +325,14 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
     });
   };
   
-  const nextPress = () => {
+  const nextPress = useCallback(() => {
     const nextPressNum = Math.ceil(index + 1)
     setTableIndex(Math.min(6, nextPressNum))
-  }
-  const backPress = () => {
+  }, [index, setTableIndex]);
+
+  const backPress = useCallback(() => {
     setTableIndex(Math.max(0, index - 1))
-  }
+  }, [index, setTableIndex]);
 
   const icons = [
     <FajrIcon color="#1d4681" size={20} />, 
@@ -694,7 +695,9 @@ const Table = ({ prayerData, setTableIndex, tableIndex, index, userSettings }: p
     </Modal>
     </>
   )
-}
+});
+
+Table.displayName = 'Table';
 
 export default Table
 

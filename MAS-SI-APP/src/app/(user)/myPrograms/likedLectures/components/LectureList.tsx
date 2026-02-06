@@ -1,5 +1,5 @@
-import React from 'react'
-import { View, FlatList, RefreshControl, StyleSheet, Text, Image, Pressable } from 'react-native'
+import React, { useCallback } from 'react'
+import { View, FlatList, RefreshControl, StyleSheet, Text, Pressable, Image } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import RenderLikedLectures from '@/src/components/UserProgramComponets/RenderLikedLectures'
 import RenderLikedEventLectures from '@/src/components/UserProgramComponets/RenderLikedEventLectures'
@@ -10,12 +10,25 @@ import { COLORS } from '../constants'
 import { LikedLecturesProps, LikedEventLecturesProps, LikedProgramsProps } from '../types'
 import { Link } from 'expo-router'
 
+// Estimated item height for lecture cards
+const LECTURE_ITEM_HEIGHT = 100;
+
 export const ProgramLectureList: React.FC<LikedLecturesProps> = ({
   likedLecture,
   refreshing,
   onRefresh,
 }) => {
   const filteredLectures = likedLecture?.filter((lecture) => lecture !== null) || []
+
+  // Memoized keyExtractor - removed index to avoid anti-pattern
+  const keyExtractor = useCallback((item: any) => `program-${item.lecture_id}`, []);
+
+  // Memoized getItemLayout for better scroll performance
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: LECTURE_ITEM_HEIGHT,
+    offset: LECTURE_ITEM_HEIGHT * index,
+    index,
+  }), []);
 
   if (filteredLectures.length === 0) {
     return <NewEmptyState />
@@ -36,7 +49,8 @@ export const ProgramLectureList: React.FC<LikedLecturesProps> = ({
         )}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        keyExtractor={(item, index) => `program-${item.lecture_id}-${index}`}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         refreshControl={
           onRefresh ? (
             <RefreshControl
@@ -47,6 +61,11 @@ export const ProgramLectureList: React.FC<LikedLecturesProps> = ({
             />
           ) : undefined
         }
+        // Performance optimizations
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews={true}
       />
     </View>
   )
@@ -58,6 +77,16 @@ export const EventLectureList: React.FC<LikedEventLecturesProps> = ({
   onRefresh,
 }) => {
   const filteredLectures = likedEventLecture?.filter((lecture) => lecture !== null) || []
+
+  // Memoized keyExtractor - removed index to avoid anti-pattern
+  const keyExtractor = useCallback((item: any) => `event-${item.event_lecture_id}`, []);
+
+  // Memoized getItemLayout for better scroll performance
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: LECTURE_ITEM_HEIGHT,
+    offset: LECTURE_ITEM_HEIGHT * index,
+    index,
+  }), []);
 
   if (filteredLectures.length === 0) {
     return <NewEmptyState />
@@ -78,7 +107,8 @@ export const EventLectureList: React.FC<LikedEventLecturesProps> = ({
         )}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        keyExtractor={(item, index) => `event-${item.event_lecture_id}-${index}`}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         refreshControl={
           onRefresh ? (
             <RefreshControl
@@ -89,10 +119,18 @@ export const EventLectureList: React.FC<LikedEventLecturesProps> = ({
             />
           ) : undefined
         }
+        // Performance optimizations
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews={true}
       />
     </View>
   )
 }
+
+// Estimated item height for program cards
+const PROGRAM_ITEM_HEIGHT = 104;
 
 export const LikedProgramsList: React.FC<LikedProgramsProps> = ({
   likedPrograms,
@@ -100,6 +138,16 @@ export const LikedProgramsList: React.FC<LikedProgramsProps> = ({
   onRefresh,
 }) => {
   const filteredPrograms = likedPrograms?.filter((program) => program !== null) || []
+
+  // Memoized keyExtractor - removed index to avoid anti-pattern
+  const keyExtractor = useCallback((item: any) => `program-${item.program_id}`, []);
+
+  // Memoized getItemLayout for better scroll performance
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: PROGRAM_ITEM_HEIGHT,
+    offset: PROGRAM_ITEM_HEIGHT * index,
+    index,
+  }), []);
 
   if (filteredPrograms.length === 0) {
     return <NewEmptyState />
@@ -115,7 +163,7 @@ export const LikedProgramsList: React.FC<LikedProgramsProps> = ({
               <Pressable style={styles.programCard}>
                 <Image
                   source={item.program_img ? { uri: item.program_img } : require('@/assets/images/MASHomeLogo.png')}
-                  style={styles.programImage}
+                  style={[styles.programImage, { resizeMode: 'cover' }]}
                 />
                 <View style={styles.programInfo}>
                   <Text style={styles.programName} numberOfLines={2}>{item.program_name}</Text>
@@ -129,7 +177,8 @@ export const LikedProgramsList: React.FC<LikedProgramsProps> = ({
         )}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        keyExtractor={(item, index) => `program-${item.program_id}-${index}`}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         refreshControl={
           onRefresh ? (
             <RefreshControl
@@ -140,6 +189,11 @@ export const LikedProgramsList: React.FC<LikedProgramsProps> = ({
             />
           ) : undefined
         }
+        // Performance optimizations
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews={true}
       />
     </View>
   )

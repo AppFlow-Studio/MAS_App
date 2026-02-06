@@ -1,20 +1,21 @@
-import { View, Text, ScrollView, StatusBar, RefreshControl, ActivityIndicator, FlatList, Pressable, Dimensions, useWindowDimensions, Image, TextInput, Platform } from 'react-native'
-import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react'
+import { View, Text, ScrollView, StatusBar, RefreshControl, ActivityIndicator, FlatList, Pressable, Dimensions, useWindowDimensions, TextInput, Platform, Image } from 'react-native'
+import React, { useEffect, useState, useRef, useMemo, useCallback, memo } from 'react'
 import { Stack, useRouter, useNavigation } from 'expo-router'
 import { Icon } from 'react-native-paper'
 import { Ionicons } from '@expo/vector-icons'
-import { supabase } from '@/src/lib/supabase'
 import { Program, EventsType } from '@/src/types'
+import { useProgramsWithRecordedLectures } from '@/src/hooks/usePrograms'
+import { useEventsWithRecordedLectures } from '@/src/hooks/useEvents'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeIn, withSpring, interpolate, useAnimatedScrollHandler, runOnJS } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass'
 
-// Program Card Component
-const ProgramCard = ({ item, onPress }: { item: Program, onPress: () => void }) => {
+// Memoized Program Card Component for better list performance
+const ProgramCard = memo(({ item, onPress }: { item: Program, onPress: () => void }) => {
   const [imageError, setImageError] = useState(false)
-  
+
   return (
-    <Pressable 
+    <Pressable
       onPress={onPress}
       style={{ marginHorizontal: 16, marginBottom: 20 }}
     >
@@ -33,30 +34,29 @@ const ProgramCard = ({ item, onPress }: { item: Program, onPress: () => void }) 
         {/* Image */}
         <View style={{ width: '100%', height: 200, backgroundColor: '#F3F4F6' }}>
           <Image
-            source={(imageError || !item.program_img || item.program_img.trim() === '') 
-              ? require("@/assets/images/massicliquidglassicon.png") 
+            source={(imageError || !item.program_img || item.program_img.trim() === '')
+              ? require("@/assets/images/massicliquidglassicon.png")
               : { uri: item.program_img }}
-            style={{ width: '100%', height: '100%' }}
-            resizeMode="cover"
+            style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
             onError={() => setImageError(true)}
           />
         </View>
-        
+
         {/* Content */}
-        <View style={{ 
-          padding: 16, 
-          borderTopWidth: 1, 
-          borderTopColor: '#D1D5DB' 
+        <View style={{
+          padding: 16,
+          borderTopWidth: 1,
+          borderTopColor: '#D1D5DB'
         }}>
-          <Text 
+          <Text
             className="text-xl font-bold text-gray-900 mb-2"
             numberOfLines={2}
           >
             {item.program_name}
           </Text>
-          
+
           {item.program_desc && (
-            <Text 
+            <Text
               className="text-sm text-gray-600 leading-5"
               numberOfLines={3}
               style={{ marginTop: 8 }}
@@ -68,14 +68,16 @@ const ProgramCard = ({ item, onPress }: { item: Program, onPress: () => void }) 
       </View>
     </Pressable>
   )
-}
+});
 
-// Event Card Component
-const EventCard = ({ item, onPress }: { item: EventsType, onPress: () => void }) => {
+ProgramCard.displayName = 'ProgramCard';
+
+// Memoized Event Card Component for better list performance
+const EventCard = memo(({ item, onPress }: { item: EventsType, onPress: () => void }) => {
   const [imageError, setImageError] = useState(false)
-  
+
   return (
-    <Pressable 
+    <Pressable
       onPress={onPress}
       style={{ marginHorizontal: 16, marginBottom: 20 }}
     >
@@ -94,30 +96,29 @@ const EventCard = ({ item, onPress }: { item: EventsType, onPress: () => void })
         {/* Image */}
         <View style={{ width: '100%', height: 200, backgroundColor: '#F3F4F6' }}>
           <Image
-            source={(imageError || !item.event_img || item.event_img.trim() === '') 
-              ? require("@/assets/images/massicliquidglassicon.png") 
+            source={(imageError || !item.event_img || item.event_img.trim() === '')
+              ? require("@/assets/images/massicliquidglassicon.png")
               : { uri: item.event_img }}
-            style={{ width: '100%', height: '100%' }}
-            resizeMode="cover"
+            style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
             onError={() => setImageError(true)}
           />
         </View>
-        
+
         {/* Content */}
-        <View style={{ 
-          padding: 16, 
-          borderTopWidth: 1, 
-          borderTopColor: '#D1D5DB' 
+        <View style={{
+          padding: 16,
+          borderTopWidth: 1,
+          borderTopColor: '#D1D5DB'
         }}>
-          <Text 
+          <Text
             className="text-xl font-bold text-gray-900 mb-2"
             numberOfLines={2}
           >
             {item.event_name}
           </Text>
-          
+
           {item.event_desc && (
-            <Text 
+            <Text
               className="text-sm text-gray-600 leading-5"
               numberOfLines={3}
               style={{ marginTop: 8 }}
@@ -129,16 +130,18 @@ const EventCard = ({ item, onPress }: { item: EventsType, onPress: () => void })
       </View>
     </Pressable>
   )
-}
+});
+
+EventCard.displayName = 'EventCard';
 
 const RecordedLectures = () => {
   const router = useRouter()
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
-  const [programsWithLectures, setProgramsWithLectures] = useState<Program[]>([])
-  const [eventsWithLectures, setEventsWithLectures] = useState<EventsType[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: programsWithLectures = [], isLoading: programsLoading, refetch: refetchPrograms } = useProgramsWithRecordedLectures()
+  const { data: eventsWithLectures = [], isLoading: eventsLoading, refetch: refetchEvents } = useEventsWithRecordedLectures()
+  const loading = programsLoading || eventsLoading
   const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState<'programs' | 'events'>('programs')
   const [searchQuery, setSearchQuery] = useState('')
@@ -149,87 +152,13 @@ const RecordedLectures = () => {
   const scrollX = useSharedValue(0)
   const searchBarWidth = useSharedValue(0)
 
-  const fetchAllLectures = async () => {
+  const onRefresh = async () => {
+    setRefreshing(true)
     try {
-      setLoading(true)
-      const date = new Date()
-      const isoString = date.toISOString()
-      
-      // Get all programs with recorded lectures (both past and upcoming) - matching UpcomingEvents
-      const { data: allProgramsWithLectures, error: lecturesError } = await supabase
-        .from('programs')
-        .select('*')
-        .eq('has_lectures', true)
-      
-      // Filter programs to only include those with YouTube video links
-      if (allProgramsWithLectures) {
-        const programsWithYouTubeLectures: Program[] = []
-        for (const program of allProgramsWithLectures) {
-          const { data: programLectures } = await supabase
-            .from('program_lectures')
-            .select('lecture_link')
-            .eq('lecture_program', program.program_id)
-          
-          // Check if any lecture has a YouTube link
-          const hasYouTubeLink = programLectures?.some(lecture => 
-            lecture.lecture_link && 
-            lecture.lecture_link.trim() !== '' && 
-            lecture.lecture_link !== 'N/A'
-          )
-          
-          if (hasYouTubeLink) {
-            programsWithYouTubeLectures.push(program)
-          }
-        }
-        setProgramsWithLectures(programsWithYouTubeLectures)
-      }
-
-      // Fetch all events with lectures (both past and upcoming) for recorded lectures
-      const { data: allEventsWithLectures, error: eventsError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('pace', false)
-        .eq('has_lecture', true)
-
-      if (!eventsError && allEventsWithLectures) {
-        // Filter events to only include those with YouTube video links
-        const eventsWithYouTubeLectures: EventsType[] = []
-        for (const event of allEventsWithLectures) {
-          const { data: eventLectures } = await supabase
-            .from('events_lectures')
-            .select('event_lecture_link')
-            .eq('event_id', event.event_id)
-          
-          // Check if any lecture has a YouTube link
-          const hasYouTubeLink = eventLectures?.some(lecture => 
-            lecture.event_lecture_link && 
-            lecture.event_lecture_link.trim() !== '' && 
-            lecture.event_lecture_link !== 'N/A'
-          )
-          
-          if (hasYouTubeLink) {
-            eventsWithYouTubeLectures.push(event)
-          }
-        }
-        setEventsWithLectures(eventsWithYouTubeLectures)
-      }
-    } catch (error) {
-      console.error('Error fetching lectures:', error)
-      setProgramsWithLectures([])
-      setEventsWithLectures([])
+      await Promise.all([refetchPrograms(), refetchEvents()])
     } finally {
-      setLoading(false)
       setRefreshing(false)
     }
-  }
-
-  useEffect(() => {
-    fetchAllLectures()
-  }, [])
-
-  const onRefresh = () => {
-    setRefreshing(true)
-    fetchAllLectures()
   }
 
   const handleTabChange = (tab: 'programs' | 'events') => {
@@ -292,25 +221,32 @@ const RecordedLectures = () => {
     )
   }, [eventsWithLectures, searchQuery])
 
-  // Render Program Card
-  const renderProgramCard = ({ item }: { item: Program }) => {
-    return (
-      <ProgramCard 
-        item={item} 
-        onPress={() => router.push(`/myPrograms/programs/${item.program_id}` as any)}
-      />
-    )
-  }
+  // Memoized render function for Program Card
+  const renderProgramCard = useCallback(({ item }: { item: Program }) => (
+    <ProgramCard
+      item={item}
+      onPress={() => router.push(`/myPrograms/programs/${item.program_id}` as any)}
+    />
+  ), [router]);
 
-  // Render Event Card
-  const renderEventCard = ({ item }: { item: EventsType }) => {
-    return (
-      <EventCard 
-        item={item} 
-        onPress={() => router.push(`/myPrograms/events/${item.event_id}` as any)}
-      />
-    )
-  }
+  // Memoized render function for Event Card
+  const renderEventCard = useCallback(({ item }: { item: EventsType }) => (
+    <EventCard
+      item={item}
+      onPress={() => router.push(`/myPrograms/events/${item.event_id}` as any)}
+    />
+  ), [router]);
+
+  // Memoized keyExtractors
+  const programKeyExtractor = useCallback((item: Program) => item.program_id, []);
+  const eventKeyExtractor = useCallback((item: EventsType) => item.event_id, []);
+
+  // Memoized getItemLayout (estimated item height: image 200 + padding 32 + text ~80 = ~312)
+  const getItemLayout = useCallback((data: any, index: number) => ({
+    length: 332,
+    offset: 332 * index,
+    index,
+  }), []);
 
   const activateSearch = () => {
     setIsSearchActive(true)
@@ -737,15 +673,21 @@ const RecordedLectures = () => {
             {/* Programs Page */}
             <View style={{ width, flex: 1 }}>
               {filteredPrograms.length > 0 ? (
-                <FlatList 
+                <FlatList
                   data={filteredPrograms}
                   renderItem={renderProgramCard}
-                  keyExtractor={(item) => item.program_id}
+                  keyExtractor={programKeyExtractor}
+                  getItemLayout={getItemLayout}
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingTop: 16, paddingBottom: 100 }}
                   refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                   }
+                  // Performance optimizations
+                  initialNumToRender={4}
+                  maxToRenderPerBatch={4}
+                  windowSize={5}
+                  removeClippedSubviews={true}
                 />
               ) : (
                 <ScrollView 
@@ -774,15 +716,21 @@ const RecordedLectures = () => {
             {/* Events Page */}
             <View style={{ width, flex: 1 }}>
               {filteredEvents.length > 0 ? (
-                <FlatList 
+                <FlatList
                   data={filteredEvents}
                   renderItem={renderEventCard}
-                  keyExtractor={(item) => item.event_id}
+                  keyExtractor={eventKeyExtractor}
+                  getItemLayout={getItemLayout}
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingTop: 16, paddingBottom: 100 }}
                   refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                   }
+                  // Performance optimizations
+                  initialNumToRender={4}
+                  maxToRenderPerBatch={4}
+                  windowSize={5}
+                  removeClippedSubviews={true}
                 />
               ) : (
                 <ScrollView 

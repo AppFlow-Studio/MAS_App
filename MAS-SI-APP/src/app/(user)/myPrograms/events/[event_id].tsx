@@ -1,5 +1,5 @@
 import { View, Text, Pressable, FlatList, Image, TouchableOpacity, Dimensions, Easing, Alert, StatusBar, Linking, Platform, ImageBackground, ScrollView as RNScrollView } from 'react-native'
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, Stack, useRouter, Link, useNavigation } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -11,6 +11,9 @@ import Animated,{ FadeInLeft, interpolate, useAnimatedRef, useAnimatedStyle, use
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { UserPlaylistType } from '@/src/types';
+import { useEventDetail, useEventLectures } from '@/src/hooks/useEvents';
+import { useSpeakers } from '@/src/hooks/useSpeakers';
+import { useUserPlaylists } from '@/src/hooks/useUserLibrary';
 import RenderAddToUserPlaylistsListEvent from '@/src/components/RenderAddToUserPlaylistsList';
 import { withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -44,8 +47,8 @@ const EventLectures = () => {
   const { session } = useAuth()
   const router = useRouter()
   const { event_id } = useLocalSearchParams();
-  const [ eventLectures, setEventLectures ] = useState<EventLectureType[] | null>(null)
-  const [ event, setEvent ] = useState<EventsType>()
+  const { data: event } = useEventDetail(event_id as string)
+  const { data: eventLectures = null } = useEventLectures(event_id as string)
   const [ visible, setVisible ] = useState(false);
   const [imageReady, setImageReady] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -56,9 +59,12 @@ const EventLectures = () => {
   const [ addToPlaylistVisible, setAddToPlaylistVisible ] = useState(false)
   const [ lectureToBeAddedToPlaylist, setLectureToBeAddedToPlaylist ] = useState<string>("")
   const [ playlistAddingTo, setPlaylistAddingTo ] = useState<string[]>([])
-  const [ speakerData, setSpeakerData ] = useState<SheikDataType[]>([])
-  const [ usersPlaylists, setUsersPlaylists ] = useState<UserPlaylistType[]>()
-  const [ speakerString, setSpeakerString ] = useState('')
+  const { data: speakerData = [] } = useSpeakers(event?.event_speaker)
+  const { data: usersPlaylists } = useUserPlaylists(session?.user.id)
+  const speakerString = useMemo(() => {
+    if (!speakerData || speakerData.length === 0) return ''
+    return speakerData.map((s, i) => i === speakerData.length - 1 ? s.speaker_name : s.speaker_name + ' & ').join('')
+  }, [speakerData])
   const [ selectedLecture, setSelectedLecture ] = useState<EventLectureType | null>(null)
   const [ playing, setPlaying ] = useState(false)
   const [ watchedLectures, setWatchedLectures ] = useState<Set<string>>(new Set())
@@ -80,58 +86,24 @@ const EventLectures = () => {
     return{}
   })
 
- async function getEvent(){
-  const { data, error } = await supabase.from("events").select("*").eq("event_id", event_id).single()
+  // Check notification/library membership when event loads
+  useEffect(() => {
+    if (!event || !session?.user.id) return
+    const checkMembership = async () => {
+      const { data: checkIfExists } = await supabase.from("added_notifications_events").select("*").eq("user_id", session?.user.id).eq("event_id", event_id).single()
+      const { data: eventExists } = await supabase.from('added_events').select('*').eq('user_id', session?.user.id).eq('event_id', event_id).single()
+      if (checkIfExists) setEventInNotifications(true)
+      if (eventExists) setEventInEvents(true)
+    }
+    checkMembership()
+  }, [event, session?.user.id])
 
-  if( error ) {
-    alert(error)
-  }
-  if ( data ) {
-    const { data : checkIfExists , error } = await supabase.from("added_notifications_events").select("*").eq("user_id", session?.user.id).eq("event_id", event_id).single()
-    const { data : eventExists , error : eventError } = await supabase.from('added_events').select('*').eq('user_id', session?.user.id).eq('event_id', event_id).single()
-    const speakers : any[] = []
-    let speaker_string : string[] = []
-    
-    if (data.event_speaker && Array.isArray(data.event_speaker) && data.event_speaker.length > 0) {
-      speaker_string = data.event_speaker.map(() => {return ''})
-      await Promise.all(
-        data.event_speaker.map( async ( speaker_id : string, index : number) => {
-          const {data : speakerInfo, error : speakerInfoError } = await supabase.from('speaker_data').select('*').eq('speaker_id', speaker_id).single()
-          if ( speakerInfo ){
-            if (index == data.event_speaker.length - 1 ){
-              speaker_string[index]=speakerInfo.speaker_name
-            }
-            else {
-              speaker_string[index]= speakerInfo.speaker_name + ' & '
-            }
-            speakers.push(speakerInfo)
-          }
-        })
-      )
+  // Check watched status when lectures load
+  useEffect(() => {
+    if (eventLectures && eventLectures.length > 0) {
+      checkWatchedStatus(eventLectures)
     }
-    
-    setSpeakerData(speakers)
-    setSpeakerString(speaker_string.join(''))
-    if( checkIfExists ){
-      setEventInNotifications(true)
-    }
-    if( eventExists ){
-      setEventInEvents(true)
-    }
-    setEvent(data)
-  }
- }
-
- async function getEventLectures() {
-  const { data, error } = await supabase.from("events_lectures").select("*").eq("event_id", event_id).order('event_lecture_date', { ascending : false })
-  if( error ) {
-    alert(error)
-  }
-  if ( data ) {
-    setEventLectures(data)
-    checkWatchedStatus(data)
-  }
-}
+  }, [eventLectures])
 
   const checkWatchedStatus = async (lecturesData: EventLectureType[]) => {
     try {
@@ -161,15 +133,6 @@ const EventLectures = () => {
     }
   };
 
-async function getUserPlaylists(){
-  const { data, error } = await supabase.from("user_playlist").select("*").eq("user_id", session?.user.id)
-  if( error ){
-    console.log( error )
-  }
-  if( data ){
-    setUsersPlaylists(data)
-  }
-}
 
   const fadeOutNotification = useAnimatedStyle(() => ({
     opacity : notifade.value
@@ -229,26 +192,7 @@ async function getUserPlaylists(){
   }, [event_id]);
 
   useEffect(() => {
-    getEvent()
-    getEventLectures()
-    getUserPlaylists()
     notifade.value = withTiming(0, {duration : 6000})
-
-    const listenForUserPlaylistChanges = supabase
-    .channel('listen for user playlist adds')
-    .on(
-     'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: "user_playlist",
-      filter: `user_id=eq.${session?.user.id}`
-    },
-    (payload) => getUserPlaylists()
-    )
-    .subscribe()
-
-    return () => { supabase.removeChannel( listenForUserPlaylistChanges )}
   }, [])
 
   useEffect(() => {

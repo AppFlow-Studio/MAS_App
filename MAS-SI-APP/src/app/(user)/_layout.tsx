@@ -15,7 +15,7 @@ import Animated, {
   FadeIn
 } from 'react-native-reanimated';
 import Toast from 'react-native-toast-message'
-import { View, Text, Image } from 'react-native'
+import { View, Text } from 'react-native'
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics'
 import AccountModal from '../../components/AccountModal';

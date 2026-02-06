@@ -1,6 +1,6 @@
 import { Tabs, Redirect, useSegments, router } from "expo-router";
 import * as Animatable from 'react-native-animatable';
-import { Pressable, TouchableOpacity, Modal, StyleSheet, Platform, useWindowDimensions } from "react-native";
+import { Pressable, TouchableOpacity, Modal, StyleSheet, Platform, useWindowDimensions, Alert } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import TabArray from '@/src/lib/tabs';
 
@@ -27,9 +27,11 @@ import { CreateProfilePopup } from '@/src/components/CreateProfilePopup';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { supabase } from '@/src/lib/supabase';
 import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingProvider';
+import { useNotifications } from '@/src/providers/NotificationProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { WHATS_NEW_VERSION_KEY } from '../_layout';
+import { userSignedInThisSession } from '../(auth)/_layout';
 
 // const toastConfig = {
 //   addProgramToNotificationsToast: ({ props }: any) => (
@@ -256,6 +258,8 @@ const UserLayoutContent = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [preferencesCompleted, setPreferencesCompleted] = useState(true);
   const whatsNewCheckedRef = useRef(false);
+  const notificationAlertShownRef = useRef(false);
+  const { isEnabled: notificationsEnabled, requestPermission } = useNotifications();
 
   // Check if user needs to see What's New screen (after app update)
   useEffect(() => {
@@ -281,6 +285,37 @@ const UserLayoutContent = () => {
 
     checkWhatsNew();
   }, [authLoading, session]);
+
+  // Check if user has notification token and prompt to enable if not
+  // Delayed to show after intro video completes, skipped for users who just signed up
+  useEffect(() => {
+    const checkNotificationToken = () => {
+      // Only check once, for authenticated non-anonymous users who didn't just sign up
+      if (notificationAlertShownRef.current || authLoading || !session || session.user.is_anonymous) return;
+      
+      // Skip if user just signed in/signed up this session - show alert on next app open instead
+      if (userSignedInThisSession) return;
+      
+      // Check if notifications are not enabled
+      if (!notificationsEnabled) {
+        notificationAlertShownRef.current = true;
+        
+        // Delay the alert to ensure intro video has finished
+        setTimeout(() => {
+          Alert.alert(
+            'Enable Notifications',
+            "Looks like you don't have notifications enabled. Please enable them to receive notifications for prayers, events, and programs.",
+            [
+              { text: 'Not Now', style: 'cancel' },
+              { text: 'Enable', onPress: () => requestPermission() }
+            ]
+          );
+        }, 5000); // 5 second delay to wait for intro video to complete
+      }
+    };
+
+    checkNotificationToken();
+  }, [authLoading, session, notificationsEnabled]);
 
   // Check for incomplete items in More screen (profile + preferences)
   useEffect(() => {

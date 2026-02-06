@@ -30,6 +30,9 @@ import "@/global.css"
 // Version tracking key for What's New screen
 export const WHATS_NEW_VERSION_KEY = 'whats_new_seen_version';
 
+// Persist that we've already asked the user to enable notifications (so we don't ask every app open)
+export const NOTIFICATION_PROMPT_ASKED_KEY = 'notification_prompt_asked';
+
 // Create a QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {

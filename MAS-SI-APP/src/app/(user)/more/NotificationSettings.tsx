@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Bell, BellOff, ChevronLeft, ExternalLink } from 'lucide-react-native';
+import { Bell, BellOff, ChevronLeft, ExternalLink, Users } from 'lucide-react-native';
 import { useNotifications } from '@/src/providers/NotificationProvider';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
@@ -22,11 +22,66 @@ export default function NotificationSettings() {
   const { isEnabled, pushToken, requestPermission } = useNotifications();
   const { session } = useAuth();
   const [toggleValue, setToggleValue] = useState(isEnabled);
+  const [capacityAlertsEnabled, setCapacityAlertsEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [capacityLoading, setCapacityLoading] = useState(false);
 
   useEffect(() => {
     setToggleValue(isEnabled);
   }, [isEnabled]);
+
+  // Check if user is subscribed to capacity alerts
+  useEffect(() => {
+    const checkCapacitySubscription = async () => {
+      if (!session?.user.id) return;
+      
+      const { data, error } = await supabase
+        .from('capacity_alert_subscribers')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (data && !error) {
+        setCapacityAlertsEnabled(true);
+      }
+    };
+    
+    checkCapacitySubscription();
+  }, [session?.user.id]);
+
+  const handleCapacityAlertsToggle = async (value: boolean) => {
+    if (!session?.user.id) return;
+    
+    setCapacityLoading(true);
+    setCapacityAlertsEnabled(value);
+    
+    try {
+      if (value) {
+        // Subscribe to capacity alerts
+        const { error } = await supabase
+          .from('capacity_alert_subscribers')
+          .upsert({ user_id: session.user.id }, { onConflict: 'user_id' });
+        
+        if (error) {
+          console.log('Error subscribing to capacity alerts:', error);
+          setCapacityAlertsEnabled(false);
+        }
+      } else {
+        // Unsubscribe from capacity alerts
+        const { error } = await supabase
+          .from('capacity_alert_subscribers')
+          .delete()
+          .eq('user_id', session.user.id);
+        
+        if (error) {
+          console.log('Error unsubscribing from capacity alerts:', error);
+          setCapacityAlertsEnabled(true);
+        }
+      }
+    } finally {
+      setCapacityLoading(false);
+    }
+  };
 
   const handleToggle = async (value: boolean) => {
     setToggleValue(value);
@@ -111,6 +166,24 @@ export default function NotificationSettings() {
               ios_backgroundColor="rgba(255,255,255,0.2)"
             />
           </View>
+          <View style={styles.divider} />
+          <View style={styles.toggleRow}>
+            <Users color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>Capacity Alerts</Text>
+              <Text style={styles.toggleSubtext}>
+                Get notified when prayers are filling up or full
+              </Text>
+            </View>
+            <Switch
+              value={capacityAlertsEnabled}
+              onValueChange={handleCapacityAlertsToggle}
+              disabled={capacityLoading || !isEnabled}
+              trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#22C55E' }}
+              thumbColor="white"
+              ios_backgroundColor="rgba(255,255,255,0.2)"
+            />
+          </View>
         </View>
       </View>
 
@@ -140,6 +213,7 @@ export default function NotificationSettings() {
           <Text style={styles.infoBullet}>  Prayer times and athan reminders</Text>
           <Text style={styles.infoBullet}>  Program and class updates</Text>
           <Text style={styles.infoBullet}>  Community event announcements</Text>
+          <Text style={styles.infoBullet}>  Jummah & Taraweeh capacity alerts</Text>
           <Text style={[styles.infoText, { marginTop: 12 }]}>
             You can manage specific prayer and program notification preferences from the Notifications section on the Account page.
           </Text>
@@ -231,6 +305,16 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: 'white',
+  },
+  toggleSubtext: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginHorizontal: 16,
   },
   settingsButton: {
     flexDirection: 'row',

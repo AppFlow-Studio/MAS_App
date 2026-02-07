@@ -30,7 +30,7 @@ import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingPro
 import { useNotifications } from '@/src/providers/NotificationProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { WHATS_NEW_VERSION_KEY } from '../_layout';
+import { WHATS_NEW_VERSION_KEY, NOTIFICATION_PROMPT_ASKED_KEY } from '../_layout';
 import { userSignedInThisSession } from '../(auth)/_layout';
 
 // const toastConfig = {
@@ -286,32 +286,53 @@ const UserLayoutContent = () => {
     checkWhatsNew();
   }, [authLoading, session]);
 
+  // Track latest notificationsEnabled value in a ref so the setTimeout callback reads the live value
+  const notificationsEnabledRef = useRef(notificationsEnabled);
+  useEffect(() => {
+    notificationsEnabledRef.current = notificationsEnabled;
+  }, [notificationsEnabled]);
+
   // Check if user has notification token and prompt to enable if not
   // Delayed to show after intro video completes, skipped for users who just signed up
+  // Only ask once per user (persisted per-user) so we don't ask on every app open
   useEffect(() => {
-    const checkNotificationToken = () => {
-      // Only check once, for authenticated non-anonymous users who didn't just sign up
+    const checkNotificationToken = async () => {
+      // Only check for authenticated non-anonymous users who didn't just sign up
       if (notificationAlertShownRef.current || authLoading || !session || session.user.is_anonymous) return;
-      
-      // Skip if user just signed in/signed up this session - show alert on next app open instead
       if (userSignedInThisSession) return;
-      
-      // Check if notifications are not enabled
-      if (!notificationsEnabled) {
-        notificationAlertShownRef.current = true;
-        
-        // Delay the alert to ensure intro video has finished
-        setTimeout(() => {
-          Alert.alert(
-            'Enable Notifications',
-            "Looks like you don't have notifications enabled. Please enable them to receive notifications for prayers, events, and programs.",
-            [
-              { text: 'Not Now', style: 'cancel' },
-              { text: 'Enable', onPress: () => requestPermission() }
-            ]
-          );
-        }, 5000); // 5 second delay to wait for intro video to complete
+      if (notificationsEnabled) return;
+
+      const storageKey = `${NOTIFICATION_PROMPT_ASKED_KEY}_${session.user.id}`;
+
+      try {
+        const alreadyAsked = await AsyncStorage.getItem(storageKey);
+        if (alreadyAsked) {
+          notificationAlertShownRef.current = true;
+          return;
+        }
+      } catch {
+        // ignore storage errors
       }
+
+      notificationAlertShownRef.current = true;
+
+      // Delay the alert to ensure intro video / notification provider has finished loading
+      setTimeout(async () => {
+        // Re-check: if notifications became enabled while we waited, skip the prompt
+        if (notificationsEnabledRef.current) return;
+
+        // Persist that we asked this user, so we don't ask again on next app open
+        await AsyncStorage.setItem(storageKey, '1').catch(() => {});
+
+        Alert.alert(
+          'Enable Notifications',
+          "Looks like you don't have notifications enabled. Please enable them to receive notifications for prayers, events, and programs.",
+          [
+            { text: 'Not Now', style: 'cancel' },
+            { text: 'Enable', onPress: () => requestPermission() }
+          ]
+        );
+      }, 5000); // 5 second delay to wait for intro video to complete
     };
 
     checkNotificationToken();

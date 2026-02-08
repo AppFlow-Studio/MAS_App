@@ -60,6 +60,7 @@ function IntroVideoOverlay() {
   const { session, loading: authLoading } = useAuth();
   const [videoDismissed, setVideoDismissed] = useState(false);
   const videoOpacity = useSharedValue(1);
+  const whiteOverlayOpacity = useSharedValue(1);
   const insets = useSafeAreaInsets();
 
   // Show video: during auth load, or for returning user (session + didn't just sign in) until dismissed
@@ -68,6 +69,12 @@ function IntroVideoOverlay() {
     !videoDismissed;
 
   const videoStyle = useAnimatedStyle(() => ({ opacity: videoOpacity.value }));
+  const whiteOverlayStyle = useAnimatedStyle(() => ({ opacity: whiteOverlayOpacity.value }));
+
+  // Fade out the white overlay once the video is ready to play
+  const handleVideoReady = () => {
+    whiteOverlayOpacity.value = withTiming(0, { duration: 800 });
+  };
 
   const handleDismiss = () => {
     videoOpacity.value = withTiming(0, { duration: 500 }, () => {
@@ -93,7 +100,16 @@ function IntroVideoOverlay() {
           if (status.isLoaded && status.didJustFinish) {
             handleDismiss();
           }
+          // Fade out white overlay once video starts playing
+          if (status.isLoaded && status.isPlaying) {
+            handleVideoReady();
+          }
         }}
+      />
+      {/* White overlay that matches the native splash — fades out to reveal video */}
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { backgroundColor: '#fff' }, whiteOverlayStyle]}
       />
       <Pressable
         onPress={handleDismiss}

@@ -292,6 +292,7 @@ const CapacityStatusAdmin = () => {
   }
 
   // Send capacity notifications to subscribed users
+  // Optimized: paginated subscriber fetch + batched sending to handle 1,000+ users
   const sendCapacityNotifications = async (changedPrayers: { name: string; status: CapacityStatus }[]) => {
     // Filter to only send notifications for "filling" (yellow) or "full" (red) statuses
     const notifiablePrayers = changedPrayers.filter(p => p.status === 'yellow' || p.status === 'red')
@@ -299,61 +300,50 @@ const CapacityStatusAdmin = () => {
     if (notifiablePrayers.length === 0) return
 
     try {
-      // Get all users who have push tokens and are subscribed to capacity alerts
-      const { data: subscribers, error: subError } = await supabase
-        .from('capacity_alert_subscribers')
-        .select('user_id, profiles!inner(push_notification_token)')
-        .not('profiles.push_notification_token', 'is', null)
+      // ====================================================================
+      // STEP 1: Paginated fetch of all subscribers with push tokens
+      // Supabase returns max 1,000 rows per query, so we paginate
+      // ====================================================================
+      const PAGE_SIZE = 1000
+      const allSubscribers: { user_id: string; push_notification_token: string }[] = []
+      let from = 0
 
-      if (subError) {
-        console.log('Error fetching subscribers:', subError)
-        // Fallback: try to get all users with push tokens if the subscription table doesn't exist
-        const { data: allUsers, error: usersError } = await supabase
-          .from('profiles')
-          .select('id, push_notification_token')
-          .not('push_notification_token', 'is', null)
+      while (true) {
+        const { data, error } = await supabase
+          .from('capacity_alert_subscribers')
+          .select('user_id, profiles!inner(push_notification_token)')
+          .not('profiles.push_notification_token', 'is', null)
+          .range(from, from + PAGE_SIZE - 1)
 
-        if (usersError || !allUsers || allUsers.length === 0) {
-          console.log('No users to notify')
+        if (error) {
+          console.log('Error fetching capacity alert subscribers:', error)
           return
         }
+        if (!data || data.length === 0) break
 
-        // Build notifications batch
-        const notifications = []
-        for (const user of allUsers) {
-          for (const prayer of notifiablePrayers) {
-            const message = prayer.status === 'red' 
-              ? `${prayer.name} is now filled.`
-              : `${prayer.name} is filling up, consider waiting for the next salah.`
-            notifications.push({
-              id: Date.now() + Math.random(),
-              user_id: user.id,
-              push_notification_token: user.push_notification_token,
-              title: `${prayer.name} Capacity Alert`,
-              message,
-            })
+        for (const sub of data) {
+          const token = (sub.profiles as any)?.push_notification_token
+          if (token) {
+            allSubscribers.push({ user_id: sub.user_id, push_notification_token: token })
           }
         }
 
-        if (notifications.length > 0) {
-          await supabase.functions.invoke('send-prayer-notification', {
-            body: { notifications_batch: notifications }
-          })
-        }
-        return
+        if (data.length < PAGE_SIZE) break // last page
+        from += PAGE_SIZE
       }
 
-      if (!subscribers || subscribers.length === 0) {
+      if (allSubscribers.length === 0) {
         console.log('No subscribers for capacity alerts')
         return
       }
 
-      // Build notifications batch for subscribers
-      const notifications = []
-      for (const sub of subscribers) {
-        const token = (sub.profiles as any)?.push_notification_token
-        if (!token) continue
+      console.log(`Sending capacity alerts to ${allSubscribers.length} subscribers`)
 
+      // ====================================================================
+      // STEP 2: Build all notification objects
+      // ====================================================================
+      const notifications = []
+      for (const sub of allSubscribers) {
         for (const prayer of notifiablePrayers) {
           const message = prayer.status === 'red' 
             ? `${prayer.name} is now filled.`
@@ -361,23 +351,32 @@ const CapacityStatusAdmin = () => {
           notifications.push({
             id: Date.now() + Math.random(),
             user_id: sub.user_id,
-            push_notification_token: token,
+            push_notification_token: sub.push_notification_token,
             title: `${prayer.name} Capacity Alert`,
             message,
           })
         }
       }
 
-      if (notifications.length > 0) {
+      // ====================================================================
+      // STEP 3: Send in batches of 500 to avoid payload/timeout issues
+      // ====================================================================
+      const SEND_BATCH_SIZE = 500
+      let totalSent = 0
+
+      for (let i = 0; i < notifications.length; i += SEND_BATCH_SIZE) {
+        const batch = notifications.slice(i, i + SEND_BATCH_SIZE)
         const { error: sendError } = await supabase.functions.invoke('send-prayer-notification', {
-          body: { notifications_batch: notifications }
+          body: { notifications_batch: batch }
         })
         if (sendError) {
-          console.log('Error sending notifications:', sendError)
+          console.log(`Error sending batch ${Math.floor(i / SEND_BATCH_SIZE) + 1}:`, sendError)
         } else {
-          console.log(`Sent ${notifications.length} capacity notifications`)
+          totalSent += batch.length
         }
       }
+
+      console.log(`Sent ${totalSent}/${notifications.length} capacity notifications`)
     } catch (error) {
       console.log('Error in sendCapacityNotifications:', error)
     }

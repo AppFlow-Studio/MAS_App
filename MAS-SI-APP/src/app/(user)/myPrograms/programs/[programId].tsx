@@ -56,6 +56,7 @@ const ProgramLectures = () => {
   const [ visible, setVisible ] = useState(false);
   const [imageReady, setImageReady] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [imageAspectRatio, setImageAspectRatio] = useState(0.8);
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
   const [ programInNotfications, setProgramInNotifications ] = useState(false)
@@ -544,7 +545,7 @@ async function getUserPlaylists(){
   }
   const addToProgramsNoti = () => {
     const goToProgram = () => {
-      navigation.navigate('myPrograms')
+      router.push('/myPrograms')
     }
     Toast.show({
       type : 'ProgramAddedToPrograms',
@@ -627,7 +628,7 @@ async function getUserPlaylists(){
   const AddToProgramsButton = () => {
     const addToProgramsNoti = () => {
       const goToProgram = () => {
-        navigation.navigate('myPrograms')
+        router.push('/myPrograms')
       }
       Toast.show({
         type : 'ProgramAddedToPrograms',
@@ -690,7 +691,7 @@ async function getUserPlaylists(){
             else{
               const { error } = await supabase.from("user_playlist_lectures").insert({user_id : session?.user.id, playlist_id : item, program_lecture_id : lectureToBeAddedToPlaylist })
               const getPlaylistAddedTo = usersPlaylists?.filter(playlist => playlist.playlist_id == playlistAddingTo[0])
-              const goToPlaylist = () => { navigation.navigate('myPrograms', { screen : 'playlists/[playlist_id]', params: { playlist_id : playlistAddingTo }}) }
+              const goToPlaylist = () => { router.push(`/myPrograms/playlists/${playlistAddingTo[0]}`) }
               if( getPlaylistAddedTo && getPlaylistAddedTo[0] ){
                 Toast.show({
                   type : 'LectureAddedToPlaylist',
@@ -747,9 +748,9 @@ async function getUserPlaylists(){
                  await supabase.from("added_programs").insert({ user_id: session?.user.id, program_id: programId });
                  setProgramInPrograms(true);
                  // Show toast notification
-                 Toast.show({
+                Toast.show({
                    type: 'ProgramAddedToPrograms',
-                   props: { props: program, onPress: () => navigation.navigate('myPrograms') },
+                   props: { props: program, onPress: () => router.push('/myPrograms') },
                    position: 'top',
                    topOffset: 50,
                  });
@@ -772,7 +773,7 @@ async function getUserPlaylists(){
         bounces={true}
         nestedScrollEnabled={true}
       >
-          <View className=' relative' style={{width: '100%', height: height * 0.5, borderBottomLeftRadius: 20, borderBottomRightRadius: 10, overflow: 'hidden', alignSelf: 'stretch' }}>
+          <View className=' relative' style={{width: '100%', height: height * 0.5, borderBottomLeftRadius: 20, borderBottomRightRadius: 10, overflow: 'hidden', alignSelf: 'stretch', backgroundColor: '#214E91' }}>
             {selectedLecture && selectedLecture.lecture_link && selectedLecture.lecture_link.trim() !== '' && selectedLecture.lecture_link !== 'N/A' ? (
               <YoutubePlayer 
                 height={height * 0.5}

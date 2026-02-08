@@ -562,17 +562,17 @@ export default function MoreScreen() {
                 <MenuButton 
                   icon={Bell} 
                   label="Prayer" 
-                  onPress={() => router.push({ pathname: '/myPrograms/notifications/NotificationEvents', params: { initialTab: 'prayer' } })}
+                  onPress={() => router.push({ pathname: '/more/NotificationCenter', params: { initialTab: 'prayer' } })}
                 />
                 <MenuButton
                   icon={Calendar}
                   label="Program"
-                  onPress={() => router.push({ pathname: '/myPrograms/notifications/NotificationEvents', params: { initialTab: 'programs' } })}
+                  onPress={() => router.push({ pathname: '/more/NotificationCenter', params: { initialTab: 'programs' } })}
                 />
                 <MenuButton 
                   icon={PartyPopper} 
                   label="Event" 
-                  onPress={() => router.push({ pathname: '/myPrograms/notifications/NotificationEvents', params: { initialTab: 'programs' } })}
+                  onPress={() => router.push({ pathname: '/more/NotificationCenter', params: { initialTab: 'programs' } })}
                 />
                 <MenuButton icon={Settings} label="Settings" onPress={() => router.push('/more/NotificationSettings')} />
               </View>

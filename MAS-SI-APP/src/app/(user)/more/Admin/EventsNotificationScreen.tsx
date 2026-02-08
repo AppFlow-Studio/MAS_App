@@ -16,13 +16,29 @@ const EventsNotificationScreen = () => {
   const totalUsers = 100;
   const [keyboardOffset, setKeyboardOffset] = useState(200)
   const getUsers = async () => {
-    const { data: users, error } = await supabase.from('added_notifications_events').select('*').eq('event_id', event_id)
-    if (users) {
-      setUsers(users)
+    // Paginated fetch to handle 1,000+ subscribers
+    const PAGE_SIZE = 1000
+    const allUsers: any[] = []
+    let from = 0
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('added_notifications_events')
+        .select('*')
+        .eq('event_id', event_id)
+        .range(from, from + PAGE_SIZE - 1)
+
+      if (error) {
+        console.log('error', error)
+        break
+      }
+      if (!data || data.length === 0) break
+      allUsers.push(...data)
+      if (data.length < PAGE_SIZE) break
+      from += PAGE_SIZE
     }
-    if (error) {
-      console.log('error', error)
-    }
+
+    setUsers(allUsers)
   }
 
   const hideModal = () => setPreviewModal(false);
@@ -31,23 +47,55 @@ const EventsNotificationScreen = () => {
   };
 
   const onSend = async () => {
-    const notification_batch: any[] = []
-    await Promise.all(
-      users.map(async (user) => {
-        const { data: profile, error } = await supabase.from('profiles').select('push_notification_token').eq('id', user.user_id).not('push_notification_token', 'is', null).single()
-        if (profile) {
-          profile['message'] = notificationMessage
-          profile['title'] = event_name
-          notification_batch.push(profile)
-        }
-      })
-    )
-    if (notification_batch.length > 0) {
-      const { error } = await supabase.functions.invoke('send-prayer-notification', { body: { notifications_batch: notification_batch } })
+    if (users.length === 0) return
+
+    // Batch fetch all push tokens instead of 1 query per user
+    const userIds = users.map((u: any) => u.user_id)
+    const tokenMap = new Map<string, string>()
+
+    for (let i = 0; i < userIds.length; i += 100) {
+      const chunk = userIds.slice(i, i + 100)
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('id, push_notification_token')
+        .in('id', chunk)
+        .not('push_notification_token', 'is', null)
+
       if (error) {
-        console.log(error)
+        console.log('Error fetching profiles chunk:', error)
+        continue
+      }
+      for (const profile of profiles || []) {
+        if (profile.push_notification_token) {
+          tokenMap.set(profile.id, profile.push_notification_token)
+        }
       }
     }
+
+    // Build notification batch
+    const notification_batch: any[] = []
+    for (const user of users) {
+      const token = tokenMap.get(user.user_id)
+      if (!token) continue
+      notification_batch.push({
+        push_notification_token: token,
+        message: notificationMessage,
+        title: event_name,
+      })
+    }
+
+    if (notification_batch.length === 0) return
+
+    // Send in batches of 500
+    const SEND_BATCH_SIZE = 500
+    for (let i = 0; i < notification_batch.length; i += SEND_BATCH_SIZE) {
+      const batch = notification_batch.slice(i, i + SEND_BATCH_SIZE)
+      const { error } = await supabase.functions.invoke('send-prayer-notification', { body: { notifications_batch: batch } })
+      if (error) {
+        console.log(`Error sending batch ${Math.floor(i / SEND_BATCH_SIZE) + 1}:`, error)
+      }
+    }
+    console.log(`Sent ${notification_batch.length} event notifications`)
   }
   useEffect(() => {
     getUsers()

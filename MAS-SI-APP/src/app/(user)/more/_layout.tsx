@@ -33,6 +33,14 @@ const MoreLayout = () => {
           }}
         />
         <Stack.Screen
+          name='NotificationCenter'
+          options={{
+            headerShown: false,
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
           name='BusinessAds'
           options={{
             headerShown: false,

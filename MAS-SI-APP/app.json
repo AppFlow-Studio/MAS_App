@@ -9,7 +9,6 @@
     "scheme": "MAS-SI-APP",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/massicliquidglassicon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

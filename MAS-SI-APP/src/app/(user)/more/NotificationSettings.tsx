@@ -8,6 +8,7 @@ import {
   Linking,
   Platform,
   StatusBar,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -129,96 +130,100 @@ export default function NotificationSettings() {
         <View style={{ width: 36 }} />
       </View>
 
-      {/* Status Section */}
-      <View style={styles.section}>
-        <View style={styles.statusCard}>
-          <View style={styles.statusIconContainer}>
-            {isEnabled ? (
-              <Bell color="#22C55E" size={28} strokeWidth={2} />
-            ) : (
-              <BellOff color="#F59E0B" size={28} strokeWidth={2} />
-            )}
-          </View>
-          <Text style={styles.statusTitle}>
-            {isEnabled ? 'Notifications are enabled' : 'Notifications are off'}
-          </Text>
-          <Text style={styles.statusSubtitle}>
-            {isEnabled
-              ? 'You will receive prayer times, program updates, and event reminders.'
-              : 'Enable notifications to stay updated with prayer times, programs, and events.'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Toggle Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>PREFERENCES</Text>
-        <View style={styles.menuCard}>
-          <View style={styles.toggleRow}>
-            <Bell color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
-            <Text style={styles.toggleLabel}>Push Notifications</Text>
-            <Switch
-              value={toggleValue}
-              onValueChange={handleToggle}
-              disabled={loading}
-              trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#22C55E' }}
-              thumbColor="white"
-              ios_backgroundColor="rgba(255,255,255,0.2)"
-            />
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.toggleRow}>
-            <Users color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Capacity Alerts</Text>
-              <Text style={styles.toggleSubtext}>
-                Get notified when prayers are filling up or full
-              </Text>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        {/* Status Section */}
+        <View style={styles.section}>
+          <View style={styles.statusCard}>
+            <View style={styles.statusIconContainer}>
+              {isEnabled ? (
+                <Bell color="#22C55E" size={28} strokeWidth={2} />
+              ) : (
+                <BellOff color="#F59E0B" size={28} strokeWidth={2} />
+              )}
             </View>
-            <Switch
-              value={capacityAlertsEnabled}
-              onValueChange={handleCapacityAlertsToggle}
-              disabled={capacityLoading || !isEnabled}
-              trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#22C55E' }}
-              thumbColor="white"
-              ios_backgroundColor="rgba(255,255,255,0.2)"
-            />
+            <Text style={styles.statusTitle}>
+              {isEnabled ? 'Notifications are enabled' : 'Notifications are off'}
+            </Text>
+            <Text style={styles.statusSubtitle}>
+              {isEnabled
+                ? 'You will receive prayer times, program updates, and event reminders.'
+                : 'Enable notifications to stay updated with prayer times, programs, and events.'}
+            </Text>
           </View>
         </View>
-      </View>
 
-      {/* System Settings */}
-      <View style={styles.section}>
-        <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.settingsButton} onPress={() => Linking.openSettings()}>
-            <ExternalLink color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
-            <Text style={styles.settingsButtonText}>Open System Settings</Text>
-            <ChevronLeft
-              color="rgba(255,255,255,0.5)"
-              size={18}
-              strokeWidth={2}
-              style={{ marginLeft: 'auto', transform: [{ rotate: '180deg' }] }}
-            />
-          </TouchableOpacity>
+        {/* Toggle Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>PREFERENCES</Text>
+          <View style={styles.menuCard}>
+            <View style={styles.toggleRow}>
+              <Bell color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabelText}>Push Notifications</Text>
+              </View>
+              <Switch
+                value={toggleValue}
+                onValueChange={handleToggle}
+                disabled={loading}
+                trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#22C55E' }}
+                thumbColor="white"
+                ios_backgroundColor="rgba(255,255,255,0.2)"
+              />
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.toggleRow}>
+              <Users color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabelText}>Capacity Alerts</Text>
+                <Text style={styles.toggleSubtext}>
+                  Get notified when prayers are filling up or full
+                </Text>
+              </View>
+              <Switch
+                value={capacityAlertsEnabled}
+                onValueChange={handleCapacityAlertsToggle}
+                disabled={capacityLoading || !isEnabled}
+                trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#22C55E' }}
+                thumbColor="white"
+                ios_backgroundColor="rgba(255,255,255,0.2)"
+              />
+            </View>
+          </View>
         </View>
-      </View>
 
-      {/* Info Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>ABOUT NOTIFICATIONS</Text>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoText}>
-            MAS Staten Island sends notifications for:
-          </Text>
-          <Text style={styles.infoBullet}>  Prayer times and athan reminders</Text>
-          <Text style={styles.infoBullet}>  Program and class updates</Text>
-          <Text style={styles.infoBullet}>  Community event announcements</Text>
-          <Text style={styles.infoBullet}>  Jummah & Taraweeh capacity alerts</Text>
-          <Text style={[styles.infoText, { marginTop: 12 }]}>
-            You can manage specific prayer and program notification preferences from the Notifications section on the Account page.
-          </Text>
+        {/* System Settings */}
+        <View style={styles.section}>
+          <View style={styles.menuCard}>
+            <TouchableOpacity style={styles.settingsButton} onPress={() => Linking.openSettings()}>
+              <ExternalLink color="white" size={20} strokeWidth={2.5} style={{ marginRight: 12 }} />
+              <Text style={styles.settingsButtonText}>Open System Settings</Text>
+              <ChevronLeft
+                color="rgba(255,255,255,0.5)"
+                size={18}
+                strokeWidth={2}
+                style={{ marginLeft: 'auto', transform: [{ rotate: '180deg' }] }}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+
+        {/* Info Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>ABOUT NOTIFICATIONS</Text>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoText}>
+              MAS Staten Island sends notifications for:
+            </Text>
+            <Text style={styles.infoBullet}>  Prayer times and athan reminders</Text>
+            <Text style={styles.infoBullet}>  Program and class updates</Text>
+            <Text style={styles.infoBullet}>  Community event announcements</Text>
+            <Text style={styles.infoBullet}>  Jummah & Taraweeh capacity alerts</Text>
+            <Text style={[styles.infoText, { marginTop: 12 }]}>
+              You can manage specific prayer and program notification preferences from the Notifications section on the Account page.
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
     </LinearGradient>
   );
 }
@@ -300,8 +305,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  toggleLabel: {
-    flex: 1,
+  toggleLabelText: {
     fontSize: 17,
     fontWeight: '600',
     color: 'white',

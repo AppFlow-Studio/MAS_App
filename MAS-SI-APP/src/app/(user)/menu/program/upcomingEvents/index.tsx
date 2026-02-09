@@ -615,13 +615,13 @@ const UpcomingEvents = () => {
       {/* Programs List */}
       <View style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 100, paddingRight: 16, paddingTop: 8 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 160, paddingTop: 8 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={GetUpcomingEvents} />}
           showsVerticalScrollIndicator={false}
         >
           {kidsPrograms.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 16 }}>
                 <View className="flex-row items-center">
                   <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#F59E0B' }}>
                     <Icon source="star" size={18} color="#FFFFFF" />
@@ -645,21 +645,19 @@ const UpcomingEvents = () => {
                   </Pressable>
                 )}
               </View>
-              <View style={{ marginRight: -50 }}>
-                <FlatList 
+              <FlatList 
                   data={expandedSections.kids ? kidsPrograms : kidsPrograms.slice(0, INITIAL_ITEMS_LIMIT)} 
                   renderItem={({ item }) => <FlyerImageComponent item={item} key={item.program_id} />} 
                   horizontal 
                   showsHorizontalScrollIndicator={false} 
-                  contentContainerStyle={{ paddingRight: 16 }}
+                  contentContainerStyle={{ paddingRight: 20 }}
                 />
-              </View>
             </View>
           )}
 
           {regularPrograms.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 16 }}>
                 <View className="flex-row items-center">
                   <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#0D509D' }}>
                     <Icon source="book-open-variant" size={18} color="#FFFFFF" />
@@ -683,21 +681,19 @@ const UpcomingEvents = () => {
                   </Pressable>
                 )}
               </View>
-              <View style={{ marginRight: -50 }}>
-                <FlatList 
+              <FlatList 
                   data={expandedSections.programs ? regularPrograms : regularPrograms.slice(0, INITIAL_ITEMS_LIMIT)} 
                   renderItem={({ item }) => <FlyerImageComponent item={item} key={item.program_id} />} 
                   horizontal 
                   showsHorizontalScrollIndicator={false} 
-                  contentContainerStyle={{ paddingRight: 16 }}
+                  contentContainerStyle={{ paddingRight: 20 }}
                 />
-              </View>
             </View>
           )}
 
           {events.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 16 }}>
                 <View className="flex-row items-center">
                   <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#10B981' }}>
                     <Icon source="calendar-star" size={18} color="#FFFFFF" />
@@ -721,21 +717,19 @@ const UpcomingEvents = () => {
                   </Pressable>
                 )}
               </View>
-              <View style={{ marginRight: -50 }}>
-                <FlatList 
+              <FlatList 
                   data={expandedSections.events ? events : events.slice(0, INITIAL_ITEMS_LIMIT)} 
                   renderItem={({ item }) => <EventImageComponent item={item} key={item.event_id} />} 
                   horizontal 
                   showsHorizontalScrollIndicator={false} 
-                  contentContainerStyle={{ paddingRight: 16 }}
+                  contentContainerStyle={{ paddingRight: 20 }}
                 />
-              </View>
             </View>
           )}
 
           {paceEvents.length > 0 && (
             <View className="mb-6">
-              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 0 }}>
+              <View className="flex-row items-center justify-between mb-4" style={{ paddingLeft: 8, paddingRight: 16 }}>
                 <View className="flex-row items-center">
                   <View className="w-8 h-8 rounded-full mr-3 items-center justify-center" style={{ backgroundColor: '#8B5CF6' }}>
                     <Icon source="account-group" size={18} color="#FFFFFF" />
@@ -759,15 +753,13 @@ const UpcomingEvents = () => {
                   </Pressable>
                 )}
               </View>
-              <View style={{ marginRight: -50 }}>
-                <FlatList 
+              <FlatList 
                   data={expandedSections.pace ? paceEvents : paceEvents.slice(0, INITIAL_ITEMS_LIMIT)} 
                   renderItem={({ item }) => <EventImageComponent item={item} key={item.event_id} />} 
                   horizontal 
                   showsHorizontalScrollIndicator={false} 
-                  contentContainerStyle={{ paddingRight: 16 }}
+                  contentContainerStyle={{ paddingRight: 20 }}
                 />
-              </View>
             </View>
           )}
 

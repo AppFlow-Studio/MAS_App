@@ -20,7 +20,7 @@ const GlassyToastWrapper = ({ children, onPress }: { children: React.ReactNode; 
       <Pressable onPress={onPress} style={styles.toastPressable}>
         <BlurView 
           intensity={80} 
-          tint="dark" 
+          tint="light" 
           style={styles.blurView}
         >
           <View style={styles.glassOverlay}>
@@ -44,12 +44,12 @@ export const glassyToastConfig: ToastConfig = {
         />
         <View style={styles.toastTextContainer}>
           <View style={styles.toastLabelRow}>
-            <Icon source={'bell-check'} size={14} color="#6EE7B7" />
+            <Icon source={'bell-check'} size={14} color="#10B981" />
             <Text style={styles.toastLabel}>Added to Notifications</Text>
           </View>
           <Text style={styles.toastTitle} numberOfLines={1}>{props?.props?.program_name}</Text>
         </View>
-        <Icon source={'chevron-right'} size={20} color="rgba(255,255,255,0.5)" />
+        <Icon source={'chevron-right'} size={20} color="rgba(0,0,0,0.3)" />
       </View>
     </GlassyToastWrapper>
   ),
@@ -64,12 +64,12 @@ export const glassyToastConfig: ToastConfig = {
         />
         <View style={styles.toastTextContainer}>
           <View style={styles.toastLabelRow}>
-            <Icon source={'playlist-check'} size={14} color="#6EE7B7" />
+            <Icon source={'playlist-check'} size={14} color="#10B981" />
             <Text style={styles.toastLabel}>Added to Playlist</Text>
           </View>
           <Text style={styles.toastTitle} numberOfLines={1}>{props?.props?.playlist_name}</Text>
         </View>
-        <Icon source={'chevron-right'} size={20} color="rgba(255,255,255,0.5)" />
+        <Icon source={'chevron-right'} size={20} color="rgba(0,0,0,0.3)" />
       </View>
     </GlassyToastWrapper>
   ),
@@ -84,12 +84,12 @@ export const glassyToastConfig: ToastConfig = {
         />
         <View style={styles.toastTextContainer}>
           <View style={styles.toastLabelRow}>
-            <Icon source={'book-check'} size={14} color="#6EE7B7" />
+            <Icon source={'book-check'} size={14} color="#10B981" />
             <Text style={styles.toastLabel}>Added to Library</Text>
           </View>
           <Text style={styles.toastTitle} numberOfLines={1}>{props?.props?.program_name}</Text>
         </View>
-        <Icon source={'chevron-right'} size={20} color="rgba(255,255,255,0.5)" />
+        <Icon source={'chevron-right'} size={20} color="rgba(0,0,0,0.3)" />
       </View>
     </GlassyToastWrapper>
   ),
@@ -104,12 +104,12 @@ export const glassyToastConfig: ToastConfig = {
         />
         <View style={styles.toastTextContainer}>
           <View style={styles.toastLabelRow}>
-            <Icon source={'bell-check'} size={14} color="#6EE7B7" />
+            <Icon source={'bell-check'} size={14} color="#10B981" />
             <Text style={styles.toastLabel}>Added to Notifications</Text>
           </View>
           <Text style={styles.toastTitle} numberOfLines={1}>{props?.props?.event_name}</Text>
         </View>
-        <Icon source={'chevron-right'} size={20} color="rgba(255,255,255,0.5)" />
+        <Icon source={'chevron-right'} size={20} color="rgba(0,0,0,0.3)" />
       </View>
     </GlassyToastWrapper>
   ),
@@ -124,12 +124,12 @@ export const glassyToastConfig: ToastConfig = {
         />
         <View style={styles.toastTextContainer}>
           <View style={styles.toastLabelRow}>
-            <Icon source={'book-check'} size={14} color="#6EE7B7" />
+            <Icon source={'book-check'} size={14} color="#10B981" />
             <Text style={styles.toastLabel}>Added to Library</Text>
           </View>
           <Text style={styles.toastTitle} numberOfLines={1}>{props?.props?.event_name}</Text>
         </View>
-        <Icon source={'chevron-right'} size={20} color="rgba(255,255,255,0.5)" />
+        <Icon source={'chevron-right'} size={20} color="rgba(0,0,0,0.3)" />
       </View>
     </GlassyToastWrapper>
   ),
@@ -139,7 +139,7 @@ export const glassyToastConfig: ToastConfig = {
     <GlassyToastWrapper>
       <View style={styles.toastContent}>
         <View style={styles.notificationIconContainer}>
-          <Icon source={'bell-ring'} size={22} color="#ffffff"/>
+          <Icon source={'bell-ring'} size={22} color="#6077F5"/>
         </View>
         <View style={styles.toastTextContainer}>
           <Text style={styles.notificationMessage}>{props?.message}</Text>
@@ -157,7 +157,7 @@ export const glassyToastConfig: ToastConfig = {
     <GlassyToastWrapper onPress={onPress}>
       <View style={styles.toastContent}>
         <View style={styles.successIcon}>
-          <Icon source={'check-circle'} size={24} color="#6EE7B7" />
+          <Icon source={'check-circle'} size={24} color="#10B981" />
         </View>
         <View style={styles.toastTextContainer}>
           {text1 && <Text style={styles.toastTitle}>{text1}</Text>}
@@ -211,15 +211,20 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   blurView: {
     borderRadius: 16,
     overflow: 'hidden',
   },
   glassOverlay: {
-    backgroundColor: 'rgba(15, 65, 132, 0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     borderRadius: 16,
   },
   toastContent: {
@@ -243,23 +248,23 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   toastLabel: {
-    color: '#6EE7B7',
+    color: '#10B981',
     fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
   },
   toastTitle: {
-    color: '#ffffff',
+    color: '#1F2937',
     fontSize: 15,
     fontWeight: '600',
   },
   toastTitleLarge: {
-    color: '#ffffff',
+    color: '#1F2937',
     fontSize: 16,
     fontWeight: '700',
   },
   toastSubtext: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(0, 0, 0, 0.5)',
     fontSize: 12,
     marginBottom: 2,
   },
@@ -276,19 +281,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(96, 119, 245, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   notificationMessage: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(0, 0, 0, 0.6)',
     fontSize: 12,
     fontWeight: '500',
     marginBottom: 2,
   },
   notificationPrayer: {
-    color: '#ffffff',
+    color: '#1F2937',
     fontSize: 16,
     fontWeight: '700',
   },

@@ -623,8 +623,11 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
             setProgramInNotifications(true);
             
             const goToNotificationCenter = () => {
-                setModalVisible(false);
-                router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs');
+                setModalToast(null);
+                closeModal();
+                setTimeout(() => {
+                    router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs');
+                }, 400);
             };
             
             // Show toast in modal
@@ -632,13 +635,6 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                 type: 'addProgramToNotificationsToast',
                 props: { props: program, onPress: goToNotificationCenter }
             });
-            // Also show root toast for when modal is closed
-            // Toast.show({
-            //     type: 'addProgramToNotificationsToast',
-            //     props: { props: program, onPress: goToNotificationCenter },
-            //     position: 'top',
-            //     topOffset: 50,
-            // });
             // Auto-hide modal toast after 3 seconds
             setTimeout(() => setModalToast(null), 3000);
         }
@@ -672,7 +668,11 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                 triggerHeartsAnimation();
                 
                 const goToProgram = () => {
-                    navigation.navigate('myPrograms');
+                    setModalToast(null);
+                    closeModal();
+                    setTimeout(() => {
+                        router.push('/myPrograms');
+                    }, 400);
                 };
                 
                 // Show toast in modal
@@ -1130,10 +1130,10 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                     style={{
                                         width: '100%',
                                         paddingTop: 12,
-                                        paddingBottom: 8,
+                                        paddingBottom: 4,
                                         alignItems: 'center',
-                                        backgroundColor: '#FFFFFF',
-                                        zIndex: 10,
+                                        backgroundColor: 'transparent',
+                                        zIndex: 20,
                                     }}
                                 >
                                     <View style={{
@@ -1144,6 +1144,61 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                     }} />
                                 </Animated.View>
                                 
+                                {/* Floating Buttons - pinned over content */}
+                                <View style={{ 
+                                    position: 'absolute',
+                                    top: 28,
+                                    left: 20,
+                                    right: 20,
+                                    flexDirection: 'row', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    zIndex: 20,
+                                    pointerEvents: 'box-none',
+                                }}>
+                                    <Pressable 
+                                        onPress={() => closeModal()} 
+                                        style={{ 
+                                            width: 36, 
+                                            height: 36, 
+                                            borderRadius: 18,
+                                            backgroundColor: 'rgba(255,255,255,0.9)',
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.15,
+                                            shadowRadius: 4,
+                                            elevation: 3,
+                                        }}
+                                    >
+                                        <Icon source="close" size={20} color="#374151" />
+                                    </Pressable>
+                                    
+                                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                                        {program && isBefore(new Date().toISOString(), program.program_end_date || '') && (
+                                            <Pressable
+                                                onPress={handleNotificationPress} 
+                                                style={{ 
+                                                    width: 36, 
+                                                    height: 36, 
+                                                    borderRadius: 18,
+                                                    backgroundColor: programInNotifications ? '#0D509D' : 'rgba(255,255,255,0.9)',
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    shadowColor: '#000',
+                                                    shadowOffset: { width: 0, height: 2 },
+                                                    shadowOpacity: 0.15,
+                                                    shadowRadius: 4,
+                                                    elevation: 3,
+                                                }}
+                                            >
+                                                <Icon source={programInNotifications ? "bell-check" : "bell-outline"} size={18} color={programInNotifications ? '#FFFFFF' : '#374151'}/>
+                                            </Pressable>
+                                        )}
+                                    </View>
+                                </View>
+
                                 {/* Main Content */}
                                 <ScrollView 
                                     ref={modalScrollRef}
@@ -1152,13 +1207,12 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                     contentContainerStyle={{ paddingBottom: 120 }}
                                     style={{ flex: 1 }}
                                 >
-                                    {/* Image/Video Section with overlayed buttons */}
+                                    {/* Image/Video Section */}
                                     <View style={{ 
                                         marginHorizontal: 16, 
                                         borderRadius: 16, 
                                         overflow: 'hidden',
                                         marginBottom: 20,
-                                        position: 'relative',
                                     }}>
                                         {selectedLecture ? (
                                             <YoutubePlayer 
@@ -1201,60 +1255,6 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                                 />
                                             </View>
                                         )}
-                                        
-                                        {/* Overlayed buttons on image */}
-                                        <View style={{ 
-                                                    position: 'absolute',
-                                            top: 12,
-                                            left: 12,
-                                            right: 12,
-                                            flexDirection: 'row', 
-                                            justifyContent: 'space-between', 
-                                            alignItems: 'center',
-                                            zIndex: 10,
-                                        }}>
-                                            <Pressable 
-                                                onPress={() => closeModal()} 
-                                                style={{ 
-                                                    width: 36, 
-                                                    height: 36, 
-                                                    borderRadius: 18,
-                                                    backgroundColor: 'rgba(255,255,255,0.9)',
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'center',
-                                                    shadowColor: '#000',
-                                                    shadowOffset: { width: 0, height: 2 },
-                                                    shadowOpacity: 0.1,
-                                                    shadowRadius: 4,
-                                                    elevation: 3,
-                                                }}
-                                            >
-                                                <Icon source="close" size={20} color="#374151" />
-                                            </Pressable>
-                                            
-                                            <View style={{ flexDirection: 'row', gap: 10 }}>
-                                                {program && isBefore(new Date().toISOString(), program.program_end_date || '') && (
-                                                    <Pressable
-                                                        onPress={handleNotificationPress} 
-                                                        style={{ 
-                                                            width: 36, 
-                                                            height: 36, 
-                                                            borderRadius: 18,
-                                                            backgroundColor: programInNotifications ? '#0D509D' : 'rgba(255,255,255,0.9)',
-                                                            alignItems: 'center', 
-                                                            justifyContent: 'center',
-                                                            shadowColor: '#000',
-                                                            shadowOffset: { width: 0, height: 2 },
-                                                            shadowOpacity: 0.1,
-                                                            shadowRadius: 4,
-                                                            elevation: 3,
-                                                        }}
-                                                    >
-                                                        <Icon source={programInNotifications ? "bell-check" : "bell-outline"} size={18} color={programInNotifications ? '#FFFFFF' : '#374151'}/>
-                                                    </Pressable>
-                                        )}
-                                            </View>
-                                        </View>
                                     </View>
                                     
                                     {/* Program Info Section */}

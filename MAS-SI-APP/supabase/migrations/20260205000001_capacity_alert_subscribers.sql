@@ -5,7 +5,9 @@ CREATE TABLE IF NOT EXISTS public.capacity_alert_subscribers (
     id BIGSERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id)
+    UNIQUE(user_id),
+    CONSTRAINT capacity_alert_subscribers_profile_fk
+        FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
 );
 
 -- Add RLS policies

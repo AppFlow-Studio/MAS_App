@@ -445,12 +445,12 @@ const EventLectures = () => {
 
   const NotificationBell = () => {
     const addedToNoti = () => {
-      const goToProgram = () => {
-        navigation.navigate('myPrograms', { screen : 'notifications/[event_id]', params : { event_id : event_id}, initial: false  })
+      const goToNotificationCenter = () => {
+        router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs')
       }
       Toast.show({
         type : 'addEventToNotificationsToast',
-      props : { props : event, onPress : goToProgram },
+      props : { props : event, onPress : goToNotificationCenter },
         position : 'top',
         topOffset : 50,
       })
@@ -526,7 +526,7 @@ const EventLectures = () => {
             else{
               const { error } = await supabase.from("user_playlist_lectures").insert({user_id : session?.user.id, playlist_id : item, event_lecture_id : lectureToBeAddedToPlaylist })
               const getPlaylistAddedTo = usersPlaylists?.filter(playlist => playlist.playlist_id == playlistAddingTo[0])
-              const goToPlaylist = () => { navigation.navigate('myPrograms', { screen : 'playlists/[playlist_id]', params: { playlist_id : playlistAddingTo }}) }
+              const goToPlaylist = () => { router.push(`/myPrograms/playlists/${playlistAddingTo[0]}`) }
               if( getPlaylistAddedTo && getPlaylistAddedTo[0] ){
                 Toast.show({
                   type : 'LectureAddedToPlaylist',
@@ -585,7 +585,7 @@ const EventLectures = () => {
                  // Show toast notification
                  Toast.show({
                    type: 'EventAddedToLibrary',
-                   props: { props: event, onPress: () => navigation.navigate('myPrograms') },
+                   props: { props: event, onPress: () => router.push('/myPrograms') },
                    position: 'top',
                    topOffset: 50,
                  });

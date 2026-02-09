@@ -10,24 +10,51 @@ const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [ notificationTitle, setNotificationTitle ] = useState("");
   const [previewModal, setPreviewModal] = useState(false);
-  const [ userInfo, setUserInfo ] = useState([])
+  const [ userInfo, setUserInfo ] = useState<any[]>([])
   const getUsersInfo = async () => {
-    const { data : profile, error } = await supabase.from('profiles').select('push_notification_token').not('push_notification_token', 'is', null)
-    if( profile ){
-      profile.map((item) => {
-        item['message'] = notificationMessage
-        item['title'] = notificationTitle
-      })
-      setUserInfo(profile)
-    }else{
-      console.log( error )
+    // Paginated fetch to handle 1,000+ users
+    const PAGE_SIZE = 1000
+    const allUsers: any[] = []
+    let from = 0
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('push_notification_token')
+        .not('push_notification_token', 'is', null)
+        .range(from, from + PAGE_SIZE - 1)
+
+      if (error) {
+        console.log(error)
+        break
+      }
+      if (!data || data.length === 0) break
+      allUsers.push(...data)
+      if (data.length < PAGE_SIZE) break
+      from += PAGE_SIZE
     }
+
+    // Attach message and title to each user
+    for (const item of allUsers) {
+      item['message'] = notificationMessage
+      item['title'] = notificationTitle
+    }
+    setUserInfo(allUsers)
   }
 
   const onSend = async () => {
-    if( userInfo.length > 0 ){
-      await supabase.functions.invoke('send-prayer-notification', {body :{ notifications_batch : userInfo }})
+    if (userInfo.length === 0) return
+
+    // Send in batches of 500 to avoid payload/timeout issues
+    const SEND_BATCH_SIZE = 500
+    for (let i = 0; i < userInfo.length; i += SEND_BATCH_SIZE) {
+      const batch = userInfo.slice(i, i + SEND_BATCH_SIZE)
+      const { error } = await supabase.functions.invoke('send-prayer-notification', { body: { notifications_batch: batch } })
+      if (error) {
+        console.log(`Error sending batch ${Math.floor(i / SEND_BATCH_SIZE) + 1}:`, error)
+      }
     }
+    console.log(`Sent notifications to ${userInfo.length} users`)
   }
   const characterLimit = 150;
   const titleLimit = 30;

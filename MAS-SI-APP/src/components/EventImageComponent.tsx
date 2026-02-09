@@ -12,6 +12,10 @@ import { BlurView } from 'expo-blur'
 import { LinearGradient } from 'expo-linear-gradient'
 import DeckSwiper from 'react-native-deck-swiper'
 import * as Haptics from 'expo-haptics'
+import Toast from 'react-native-toast-message'
+import { glassyToastConfig } from '@/src/lib/toastConfig'
+
+const toastConfig = glassyToastConfig
 
 const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : EventsType, autoOpen?: boolean, onModalClose?: () => void}) => {
     const { session } = useAuth()
@@ -35,6 +39,7 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
     const scrollOffset = useRef(0)
     const previousScrollOffset = useRef(0)
     const isClosing = useRef(false)
+    const [modalToast, setModalToast] = useState<{ type: string; props: any } | null>(null)
     const router = useRouter()
     const { width, height } = Dimensions.get("window")
     
@@ -344,8 +349,24 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
             
             if (!error) {
                 setEventInNotifications(true);
+                
+                const goToNotificationCenter = () => {
+                    setModalToast(null);
+                    closeModal();
+                    setTimeout(() => {
+                        router.push('/myPrograms/notifications/NotificationEvents?initialTab=programs');
+                    }, 400);
+                };
+                
+                setModalToast({
+                    type: 'addEventToNotificationsToast',
+                    props: { props: event, onPress: goToNotificationCenter }
+                });
+                setTimeout(() => setModalToast(null), 3000);
             }
         }
+        
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     };
 
     const handleAddToProgramsPress = async () => {
@@ -375,8 +396,24 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
             
             if (!error) {
                 setEventInPrograms(true);
+                
+                const goToLibrary = () => {
+                    setModalToast(null);
+                    closeModal();
+                    setTimeout(() => {
+                        router.push('/myPrograms');
+                    }, 400);
+                };
+                
+                setModalToast({
+                    type: 'EventAddedToLibrary',
+                    props: { props: event, onPress: goToLibrary }
+                });
+                setTimeout(() => setModalToast(null), 3000);
             }
         }
+        
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     };
 
     const renderSpeakerCard = (speakerData: SheikDataType, index: number) => {
@@ -716,10 +753,10 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                     style={{
                                         width: '100%',
                                         paddingTop: 12,
-                                        paddingBottom: 8,
+                                        paddingBottom: 4,
                                         alignItems: 'center',
-                                        backgroundColor: '#FFFFFF',
-                                        zIndex: 10,
+                                        backgroundColor: 'transparent',
+                                        zIndex: 20,
                                     }}
                                 >
                                     <View style={{
@@ -730,6 +767,79 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                     }} />
                                 </Animated.View>
                                 
+                                {/* Floating Buttons - pinned over content */}
+                                <View style={{ 
+                                    position: 'absolute',
+                                    top: 28,
+                                    left: 20,
+                                    right: 20,
+                                    flexDirection: 'row', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    zIndex: 20,
+                                    pointerEvents: 'box-none',
+                                }}>
+                                    <Pressable 
+                                        onPress={closeModal} 
+                                        style={{ 
+                                            width: 36, 
+                                            height: 36, 
+                                            borderRadius: 18,
+                                            backgroundColor: 'rgba(255,255,255,0.9)',
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.15,
+                                            shadowRadius: 4,
+                                            elevation: 3,
+                                        }}
+                                    >
+                                        <Icon source="close" size={20} color="#374151" />
+                                    </Pressable>
+                                    
+                                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                                        {event && isBefore(new Date().toISOString(), event.event_end_date || '') && (
+                                            <Pressable
+                                                onPress={handleNotificationPress} 
+                                                style={{ 
+                                                    width: 36, 
+                                                    height: 36, 
+                                                    borderRadius: 18,
+                                                    backgroundColor: eventInNotifications ? '#0D509D' : 'rgba(255,255,255,0.9)',
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    shadowColor: '#000',
+                                                    shadowOffset: { width: 0, height: 2 },
+                                                    shadowOpacity: 0.15,
+                                                    shadowRadius: 4,
+                                                    elevation: 3,
+                                                }}
+                                            >
+                                                <Icon source={eventInNotifications ? "bell-check" : "bell-outline"} size={18} color={eventInNotifications ? '#FFFFFF' : '#374151'}/>
+                                            </Pressable>
+                                        )}
+                                        <Pressable 
+                                            onPress={handleAddToProgramsPress} 
+                                            style={{ 
+                                                width: 36, 
+                                                height: 36, 
+                                                borderRadius: 18,
+                                                backgroundColor: eventInPrograms ? 'rgba(16,185,129,0.9)' : 'rgba(255,255,255,0.9)',
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                shadowColor: '#000',
+                                                shadowOffset: { width: 0, height: 2 },
+                                                shadowOpacity: 0.15,
+                                                shadowRadius: 4,
+                                                elevation: 3,
+                                            }}
+                                        >
+                                            <Icon source={eventInPrograms ? 'check' : 'plus'} size={18} color={eventInPrograms ? '#FFFFFF' : '#374151'}/>
+                                        </Pressable>
+                                    </View>
+                                </View>
+
                                 {/* Main Content */}
                                 <ScrollView 
                                     ref={modalScrollRef}
@@ -738,13 +848,12 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                     contentContainerStyle={{ paddingBottom: 120 }}
                                     style={{ flex: 1 }}
                                 >
-                                    {/* Image Section with overlayed buttons */}
+                                    {/* Image Section */}
                                     <View style={{ 
                                         marginHorizontal: 16, 
                                         borderRadius: 16, 
                                         overflow: 'hidden',
                                         marginBottom: 20,
-                                        position: 'relative',
                                     }}>
                                         <View>
                                         {!modalImageReady && (
@@ -770,78 +879,6 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                                     setModalImageReady(true);
                                                 }}
                                             />
-                                        </View>
-                                        
-                                        {/* Overlayed buttons on image */}
-                                        <View style={{ 
-                                                    position: 'absolute',
-                                            top: 12,
-                                            left: 12,
-                                            right: 12,
-                                            flexDirection: 'row', 
-                                            justifyContent: 'space-between', 
-                                            alignItems: 'center',
-                                            zIndex: 10,
-                                        }}>
-                                            <Pressable 
-                                                onPress={closeModal} 
-                                                style={{ 
-                                                    width: 36, 
-                                                    height: 36, 
-                                                    borderRadius: 18,
-                                                    backgroundColor: 'rgba(255,255,255,0.9)',
-                                                    alignItems: 'center', 
-                                                    justifyContent: 'center',
-                                                    shadowColor: '#000',
-                                                    shadowOffset: { width: 0, height: 2 },
-                                                    shadowOpacity: 0.1,
-                                                    shadowRadius: 4,
-                                                    elevation: 3,
-                                                }}
-                                            >
-                                                <Icon source="close" size={20} color="#374151" />
-                                            </Pressable>
-                                            
-                                            <View style={{ flexDirection: 'row', gap: 10 }}>
-                                                {event && isBefore(new Date().toISOString(), event.event_end_date || '') && (
-                                                    <Pressable
-                                                        onPress={handleNotificationPress} 
-                                                        style={{ 
-                                                            width: 36, 
-                                                            height: 36, 
-                                                            borderRadius: 18,
-                                                            backgroundColor: eventInNotifications ? '#0D509D' : 'rgba(255,255,255,0.9)',
-                                                            alignItems: 'center', 
-                                                            justifyContent: 'center',
-                                                            shadowColor: '#000',
-                                                            shadowOffset: { width: 0, height: 2 },
-                                                            shadowOpacity: 0.1,
-                                                            shadowRadius: 4,
-                                                            elevation: 3,
-                                                        }}
-                                                    >
-                                                        <Icon source={eventInNotifications ? "bell-check" : "bell-outline"} size={18} color={eventInNotifications ? '#FFFFFF' : '#374151'}/>
-                                                    </Pressable>
-                                                )}
-                                                <Pressable 
-                                                    onPress={handleAddToProgramsPress} 
-                                                    style={{ 
-                                                        width: 36, 
-                                                        height: 36, 
-                                                        borderRadius: 18,
-                                                        backgroundColor: eventInPrograms ? 'rgba(16,185,129,0.9)' : 'rgba(255,255,255,0.9)',
-                                                        alignItems: 'center', 
-                                                        justifyContent: 'center',
-                                                        shadowColor: '#000',
-                                                        shadowOffset: { width: 0, height: 2 },
-                                                        shadowOpacity: 0.1,
-                                                        shadowRadius: 4,
-                                                        elevation: 3,
-                                                    }}
-                                                >
-                                                    <Icon source={eventInPrograms ? 'check' : 'plus'} size={18} color={eventInPrograms ? '#FFFFFF' : '#374151'}/>
-                                                </Pressable>
-                                            </View>
                                         </View>
                                     </View>
                                     
@@ -1027,6 +1064,40 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                             </Modal>
                         </Portal>
                     </Modal>
+                    
+                    {/* Custom Toast Notification - Renders inside modal Portal to appear on top */}
+                    {modalToast && (
+                        <View
+                            style={{
+                                position: 'absolute',
+                                top: 50,
+                                left: 0,
+                                right: 0,
+                                zIndex: 9999,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                pointerEvents: 'box-none',
+                                paddingHorizontal: 16,
+                            }}
+                        >
+                            <View style={{ width: '100%', maxWidth: '100%' }}>
+                                <Pressable 
+                                    onPress={() => {
+                                        if (modalToast.props.onPress) {
+                                            modalToast.props.onPress();
+                                        }
+                                        setModalToast(null);
+                                    }}
+                                    className='rounded-xl overflow-hidden'
+                                    style={{ width: '100%', maxWidth: '100%' }}
+                                >
+                                    <View style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                                        {toastConfig[modalToast.type as keyof typeof toastConfig]?.({ props: modalToast.props } as any)}
+                                    </View>
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
                 </Portal>
             )}
         </>

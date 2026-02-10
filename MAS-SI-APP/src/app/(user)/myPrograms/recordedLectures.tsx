@@ -447,13 +447,8 @@ const RecordedLectures = () => {
                       }}
                       returnKeyType="search"
                     />
-                    {searchQuery.length > 0 && (
-                      <Pressable onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
-                        <Ionicons name="close-circle" size={17} color="rgba(255, 255, 255, 0.6)" />
-                      </Pressable>
-                    )}
                     <Pressable 
-                      onPress={deactivateSearch}
+                      onPress={searchQuery.length > 0 ? () => setSearchQuery('') : deactivateSearch}
                       style={{ paddingLeft: 6, paddingRight: 10, paddingVertical: 6 }}
                     >
                       <Ionicons name="close" size={20} color="white" />
@@ -525,13 +520,8 @@ const RecordedLectures = () => {
                       }}
                       returnKeyType="search"
                     />
-                    {searchQuery.length > 0 && (
-                      <Pressable onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
-                        <Ionicons name="close-circle" size={17} color="rgba(255, 255, 255, 0.6)" />
-                      </Pressable>
-                    )}
                     <Pressable 
-                      onPress={deactivateSearch}
+                      onPress={searchQuery.length > 0 ? () => setSearchQuery('') : deactivateSearch}
                       style={{ paddingLeft: 6, paddingRight: 10, paddingVertical: 6 }}
                     >
                       <Ionicons name="close" size={20} color="white" />

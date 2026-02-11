@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Pressable, ImageBackground } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { gettingPrayerData } from '../types';
-import { parse, isAfter, isBefore, addDays, differenceInMilliseconds } from 'date-fns';
+import { format, parse, isAfter, isBefore, addDays, differenceInMilliseconds } from 'date-fns';
 import { Link, useRouter } from 'expo-router';
 import { Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,7 +9,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
 const parseTime = (timeStr: string): Date => {
-    return parse(timeStr, 'h:mm a', new Date());
+    const now = new Date();
+
+    // 24-hour format: "05:39:00" or "17:30" or "5:39:00"
+    const match24 = timeStr.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (match24) {
+        const result = new Date(now);
+        result.setHours(parseInt(match24[1], 10), parseInt(match24[2], 10), 0, 0);
+        return result;
+    }
+
+    // 12-hour format: "5:39 AM", "5:39AM", "5:39\u202FAM"
+    const match12 = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (match12) {
+        let hours = parseInt(match12[1], 10);
+        const minutes = parseInt(match12[2], 10);
+        const period = match12[3].toUpperCase();
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        const result = new Date(now);
+        result.setHours(hours, minutes, 0, 0);
+        return result;
+    }
+
+    // Fallback
+    const normalized = timeStr.replace(/[\u00A0\u202F]/g, ' ');
+    return parse(normalized, 'h:mm a', now);
 };
 
 type salahDisplayWidgetProp = {
@@ -185,7 +210,7 @@ export default function SalahDisplayWidget({ prayer, nextPrayer }: salahDisplayW
         }
     }
 
-    const currentTime = liveTime.toLocaleTimeString("en-US", { hour12: true, hour: "numeric", minute: "numeric" });
+    const currentTime = format(liveTime, 'h:mm a');
     const timeToNextPrayer = getTimeToNextPrayer();
     const compareTime = () => {
         const currentDate = parseTime(currentTime);

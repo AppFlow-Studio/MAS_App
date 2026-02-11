@@ -1196,6 +1196,12 @@ export default function Index() {
     };
   }, [session?.user.id]);
 
+  const renderPrayerTable = useCallback(({ item, index }: { item: gettingPrayerData; index: number }) => (
+    <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings} />
+  ), [tableIndex, UserSettings]);
+
+  const prayerTableKeyExtractor = useCallback((item: gettingPrayerData, index: number) => `prayer-${index}`, []);
+
   // Early returns AFTER all hooks
   if (isLoading) {
     return (
@@ -1227,12 +1233,6 @@ export default function Index() {
   const FirstTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1)
   const SecondTaraweehTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1, FirstTaraweehTime.getMinutes() + 20)
   const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2, FirstTaraweehTime.getMinutes() + 20)
-
-  const renderPrayerTable = useCallback(({ item, index }: { item: gettingPrayerData; index: number }) => (
-    <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings} />
-  ), [tableIndex, UserSettings]);
-
-  const prayerTableKeyExtractor = useCallback((item: gettingPrayerData, index: number) => `prayer-${index}`, []);
 
   return (
     <LinearGradient

@@ -8,5 +8,13 @@
     <array>
       <string>Default</string>
     </array>
+    <key>com.apple.developer.associated-domains</key>
+    <array>
+      <string>applinks:yourdomain.com</string>
+    </array>
+    <key>com.apple.developer.in-app-payments</key>
+    <array>
+      <string>merchant.com.MAS-SI-APP</string>
+    </array>
   </dict>
 </plist>

@@ -31,6 +31,7 @@ import { LiquidGlassView, isLiquidGlassSupported } from '@/src/lib/liquidGlass';
 import { Pencil, X, Check } from 'lucide-react-native';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
+import { useIsRamadan } from '@/src/lib/ramadanConfig';
 
 type NotificationOption = 'prayer_time' | 'iqamah_time' | '30_min_before' | 'mute';
 
@@ -56,6 +57,7 @@ const NotificationPrayerTable = ({
   openPrayer,
 }: prayerDataProp) => {
   const { session } = useAuth();
+  const isRamadan = useIsRamadan();
   const currentPrayer = useCurrentPrayer();
   const { width, height } = Dimensions.get("window");
   const navigation = useNavigation<any>();
@@ -318,7 +320,9 @@ const NotificationPrayerTable = ({
     const hasValidOptions = currentOptions.length > 0 && !currentOptions.includes('mute');
     
     // Save to database for all prayers
-    const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'taraweeh 1', 'taraweeh 2'];
+    const prayers = isRamadan
+      ? ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'taraweeh 1', 'taraweeh 2']
+      : ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
     
     for (const prayer of prayers) {
       const { data: existingSettings } = await supabase
@@ -479,89 +483,93 @@ const NotificationPrayerTable = ({
             })
           }
           
-          {/* Taraweeh 1 Card */}
-          <View style={styles.prayerCardOffWhite}>
-            <View style={styles.prayerCard}>
-              <Image 
-                source={require('@/assets/images/glowingTree.png')} 
-                style={styles.prayerIcon}
-                resizeMode="contain"
-              />
-              <View style={styles.contentContainer}>
-                <Text style={styles.prayerName}>Taraweeh 1</Text>
-                <View style={styles.timeRow}>
-                  <Text style={styles.timeLabel}>Athan</Text>
-                  <Text style={styles.timeValue}>--</Text>
-                </View>
-                <View style={styles.timeRow}>
-                  <Text style={styles.timeLabel}>Iqamah</Text>
-                  <Text style={styles.timeValue}>{format(FirstTaraweehTime, 'h:mma')}</Text>
+          {isRamadan && (
+            <>
+              {/* Taraweeh 1 Card */}
+              <View style={styles.prayerCardOffWhite}>
+                <View style={styles.prayerCard}>
+                  <Image
+                    source={require('@/assets/images/glowingTree.png')}
+                    style={styles.prayerIcon}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.contentContainer}>
+                    <Text style={styles.prayerName}>Taraweeh 1</Text>
+                    <View style={styles.timeRow}>
+                      <Text style={styles.timeLabel}>Athan</Text>
+                      <Text style={styles.timeValue}>--</Text>
+                    </View>
+                    <View style={styles.timeRow}>
+                      <Text style={styles.timeLabel}>Iqamah</Text>
+                      <Text style={styles.timeValue}>{format(FirstTaraweehTime, 'h:mma')}</Text>
+                    </View>
+                  </View>
+                  {/* Edit Button */}
+                  <Pressable
+                    style={styles.editIconBlurSmall}
+                    onPress={() => {
+                      setSelectedPrayer('Taraweeh 1');
+                      setModalVisible(true);
+                    }}
+                  >
+                    <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+                    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                      <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
+                    </View>
+                  </Pressable>
+                  <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                    <Switch
+                      value={prayerSettings['Taraweeh 1']?.enabled || false}
+                      onValueChange={() => handleToggle('Taraweeh 1')}
+                      color="#6EE7B7"
+                    />
+                  </View>
                 </View>
               </View>
-              {/* Edit Button */}
-              <Pressable 
-                style={styles.editIconBlurSmall}
-                onPress={() => {
-                  setSelectedPrayer('Taraweeh 1');
-                  setModalVisible(true);
-                }}
-              >
-                <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
-                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
-                </View>
-              </Pressable>
-              <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                <Switch
-                  value={prayerSettings['Taraweeh 1']?.enabled || false}
-                  onValueChange={() => handleToggle('Taraweeh 1')}
-                  color="#6EE7B7"
-                />
-              </View>
-            </View>
-          </View>
 
-          {/* Taraweeh 2 Card */}
-          <View style={styles.prayerCardOffWhite}>
-            <View style={styles.prayerCard}>
-              <Image 
-                source={require('@/assets/images/glowingTree.png')} 
-                style={styles.prayerIcon}
-                resizeMode="contain"
-              />
-              <View style={styles.contentContainer}>
-                <Text style={styles.prayerName}>Taraweeh 2</Text>
-                <View style={styles.timeRow}>
-                  <Text style={styles.timeLabel}>Athan</Text>
-                  <Text style={styles.timeValue}>--</Text>
-                </View>
-                <View style={styles.timeRow}>
-                  <Text style={styles.timeLabel}>Iqamah</Text>
-                  <Text style={styles.timeValue}>{format(SecondTaraweehTime, 'h:mma')}</Text>
+              {/* Taraweeh 2 Card */}
+              <View style={styles.prayerCardOffWhite}>
+                <View style={styles.prayerCard}>
+                  <Image
+                    source={require('@/assets/images/glowingTree.png')}
+                    style={styles.prayerIcon}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.contentContainer}>
+                    <Text style={styles.prayerName}>Taraweeh 2</Text>
+                    <View style={styles.timeRow}>
+                      <Text style={styles.timeLabel}>Athan</Text>
+                      <Text style={styles.timeValue}>--</Text>
+                    </View>
+                    <View style={styles.timeRow}>
+                      <Text style={styles.timeLabel}>Iqamah</Text>
+                      <Text style={styles.timeValue}>{format(SecondTaraweehTime, 'h:mma')}</Text>
+                    </View>
+                  </View>
+                  {/* Edit Button */}
+                  <Pressable
+                    style={styles.editIconBlurSmall}
+                    onPress={() => {
+                      setSelectedPrayer('Taraweeh 2');
+                      setModalVisible(true);
+                    }}
+                  >
+                    <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+                    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                      <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
+                    </View>
+                  </Pressable>
+                  <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                    <Switch
+                      value={prayerSettings['Taraweeh 2']?.enabled || false}
+                      onValueChange={() => handleToggle('Taraweeh 2')}
+                      color="#6EE7B7"
+                    />
+                  </View>
                 </View>
               </View>
-              {/* Edit Button */}
-              <Pressable 
-                style={styles.editIconBlurSmall}
-                onPress={() => {
-                  setSelectedPrayer('Taraweeh 2');
-                  setModalVisible(true);
-                }}
-              >
-                <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
-                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  <Pencil color="rgba(255, 255, 255, 0.9)" size={14} strokeWidth={2} />
-                </View>
-              </Pressable>
-              <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                <Switch
-                  value={prayerSettings['Taraweeh 2']?.enabled || false}
-                  onValueChange={() => handleToggle('Taraweeh 2')}
-                  color="#6EE7B7"
-                />
-              </View>
-            </View>
-          </View>
+            </>
+          )}
           </ScrollView>
             {/* Jummah section moved to its own tab */}
             {/* <Text className="font-bold text-lg mt-[15%] mb-1">Taraweeh Notifications</Text>

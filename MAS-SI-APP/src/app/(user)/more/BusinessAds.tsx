@@ -26,6 +26,7 @@ import BusinessAdPreview from '@/src/components/BusinessAdsComponets/BusinessAdP
 import { setupStripePaymentSheet, openStripePaymentSheet, fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod, createBusinessSubscription } from '@/src/lib/StripePaySheet'
 import { savePendingBusinessAdSubmission } from '@/src/lib/businessAdsSubmission'
 import * as WebBrowser from 'expo-web-browser'
+import { formatPhoneNumber } from '@/src/lib/utils'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 
@@ -187,20 +188,6 @@ const BusinessAds = () => {
         loadSavedCards()
     }, [])
 
-    // Phone number formatter - formats as (XXX) XXX-XXXX
-    const formatPhoneNumber = (text: string) => {
-        // Remove all non-numeric characters
-        const cleaned = text.replace(/\D/g, '')
-        
-        // Limit to 10 digits
-        const limited = cleaned.slice(0, 10)
-        
-        // Format based on length
-        if (limited.length === 0) return ''
-        if (limited.length <= 3) return `(${limited}`
-        if (limited.length <= 6) return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
-        return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6)}`
-    }
 
     // Animated progress bar
     const progressWidth = useSharedValue(1 / TOTAL_STEPS)

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image, Dimensions, StatusBar, ImageBackground, FlatList } from 'react-native'
+import { View, Text, Pressable, Dimensions, StatusBar, ImageBackground, FlatList, Image } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { ScrollView } from 'react-native-gesture-handler'
 import { Animated, PanResponder } from 'react-native'
@@ -26,19 +26,10 @@ import Toast from 'react-native-toast-message'
 import * as Haptics from 'expo-haptics'
 import DeckSwiper from 'react-native-deck-swiper'
 import { glassyToastConfig } from '@/src/lib/toastConfig'
+import { getVideoIdFromUrl } from '@/src/lib/utils'
 
 // Use centralized glassy toast config
 const toastConfig = glassyToastConfig
-
-// Helper function to extract video ID from YouTube URL
-const getVideoIdFromUrl = (url: string) => {
-  if (!url) return null;
-  if (!url.includes('/') && !url.includes('?')) {
-    return url;
-  }
-  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-  return match ? match[1] : null;
-};
 
 const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Program, autoOpen?: boolean, onModalClose?: () => void}) => {
     const { session } = useAuth()
@@ -411,16 +402,16 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         }
     }, [selectedLecture]);
 
-    const fetchProgramData = async () => {
+    const fetchProgramData = useCallback(async () => {
         const { data, error } = await supabase
             .from("programs")
             .select("*")
             .eq("program_id", item.program_id)
             .single();
-        
+
         if (data && !error) {
             setProgram(data);
-            
+
             // Check if program is in notifications
             if (session?.user.id) {
                 const { data: checkIfExists } = await supabase
@@ -429,11 +420,11 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                     .eq("user_id", session.user.id)
                     .eq("program_id", item.program_id)
                     .single();
-                
+
                 if (checkIfExists) {
                     setProgramInNotifications(true);
                 }
-                
+
                 // Check if program is in programs
                 const { data: programExists } = await supabase
                     .from('added_programs')
@@ -441,13 +432,13 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                     .eq('user_id', session.user.id)
                     .eq('program_id', item.program_id)
                     .single();
-                
+
                 if (programExists) {
                     setProgramInPrograms(true);
                 }
             }
         }
-    };
+    }, [item.program_id, session?.user.id]);
     
     const getUserPlaylists = async () => {
         if (!session?.user.id) return;
@@ -688,12 +679,12 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     };
 
-    const fetchSpeakerData = async () => {
+    const fetchSpeakerData = useCallback(async () => {
         const speakerArray = Array.isArray(item.program_speaker) ? item.program_speaker : (item.program_speaker ? [item.program_speaker] : []);
         if (speakerArray && speakerArray.length > 0) {
             const speakers: SheikDataType[] = [];
             let speaker_string: string[] = speakerArray.map(() => '');
-            
+
             await Promise.all(
                 speakerArray.map(async (speaker_id: string, index: number) => {
                     const { data: speakerInfo } = await supabase
@@ -701,7 +692,7 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                         .select('*')
                         .eq('speaker_id', speaker_id)
                         .single();
-                    
+
                     if (speakerInfo) {
                         if (index === speakerArray.length - 1) {
                             speaker_string[index] = speakerInfo.speaker_name;
@@ -712,11 +703,11 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                     }
                 })
             );
-            
+
             setSpeakerData(speakers);
             setSpeakerString(speaker_string.join(''));
         }
-    };
+    }, [item.program_speaker]);
 
     const openModal = useCallback(() => {
         // Reset closing state
@@ -759,18 +750,18 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         
         // Fetch speaker data
         fetchSpeakerData();
-    }, [slideAnim, item.has_lectures, item.program_id, lectures.length]);
+    }, [slideAnim, item.has_lectures, item.program_id, lectures.length, fetchProgramData, fetchSpeakerData, fetchLectures]);
 
     
-    const renderSpeakerCard = (speakerData: SheikDataType, index: number) => {
+    const renderSpeakerCard = useCallback((speakerData: SheikDataType, index: number) => {
         const cardWidth = width * 0.85;
         const maxCardHeight = height * 0.55; // 55% of screen height
-        
+
         return (
-            <View style={{ 
+            <View style={{
                 width: width,
                 height: maxCardHeight,
-                justifyContent: 'center', 
+                justifyContent: 'center',
                 alignItems: 'center',
             }}>
                 <BlurView
@@ -815,10 +806,10 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                                 borderColor: '#E5E7EB',
                                 marginRight: 16,
                             }}>
-                                <Image 
-                                    source={speakerData?.speaker_img ? { uri: speakerData.speaker_img } : require("@/assets/images/MASHomeLogo.png")} 
-                                    style={{ width: '100%', height: '100%' }} 
-                                    resizeMode='cover'
+                                <Image
+                                    source={speakerData?.speaker_img ? { uri: speakerData.speaker_img } : require("@/assets/images/MASHomeLogo.png")}
+                                    style={{ width: '100%', height: '100%' }}
+                                    resizeMode="cover"
                                 />
                             </View>
                             <View className='flex-1'>
@@ -849,7 +840,7 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                 </BlurView>
             </View>
         );
-    };
+    }, [width, height]);
 
     const GetSheikData = () => {
         if (!speakerData || speakerData.length === 0) {
@@ -968,18 +959,18 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
         );
     };
 
-    const fetchLectures = async () => {
+    const fetchLectures = useCallback(async () => {
         const { data, error } = await supabase
             .from("program_lectures")
             .select("*")
             .eq("lecture_program", item.program_id)
             .order('lecture_date', { ascending: false });
-        
+
         if (data && !error) {
             setLectures(data);
             checkWatchedStatus(data);
         }
-    };
+    }, [item.program_id]);
 
     // Handle press - navigate if program has lectures with YouTube links, otherwise open modal
     const handlePress = useCallback(async () => {
@@ -1034,10 +1025,10 @@ const FlyerImageComponent = ({item, autoOpen = false, onModalClose} : {item : Pr
                         { !imageReady && 
                             <FlyerSkeleton width={150} height={150} style={{position : 'absolute', top : 0, zIndex : 2}}/>
                         }
-                        <Image 
-                            source={(hasError || !item.program_img || item.program_img.trim() === '') 
-                                ? require("@/assets/images/massicliquidglassicon.png") 
-                                : { uri : item.program_img }} 
+                        <Image
+                            source={(hasError || !item.program_img || item.program_img.trim() === '')
+                                ? require("@/assets/images/massicliquidglassicon.png")
+                                : { uri : item.program_img }}
                             style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}
                             resizeMode="cover"
                             onLoad={() => setImageReady(true)}

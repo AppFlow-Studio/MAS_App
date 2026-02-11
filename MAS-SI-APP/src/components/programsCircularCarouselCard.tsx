@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, useWindowDimensions, Pressable} from 'react-native'
+import { View, Text, TouchableOpacity, useWindowDimensions, Pressable, Image} from 'react-native'
 import React, {useRef, useState, useEffect, memo}from 'react';
 import { Program } from '../types';
 import { Link, useRouter } from 'expo-router';
@@ -30,32 +30,32 @@ const ProgramsCircularCarouselCard = memo(function ProgramsCircularCarouselCard(
       (index  + 1) * listItemWidth
     ]
   
-    useEffect(() => {
-      scrollXShared.value = scrollX;
-      // Fade in when component mounts
-      opacity.value = withTiming(1, { duration: 500 });
-    }, [scrollX]);
+    // useEffect(() => {
+    //   scrollXShared.value = scrollX;
+    //   // Fade in when component mounts
+    //   opacity.value = withTiming(1, { duration: 500 });
+    // }, [scrollX]);
 
-    const cardStyle = useAnimatedStyle(() =>{
-      const scale = interpolate(
-        scrollXShared.value,
-        inputRange,
-        [0.6, 1, 0.6],
-        Extrapolation.CLAMP
-      );
+    // const cardStyle = useAnimatedStyle(() =>{
+    //   const scale = interpolate(
+    //     scrollXShared.value,
+    //     inputRange,
+    //     [0.6, 1, 0.6],
+    //     Extrapolation.CLAMP
+    //   );
       
-      const opacityValue = interpolate(
-        scrollXShared.value,
-        inputRange,
-        [0.3, 1, 0.3],
-        Extrapolation.CLAMP
-      );
+    //   const opacityValue = interpolate(
+    //     scrollXShared.value,
+    //     inputRange,
+    //     [0.3, 1, 0.3],
+    //     Extrapolation.CLAMP
+    //   );
       
-      return{
-        transform : [{scaleY : scale}],
-        opacity: opacityValue * opacity.value
-      }
-    })
+    //   return{
+    //     transform : [{scaleY : scale}],
+    //     opacity: opacityValue * opacity.value
+    //   }
+    // })
 
   if( lastIndex == null ) {
     return
@@ -67,22 +67,25 @@ const ProgramsCircularCarouselCard = memo(function ProgramsCircularCarouselCard(
     } as any);
   };
 
+  //  cardStyle, {marginLeft : index == 0 ? itemSpacer : spacing, marginRight : index == lastIndex - 1 ? itemSpacer : spacing}
+  // {width: listItemWidth, marginLeft: spacing, marginRight: spacing},
+
+  // width: listItemWidth 
   return (
-    <Animated.View style={[{width: listItemWidth, marginLeft: spacing, marginRight: spacing}, cardStyle, {marginLeft : index == 0 ? itemSpacer : spacing, marginRight : index == lastIndex - 1 ? itemSpacer : spacing}]} className=''>
+    <Animated.View style={[]} className=''>
       <Pressable 
         style={{justifyContent: "center" , alignItems : "center"}} 
         disabled={!disabled}
         onPress={handlePress}
       >
-        <View style={{width: listItemWidth , height: 200, shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, justifyContent: "center", alignItems: "center", borderRadius: 20, elevation : 8, position : 'relative' }} >
+        <View style={{ height: 200, shadowColor: "black", shadowOffset: { width: 0, height: 0},shadowOpacity: 0.6, justifyContent: "center", alignItems: "center", borderRadius: 20, elevation : 8, position : 'relative' }} >
          { !imageReady && 
          <FlyerSkeleton width={listItemWidth} height={200} style={{position : 'absolute', top : 0, zIndex : 2}}/>
          }
          <Image
           source={program.program_img ? { uri: program.program_img } : require("@/assets/images/MASHomeLogo.png")}
-          style={{ width: "100%", height: "100%", resizeMode: "stretch", overflow: "hidden", borderRadius: 20 }}
-          width={listItemWidth}
-          height={200}
+          style={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: 20 }}
+          resizeMode="cover"
           onLoad={() => setImageReady(true)}
           onError={() => setImageReady(false)}
           /> 

@@ -7,6 +7,9 @@ export const queryKeys = {
     lectures: (id: string) => [...queryKeys.programs.all, 'lectures', id] as const,
     withRecordedLectures: () => [...queryKeys.programs.all, 'with-recorded-lectures'] as const,
   },
+  upcoming: {
+    all: ['upcoming'] as const,
+  },
   events: {
     all: ['events'] as const,
     current: () => [...queryKeys.events.all, 'current'] as const,
@@ -34,5 +37,18 @@ export const queryKeys = {
   },
   prayerSettings: {
     notifications: (userId: string) => ['prayer-settings', userId, 'notifications'] as const,
+  },
+  jummah: {
+    all: ['jummah'] as const,
+  },
+  donations: {
+    all: ['donations'] as const,
+  },
+  businessAds: {
+    submissions: () => ['business-ads', 'submissions'] as const,
+  },
+  quran: {
+    bookmarkedSurahs: (userId: string) => ['quran', 'bookmarked-surahs', userId] as const,
+    bookmarkedAyahs: (userId: string) => ['quran', 'bookmarked-ayahs', userId] as const,
   },
 }

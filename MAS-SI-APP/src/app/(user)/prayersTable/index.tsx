@@ -1,7 +1,7 @@
 import { View, Text, FlatList, Image, Pressable, StatusBar, Dimensions, ImageBackground, StyleSheet } from 'react-native';
 import Paginator from '@/src/components/paginator';
 import Table from "@/src/components/prayerTimeTable";
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { usePrayerTimes, useCurrentPrayer, useUpcomingPrayer, useTimeToNextPrayer } from '@/src/hooks/usePrayerTimes';
 import { gettingPrayerData } from '@/src/types';
 import { Divider, Icon } from 'react-native-paper';
@@ -1227,6 +1227,13 @@ export default function Index() {
   const FirstTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1)
   const SecondTaraweehTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1, FirstTaraweehTime.getMinutes() + 20)
   const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2, FirstTaraweehTime.getMinutes() + 20)
+
+  const renderPrayerTable = useCallback(({ item, index }: { item: gettingPrayerData; index: number }) => (
+    <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings} />
+  ), [tableIndex, UserSettings]);
+
+  const prayerTableKeyExtractor = useCallback((item: gettingPrayerData, index: number) => `prayer-${index}`, []);
+
   return (
     <LinearGradient
       colors={['#e8f4fc', '#f5fafd']}
@@ -1247,7 +1254,8 @@ export default function Index() {
           {/* Weekly Prayer Times */}
           <FlatList
             data={prayerTimesWeek}
-            renderItem={({ item, index }) => <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings} />}
+            renderItem={renderPrayerTable}
+            keyExtractor={prayerTableKeyExtractor}
             horizontal
             bounces={false}
             showsHorizontalScrollIndicator={false}
@@ -1256,6 +1264,9 @@ export default function Index() {
             viewabilityConfig={viewConfig}
             contentContainerStyle={{ justifyContent: "center", alignItems: "center" }}
             ref={flatlistRef}
+            removeClippedSubviews={true}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
             className='h-[100%] p-0'
           />
           {/* Business Ads */}

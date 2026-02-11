@@ -6,7 +6,8 @@ import ProgramsCircularCarouselCard from './programsCircularCarouselCard';
 import { useAuth } from '../providers/AuthProvider';
 import SignInAnonModal from './SignInAnonModal';
 import { useCurrentPrograms } from '../hooks/usePrograms';
-
+import { useSharedValue } from "react-native-reanimated";
+import Carousel from "react-native-reanimated-carousel";
 export default function ProgramsCircularCarousel(  ) {
     const { session } = useAuth()
     const { data: programsData } = useCurrentPrograms()
@@ -108,13 +109,19 @@ export default function ProgramsCircularCarousel(  ) {
       />
     ), [scrollX, listItemWidth, SIDE_CARD_LENGTH, SPACEING, endOfList, canPressFlyers]);
   
+  
+  const progress = useSharedValue<number>(0);
 
   return (
     
-    <View>
-    <Animated.View className='' style={{height: 300, position: 'relative'}}>
-      <Pressable onPress={SignInModalCheck}>
-        <Animated.FlatList
+    <View
+			// dataSet={{ kind: "basic-layouts", name: "parallax" }}
+    >
+    <View className='' style={{height: 300, position: 'relative'}}
+    id='carousel-component'
+    >
+      {/* <Pressable onPress={SignInModalCheck}> */}
+        {/* <Animated.FlatList
                   data={programsData}
                   renderItem={renderItem}
                   keyExtractor={keyExtractor}
@@ -133,9 +140,28 @@ export default function ProgramsCircularCarousel(  ) {
                   initialNumToRender={3}
                   maxToRenderPerBatch={2}
                   windowSize={5}
-        />
-       </Pressable>
-    </Animated.View>
+        /> */}
+        <Carousel
+				width={windowWidth}
+				height={258}
+				autoPlay={true}
+				autoPlayInterval={2000}
+				data={programsData}
+				loop={true}
+				pagingEnabled={true}
+				snapEnabled={true}
+				mode="parallax"
+				modeConfig={{
+					parallaxScrollingScale: 0.9,
+					parallaxScrollingOffset: 165,
+				}}
+				onProgressChange={progress}
+				renderItem={renderItem}
+			/>
+
+
+       {/* </Pressable> */}
+    </View>
     <SignInAnonModal visible={visible} setVisible={() => setVisible(false)} />
     </View>
 

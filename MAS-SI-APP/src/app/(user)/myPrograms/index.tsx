@@ -1,5 +1,5 @@
 import { View, Text, FlatList, Pressable, ScrollView, StatusBar, Image, Dimensions, RefreshControl, ActivityIndicator, Platform } from 'react-native'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import RenderMyLibraryProgram from '@/src/components/UserProgramComponets/renderMyLibraryProgram';
 import { useAuth } from '@/src/providers/AuthProvider';
@@ -226,17 +226,21 @@ async function signUpWithEmail() {
     return content
   }
 
-  return (
-    <ScrollView 
-      style={{ flex: 1, backgroundColor: '#F8F9FA' }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      showsVerticalScrollIndicator={false}
-    >
+  const renderProgramItem = useCallback(({ item: program }: { item: { program_id: string } }) => (
+    <View style={{ width: '48%', marginBottom: 10, marginHorizontal: '1%' }}>
+      <RenderMyLibraryProgram program_id={program.program_id} />
+    </View>
+  ), []);
+
+  const programKeyExtractor = useCallback((item: { program_id: string }, index: number) => `${item.program_id}-${index}`, []);
+
+  const ListHeader = useMemo(() => (
+    <>
       <StatusBar barStyle={"dark-content"}/>
-      
+
       {/* Auth Modal - uses the same SignInAnonModal as More screen */}
-      <SignInAnonModal 
-        visible={guestAuthModalVisible} 
+      <SignInAnonModal
+        visible={guestAuthModalVisible}
         setVisible={() => setGuestAuthModalVisible(false)}
         dismissable={true}
         showLanding={true}
@@ -250,8 +254,8 @@ async function signUpWithEmail() {
       />
 
       {/* Header */}
-      <View style={{ 
-        paddingTop: Platform.OS === 'ios' ? 30 : 30, 
+      <View style={{
+        paddingTop: Platform.OS === 'ios' ? 30 : 30,
         paddingBottom: 8,
         paddingHorizontal: 18,
         backgroundColor: '#F8F9FA',
@@ -272,24 +276,36 @@ async function signUpWithEmail() {
         <MenuItem title="Recorded Lectures" subtitle="View your recorded lectures" href="/myPrograms/recordedLectures" icon="video" />
       </View>
 
-      {/* My Programs */}
+      {/* My Programs Header */}
       {userPrograms && userPrograms.length > 0 && (
         <View style={{ marginTop: 12, paddingHorizontal: 16 }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 10, marginLeft: 4 }}>
             My Programs
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-            {userPrograms.map((program, index) => (
-              <View key={index} style={{ width: '48%', marginBottom: 10 }}>
-                <RenderMyLibraryProgram program_id={program.program_id} />
-              </View>
-            ))}
-          </View>
         </View>
       )}
+    </>
+  ), [guestAuthModalVisible, refreshing, userPrograms?.length]);
 
-      {/* Bottom spacing for tab bar */}
-      <View style={{ height: 100 }} />
-    </ScrollView>
+  const ListFooter = useMemo(() => (
+    <View style={{ height: 100 }} />
+  ), []);
+
+  return (
+    <FlatList
+      data={userPrograms && userPrograms.length > 0 ? userPrograms : []}
+      renderItem={renderProgramItem}
+      keyExtractor={programKeyExtractor}
+      numColumns={2}
+      columnWrapperStyle={{ paddingHorizontal: 16, justifyContent: 'space-between' }}
+      ListHeaderComponent={ListHeader}
+      ListFooterComponent={ListFooter}
+      removeClippedSubviews={true}
+      initialNumToRender={10}
+      maxToRenderPerBatch={10}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      showsVerticalScrollIndicator={false}
+      style={{ flex: 1, backgroundColor: '#F8F9FA' }}
+    />
   )
 }

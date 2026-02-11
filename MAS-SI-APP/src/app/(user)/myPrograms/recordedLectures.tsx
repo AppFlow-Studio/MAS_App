@@ -37,7 +37,8 @@ const ProgramCard = memo(({ item, onPress }: { item: Program, onPress: () => voi
             source={(imageError || !item.program_img || item.program_img.trim() === '')
               ? require("@/assets/images/massicliquidglassicon.png")
               : { uri: item.program_img }}
-            style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
             onError={() => setImageError(true)}
           />
         </View>
@@ -99,7 +100,8 @@ const EventCard = memo(({ item, onPress }: { item: EventsType, onPress: () => vo
             source={(imageError || !item.event_img || item.event_img.trim() === '')
               ? require("@/assets/images/massicliquidglassicon.png")
               : { uri: item.event_img }}
-            style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
             onError={() => setImageError(true)}
           />
         </View>

@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, FlatList, RefreshControl, Pressable, Dimensions, TouchableOpacity, StatusBar, Animated as RNAnimated, Modal, PanResponder, TextInput } from 'react-native'
 import React, { useEffect, useState, useRef } from 'react'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, interpolate, runOnJS } from 'react-native-reanimated'
-import { supabase } from '@/src/lib/supabase'
 import { EventsType, Program } from '@/src/types'
+import { useUpcomingEvents } from '@/src/hooks/useUpcomingEvents'
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router'
 import { Icon } from 'react-native-paper'
 import { Ionicons } from '@expo/vector-icons'
@@ -39,8 +39,9 @@ const UpcomingEvents = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { openProgramId } = useLocalSearchParams<{ openProgramId?: string }>()
-  const [upcoming, setUpcoming] = useState<Program[]>([])
-  const [upcomingEvents, setUpcomingEvents] = useState<EventsType[]>([])
+  const { data: upcomingData, isLoading, refetch } = useUpcomingEvents()
+  const upcoming = upcomingData?.programs || []
+  const upcomingEvents = upcomingData?.events || []
   const [refreshing, setRefreshing] = useState(false)
   const [autoOpenProgram, setAutoOpenProgram] = useState<Program | null>(null)
   const hasAutoOpened = useRef(false)
@@ -208,21 +209,14 @@ const UpcomingEvents = () => {
     })
   ).current
 
-  const GetUpcomingEvents = async () => {
+  const onRefresh = async () => {
     setRefreshing(true)
-    const date = new Date()
-    const isoString = date.toISOString()
-    const { data: programs } = await supabase.from('programs').select('*').gte('program_end_date', isoString)
-    const { data: events } = await supabase.from('events').select('*').gte('event_end_date', isoString)
-
-    if (programs) setUpcoming(programs)
-    if (events) setUpcomingEvents(events)
-    setRefreshing(false)
+    try {
+      await refetch()
+    } finally {
+      setRefreshing(false)
+    }
   }
-
-  useEffect(() => {
-    GetUpcomingEvents()
-  }, [])
 
   // Auto-open program from carousel navigation
   useEffect(() => {
@@ -606,7 +600,7 @@ const UpcomingEvents = () => {
       <View style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 160, paddingTop: 8 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={GetUpcomingEvents} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           showsVerticalScrollIndicator={false}
         >
           {kidsPrograms.length > 0 && (

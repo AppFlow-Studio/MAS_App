@@ -4,7 +4,6 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import moment from "moment";
 import Toast from "react-native-toast-message";
 import {
   Menu,
@@ -125,11 +124,11 @@ const UpdateEventScreen = () => {
   };
 
   const formatDate = (date: Date | null) => {
-    return date ? moment(date).format("MM/DD/YYYY") : "";
+    return date ? format(date, "MM/dd/yyyy") : "";
   };
 
   const formatTime = (time: Date | null) => {
-    return time ? moment(time).format("hh:mm A") : "";
+    return time ? format(time, "hh:mm a") : "";
   };
 
   const addSpeaker = () => {

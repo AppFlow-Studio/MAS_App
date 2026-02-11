@@ -1,26 +1,26 @@
 import { View, Text, Pressable, ScrollView, useWindowDimensions, Image, StyleSheet, Platform } from 'react-native'
 import { Link, Stack, useRouter } from 'expo-router'
-import React, { useEffect, useRef, useState } from 'react'
-import { Icon } from "react-native-paper"
+import React, { useRef, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { TouchableOpacity } from 'react-native-gesture-handler'
-import { supabase } from '@/src/lib/supabase'
 import { useAuth } from "@/src/providers/AuthProvider"
-import { UserPlaylistType } from '@/src/types'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated'
 import { Heart, Music2, BookOpen, Sparkles, Play, ChevronRight, Plus, LogIn } from 'lucide-react-native'
 import CreatePlaylistBottomSheet from '@/src/components/UserProgramComponets/CreatePlaylistBottomSheet'
 import SignInAnonModal from '@/src/components/SignInAnonModal'
+import { useUserPlaylists } from '@/src/hooks/useUserLibrary'
+import type { UserPlaylistType } from '@/src/types'
 
 const PlaylistIndex = () => {
   const { session } = useAuth()
-  const [userPlayLists, setUserPlaylists] = useState<UserPlaylistType[]>([])
   const { width } = useWindowDimensions()
   const cardWidth = (width - 48) / 2
   const bottomSheetRef = useRef<{ present: () => void; dismiss: () => void; snapToIndex: (index: number) => void }>(null)
   const [signInModalVisible, setSignInModalVisible] = useState(false)
   const router = useRouter()
+
+  const { data: userPlayLists = [] } = useUserPlaylists(session?.user?.id)
 
   const isAnonymous = session?.user?.is_anonymous ?? true
 
@@ -31,35 +31,6 @@ const PlaylistIndex = () => {
       bottomSheetRef.current?.present()
     }
   }
-
-  const getUserPlaylists = async () => {
-    const { data: user_playlist, error } = await supabase.from("user_playlist").select("*").eq("user_id", session?.user.id)
-    if (error) {
-      console.log(error)
-    }
-    if (user_playlist) {
-      setUserPlaylists(user_playlist)
-    }
-  }
-
-  useEffect(() => {
-    getUserPlaylists()
-
-    const listenForUserPlaylistChanges = supabase
-      .channel('listen for user playlist change')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: "user_playlist",
-        },
-        async (payload) => await getUserPlaylists()
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(listenForUserPlaylistChanges) }
-  }, [])
 
   // Featured Playlist Card Component
   const FeaturedCard = ({ 

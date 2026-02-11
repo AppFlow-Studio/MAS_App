@@ -1,35 +1,10 @@
 import { View, Text, FlatList, Dimensions, Pressable } from 'react-native';
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, memo } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { useRef, forwardRef, useImperativeHandle, useCallback, memo, useMemo } from 'react';
 import { ActivityIndicator, Icon } from 'react-native-paper';
 import Animated from 'react-native-reanimated';
 import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
-
-type DonationCategory = {
-  project_id: string;
-  project_name: string;
-  project_goal: number | null;
-  project_linked_to: string | null;
-  thumbnail: string | null;
-  type: 'donation';
-};
-
-type VolunteerOpportunity = {
-  id: string;
-  title: string;
-  description: string | null;
-  thumbnail: string | null;
-  link: string | null;
-  type: 'volunteer';
-};
-
-type AdvertiseCard = {
-  id: string;
-  type: 'advertise';
-};
-
-type CardItem = DonationCategory | VolunteerOpportunity | AdvertiseCard;
+import { useDonationsAndVolunteers, type CardItem } from '../hooks/useDonationsAndVolunteers';
 
 export type DonationVolunteerCarouselRef = {
   scrollToDonation: () => void;
@@ -46,8 +21,7 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, DonationVolunteerCarouselProps>(({ onDonationPress, onIndexChange }, ref) => {
   const windowWidth = Dimensions.get("window").width;
-  const [items, setItems] = useState<CardItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: items = [], isLoading: loading } = useDonationsAndVolunteers();
   const flatListRef = useRef<FlatList>(null);
   const currentIndexRef = useRef<number>(0);
   const donationIndexRef = useRef<number>(-1);
@@ -55,121 +29,12 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
   const advertiseIndexRef = useRef<number>(-1);
   const isScrollingFromTabRef = useRef(false);
 
-  const fetchData = async () => {
-    try {
-      // Fetch only "General Masjid Support" donation category
-      const { data: donations, error: donationError } = await supabase
-        .from('projects')
-        .select('*')
-        .ilike('project_name', '%General Masjid Support%')
-        .limit(1);
-
-      // Fetch volunteers (if table exists)
-      const { data: volunteers, error: volunteerError } = await supabase
-        .from('volunteers')
-        .select('*')
-        .limit(1);
-
-      const combinedItems: CardItem[] = [];
-
-      // Add "General Masjid Support" donation category
-      if (donations && donations.length > 0) {
-        donations.forEach((donation) => {
-          combinedItems.push({
-            ...donation,
-            type: 'donation' as const,
-          });
-        });
-        donationIndexRef.current = 0;
-      }
-
-      // Add volunteer opportunities
-      if (volunteers && volunteers.length > 0) {
-        volunteers.forEach((volunteer) => {
-          combinedItems.push({
-            ...volunteer,
-            type: 'volunteer' as const,
-          });
-        });
-        volunteerIndexRef.current = combinedItems.length - 1;
-      } else {
-        // Add default volunteer if no volunteers found
-        combinedItems.push({
-          id: 'default',
-          title: 'Volunteer Opportunities',
-          description: 'Join us in serving our community',
-          thumbnail: null,
-          link: 'https://www.mobilize.us/mascenter/',
-          type: 'volunteer' as const,
-        });
-        volunteerIndexRef.current = combinedItems.length - 1;
-      }
-
-      // Add advertise your business card
-      combinedItems.push({
-        id: 'advertise',
-        type: 'advertise' as const,
-      });
-      advertiseIndexRef.current = combinedItems.length - 1;
-
-      setItems(combinedItems);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      // Set default items on error
-      setItems([
-        {
-          id: 'default',
-          title: 'Volunteer Opportunities',
-          description: 'Join us in serving our community',
-          thumbnail: null,
-          link: 'https://www.mobilize.us/mascenter/',
-          type: 'volunteer' as const,
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-
-    // Subscribe to changes
-    const donationChannel = supabase
-      .channel('donation-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'projects',
-        },
-        async () => {
-          await fetchData();
-        }
-      )
-      .subscribe();
-
-    const volunteerChannel = supabase
-      .channel('volunteer-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'volunteers',
-        },
-        async () => {
-          await fetchData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(donationChannel);
-      supabase.removeChannel(volunteerChannel);
-    };
-  }, []);
+  // Compute index refs from items data
+  useMemo(() => {
+    donationIndexRef.current = items.findIndex(i => i.type === 'donation');
+    volunteerIndexRef.current = items.findIndex(i => i.type === 'volunteer');
+    advertiseIndexRef.current = items.findIndex(i => i.type === 'advertise');
+  }, [items]);
 
   const sideMargin = 12; // Space on left/right edges of screen
   const cardWidth = windowWidth - (sideMargin * 2); // Card fills screen minus margins
@@ -256,7 +121,7 @@ const DonationVolunteerCarousel = forwardRef<DonationVolunteerCarouselRef, Donat
     <View style={{ height: 260, marginBottom: 8, overflow: 'hidden' }}>
       <AnimatedFlatList
         data={items}
-        keyExtractor={(item: CardItem) => item.type === 'donation' ? (item as DonationCategory).project_id : item.type === 'volunteer' ? (item as VolunteerOpportunity).id : 'advertise'}
+        keyExtractor={(item: CardItem) => 'project_id' in item ? item.project_id : 'id' in item ? item.id : 'advertise'}
         renderItem={({ item, index }: { item: CardItem; index: number }) => (
           <CardItem
             item={item}
@@ -474,7 +339,7 @@ const CardItem = memo(function CardItem({ item, cardWidth, spacing, onDonationPr
       </View>
     );
   } else {
-    const volunteer = item as VolunteerOpportunity;
+    const volunteer = item as Extract<CardItem, { type: 'volunteer' }>;
     const handlePress = async () => {
       if (volunteer.link) {
         try {

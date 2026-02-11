@@ -1,15 +1,10 @@
 import { View, Text , useWindowDimensions, ScrollView} from 'react-native'
 import { TabView, SceneMap } from 'react-native-tab-view';
-import React, { useEffect, useState } from 'react'
-import { supabase } from '@/src/lib/supabase';
-import { useAuth } from "@/src/providers/AuthProvider"
-import RenderLikedAyahs from '@/src/components/PrayerTimesComponets/RenderLikedAyahs';
-import RenderLikedSurahs from '@/src/components/PrayerTimesComponets/RenderLikedSurahs';
+import React, { useState } from 'react'
 import { Divider } from 'react-native-paper';
 import RenderBookmarkAyahs from '@/src/components/PrayerTimesComponets/RenderBookmarkAyahs';
 import RenderBookmarkSurahs from '@/src/components/PrayerTimesComponets/RenderBookmarkSurahs';
-import { user_bookmark_surahs_channel } from '@/src/lib/supabase';
-import { useNavigation } from 'expo-router';
+import { useBookmarkedSurahs, useBookmarkedAyahs } from '@/src/hooks/useBookmarkedQuran';
 type bookMarkedSurahsProp = {
   surah_number : number
 }
@@ -19,99 +14,45 @@ type bookmarkedAyahsProp = {
 }
 
 const BookmarkSurah = () => {
-  const { session } = useAuth()
-  const router = useNavigation()
-  const [ bookmarkedSurahs, setBookmarkedSurahs ] = useState<bookMarkedSurahsProp[] | null>()
-  const getBookmarkedSurahs = async () => {
-    const { data, error } = await supabase.from("user_bookmarked_surahs").select("surah_number").eq("user_id", session?.user.id) 
-    if ( error ){
-      console.log(error)
-    }
-    if( data ){
-      setBookmarkedSurahs(data)
-    }
+  const { data: bookmarkedSurahs = [] } = useBookmarkedSurahs()
+
+  if (!bookmarkedSurahs || bookmarkedSurahs.length === 0) {
+    return <></>
   }
 
-  useEffect(() => {
-    getBookmarkedSurahs()
-    const user_bookmark_surahs_channel = supabase
-    .channel('user_bookmarked_surahs_changes')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: "user_bookmarked_surahs",
-      },
-      (payload) => getBookmarkedSurahs()
-    )
-    .subscribe()
-
-    return () => {supabase.removeChannel(user_bookmark_surahs_channel)}
-  }, [])
-  if( !bookmarkedSurahs ){
-    return<></>
-  }
-  return(
+  return (
     <ScrollView className='bg-white flex-1'>
-    {bookmarkedSurahs ? bookmarkedSurahs.map((item, index) => {
-      return(
-        <View key={index} style={{ justifyContent : "center", alignItems: "center" }}>
-          <RenderBookmarkSurahs surah_number={item.surah_number} />
-          <Divider />
-        </View>
-      )
-    }) : <></>}
-  </ScrollView>
+      {bookmarkedSurahs.map((item, index) => {
+        return (
+          <View key={index} style={{ justifyContent: "center", alignItems: "center" }}>
+            <RenderBookmarkSurahs surah_number={item.surah_number} />
+            <Divider />
+          </View>
+        )
+      })}
+    </ScrollView>
   )
 }
 
 const BookmarkAyah = () => {
-const { session } = useAuth()
-const [ bookmarkedAyahs, setBookmarkedAyahs ] = useState<bookmarkedAyahsProp[] | null>()
-const getBookmarkedAyahs = async () => {
-  const { data, error } = await supabase.from("user_bookmarked_ayahs").select("surah_number, ayah_number").eq("user_id" , session?.user.id)
-  if( error ){
-    console.log( error )
-  }
-  if( data ){
-    setBookmarkedAyahs(data)
-  }
-}
+  const { data: bookmarkedAyahs = [] } = useBookmarkedAyahs()
 
-useEffect(() => {
-  getBookmarkedAyahs()
-  const user_bookmark_ayahs_channel = supabase
-  .channel('user_bookmarked_ayahs_changes')
-  .on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: "user_bookmarked_ayahs",
-    },
-    (payload) => getBookmarkedAyahs()
+  if (!bookmarkedAyahs || bookmarkedAyahs.length === 0) {
+    return <></>
+  }
+
+  return (
+    <ScrollView className='bg-white flex-1'>
+      {bookmarkedAyahs.map((item, index) => {
+        return (
+          <View key={index} style={{ justifyContent: "center", alignItems: "center" }}>
+            <RenderBookmarkAyahs surah_number={item.surah_number} ayah_number={item.ayah_number}/>
+            <Divider />
+          </View>
+        )
+      })}
+    </ScrollView>
   )
-  .subscribe()
-
-  return () => {supabase.removeChannel(user_bookmark_ayahs_channel)}
-}, [])
-
-if( !bookmarkedAyahs ){
-  return<></>
-}
-return(
-  <ScrollView className='bg-white flex-1'>
-  {bookmarkedAyahs ? bookmarkedAyahs.map((item, index) => {
-    return(
-      <View key={index} style={{ justifyContent : "center", alignItems: "center" }}>
-        <RenderBookmarkAyahs surah_number={item.surah_number} ayah_number={item.ayah_number}/>
-        <Divider />
-      </View>
-    )
-  }) : <></>}
-</ScrollView>
-)
 }
 
 const renderScene = SceneMap({

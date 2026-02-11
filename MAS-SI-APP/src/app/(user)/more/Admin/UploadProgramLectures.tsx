@@ -4,7 +4,6 @@ import { TextInput, Button, IconButton, Modal, Icon } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Toast from "react-native-toast-message";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import moment from "moment";
 import { supabase } from "@/src/lib/supabase";
 import Svg, { Path } from "react-native-svg";
 import {

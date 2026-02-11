@@ -1,14 +1,17 @@
 import { View, Text, TouchableOpacity, Pressable, ImageBackground } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { gettingPrayerData } from '../types';
-import { format } from 'date-fns';
-import moment from 'moment';
+import { parse, isAfter, isBefore, addDays, differenceInMilliseconds } from 'date-fns';
 import { Link, useRouter } from 'expo-router';
 import { Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
+const parseTime = (timeStr: string): Date => {
+    return parse(timeStr, 'h:mm a', new Date());
+};
+
 type salahDisplayWidgetProp = {
     prayer: gettingPrayerData,
     nextPrayer: gettingPrayerData
@@ -117,54 +120,53 @@ export default function SalahDisplayWidget({ prayer, nextPrayer }: salahDisplayW
     }
 
     const getTimeToNextPrayer = () => {
-        const currentMoment = moment(currentTime, "HH:mm A")
-        let iqamahMoment = moment(currentSalah.iqamah, "HH:mm A")
+        const currentDate = parseTime(currentTime)
+        let iqamahDate = parseTime(currentSalah.iqamah)
 
         // If showing next day's Fajr, only add a day if we're in the evening (after Isha)
         // Don't add a day if we're in early morning (before Fajr) - Fajr is later today
         if (salahIndex === 5) {
-            const ishaMoment = moment(prayer.athan_isha, "HH:mm A")
-            const fajrMoment = moment(prayer.athan_fajr, "HH:mm A")
-            
+            const ishaDate = parseTime(prayer.athan_isha)
+
             // Only add a day if current time is after Isha (evening hours)
             // If we're before Fajr (early morning), Fajr is later today, not tomorrow
-            if (currentMoment.isAfter(ishaMoment)) {
-                iqamahMoment.add(1, "day")
+            if (isAfter(currentDate, ishaDate)) {
+                iqamahDate = addDays(iqamahDate, 1)
             }
         }
 
         // Calculate time until next iqamah
-        const duration = moment.duration(iqamahMoment.diff(currentMoment))
-        const hours = Math.floor(duration.asHours())
-        const minutes = Math.abs(duration.minutes())
+        const diffMs = differenceInMilliseconds(iqamahDate, currentDate)
+        const hours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60))
+        const minutes = Math.floor((Math.abs(diffMs) % (1000 * 60 * 60)) / (1000 * 60))
 
         // Handle negative duration (time has passed)
-        if (duration.asMilliseconds() < 0) {
+        if (diffMs < 0) {
             // If iqamah has passed, show time until next prayer's athan
-            let nextAthanMoment;
+            let nextAthanDate: Date;
 
             if (salahIndex === 5) {
                 // Already showing next day's Fajr, so next athan is Dhuhr of next day
-                nextAthanMoment = moment(nextPrayer.athan_zuhr, "HH:mm A").add(1, "day")
+                nextAthanDate = addDays(parseTime(nextPrayer.athan_zuhr), 1)
             } else if (currentSalah.salah === 'Fajr') {
-                nextAthanMoment = moment(prayer.athan_zuhr, "HH:mm A")
+                nextAthanDate = parseTime(prayer.athan_zuhr)
             } else if (currentSalah.salah === 'Dhuhr') {
-                nextAthanMoment = moment(prayer.athan_asr, "HH:mm A")
+                nextAthanDate = parseTime(prayer.athan_asr)
             } else if (currentSalah.salah === 'Asr') {
-                nextAthanMoment = moment(prayer.athan_maghrib, "HH:mm A")
+                nextAthanDate = parseTime(prayer.athan_maghrib)
             } else if (currentSalah.salah === 'Maghrib') {
-                nextAthanMoment = moment(prayer.athan_isha, "HH:mm A")
+                nextAthanDate = parseTime(prayer.athan_isha)
             } else if (currentSalah.salah === 'Isha') {
-                nextAthanMoment = moment(nextPrayer.athan_fajr, "HH:mm A").add(1, "day")
+                nextAthanDate = addDays(parseTime(nextPrayer.athan_fajr), 1)
             } else {
-                nextAthanMoment = moment(prayer.athan_zuhr, "HH:mm A")
+                nextAthanDate = parseTime(prayer.athan_zuhr)
             }
 
-            const athanDuration = moment.duration(nextAthanMoment.diff(currentMoment))
-            const athanHours = Math.floor(athanDuration.asHours())
-            const athanMinutes = Math.abs(athanDuration.minutes())
+            const athanDiffMs = differenceInMilliseconds(nextAthanDate, currentDate)
+            const athanHours = Math.floor(Math.abs(athanDiffMs) / (1000 * 60 * 60))
+            const athanMinutes = Math.floor((Math.abs(athanDiffMs) % (1000 * 60 * 60)) / (1000 * 60))
 
-            if (athanDuration.asMilliseconds() <= 0) {
+            if (athanDiffMs <= 0) {
                 return 'Now'
             } else if (athanHours === 0) {
                 return `${athanMinutes} mins`
@@ -185,20 +187,8 @@ export default function SalahDisplayWidget({ prayer, nextPrayer }: salahDisplayW
 
     const currentTime = liveTime.toLocaleTimeString("en-US", { hour12: true, hour: "numeric", minute: "numeric" });
     const timeToNextPrayer = getTimeToNextPrayer();
-    const nextFajr = nextPrayer.iqa_fajr
-    const nextFajrTime = moment(nextFajr, "HH::mm A");
-    const nextFajrDay = nextFajrTime.add(1, "days");
-    const midNight = moment("12:01AM", "HH:mm A");
-    const nextDayMidnight = midNight.add(1, "days");
-    const getTimeToMidNight = () => {
-        const time1 = moment(currentTime, "HH:mm A");
-        const time2 = nextDayMidnight;
-
-        const duration = moment.duration(time2.diff(time1));
-        return duration.asMilliseconds();
-    }
     const compareTime = () => {
-        const currentMoment = moment(currentTime, "HH:mm A");
+        const currentDate = parseTime(currentTime);
 
         // Determine which prayer should be current based on current time
         const prayers = [
@@ -212,17 +202,16 @@ export default function SalahDisplayWidget({ prayer, nextPrayer }: salahDisplayW
         let newIndex = 0;
 
         // Check if we're after Isha (between Isha and next day's Fajr)
-        const ishaMoment = moment(prayers[4].time, "HH:mm A");
-        const nextFajrMoment = moment(nextPrayer.athan_fajr, "HH:mm A").add(1, "day");
+        const ishaDate = parseTime(prayers[4].time);
 
-        if (currentMoment.isAfter(ishaMoment) || currentMoment.isBefore(moment(prayers[0].time, "HH:mm A"))) {
+        if (isAfter(currentDate, ishaDate) || isBefore(currentDate, parseTime(prayers[0].time))) {
             // After Isha or before Fajr (early morning), show next day's Fajr
             newIndex = 5; // nextDayFajr index
         } else {
             // Find the current prayer based on time
             for (let i = 0; i < prayers.length; i++) {
-                const prayerMoment = moment(prayers[i].time, "HH:mm A");
-                if (currentMoment.isBefore(prayerMoment)) {
+                const prayerDate = parseTime(prayers[i].time);
+                if (isBefore(currentDate, prayerDate)) {
                     newIndex = i;
                     break;
                 }

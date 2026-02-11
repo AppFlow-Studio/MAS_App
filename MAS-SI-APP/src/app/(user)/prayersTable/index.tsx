@@ -32,6 +32,7 @@ import Animated, {
 import { TaraweehSessionBottomSheet, TaraweehSessionBottomSheetRef, TaraweehSessionData } from '@/src/components/TaraweehSessionBottomSheet';
 import { TaraweehNotificationBottomSheet, TaraweehNotificationBottomSheetRef } from '@/src/components/TaraweehNotificationBottomSheet';
 import { CapacityStatusLight, CapacityStatus } from '@/src/components/CapacityStatusLight';
+import { useIsRamadan } from '@/src/lib/ramadanConfig';
 
 // ============================================
 // TARAWEEH TIMELINE COMPONENT
@@ -1086,6 +1087,7 @@ const QuranTracker = ({ currentSurah, showInfo, onToggleInfo }: QuranTrackerProp
 
 export default function Index() {
   // ALL hooks must be called unconditionally at the top
+  const isRamadan = useIsRamadan();
   const { data: prayerTimesWeek, isLoading } = usePrayerTimes();
   const currentPrayer = useCurrentPrayer();
   const upcomingPrayer = useUpcomingPrayer();
@@ -1164,7 +1166,7 @@ export default function Index() {
   }, [tableIndex]);
 
   useEffect(() => {
-    if (!session?.user.id) return;
+    if (!session?.user.id || !isRamadan) return;
 
     GetRamadanTracker();
     getTaraweehLineup();
@@ -1194,7 +1196,7 @@ export default function Index() {
       supabase.removeChannel(listenForQuranTrackerChanges);
       supabase.removeChannel(listenForTaraweehLineupChanges);
     };
-  }, [session?.user.id]);
+  }, [session?.user.id, isRamadan]);
 
   const renderPrayerTable = useCallback(({ item, index }: { item: gettingPrayerData; index: number }) => (
     <Table prayerData={item} setTableIndex={setTableIndex} tableIndex={tableIndex} index={index} userSettings={UserSettings} />
@@ -1273,25 +1275,29 @@ export default function Index() {
           <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true)} />
           
           {/* ==================== RAMADAN COMPONENTS ==================== */}
-          
-          {/* Taraweeh Timeline - Unified Widget */}
-          <TaraweehTimeline
-            sessionOneStart={FirstTaraweehTime}
-            sessionOneEnd={FirstTaraweehEndTime}
-            sessionTwoStart={SecondTaraweehTime}
-            sessionTwoEnd={SecondTaraweehEndTime}
-            currentSurah={currentSurah}
-            sessionOneLineup={taraweehLineup?.sessionOne}
-            sessionTwoLineup={taraweehLineup?.sessionTwo}
-          />
 
-          {/* Suhoor & Iftar Timer - Redesigned */}
-          <SuhoorIftarTimer
-            todayFajrAthan={prayerTimesWeek[0].athan_fajr}
-            tomorrowFajrAthan={prayerTimesWeek[1]?.athan_fajr || prayerTimesWeek[0].athan_fajr}
-            todayMaghribAthan={prayerTimesWeek[0].athan_maghrib}
-            tomorrowMaghribAthan={prayerTimesWeek[1]?.athan_maghrib || prayerTimesWeek[0].athan_maghrib}
-          />
+          {isRamadan && (
+            <>
+              {/* Taraweeh Timeline - Unified Widget */}
+              <TaraweehTimeline
+                sessionOneStart={FirstTaraweehTime}
+                sessionOneEnd={FirstTaraweehEndTime}
+                sessionTwoStart={SecondTaraweehTime}
+                sessionTwoEnd={SecondTaraweehEndTime}
+                currentSurah={currentSurah}
+                sessionOneLineup={taraweehLineup?.sessionOne}
+                sessionTwoLineup={taraweehLineup?.sessionTwo}
+              />
+
+              {/* Suhoor & Iftar Timer - Redesigned */}
+              <SuhoorIftarTimer
+                todayFajrAthan={prayerTimesWeek[0].athan_fajr}
+                tomorrowFajrAthan={prayerTimesWeek[1]?.athan_fajr || prayerTimesWeek[0].athan_fajr}
+                todayMaghribAthan={prayerTimesWeek[0].athan_maghrib}
+                tomorrowMaghribAthan={prayerTimesWeek[1]?.athan_maghrib || prayerTimesWeek[0].athan_maghrib}
+              />
+            </>
+          )}
 
           {/* Ramadan Quran Tracker - Redesigned */}
           {/* <QuranTracker

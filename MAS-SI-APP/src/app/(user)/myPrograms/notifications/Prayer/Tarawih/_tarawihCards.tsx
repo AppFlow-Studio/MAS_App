@@ -5,8 +5,8 @@ import * as Haptics from "expo-haptics"
 import { useAuth } from '@/src/providers/AuthProvider'
 import { Icon } from 'react-native-paper'
 import { supabase } from '@/src/lib/supabase'
-import { format, isAfter, isBefore } from 'date-fns'
-import { err } from 'react-native-svg'
+import { format } from 'date-fns'
+import { isRamadanActive } from '@/src/lib/ramadanConfig'
 const NotificationArray = [
     "Alert at Athan time",
     "Alert 30 Mins Before",
@@ -69,11 +69,11 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
         const settings = CurrentSettings.notification_settings
         // If Setting Exists i.e : Deselect it
         if( settings.includes(NotificationArray[index]) ){
-            if( index == 2 ){ 
+            if( index == 2 ){
               const TodayDate = new Date()
               const {data, error} = await supabase.from('prayer_notification_settings').update({notification_settings : ['Alert at Athan time']}).eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id )
-                if( isBefore(TodayDate, new Date(2025, 2, 30)) && isAfter(TodayDate, new Date(2025, 1, 28)) ){
-                    if( isBefore(TodayDate, tarawihTime) ){
+                if( isRamadanActive() ){
+                    if( TodayDate < tarawihTime ){
                         const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
                         const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id).eq('notification_type', 'Alert at Athan time').single()
                         if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists ){
@@ -115,8 +115,8 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
             const TodayDate = new Date()
 
             if (index == 0){
-                if( isBefore(TodayDate, new Date(2025, 2, 30)) && isAfter(TodayDate, new Date(2025, 1, 28)) ){
-                    if( isBefore(TodayDate, tarawihTime) ){
+                if( isRamadanActive() ){
+                    if( TodayDate < tarawihTime ){
                         const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
                         const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id).eq('notification_type', 'Alert at Athan time').single()
                         if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists){
@@ -136,9 +136,9 @@ const TarawihCards = ({ height , width, index, setSelectedNotification, selected
             }
             
             if( index == 1 ){
-                if( isBefore(TodayDate, new Date(2025, 2, 30)) && isAfter(TodayDate, new Date(2025, 1, 28)) ){
+                if( isRamadanActive() ){
                     tarawihTime.setMinutes(tarawihTime.getMinutes() - 30)
-                    if( isBefore(TodayDate, tarawihTime) ){
+                    if( TodayDate < tarawihTime ){
                         const { data : UserPushToken, error } = await supabase.from('profiles').select('push_notification_token').eq('id', session?.user.id).single()
                         const { data : CheckIfNotificationExists , error : CheckIfNotificationExistsError }  = await supabase.from('prayer_notification_scheduler').select('id').eq('prayer', lowercasedTarawihName).eq('user_id', session?.user.id).eq('notification_type', 'Alert 30 Mins Before').single()
                         if( UserPushToken && UserPushToken.push_notification_token && !CheckIfNotificationExists){

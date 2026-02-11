@@ -26,18 +26,39 @@ const useCurrentTime = () => {
  * Utility function to parse a time string like "2:30 PM" into a Date object (today's date)
  */
 const parseTime = (timeStr: string): Date => {
-    return parse(timeStr, 'h:mm a', new Date());
+    const now = new Date();
+
+    // 24-hour format: "05:39:00" or "17:30" or "5:39:00"
+    const match24 = timeStr.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (match24) {
+        const result = new Date(now);
+        result.setHours(parseInt(match24[1], 10), parseInt(match24[2], 10), 0, 0);
+        return result;
+    }
+
+    // 12-hour format: "5:39 AM", "5:39AM", "5:39\u202FAM"
+    const match12 = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (match12) {
+        let hours = parseInt(match12[1], 10);
+        const minutes = parseInt(match12[2], 10);
+        const period = match12[3].toUpperCase();
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        const result = new Date(now);
+        result.setHours(hours, minutes, 0, 0);
+        return result;
+    }
+
+    // Fallback
+    const normalized = timeStr.replace(/[\u00A0\u202F]/g, ' ');
+    return parse(normalized, 'h:mm a', now);
 };
 
 /**
  * Utility function to format current Date to time string for parsing
  */
 const formatTimeStr = (date: Date): string => {
-    return date.toLocaleTimeString('en-US', {
-        hour12: true,
-        hour: 'numeric',
-        minute: 'numeric',
-    });
+    return format(date, 'h:mm a');
 };
 
 /**

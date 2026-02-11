@@ -20,7 +20,7 @@ const { width } = Dimensions.get("window")
 type program_imgProp = {
   program_img : string
 }
-const RenderLikedLectures = ({lecture, index, speaker} : RenderLikedLecturesProp) => {
+const RenderLikedLectures = React.memo(function RenderLikedLectures({lecture, index, speaker} : RenderLikedLecturesProp) {
     const liked = useSharedValue(0)
     const { session } = useAuth()
     const [ loading, setLoading ] = useState(true)
@@ -168,6 +168,6 @@ const RenderLikedLectures = ({lecture, index, speaker} : RenderLikedLecturesProp
           
         </View>
       )
-}
+})
 
 export default RenderLikedLectures

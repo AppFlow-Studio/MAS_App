@@ -1,47 +1,13 @@
 import { FlatList, Text, View, Image, Pressable } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { supabase } from '@/src/lib/supabase'
+import React from 'react'
 import { Link, Stack } from 'expo-router'
 import { Icon, ActivityIndicator } from 'react-native-paper'
 import { format } from 'date-fns'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { useBusinessAdsSubmissions } from '@/src/hooks/useBusinessAdsSubmissions'
 
 const BusinessAdsApprovalScreen = () => {
-  const [ads, setAds] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  const getAds = async () => {
-    const { data, error } = await supabase
-      .from('business_ads_submissions')
-      .select('*')
-      .neq('status', 'APPROVED')
-      .neq('status', 'REJECT')
-      .order('created_at', { ascending: false })
-    if (data) {
-      setAds(data)
-    }
-    setIsLoading(false)
-  }
-
-  useEffect(() => {
-    getAds()
-    const checkStatus = supabase
-      .channel('Check for Business Status')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'business_ads_submissions',
-        },
-        async () => await getAds()
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(checkStatus)
-    }
-  }, [])
+  const { data: ads = [], isLoading } = useBusinessAdsSubmissions()
 
   const renderEmptyState = () => (
     <Animated.View

@@ -5,7 +5,6 @@ import { format } from 'date-fns'
 import { Divider, Icon } from 'react-native-paper'
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { Line, Svg } from 'react-native-svg'
-import { duration } from 'moment'
 type BusinessSubmissionsCardProp = {
     submission : BusinessSubmissionsProp
     index : number

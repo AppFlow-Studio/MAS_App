@@ -26,6 +26,7 @@ import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin'
+import { formatPhoneNumber } from '@/src/lib/utils'
 
 // Configure Google Sign-In once
 GoogleSignin.configure({
@@ -161,21 +162,6 @@ const SignUp = () => {
     }
   }
 
-  // Format phone number as (XXX) XXX-XXXX
-  const formatPhoneNumber = (text: string) => {
-    const cleaned = text.replace(/\D/g, '').slice(0, 10)
-    let formatted = ''
-    if (cleaned.length > 0) {
-      formatted = '(' + cleaned.slice(0, 3)
-    }
-    if (cleaned.length >= 3) {
-      formatted += ') ' + cleaned.slice(3, 6)
-    }
-    if (cleaned.length >= 6) {
-      formatted += '-' + cleaned.slice(6, 10)
-    }
-    return formatted || cleaned
-  }
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],

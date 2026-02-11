@@ -26,7 +26,7 @@ export default function ProgramWidgetSlider() {
         showsVerticalScrollIndicator={false}
         alwaysBounceVertical={false}
         onScroll={Animated.event( [{ nativeEvent: {contentOffset : {y : scrolly } } }],{
-          useNativeDriver: false
+          useNativeDriver: true
         } )}
         scrollEventThrottle={32}
         onViewableItemsChanged={viewableItemsChanged}

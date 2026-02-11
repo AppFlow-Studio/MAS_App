@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image, ScrollView, Animated, Dimensions, PanResponder } from 'react-native'
+import { View, Text, Pressable, ScrollView, Animated, Dimensions, PanResponder, Image } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'expo-router'
@@ -173,15 +173,15 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
         });
     }, [slideAnim, panY]);
 
-    const fetchEventData = async () => {
+    const fetchEventData = useCallback(async () => {
         if (!item.event_id) return;
-        
+
         const { data: eventData, error } = await supabase
             .from('events')
             .select('*')
             .eq('event_id', item.event_id)
             .single();
-        
+
         if (eventData && !error) {
             setEvent(eventData);
             // Check if event is in notifications/programs
@@ -203,14 +203,14 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                 setEventInPrograms(!!programData);
             }
         }
-    };
+    }, [item.event_id, session?.user?.id]);
 
-    const fetchSpeakerData = async () => {
+    const fetchSpeakerData = useCallback(async () => {
         const speakerArray = Array.isArray(item.event_speaker) ? item.event_speaker : (item.event_speaker ? [item.event_speaker] : []);
         if (speakerArray && speakerArray.length > 0) {
             const speakers: SheikDataType[] = [];
             let speaker_string: string[] = speakerArray.map(() => '');
-            
+
             await Promise.all(
                 speakerArray.map(async (speaker_id: string, index: number) => {
                     const { data: speakerInfo } = await supabase
@@ -218,7 +218,7 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                         .select('*')
                         .eq('speaker_id', speaker_id)
                         .single();
-                    
+
                     if (speakerInfo) {
                         if (index === speakerArray.length - 1) {
                             speaker_string[index] = speakerInfo.speaker_name;
@@ -229,11 +229,11 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                     }
                 })
             );
-            
+
             setSpeakerData(speakers);
             setSpeakerString(speaker_string.join(''));
         }
-    };
+    }, [item.event_speaker]);
 
     const openModal = useCallback(() => {
         // Reset closing state
@@ -265,7 +265,7 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
         
         fetchEventData();
         fetchSpeakerData();
-    }, [slideAnim, item.event_id]);
+    }, [slideAnim, item.event_id, fetchEventData, fetchSpeakerData]);
 
     // Reset error state when item changes
     useEffect(() => {
@@ -416,15 +416,15 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     };
 
-    const renderSpeakerCard = (speakerData: SheikDataType, index: number) => {
+    const renderSpeakerCard = useCallback((speakerData: SheikDataType, index: number) => {
         const cardWidth = width * 0.85;
         const maxCardHeight = height * 0.55; // 55% of screen height
-        
+
         return (
-            <View style={{ 
+            <View style={{
                 width: width,
                 height: maxCardHeight,
-                justifyContent: 'center', 
+                justifyContent: 'center',
                 alignItems: 'center',
             }}>
                 <BlurView
@@ -469,10 +469,10 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                                 borderColor: '#E5E7EB',
                                 marginRight: 16,
                             }}>
-                                <Image 
-                                    source={speakerData?.speaker_img ? { uri: speakerData.speaker_img } : require("@/assets/images/MASHomeLogo.png")} 
-                                    style={{ width: '100%', height: '100%' }} 
-                                    resizeMode='cover'
+                                <Image
+                                    source={speakerData?.speaker_img ? { uri: speakerData.speaker_img } : require("@/assets/images/MASHomeLogo.png")}
+                                    style={{ width: '100%', height: '100%' }}
+                                    resizeMode="cover"
                                 />
                             </View>
                             <View className='flex-1'>
@@ -503,7 +503,7 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                 </BlurView>
             </View>
         );
-    };
+    }, [width, height]);
 
     const GetSheikData = () => {
         if (!speakerData || speakerData.length === 0) {
@@ -658,11 +658,11 @@ const EventImageComponent = ({item, autoOpen = false, onModalClose} : {item : Ev
                     { !imageReady && 
                         <FlyerSkeleton width={150} height={150} style={{position : 'absolute', top : 0, zIndex : 2}}/>
                     }
-                    <Image 
-                        source={(hasError || !item.event_img || item.event_img.trim() === '') 
-                            ? require("@/assets/images/massicliquidglassicon.png") 
-                            : { uri : item.event_img }} 
-                        style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}  
+                    <Image
+                        source={(hasError || !item.event_img || item.event_img.trim() === '')
+                            ? require("@/assets/images/massicliquidglassicon.png")
+                            : { uri : item.event_img }}
+                        style={{ width : 150, height : 150, borderRadius : 8, margin : 5 }}
                         resizeMode="cover"
                         onLoad={() => setImageReady(true)}
                         onError={() => {

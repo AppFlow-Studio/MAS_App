@@ -17,6 +17,7 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming, Easing
 import LottieView from 'lottie-react-native';
 import * as Haptics from "expo-haptics";
 import Toast from 'react-native-toast-message';
+import { getVideoIdFromUrl } from '@/src/lib/utils';
 
 export default function LecturesData() {
   const { session } = useAuth()
@@ -280,17 +281,6 @@ export default function LecturesData() {
     } catch {
       return dateString
     }
-  }
-
-  const getVideoIdFromUrl = (url: string) => {
-    if (!url) return null
-    // If it's already just a video ID (no slashes or special chars), return as is
-    if (!url.includes('/') && !url.includes('?')) {
-      return url
-    }
-    // Otherwise, try to extract from URL
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
-    return match ? match[1] : url
   }
 
   return (

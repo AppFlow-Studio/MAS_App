@@ -24,6 +24,7 @@ import { FlyerSkeleton } from '@/src/components/FlyerSkeleton';
 import YoutubePlayer from "react-native-youtube-iframe";
 import DeckSwiper from 'react-native-deck-swiper';
 import { AIReasoningMarkdown, AIKeynotes } from '@/src/components/AIReasoningMarkdown';
+import { getVideoIdFromUrl } from '@/src/lib/utils';
 
 function setTimeToCurrentDate(timeString : string ) {
   const [hours, minutes, seconds] = timeString.split(':').map(Number);
@@ -174,15 +175,6 @@ async function getUserPlaylists(){
   const fadeOutNotification = useAnimatedStyle(() => ({
     opacity : notifade.value
   }))
-
-  const getVideoIdFromUrl = (url: string) => {
-    if (!url) return null
-    if (!url.includes('/') && !url.includes('?')) {
-      return url
-    }
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)
-    return match ? match[1] : url
-  }
 
   const onStateChange = useCallback((state: string) => {
     if (state === "ended") {

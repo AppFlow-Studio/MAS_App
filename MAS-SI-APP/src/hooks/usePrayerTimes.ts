@@ -3,8 +3,7 @@ import { supabase } from '@/src/lib/supabase';
 import { gettingPrayerData } from '@/src/types';
 import { ThePrayerData } from '@/src/components/getPrayerData';
 import { useState, useEffect, useMemo } from 'react';
-import moment from 'moment';
-import { format } from 'date-fns';
+import { format, parse, isAfter, isBefore, addDays, differenceInMilliseconds } from 'date-fns';
 
 /**
  * Shared hook for current time - single timer used across all prayer time hooks
@@ -24,9 +23,16 @@ const useCurrentTime = () => {
 };
 
 /**
- * Utility function to format time string for moment parsing
+ * Utility function to parse a time string like "2:30 PM" into a Date object (today's date)
  */
-const formatTimeForMoment = (date: Date): string => {
+const parseTime = (timeStr: string): Date => {
+    return parse(timeStr, 'h:mm a', new Date());
+};
+
+/**
+ * Utility function to format current Date to time string for parsing
+ */
+const formatTimeStr = (date: Date): string => {
     return date.toLocaleTimeString('en-US', {
         hour12: true,
         hour: 'numeric',
@@ -128,23 +134,23 @@ export const useCurrentPrayer = () => {
             return '';
         }
 
-        const currentTimeStr = formatTimeForMoment(currentTime);
-        const currentMoment = moment(currentTimeStr, 'HH:mm A');
+        const currentTimeStr = formatTimeStr(currentTime);
+        const currentDate = parseTime(currentTimeStr);
         const prayers = getPrayerTimesArray(prayer);
 
         // Check if we're after Isha (between Isha and next day's Fajr)
-        const ishaMoment = moment(prayers[4].time, 'HH:mm A');
-        const fajrMoment = moment(prayers[0].time, 'HH:mm A');
+        const ishaDate = parseTime(prayers[4].time);
+        const fajrDate = parseTime(prayers[0].time);
 
-        if (currentMoment.isAfter(ishaMoment) || currentMoment.isBefore(fajrMoment)) {
+        if (isAfter(currentDate, ishaDate) || isBefore(currentDate, fajrDate)) {
             // After Isha or before Fajr (early morning), current prayer is Isha (showing next day's Fajr)
             return 'Isha';
         }
 
         // Find the current prayer based on time
         for (let i = 0; i < prayers.length; i++) {
-            const prayerMoment = moment(prayers[i].time, 'HH:mm A');
-            if (currentMoment.isBefore(prayerMoment)) {
+            const prayerDate = parseTime(prayers[i].time);
+            if (isBefore(currentDate, prayerDate)) {
                 // Return the previous prayer, or Isha if it's the first one (before Fajr means after Isha)
                 if (i === 0) {
                     return 'Isha';
@@ -171,23 +177,23 @@ export const useUpcomingPrayer = () => {
             return '';
         }
 
-        const currentTimeStr = formatTimeForMoment(currentTime);
-        const currentMoment = moment(currentTimeStr, 'HH:mm A');
+        const currentTimeStr = formatTimeStr(currentTime);
+        const currentDate = parseTime(currentTimeStr);
         const prayers = getPrayerTimesArray(prayer);
 
         // Check if we're after Isha (between Isha and next day's Fajr)
-        const ishaMoment = moment(prayers[4].time, 'HH:mm A');
-        const fajrMoment = moment(prayers[0].time, 'HH:mm A');
+        const ishaDate = parseTime(prayers[4].time);
+        const fajrDate = parseTime(prayers[0].time);
 
-        if (currentMoment.isAfter(ishaMoment) || currentMoment.isBefore(fajrMoment)) {
+        if (isAfter(currentDate, ishaDate) || isBefore(currentDate, fajrDate)) {
             // After Isha or before Fajr, next prayer is next day's Fajr
             return 'Fajr';
         }
 
         // Find the next upcoming prayer
         for (let i = 0; i < prayers.length; i++) {
-            const prayerMoment = moment(prayers[i].time, 'HH:mm A');
-            if (currentMoment.isBefore(prayerMoment)) {
+            const prayerDate = parseTime(prayers[i].time);
+            if (isBefore(currentDate, prayerDate)) {
                 return prayers[i].name;
             }
         }
@@ -223,21 +229,21 @@ export const useTimeToNextPrayer = () => {
             return '';
         }
 
-        const currentTimeStr = formatTimeForMoment(currentTime);
-        const currentMoment = moment(currentTimeStr, 'HH:mm A');
+        const currentTimeStr = formatTimeStr(currentTime);
+        const currentDate = parseTime(currentTimeStr);
         const prayers = getPrayerTimesArray(prayer);
 
         // Determine which prayer index we're at
         let salahIndex = 0;
-        const ishaMoment = moment(prayers[4].time, 'HH:mm A');
-        const fajrMoment = moment(prayers[0].time, 'HH:mm A');
+        const ishaDate = parseTime(prayers[4].time);
+        const fajrDate = parseTime(prayers[0].time);
 
-        if (currentMoment.isAfter(ishaMoment) || currentMoment.isBefore(fajrMoment)) {
+        if (isAfter(currentDate, ishaDate) || isBefore(currentDate, fajrDate)) {
             salahIndex = 5; // nextDayFajr
         } else {
             for (let i = 0; i < prayers.length; i++) {
-                const prayerMoment = moment(prayers[i].time, 'HH:mm A');
-                if (currentMoment.isBefore(prayerMoment)) {
+                const prayerDate = parseTime(prayers[i].time);
+                if (isBefore(currentDate, prayerDate)) {
                     salahIndex = i;
                     break;
                 }
@@ -266,45 +272,45 @@ export const useTimeToNextPrayer = () => {
             return '';
         }
 
-        let iqamahMoment = moment(currentSalah.iqamah, 'HH:mm A');
+        let iqamahDate = parseTime(currentSalah.iqamah);
 
         // If showing next day's Fajr, add a day to the iqamah time
         if (salahIndex === 5) {
-            iqamahMoment.add(1, 'day');
+            iqamahDate = addDays(iqamahDate, 1);
         }
 
         // Calculate time until next iqamah
-        const duration = moment.duration(iqamahMoment.diff(currentMoment));
-        const hours = Math.floor(duration.asHours());
-        const minutes = Math.abs(duration.minutes());
+        const diffMs = differenceInMilliseconds(iqamahDate, currentDate);
+        const hours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60));
+        const minutes = Math.floor((Math.abs(diffMs) % (1000 * 60 * 60)) / (1000 * 60));
 
         // Handle negative duration (time has passed)
-        if (duration.asMilliseconds() < 0) {
+        if (diffMs < 0) {
             // If iqamah has passed, show time until next prayer's athan
-            let nextAthanMoment: moment.Moment;
+            let nextAthanDate: Date;
 
             if (salahIndex === 5) {
                 // Already showing next day's Fajr, so next athan is Dhuhr of next day
-                nextAthanMoment = moment(nextPrayer.athan_zuhr, 'HH:mm A').add(1, 'day');
+                nextAthanDate = addDays(parseTime(nextPrayer.athan_zuhr), 1);
             } else if (currentSalah.salah === 'Fajr') {
-                nextAthanMoment = moment(prayer.athan_zuhr, 'HH:mm A');
+                nextAthanDate = parseTime(prayer.athan_zuhr);
             } else if (currentSalah.salah === 'Dhuhr') {
-                nextAthanMoment = moment(prayer.athan_asr, 'HH:mm A');
+                nextAthanDate = parseTime(prayer.athan_asr);
             } else if (currentSalah.salah === 'Asr') {
-                nextAthanMoment = moment(prayer.athan_maghrib, 'HH:mm A');
+                nextAthanDate = parseTime(prayer.athan_maghrib);
             } else if (currentSalah.salah === 'Maghrib') {
-                nextAthanMoment = moment(prayer.athan_isha, 'HH:mm A');
+                nextAthanDate = parseTime(prayer.athan_isha);
             } else if (currentSalah.salah === 'Isha') {
-                nextAthanMoment = moment(nextPrayer.athan_fajr, 'HH:mm A').add(1, 'day');
+                nextAthanDate = addDays(parseTime(nextPrayer.athan_fajr), 1);
             } else {
-                nextAthanMoment = moment(prayer.athan_zuhr, 'HH:mm A');
+                nextAthanDate = parseTime(prayer.athan_zuhr);
             }
 
-            const athanDuration = moment.duration(nextAthanMoment.diff(currentMoment));
-            const athanHours = Math.floor(athanDuration.asHours());
-            const athanMinutes = Math.abs(athanDuration.minutes());
+            const athanDiffMs = differenceInMilliseconds(nextAthanDate, currentDate);
+            const athanHours = Math.floor(Math.abs(athanDiffMs) / (1000 * 60 * 60));
+            const athanMinutes = Math.floor((Math.abs(athanDiffMs) % (1000 * 60 * 60)) / (1000 * 60));
 
-            if (athanDuration.asMilliseconds() <= 0) {
+            if (athanDiffMs <= 0) {
                 return 'Now';
             }
             return formatTimeDuration(athanHours, athanMinutes);

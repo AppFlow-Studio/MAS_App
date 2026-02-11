@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Dimensions, StyleSheet, ImageBackground } from 'react-native';
-import React, { useRef, forwardRef, useState, useEffect } from 'react';
+import React, { useRef, forwardRef, useState } from 'react';
 import { Icon } from 'react-native-paper';
-import { supabase } from '../lib/supabase';
+import { useJummah } from '../hooks/useJummah';
 import { JummahBottomSheet, JummahBottomSheetRef } from './jummahBottomSheet';
 import Animated, { 
   FadeInDown, 
@@ -148,9 +148,9 @@ const JummahCard = ({ card, index, onPress, speakerName, capacityStatus }: Jumma
 
 export const JummahTable = forwardRef<Ref, {}>((_, ref) => {
   const [clickedState, setClickedState] = useState(0);
-  const [jummah, setJummah] = useState<any[]>([]);
-  const [speakerInfo, setSpeakerInfo] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading } = useJummah();
+  const jummah = data?.jummah || [];
+  const speakerInfo = data?.speakers || [];
   const bottomSheetRef = useRef<JummahBottomSheetRef>(null);
 
   const handlePresentModalPress = (index: number) => {
@@ -159,51 +159,6 @@ export const JummahTable = forwardRef<Ref, {}>((_, ref) => {
       bottomSheetRef.current?.snapToIndex(0);
     }, 50);
   };
-
-  const getJummahData = async () => {
-    try {
-      const { data, error } = await supabase.from('jummah').select('*').order('id', { ascending: true });
-      if (data && data.length > 0) {
-        setJummah(data);
-        const speakers = await Promise.all(
-          data?.map(async (jummah) => {
-            const { data: speakerInfo, error: speakerInfoError } = await supabase
-              .from('speaker_data')
-              .select('*')
-              .eq('speaker_id', jummah.speaker)
-              .single();
-            if (speakerInfo) return speakerInfo;
-            return null;
-          })
-        );
-        setSpeakerInfo(speakers);
-      }
-    } catch (error) {
-      console.log('Error fetching jummah data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getJummahData();
-    const channel = supabase
-      .channel("Jummah Data")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "jummah",
-        },
-        async (payload) => await getJummahData()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   return (
     <View style={styles.container}>

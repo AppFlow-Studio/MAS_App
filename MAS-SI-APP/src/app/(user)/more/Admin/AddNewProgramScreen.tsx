@@ -4,7 +4,6 @@ import { router, Stack } from "expo-router";
 import { TextInput, Checkbox, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import moment from "moment";
 import Toast from "react-native-toast-message";
 import { supabase } from "@/src/lib/supabase";
 import {

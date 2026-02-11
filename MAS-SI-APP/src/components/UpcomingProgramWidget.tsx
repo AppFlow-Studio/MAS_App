@@ -7,11 +7,10 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Program, EventsType, Lectures, SheikDataType } from '../types';
-import moment from 'moment';
 import { Link, useRouter } from 'expo-router';
 import { Icon, Modal, Portal, Button } from 'react-native-paper';
 import { supabase } from '@/src/lib/supabase';
-import { parse, isBefore, format } from 'date-fns';
+import { parse, isBefore, isAfter, format, startOfDay, setHours, setMinutes, setSeconds, addDays, differenceInMinutes, differenceInMilliseconds } from 'date-fns';
 import { useAuth } from '@/src/providers/AuthProvider';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
@@ -19,16 +18,10 @@ import { FlyerSkeleton } from './FlyerSkeleton';
 import YoutubePlayer from "react-native-youtube-iframe";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { glassyToastConfig } from '@/src/lib/toastConfig';
+import { getVideoIdFromUrl } from '@/src/lib/utils';
 
 // Use centralized glassy toast config
 const toastConfig = glassyToastConfig;
-
-// Helper function to extract video ID from YouTube URL
-const getVideoIdFromUrl = (url: string) => {
-  if (!url) return null;
-  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-  return match ? match[1] : null;
-};
 
 type UpcomingProgramWidgetProp = {
   // No props needed - will fetch data internally
@@ -170,50 +163,28 @@ export default function UpcomingProgramWidget() {
   const currentDay = getCurrentDay();
   const currentTime = liveTime.toLocaleTimeString("en-US", { hour12: true, hour: "numeric", minute: "numeric" });
 
-  // Helper function to convert time string to moment and format as 12-hour
-  const parseTimeToMoment = (timeString: string) => {
-    if (!timeString) return moment();
+  // Helper function to parse time string into a Date object
+  const parseTimeToDate = (timeString: string): Date => {
+    if (!timeString) return new Date();
 
-    try {
-      // Try parsing as 12-hour format first (e.g., "2:30 PM" or "2:30:00 PM")
-      const parsed12 = parse(timeString, 'h:mm a', new Date());
-      if (!isNaN(parsed12.getTime())) {
-        return moment(parsed12);
+    const formats = ['h:mm a', 'HH:mm', 'HH:mm:ss', 'h:mm:ss a'];
+    for (const fmt of formats) {
+      try {
+        const parsed = parse(timeString, fmt, new Date());
+        if (!isNaN(parsed.getTime())) {
+          return parsed;
+        }
+      } catch (error) {
+        // Continue to try other formats
       }
-    } catch (error) {
-      // Continue to try other formats
-    }
-
-    try {
-      // Try parsing as 24-hour format (e.g., "14:30" or "14:30:00")
-      const parsed24 = parse(timeString, 'HH:mm', new Date());
-      if (!isNaN(parsed24.getTime())) {
-        return moment(parsed24);
-      }
-    } catch (error) {
-      // Continue to try other formats
-    }
-
-    try {
-      // Try parsing as 24-hour format with seconds (e.g., "14:30:00")
-      const parsed24Sec = parse(timeString, 'HH:mm:ss', new Date());
-      if (!isNaN(parsed24Sec.getTime())) {
-        return moment(parsed24Sec);
-      }
-    } catch (error) {
-      // Continue to try moment directly
-    }
-
-    // If all parsing fails, try moment directly with multiple formats
-    const momentTime = moment(timeString, ['h:mm a', 'HH:mm', 'HH:mm:ss', 'h:mm:ss a'], true);
-    if (momentTime.isValid()) {
-      return momentTime;
     }
 
     // Last resort: return current time
     console.warn('Could not parse time:', timeString);
-    return moment();
+    return new Date();
   };
+
+  const isValidDate = (d: Date): boolean => !isNaN(d.getTime());
 
   // Pan responder for slide-down gesture on full description sheet
   const panResponder = useRef(
@@ -297,9 +268,9 @@ export default function UpcomingProgramWidget() {
     if (!timeString) return 'TBD';
 
     try {
-      const time = parseTimeToMoment(timeString);
-      if (time.isValid()) {
-        return time.format('h:mm A');
+      const time = parseTimeToDate(timeString);
+      if (isValidDate(time)) {
+        return format(time, 'h:mm a');
       }
     } catch (error) {
       console.error('Error formatting time:', error);
@@ -423,7 +394,7 @@ export default function UpcomingProgramWidget() {
       const allItems: UpcomingItem[] = [...allPrograms, ...allEvents];
 
       // Find the next upcoming item based on current time
-      const now = moment();
+      const now = new Date();
       let nextItem: UpcomingItem | null = null;
       let smallestDuration = Infinity;
 
@@ -431,23 +402,25 @@ export default function UpcomingProgramWidget() {
         if (!item.time) return;
 
         try {
-          const itemTime = parseTimeToMoment(item.time);
-          if (!itemTime.isValid()) {
+          const itemTime = parseTimeToDate(item.time);
+          if (!isValidDate(itemTime)) {
             console.error('Invalid time format for item:', item.name, item.time);
             return;
           }
 
-          // Create a moment for today at the program time
-          const today = moment().startOf('day');
-          const programTimeToday = today.clone().hour(itemTime.hour()).minute(itemTime.minute()).second(0);
+          // Create a date for today at the program time
+          let programTimeToday = startOfDay(new Date());
+          programTimeToday = setHours(programTimeToday, itemTime.getHours());
+          programTimeToday = setMinutes(programTimeToday, itemTime.getMinutes());
+          programTimeToday = setSeconds(programTimeToday, 0);
 
           // If program time has passed today, assume it's for tomorrow
           let targetTime = programTimeToday;
-          if (programTimeToday.isBefore(now)) {
-            targetTime = programTimeToday.clone().add(1, 'day');
+          if (isBefore(programTimeToday, now)) {
+            targetTime = addDays(programTimeToday, 1);
           }
 
-          const duration = targetTime.diff(now, 'minutes');
+          const duration = differenceInMinutes(targetTime, now);
 
           // Consider items in the future or within the last 2 hours (still ongoing)
           if (duration >= -120 && duration < smallestDuration) {
@@ -809,24 +782,25 @@ export default function UpcomingProgramWidget() {
 
     try {
       // Get current time
-      const now = moment();
+      const now = new Date();
 
       // Parse program time
-      const programTime = parseTimeToMoment(upcomingItem.time);
+      const programTime = parseTimeToDate(upcomingItem.time);
 
       // Set both to today's date for accurate comparison
-      const today = moment().startOf('day');
-      const programTimeToday = today.clone().hour(programTime.hour()).minute(programTime.minute()).second(0);
+      let programTimeToday = startOfDay(new Date());
+      programTimeToday = setHours(programTimeToday, programTime.getHours());
+      programTimeToday = setMinutes(programTimeToday, programTime.getMinutes());
+      programTimeToday = setSeconds(programTimeToday, 0);
 
       // If program time has passed today, assume it's for tomorrow
       let targetTime = programTimeToday;
-      if (programTimeToday.isBefore(now)) {
-        targetTime = programTimeToday.clone().add(1, 'day');
+      if (isBefore(programTimeToday, now)) {
+        targetTime = addDays(programTimeToday, 1);
       }
 
       // Calculate duration
-      const duration = moment.duration(targetTime.diff(now));
-      const totalMinutes = Math.floor(duration.asMinutes());
+      const totalMinutes = differenceInMinutes(targetTime, now);
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
 
@@ -891,25 +865,26 @@ export default function UpcomingProgramWidget() {
   useEffect(() => {
     if (!loading && upcomingItem) {
       try {
-        const now = moment();
-        const programTime = parseTimeToMoment(upcomingItem.time);
+        const now = new Date();
+        const programTime = parseTimeToDate(upcomingItem.time);
 
-        if (!programTime.isValid()) {
+        if (!isValidDate(programTime)) {
           return;
         }
 
-        // Create a moment for today at the program time
-        const today = moment().startOf('day');
-        const programTimeToday = today.clone().hour(programTime.hour()).minute(programTime.minute()).second(0);
+        // Create a date for today at the program time
+        let programTimeToday = startOfDay(new Date());
+        programTimeToday = setHours(programTimeToday, programTime.getHours());
+        programTimeToday = setMinutes(programTimeToday, programTime.getMinutes());
+        programTimeToday = setSeconds(programTimeToday, 0);
 
         // If program time has passed today, assume it's for tomorrow
         let targetTime = programTimeToday;
-        if (programTimeToday.isBefore(now)) {
-          targetTime = programTimeToday.clone().add(1, 'day');
+        if (isBefore(programTimeToday, now)) {
+          targetTime = addDays(programTimeToday, 1);
         }
 
-        const duration = moment.duration(targetTime.diff(now));
-        const totalMinutes = Math.floor(duration.asMinutes());
+        const totalMinutes = differenceInMinutes(targetTime, now);
 
         // If current program has passed (more than 1 hour ago), refetch to find next one
         if (totalMinutes < -60) {

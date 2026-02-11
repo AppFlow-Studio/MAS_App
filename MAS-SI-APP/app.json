@@ -3,16 +3,17 @@
     "name": "MAS Staten Island",
     "owner": "appflow-studios",
     "slug": "MAS-SI-APP",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "orientation": "portrait",
     "icon": "./assets/images/massicliquidglassicon.png",
     "scheme": "MAS-SI-APP",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "icon": "./assets/images/Mas-SI-Glass.icon",
       "supportsTablet": true,
       "bundleIdentifier": "com.MAS-SI-APP",
       "usesAppleSignIn": true,

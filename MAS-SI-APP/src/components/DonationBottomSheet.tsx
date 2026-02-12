@@ -27,7 +27,7 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLLAPSED_HEIGHT = 390;
 const EXPANDED_HEIGHT = 540;
 const PAYMENT_HEIGHT = 560;
-const PAYMENT_HEIGHT_WITH_KEYBOARD = SCREEN_HEIGHT * 0.92; // Almost full screen when keyboard is open
+const PAYMENT_HEIGHT_WITH_KEYBOARD = SCREEN_HEIGHT * 0.92;
 const SAVED_CARDS_HEIGHT = 450;
 const SUCCESS_HEIGHT = 360;
 
@@ -820,17 +820,6 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   {/* Amount Display */}
                   <RNText style={styles.paymentAmount}>${getFinalAmount()}</RNText>
 
-                  {/* Scan Card Hint - iOS only */}
-                  {Platform.OS === 'ios' && (
-                    <View style={styles.scanCardHintRow}>
-                      <View style={{ flex: 1 }} />
-                      <Pressable style={styles.scanCardHint}>
-                        <Icon source="camera" size={14} color="#2563EB" />
-                        <RNText style={styles.scanCardHintText}>Scan card</RNText>
-                      </Pressable>
-                    </View>
-                  )}
-
                   {/* Card Form */}
                   <View style={styles.cardFormContainer}>
                     <CardForm
@@ -841,30 +830,17 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                         cvc: 'CVC',
                         postalCode: 'ZIP',
                       }}
-                      cardStyle={Platform.select({
-                        ios: {
-                          backgroundColor: '#FFFFFF',
-                          textColor: '#000000',
-                          borderRadius: 12,
-                          borderWidth: 1,
-                          borderColor: '#D1D5DB',
-                          fontSize: 16,
-                          placeholderColor: '#6B7280',
-                          cursorColor: '#214E91',
-                          textErrorColor: '#EF4444',
-                        },
-                        android: {
-                          backgroundColor: '#FFFFFF',
-                          textColor: '#000000',
-                          borderRadius: 12,
-                          borderWidth: 1,
-                          borderColor: '#D1D5DB',
-                          fontSize: 16,
-                          placeholderColor: '#6B7280',
-                          cursorColor: '#214E91',
-                          textErrorColor: '#EF4444',
-                        },
-                      })}
+                      cardStyle={{
+                        backgroundColor: '#FFFFFF',
+                        textColor: '#000000',
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: '#D1D5DB',
+                        fontSize: 16,
+                        placeholderColor: '#6B7280',
+                        cursorColor: '#214E91',
+                        textErrorColor: '#EF4444',
+                      }}
                       style={styles.cardForm}
                       onFormComplete={(cardDetails) => {
                         setCardComplete(cardDetails.complete);
@@ -1331,25 +1307,6 @@ const styles = StyleSheet.create({
   cardForm: {
     width: '100%',
     height: 200,
-  },
-  scanCardHintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  scanCardHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 20,
-  },
-  scanCardHintText: {
-    fontSize: 13,
-    color: '#2563EB',
-    marginLeft: 5,
-    fontWeight: '600',
   },
   payButton: {
     backgroundColor: '#2563EB',

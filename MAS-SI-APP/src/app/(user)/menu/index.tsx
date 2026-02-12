@@ -222,7 +222,7 @@ export default function homeScreen() {
           <Icon source={'chevron-right'} size={20} color={COLORS.gray} />
         </View>
       </Pressable>
-      <View className='pt-3' style={{ height: 250 }}>
+      <View className='pt-3'>
         <ProgramsCircularCarousel />
       </View>
 

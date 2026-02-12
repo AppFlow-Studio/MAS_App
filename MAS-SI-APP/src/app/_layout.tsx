@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -21,7 +21,7 @@ import { glassyToastConfig } from '../lib/toastConfig';
 import Constants from 'expo-constants';
 import "@/global.css"
 
-const IntroVideoOverlay = React.lazy(() => import('@/src/components/IntroVideoOverlay'));
+import IntroVideoOverlay from '@/src/components/IntroVideoOverlay';
 
 // Version tracking key for What's New screen
 export const WHATS_NEW_VERSION_KEY = 'whats_new_seen_version';
@@ -104,9 +104,7 @@ export default function RootLayout() {
                   <MenuProvider>
                     <PaperProvider>
                       <RootLayoutNav />
-                      <Suspense fallback={null}>
-                        <IntroVideoOverlay />
-                      </Suspense>
+                      <IntroVideoOverlay />
                       <Toast 
                         config={glassyToastConfig}
                         position="top"

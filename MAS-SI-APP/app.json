@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/massicliquidglassicon.png",
     "scheme": "MAS-SI-APP",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "splash": {
       "resizeMode": "cover",
       "backgroundColor": "#ffffff"
@@ -18,9 +18,12 @@
       "bundleIdentifier": "com.MAS-SI-APP",
       "usesAppleSignIn": true,
       "newArchEnabled": true,
+      "userInterfaceStyle": "light",
       "associatedDomains": ["applinks:yourdomain.com"],
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIUserInterfaceStyle": "Light",
+        "NSCameraUsageDescription": "Allow camera access to scan your credit card for faster payment entry."
       }
     },
     "android": {

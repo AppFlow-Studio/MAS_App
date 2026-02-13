@@ -73,6 +73,7 @@ const UserPlayListLectures = () => {
         speakerImg,
         programImg: program?.program_img,
         lectureId: lecture.lecture_id,
+        programId: lecture.lecture_program,
         type: 'program'
       }))
     }
@@ -99,6 +100,7 @@ const UserPlayListLectures = () => {
         speakerImg,
         programImg: event?.event_img,
         lectureId: lecture.event_lecture_id,
+        eventId: lecture.event_id,
         type: 'event'
       }))
     }
@@ -220,9 +222,9 @@ const UserPlayListLectures = () => {
 
   const getLectureLink = (lecture: UserPlaylistLectureType, details: any) => {
     if (details?.type === 'program') {
-      return `/myPrograms/lectures/${details.lectureId}`
+      return `/myPrograms/programs/${details.programId}?lectureId=${details.lectureId}`
     } else if (details?.type === 'event') {
-      return `/myPrograms/eventLectures/${details.lectureId}`
+      return `/myPrograms/events/${details.eventId}?lectureId=${details.lectureId}`
     } else if (details?.type === 'quran') {
       return {
         pathname: '/myPrograms/quran/QuranVideo',

@@ -159,7 +159,7 @@ const RenderAddedProgramLectures = ( {program_lecture_id, playlist, id} : Render
     <View className='bg-white mt-2  justify-center' style={{width: width}}>
     <Pressable>
     <View className='flex-row justify-between px-2'>
-      <Link href={`/myPrograms/lectures/${lecture?.lecture_id}`}>
+      <Link href={`/myPrograms/programs/${lecture?.lecture_program}?lectureId=${lecture?.lecture_id}`}>
         <View className=''>
           <Image source={program_img ? { uri : program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, borderRadius: 8}}/>
         </View>
@@ -335,7 +335,7 @@ export const RenderAddedEventLectures = ( {event_lecture_id, playlist , id} : Re
     <View className='bg-white mt-2  justify-center' style={{width: width}}>
     <Pressable>
     <View className='flex-row justify-between px-2'>
-      <Link href={`/myPrograms/eventLectures/${lecture?.event_lecture_id}`}>
+      <Link href={`/myPrograms/events/${lecture?.event_id}?lectureId=${lecture?.event_lecture_id}`}>
         <View className=''>
           <Image source={ program_img ? { uri : program_img } : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, borderRadius: 8}}/>
         </View>

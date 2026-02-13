@@ -1,42 +1,28 @@
-import { View, Text, Pressable, FlatList, Dimensions, Image } from 'react-native'
+import { View, Text, Pressable, Image, StyleSheet } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import { useLocalSearchParams, Stack } from 'expo-router';
-import { EventLectureType, Lectures, Program } from '@/src/types';
+import { EventLectureType } from '@/src/types';
 import { Link } from "expo-router";
-import { ActivityIndicator, Icon, IconButton } from 'react-native-paper';
-import LectureDotsMenu from '../LectureComponets/LectureDotsMenu';
-import {
-  Menu,
-  MenuOptions,
-  MenuOption,
-  MenuTrigger,
-} from 'react-native-popup-menu';
+import { Icon } from 'react-native-paper';
+import * as Haptics from "expo-haptics"
 import Animated, { useSharedValue, withSpring, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { format } from 'date-fns';
-type RenderLikedLecturesProp = {
+
+type RenderLikedEventLecturesProp = {
   lecture : EventLectureType
   index : number
   speaker : string | null | undefined
 }
-const { width } = Dimensions.get("window")
-type program_imgProp = {
-  event_img : string
-}
-const RenderLikedEventLectures = React.memo(function RenderLikedEventLectures({lecture, index, speaker} : RenderLikedLecturesProp) {
+
+const RenderLikedEventLectures = React.memo(function RenderLikedEventLectures({lecture, index, speaker} : RenderLikedEventLecturesProp) {
     const liked = useSharedValue(0)
     const { session } = useAuth()
-    const [ loading, setLoading ] = useState(true)
-    const [ program_img , setProgram_img ] = useState<program_imgProp>()
-    async function checkIfLectureIsLiked(){
-      const { data , error } = await supabase.from("liked_event_lectures").select("event_lecture_id").eq("user_id", session?.user.id).eq("event_lecture_id", lecture.event_lecture_id).single()
+    const [ eventImg, setEventImg ] = useState<string | null>(null)
 
-      if( data ){
-        return 1
-      }else{
-        return 0
-      }
+    async function checkIfLectureIsLiked(){
+      const { data } = await supabase.from("liked_event_lectures").select("event_lecture_id").eq("user_id", session?.user.id).eq("event_lecture_id", lecture.event_lecture_id).single()
+      return data ? 1 : 0
     }
 
     async function setLiked() {
@@ -47,112 +33,118 @@ const RenderLikedEventLectures = React.memo(function RenderLikedEventLectures({l
         console.error("Error setting liked value:", error);
       }
     }
+
+    async function stateOfLikedEventLecture(){
+      if( liked.value == 0 ){
+        const { error } = await supabase.from("liked_event_lectures").insert({user_id : session?.user.id, event_lecture_id: lecture.event_lecture_id})
+        if (error) console.log(error)
+      }
+      if ( liked.value == 1 ){
+        const { error } = await supabase.from("liked_event_lectures").delete().eq("user_id", session?.user.id).eq("event_lecture_id", lecture.event_lecture_id)
+        if (error) console.log(error)
+      }
+      liked.value = withSpring( liked.value ? 0: 1, {} )
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    }
         
-    const outlineStyle = useAnimatedStyle(() => {
-      return {
-        transform: [
-          {
-            scale: interpolate(liked.value, [0, 1], [1, 0], Extrapolation.CLAMP),
-          },
-        ],
-      };
-    });
+    const outlineStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: interpolate(liked.value, [0, 1], [1, 0], Extrapolation.CLAMP) }],
+    }));
     
     async function getLecImage(){
-      const { data, error } = await supabase.from("events_lectures").select("event_id").eq("event_lecture_id", lecture.event_lecture_id).single()
-      if( error ){
-        console.log( error)
-      }
-      if( data ){
-        let img = data;
-        if( img ){
-          const { data , error }  = await supabase.from("events").select("event_img").eq("event_id", img.event_id).single()
-          if( error ){
-            console.log( "DS" ,error)
-          }
-          if( data ){
-            setProgram_img(data)
-        }
-        }
-      }
+      const { data } = await supabase.from("events").select("event_img").eq("event_id", lecture.event_id).single()
+      if( data ) setEventImg(data.event_img)
     }
-    const fillStyle = useAnimatedStyle(() => {
-      return {
-        transform: [
-          {
-            scale: liked.value,
-          },
-        ],
-        opacity: liked.value
-      };
-    });
-    
-      const LikeButton = () => {
-        return(
-          <Pressable onPress={() => (liked.value = withSpring(liked.value ? 0: 1))} className=' relative'>
-            <Animated.View style={outlineStyle}>
-              <Icon source="cards-heart-outline"  color='black'size={25}/>
-            </Animated.View>
-            <Animated.View style={[{position: "absolute"} ,fillStyle]}>
-              <Icon source="cards-heart"  color='red'size={25}/>
-            </Animated.View>
-        </Pressable>
-        )
-      }
-    
-      const DotsButton = () => {
-        return(
-          <Menu>
-            <MenuTrigger>
-              <Icon source={"dots-horizontal"} color='black' size={25}/>
-            </MenuTrigger>
-            <MenuOptions customStyles={{optionsContainer: {width: 150, borderRadius: 8, marginTop: 20, padding: 8}}}>
-              <MenuOption>
-                <View className='flex-row justify-between items-center'>
-                 <Text>Add To Playlist</Text> 
-                 <Icon source="playlist-plus" color='black' size={15}/>
-                </View>
-              </MenuOption>
-            </MenuOptions>
-          </Menu>           
-        )
-      }
 
+    const fillStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: liked.value }],
+      opacity: liked.value
+    }));
       
-      useEffect(() => {
-        setLoading(true)
-        setLiked()
-        getLecImage()
-        setLoading(false)
-      },[])
-      
-      if(loading){
-        return <ActivityIndicator />
-      }
-      const width = Dimensions.get("window").width
-      return (
-        <View className='bg-white mt-2  justify-center ml-2' style={{width: width}}>
-          <Pressable>
-          <View className='flex-row'>
-            <Link href={`/myPrograms/eventLectures/${lecture.event_lecture_id}`}>
-              <View className=''>
-                <Image source={ program_img?.event_img ? { uri : program_img?.event_img} : require("@/assets/images/MASHomeLogo.png")} style={{ width: 50, height: 50, borderRadius: 8}}/>
-              </View>
-              <View className='flex-col justify-center' style={{width: width / 1.5, height: 50}}>
-                <Text className='text-md font-bold ml-2 text-black' style={{flexShrink: 1 }} numberOfLines={1}>{lecture.event_lecture_name}</Text>
-                <View className='flex-row' style={{flexShrink: 1, width: width / 1.5}}>
-                  {speaker == "MAS" ? <Text className='ml-2 text-gray-500' style={{flexShrink:1}} numberOfLines={1}>{lecture.event_lecture_speaker} </Text> : <Text className='ml-2 text-gray-500'> {format(lecture.event_lecture_date, 'PP')}</Text>}
-                </View>
-              </View>
-              </Link>
-              <View className='flex-row mt-3 justify-center px-2'>
-                <LikeButton />
-              </View>
-            </View>
+    useEffect(() => {
+      setLiked()
+      getLecImage()
+    },[])
+
+    let dateStr = ''
+    try { dateStr = format(lecture.event_lecture_date, 'PP') } catch {}
+
+    return (
+      <Link href={`/myPrograms/events/${lecture.event_id}?lectureId=${lecture.event_lecture_id}`} asChild>
+        <Pressable style={styles.card}>
+          <Image 
+            source={eventImg ? { uri: eventImg } : require("@/assets/images/MASHomeLogo.png")} 
+            style={styles.thumbnail}
+          />
+          <View style={styles.textContainer}>
+            <Text style={styles.title} numberOfLines={1}>{lecture.event_lecture_name}</Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {speaker === "MAS" ? lecture.event_lecture_speaker : dateStr}
+            </Text>
+          </View>
+          <Pressable 
+            onPress={(e) => { e.stopPropagation(); stateOfLikedEventLecture(); }}
+            style={styles.heartButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Animated.View style={outlineStyle}>
+              <Icon source="cards-heart-outline" color="#94A3B8" size={22}/>
+            </Animated.View>
+            <Animated.View style={[styles.heartFill, fillStyle]}>
+              <Icon source="cards-heart" color="#EF4444" size={22}/>
+            </Animated.View>
           </Pressable>
-          
-        </View>
-      )
+        </Pressable>
+      </Link>
+    )
+})
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 16,
+    marginVertical: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(33, 78, 145, 0.08)',
+  },
+  thumbnail: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+  },
+  textContainer: {
+    flex: 1,
+    marginLeft: 14,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
+    marginBottom: 3,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: '#64748B',
+  },
+  heartButton: {
+    padding: 6,
+    marginLeft: 8,
+  },
+  heartFill: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+  },
 })
 
 export default RenderLikedEventLectures

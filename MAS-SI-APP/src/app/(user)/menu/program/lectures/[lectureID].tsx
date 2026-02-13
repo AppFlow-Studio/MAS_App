@@ -354,7 +354,7 @@ export default function LecturesData() {
                   key={lecture.lecture_id}
                   onPress={() => {
                     if (!isCurrentLecture) {
-                      router.push(`/menu/program/lectures/${lecture.lecture_id}`)
+                      router.push(`/menu/program/${program?.program_id}?lectureId=${lecture.lecture_id}`)
                     }
                   }}
                   className='mb-3 bg-white rounded-xl overflow-hidden'

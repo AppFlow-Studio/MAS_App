@@ -52,7 +52,7 @@ const schedule_notification = async ( user_id : string, push_notification_token 
 const ProgramLectures = () => {
   const { session } = useAuth()
   const router = useRouter()
-  const { programId } = useLocalSearchParams();
+  const { programId, lectureId } = useLocalSearchParams();
   const programIdStr = typeof programId === 'string' ? programId : Array.isArray(programId) ? programId[0] : ''
   const { data: programDetailData } = useProgramDetail(programIdStr)
   const program = programDetailData?.program
@@ -84,6 +84,7 @@ const ProgramLectures = () => {
   const [ playing, setPlaying ] = useState(false)
   const [ watchedLectures, setWatchedLectures ] = useState<Set<string>>(new Set())
   const [ startedLectures, setStartedLectures ] = useState<Set<string>>(new Set())
+  const [ likedLectureIds, setLikedLectureIds ] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'description' | 'classes'>('description')
   const [videoTab, setVideoTab] = useState<'keynotes' | 'summary'>('summary')
   const [currentSpeakerIndex, setCurrentSpeakerIndex] = useState(0)
@@ -113,6 +114,27 @@ const ProgramLectures = () => {
       // ]
     }
   })
+
+  const fetchLikedLectureIds = async () => {
+    if (!session?.user.id) return
+    const { data, error } = await supabase.from('liked_lectures').select('lecture_id').eq('user_id', session.user.id)
+    if (data) {
+      setLikedLectureIds(new Set(data.map(d => d.lecture_id)))
+    }
+  }
+
+  const toggleLikeLecture = async (lectureId: string) => {
+    if (!session?.user.id) return
+    const isLiked = likedLectureIds.has(lectureId)
+    if (isLiked) {
+      await supabase.from('liked_lectures').delete().eq('user_id', session.user.id).eq('lecture_id', lectureId)
+      setLikedLectureIds(prev => { const next = new Set(prev); next.delete(lectureId); return next })
+    } else {
+      await supabase.from('liked_lectures').insert({ user_id: session.user.id, lecture_id: lectureId })
+      setLikedLectureIds(prev => new Set([...prev, lectureId]))
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+  }
 
   const checkWatchedStatus = async (lecturesData: Lectures[]) => {
     try {
@@ -196,6 +218,7 @@ const ProgramLectures = () => {
 
   useEffect(() => {
     notifade.value = withTiming(0, {duration : 6000})
+    fetchLikedLectureIds()
   }, [])
 
   // Check watched status when lectures data changes
@@ -204,6 +227,21 @@ const ProgramLectures = () => {
       checkWatchedStatus(lectures)
     }
   }, [lectures])
+
+  // Auto-select lecture if lectureId param is provided (deep link from favorites/playlists)
+  useEffect(() => {
+    if (lectureId && lectures && lectures.length > 0 && !selectedLecture) {
+      const targetLecture = lectures.find(l => l.lecture_id === lectureId)
+      if (targetLecture) {
+        setSelectedLecture(targetLecture)
+        const hasVideoLink = !!(targetLecture.lecture_link && targetLecture.lecture_link.trim() !== '' && targetLecture.lecture_link !== 'N/A')
+        setPlaying(hasVideoLink)
+        setTimeout(() => {
+          scrollRef.current?.scrollTo({ y: 0, animated: true })
+        }, 100)
+      }
+    }
+  }, [lectureId, lectures])
 
   useEffect(() => {
     setPlaylistAddingTo([])
@@ -763,7 +801,7 @@ const ProgramLectures = () => {
           {selectedLecture && selectedLecture.lecture_link && selectedLecture.lecture_link.trim() !== '' && selectedLecture.lecture_link !== 'N/A' && (
             <View style={{ 
               paddingHorizontal: 16,
-              paddingTop: 0,
+              paddingTop: 16,
               paddingBottom: 8,
               width: '100%',
               backgroundColor: '#FFFFFF',
@@ -990,6 +1028,33 @@ const ProgramLectures = () => {
                                   ) : null}
                                 </View>
                               </View>
+
+                              {/* Like Button */}
+                              <Pressable
+                                onPress={(e) => {
+                                  e.stopPropagation()
+                                  toggleLikeLecture(lecture.lecture_id)
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: 16,
+                                  backgroundColor: 'rgba(0,0,0,0.4)',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  zIndex: 10,
+                                }}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              >
+                                <Icon
+                                  source={likedLectureIds.has(lecture.lecture_id) ? "cards-heart" : "cards-heart-outline"}
+                                  color={likedLectureIds.has(lecture.lecture_id) ? "#EF4444" : "white"}
+                                  size={18}
+                                />
+                              </Pressable>
                             </View>
                           </Pressable>
                         )
@@ -1339,6 +1404,33 @@ const ProgramLectures = () => {
                             ) : null}
                           </View>
                         </View>
+
+                        {/* Like Button */}
+                        <Pressable
+                          onPress={(e) => {
+                            e.stopPropagation()
+                            toggleLikeLecture(lecture.lecture_id)
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: 'rgba(0,0,0,0.4)',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10,
+                          }}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Icon
+                            source={likedLectureIds.has(lecture.lecture_id) ? "cards-heart" : "cards-heart-outline"}
+                            color={likedLectureIds.has(lecture.lecture_id) ? "#EF4444" : "white"}
+                            size={18}
+                          />
+                        </Pressable>
                       </View>
                     </Pressable>
                   )

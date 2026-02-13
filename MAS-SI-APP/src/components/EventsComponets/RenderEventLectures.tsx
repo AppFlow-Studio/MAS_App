@@ -30,7 +30,7 @@ const { session } = useAuth()
 const liked = useSharedValue(0)
 
 async function checkIfLectureIsLiked(){
-  const { data , error } = await supabase.from("liked_lectures").select("lecture_id").eq("user_id", session?.user.id).eq("lecture_id", lecture.event_lecture_id).single()
+  const { data , error } = await supabase.from("liked_event_lectures").select("event_lecture_id").eq("user_id", session?.user.id).eq("event_lecture_id", lecture.event_lecture_id).single()
 
   if( data ){
     return 1
@@ -128,7 +128,7 @@ const fillStyle = useAnimatedStyle(() => {
     <View className='bg-white mt-4'>
       <Pressable>
       <View className='ml-2 flex-row items-center' >
-        <Link href={`/menu/program/events/event_lectures/${lecture.event_lecture_id}`} asChild>
+        <Link href={`/menu/program/events/${lecture.event_id}?lectureId=${lecture.event_lecture_id}`} asChild>
           <Pressable className='flex-row items-center'>
             <View className='w-[35] h-[25] items-center justify-center mb-2'>
                 <Text className='text-xl font-bold text-gray-400 ml-2' >{length - index}</Text>

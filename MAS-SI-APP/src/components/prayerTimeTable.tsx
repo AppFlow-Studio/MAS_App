@@ -335,11 +335,11 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
   }, [index, setTableIndex]);
 
   const icons = [
-    <FajrIcon color="#1d4681" size={20} />, 
-    <DhuhrIcon color="#1d4681" size={20} />, 
-    <AsrIcon color="#1d4681" size={20} />, 
-    <MaghribIcon color="#1d4681" size={20} />, 
-    <IshaIcon color="#1d4681" size={20} />
+    <FajrIcon color="#ffffff" size={20} />, 
+    <DhuhrIcon color="#ffffff" size={20} />, 
+    <AsrIcon color="#ffffff" size={20} />, 
+    <MaghribIcon color="#ffffff" size={20} />, 
+    <IshaIcon color="#ffffff" size={20} />
   ]
   return (
     <>
@@ -348,28 +348,28 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
         {/* Date Selector - Premium Design */}
         <View className='flex-row justify-between items-center px-3 py-2 rounded-2xl h-[70] w-[85%]'
           style={[{ 
-            backgroundColor: 'rgba(29, 70, 129, 0.08)',
+            backgroundColor: 'rgba(160, 170, 190, 0.55)',
             borderWidth: 1,
-            borderColor: 'rgba(29, 70, 129, 0.15)',
-            shadowColor: '#1d4681',
+            borderColor: 'rgba(255, 255, 255, 0.15)',
+            shadowColor: '#000',
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.1,
+            shadowOpacity: 0.15,
             shadowRadius: 8,
             elevation: 5,
           },
           Platform.OS == 'android' ? {
             borderWidth: 1,
-            borderColor: 'rgba(29, 70, 129, 0.15)',
+            borderColor: 'rgba(255, 255, 255, 0.15)',
           } : {}
           ]}>
           <Pressable 
             onPress={backPress}
             style={{ padding: 8 }}
           >
-            <Icon source="chevron-left" size={26} color='#1d4681' />
+            <Icon source="chevron-left" size={26} color='#ffffff' />
           </Pressable>
           <View className='flex-col items-center justify-center'>
-            <Text style={{ color: '#1d4681', fontWeight: '700', fontSize: 17, letterSpacing: 0.3 }}>{prayerData.date}</Text>
+            <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 17, letterSpacing: 0.3 }}>{prayerData.date}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
               <View style={{ 
                 width: 6, 
@@ -385,7 +385,7 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
             onPress={nextPress}
             style={{ padding: 8 }}
           >
-            <Icon source="chevron-right" size={26} color='#1d4681' />
+            <Icon source="chevron-right" size={26} color='#ffffff' />
           </Pressable>
         </View>
 
@@ -394,7 +394,7 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
             [{ width: '100%' },
             Platform.OS == 'android' ? {
               borderWidth: 1,
-              borderColor: 'rgba(29, 70, 129, 0.1)',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
             } : {}
 
             ]} className='flex-col px-2'>
@@ -411,14 +411,14 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
                   return (
                     <React.Fragment key={prayerIndex}>
                       <View style={{
-                        backgroundColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.12)' : 'rgba(29, 70, 129, 0.06)',
+                        backgroundColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.25)' : 'rgba(160, 170, 190, 0.55)',
                         borderWidth: isCurrentPrayer ? 1.5 : 1,
-                        borderColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.4)' : 'rgba(29, 70, 129, 0.12)',
+                        borderColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.15)',
                         borderRadius: 16,
                         marginBottom: 8,
-                        shadowColor: isCurrentPrayer ? '#10b981' : '#1d4681',
+                        shadowColor: '#000',
                         shadowOffset: { width: 0, height: isCurrentPrayer ? 4 : 2 },
-                        shadowOpacity: isCurrentPrayer ? 0.2 : 0.08,
+                        shadowOpacity: isCurrentPrayer ? 0.25 : 0.1,
                         shadowRadius: isCurrentPrayer ? 8 : 4,
                         elevation: isCurrentPrayer ? 8 : 3,
                         flexDirection: 'row',
@@ -427,10 +427,10 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
                         paddingHorizontal: 16,
                       }}>
                         <View style={{ flex: 1.4, justifyContent: 'center' }}>
-                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -2, left: 36 }}>Prayer</Text>}
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -2, left: 36 }}>Prayer</Text>}
                           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: isFajr ? 14 : 0 }}>
                             <View style={{
-                              backgroundColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.15)' : 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: isCurrentPrayer ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.1)',
                               borderRadius: 10,
                               padding: 6,
                               marginRight: 10,
@@ -438,23 +438,23 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
                               {icons[prayerIndex]}
                             </View>
                             <Text style={{ 
-                              color: isCurrentPrayer ? '#10b981' : '#1d4681', 
+                              color: isCurrentPrayer ? '#10b981' : '#ffffff', 
                               fontWeight: '600', 
                               fontSize: 15,
                             }}>{salah}</Text>
                           </View>
                         </View>
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Athan</Text>}
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Athan</Text>}
                           <Text style={{ 
-                            color: "rgba(29,70,129,0.7)", 
+                            color: "rgba(255,255,255,0.8)", 
                             fontSize: 15,
                             fontWeight: '500',
                             marginTop: isFajr ? 14 : 0,
                           }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]}</Text>
                         </View>
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Iqamah</Text>}
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Iqamah</Text>}
                           <Text style={{ 
                             color: '#10b981', 
                             fontWeight: '700',
@@ -467,12 +467,12 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.15)' : isCurrentPrayer ? 'rgba(128, 128, 128, 0.15)' : 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.2)' : 'rgba(255, 255, 255, 0.1)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(29,70,129,0.5)"} />
+                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(255,255,255,0.5)"} />
                           </Pressable>
                         </View>
                       </View>
@@ -490,14 +490,14 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
                   return (
                     <React.Fragment key={prayerIndex}>
                       <View style={{
-                        backgroundColor: 'rgba(29, 70, 129, 0.06)',
+                        backgroundColor: 'rgba(160, 170, 190, 0.55)',
                         borderWidth: 1,
-                        borderColor: 'rgba(29, 70, 129, 0.12)',
+                        borderColor: 'rgba(255, 255, 255, 0.15)',
                         borderRadius: 16,
                         marginBottom: 8,
-                        shadowColor: '#1d4681',
+                        shadowColor: '#000',
                         shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.08,
+                        shadowOpacity: 0.1,
                         shadowRadius: 4,
                         elevation: 3,
                         flexDirection: 'row',
@@ -506,30 +506,30 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
                         paddingHorizontal: 16,
                       }}>
                         <View style={{ flex: 1.4, justifyContent: 'center' }}>
-                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -2, left: 36 }}>Prayer</Text>}
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -2, left: 36 }}>Prayer</Text>}
                           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: isFajr ? 14 : 0 }}>
                             <View style={{
-                              backgroundColor: 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
                               borderRadius: 10,
                               padding: 6,
                               marginRight: 10,
                             }}>
                               {icons[prayerIndex]}
                             </View>
-                            <Text style={{ color: '#1d4681', fontWeight: '600', fontSize: 15 }}>{salah}</Text>
+                            <Text style={{ color: '#ffffff', fontWeight: '600', fontSize: 15 }}>{salah}</Text>
                           </View>
                         </View>
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Athan</Text>}
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Athan</Text>}
                           <Text style={{ 
-                            color: "rgba(29,70,129,0.7)", 
+                            color: "rgba(255,255,255,0.8)", 
                             fontSize: 15,
                             fontWeight: '500',
                             marginTop: isFajr ? 14 : 0,
                           }} adjustsFontSizeToFit numberOfLines={1}>{prayerData[`athan_${salah == 'Dhuhr' ? 'zuhr' : salah.toLowerCase()}` as keyof gettingPrayerData]}</Text>
                         </View>
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(29,70,129,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Iqamah</Text>}
+                          {isFajr && <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: '500', letterSpacing: 0.5, textTransform: 'uppercase', position: 'absolute', top: -8 }}>Iqamah</Text>}
                           <Text style={{ 
                             color: '#10b981', 
                             fontWeight: '700',
@@ -542,12 +542,12 @@ const Table = memo(({ prayerData, setTableIndex, tableIndex, index, userSettings
                             hitSlop={10} 
                             onPress={() => handleBellPress(salah)}
                             style={{
-                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.15)' : 'rgba(29, 70, 129, 0.08)',
+                              backgroundColor: hasNotificationEnabled ? 'rgba(250, 204, 21, 0.2)' : 'rgba(255, 255, 255, 0.1)',
                               borderRadius: 10,
                               padding: 8,
                             }}
                           >
-                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(29,70,129,0.5)"} />
+                            <Icon source={hasNotificationEnabled ? "bell" : "bell-outline"} size={20} color={hasNotificationEnabled ? "#facc15" : "rgba(255,255,255,0.5)"} />
                           </Pressable>
                         </View>
                       </View>

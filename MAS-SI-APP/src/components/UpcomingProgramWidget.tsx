@@ -1,5 +1,6 @@
 import { View, Text, Pressable, ImageBackground, ScrollView, Animated, Image, Dimensions, PanResponder, LayoutAnimation, Platform, UIManager, Modal as RNModal } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import ReAnimated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -104,6 +105,18 @@ export default function UpcomingProgramWidget() {
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const isSheetExpandedRef = useRef(false);
   const sheetHeightAnim = useRef(new Animated.Value(0)).current; // 0 = collapsed, 1 = expanded (legacy)
+
+  // Reanimated shared values for content fade
+  const collapsedOpacity = useSharedValue(1);
+  const expandedOpacity = useSharedValue(0);
+
+  const animatedCollapsedStyle = useAnimatedStyle(() => ({
+    opacity: collapsedOpacity.value,
+  }));
+
+  const animatedExpandedStyle = useAnimatedStyle(() => ({
+    opacity: expandedOpacity.value,
+  }));
 
   // Pan responder for notification sheet drag-to-dismiss
   const notificationPanResponder = useRef(
@@ -735,42 +748,38 @@ export default function UpcomingProgramWidget() {
 
   // Handle add to programs button press
   const handleAddToProgramsPress = async () => {
-    if (!session?.user.id || !upcomingItem) return;
+    if (!session?.user.id || !upcomingItem || upcomingItem.type !== 'program') return;
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     if (itemInPrograms) {
       // Remove from programs
-      if (upcomingItem.type === 'program') {
-        const { error } = await supabase
-          .from('added_programs')
-          .delete()
-          .eq('user_id', session.user.id)
-          .eq('program_id', upcomingItem.id);
-      }
+      const { error } = await supabase
+        .from('added_programs')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('program_id', upcomingItem.id);
 
       setItemInPrograms(false);
     } else {
       // Add to programs
-      if (upcomingItem.type === 'program') {
-        const { error } = await supabase
-          .from('added_programs')
-          .insert({
-            user_id: session.user.id,
-            program_id: upcomingItem.id
-          });
+      const { error } = await supabase
+        .from('added_programs')
+        .insert({
+          user_id: session.user.id,
+          program_id: upcomingItem.id
+        });
 
-        if (!error) {
-          setItemInPrograms(true);
+      if (!error) {
+        setItemInPrograms(true);
 
-          // Show toast in modal
-          setModalToast({
-            type: 'ProgramAddedToPrograms',
-            props: { props: programData, onPress: () => { } }
-          });
-          // Auto-hide modal toast after 3 seconds
-          setTimeout(() => setModalToast(null), 3000);
-        }
+        // Show toast in modal
+        setModalToast({
+          type: 'ProgramAddedToPrograms',
+          props: { props: programData, onPress: () => { } }
+        });
+        // Auto-hide modal toast after 3 seconds
+        setTimeout(() => setModalToast(null), 3000);
       }
     }
   };
@@ -909,6 +918,9 @@ export default function UpcomingProgramWidget() {
       panY.setValue(0);
       panYValue.current = 0;
       sheetHeightAnim.setValue(0);
+      // Reset Reanimated opacity shared values
+      collapsedOpacity.value = 1;
+      expandedOpacity.value = 0;
       setModalSpeakerData([]);
       setModalSpeakerString('');
       setModalImageReady(false);
@@ -947,6 +959,9 @@ export default function UpcomingProgramWidget() {
       panY.setValue(0);
       panYValue.current = 0;
       sheetHeightAnim.setValue(0);
+      // Reset Reanimated opacity shared values
+      collapsedOpacity.value = 1;
+      expandedOpacity.value = 0;
       scrollOffset.current = 0;
       previousScrollOffset.current = 0;
       isScrolling.current = false;
@@ -954,30 +969,34 @@ export default function UpcomingProgramWidget() {
     });
   }, [sheetHeightAnim]);
 
-  // Toggle sheet expansion with smooth rise animation (like SignInAnonModal)
+  // Toggle sheet expansion: LayoutAnimation for height, Reanimated for content fade
   const toggleSheetExpand = useCallback(() => {
-    const newValue = !isSheetExpanded;
-    
-    // Use LayoutAnimation for smooth content-based height transition
-    LayoutAnimation.configureNext({
-      duration: 400,
-      update: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.scaleY,
-        springDamping: 0.85,
-      },
-      create: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-      delete: {
-        type: LayoutAnimation.Types.easeInEaseOut,
-        property: LayoutAnimation.Properties.opacity,
-      },
-    });
-    
-    setIsSheetExpanded(newValue);
-    isSheetExpandedRef.current = newValue;
+    if (!isSheetExpanded) {
+      // Expanding: fade out collapsed content, then swap content + animate height, fade in expanded
+      collapsedOpacity.value = withTiming(0, { duration: 150 });
+      setTimeout(() => {
+        LayoutAnimation.configureNext({
+          duration: 450,
+          update: { type: LayoutAnimation.Types.easeInEaseOut },
+        });
+        setIsSheetExpanded(true);
+        isSheetExpandedRef.current = true;
+        // Delay the fade-in so content appears after the sheet has risen
+        expandedOpacity.value = withTiming(1, { duration: 300 });
+      }, 150);
+    } else {
+      // Collapsing: fade out expanded content, then swap content + animate height, fade in collapsed
+      expandedOpacity.value = withTiming(0, { duration: 150 });
+      setTimeout(() => {
+        LayoutAnimation.configureNext({
+          duration: 450,
+          update: { type: LayoutAnimation.Types.easeInEaseOut },
+        });
+        setIsSheetExpanded(false);
+        isSheetExpandedRef.current = false;
+        collapsedOpacity.value = withTiming(1, { duration: 300 });
+      }, 150);
+    }
   }, [isSheetExpanded]);
 
   const checkWatchedStatus = async (lecturesData: Lectures[]) => {
@@ -1070,11 +1089,10 @@ export default function UpcomingProgramWidget() {
     previousScrollOffset.current = 0;
     isScrolling.current = false;
     isClosing.current = false;
-    Animated.spring(slideAnim, {
+    Animated.timing(slideAnim, {
       toValue: 1,
+      duration: 350,
       useNativeDriver: true,
-      tension: 40,
-      friction: 8,
     }).start();
 
     // Fetch modal data - will be handled by useEffect
@@ -1390,13 +1408,12 @@ export default function UpcomingProgramWidget() {
                   backgroundColor: '#FFFFFF',
                   borderRadius: 32,
                   paddingTop: 16,
-                  paddingBottom: 34,
+                  paddingBottom: 16,
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.25,
                   shadowRadius: 16,
                   elevation: 20,
-                  minHeight: isSheetExpanded ? undefined : 220,
                   maxHeight: height * 0.85,
                 }}
               >
@@ -1494,44 +1511,45 @@ export default function UpcomingProgramWidget() {
                     </View>
                   </View>
 
-                  {/* Short description when collapsed */}
-                  {!isSheetExpanded && upcomingItem.description && (
-                    <Text style={{
-                      fontSize: 13,
-                      color: '#6B7280',
-                      lineHeight: 18,
-                      marginTop: 10,
-                    }} numberOfLines={2}>
-                      {upcomingItem.description}
-                    </Text>
-                  )}
-
-                  {/* View Full Details Button - Only when collapsed */}
+                  {/* Collapsed Content (short description + View Full Details) */}
                   {!isSheetExpanded && (
-                    <Pressable
-                      onPress={toggleSheetExpand}
-                      style={{
-                        backgroundColor: '#224F92',
-                        borderRadius: 14,
-                        paddingVertical: 16,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginTop: 24,
-                      }}
-                    >
-                      <Text style={{
-                        fontSize: 16,
-                        fontWeight: '700',
-                        color: '#FFFFFF',
-                      }}>
-                        View Full Details
-                      </Text>
-                    </Pressable>
+                    <ReAnimated.View style={animatedCollapsedStyle} pointerEvents={isSheetExpanded ? 'none' : 'auto'}>
+                      {upcomingItem.description && (
+                        <Text style={{
+                          fontSize: 13,
+                          color: '#6B7280',
+                          lineHeight: 18,
+                          marginTop: 10,
+                        }} numberOfLines={2}>
+                          {upcomingItem.description}
+                        </Text>
+                      )}
+
+                      <Pressable
+                        onPress={toggleSheetExpand}
+                        style={{
+                          backgroundColor: '#224F92',
+                          borderRadius: 14,
+                          paddingVertical: 16,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginTop: 24,
+                        }}
+                      >
+                        <Text style={{
+                          fontSize: 16,
+                          fontWeight: '700',
+                          color: '#FFFFFF',
+                        }}>
+                          View Full Details
+                        </Text>
+                      </Pressable>
+                    </ReAnimated.View>
                   )}
 
-                  {/* Expanded Content */}
+                  {/* Expanded Content (full description + action buttons) */}
                   {isSheetExpanded && (
-                    <>
+                    <ReAnimated.View style={animatedExpandedStyle} pointerEvents={isSheetExpanded ? 'auto' : 'none'}>
                       {/* Full Description Section */}
                       {upcomingItem.description && (
                         <View style={{ marginTop: 16 }}>
@@ -1583,24 +1601,26 @@ export default function UpcomingProgramWidget() {
                           </Text>
                         </Pressable>
 
-                        {/* Save Button */}
-                        <Pressable
-                          onPress={handleAddToProgramsPress}
-                          style={{
-                            width: 48,
-                            height: 48,
-                            backgroundColor: '#F3F4F6',
-                            borderRadius: 12,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Icon 
-                            source={itemInPrograms ? "heart" : "heart-outline"} 
-                            size={22} 
-                            color={itemInPrograms ? '#62E090' : '#6B7280'} 
-                          />
-                        </Pressable>
+                        {/* Save Button - Only for programs */}
+                        {upcomingItem.type === 'program' && (
+                          <Pressable
+                            onPress={handleAddToProgramsPress}
+                            style={{
+                              width: 48,
+                              height: 48,
+                              backgroundColor: '#F3F4F6',
+                              borderRadius: 12,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Icon 
+                              source={itemInPrograms ? "heart" : "heart-outline"} 
+                              size={22} 
+                              color={itemInPrograms ? '#62E090' : '#6B7280'} 
+                            />
+                          </Pressable>
+                        )}
                       </View>
 
                       {/* Register Button for paid programs */}
@@ -1638,7 +1658,7 @@ export default function UpcomingProgramWidget() {
                           </Text>
                         </Pressable>
                       )}
-                    </>
+                    </ReAnimated.View>
                   )}
                 </ScrollView>
               </View>

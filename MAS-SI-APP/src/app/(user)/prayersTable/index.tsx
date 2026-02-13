@@ -1207,17 +1207,31 @@ export default function Index() {
   // Early returns AFTER all hooks
   if (isLoading) {
     return (
-      <View className='flex flex-1 h-screen justify-center items-center bg-white'>
-        <Text className='text-lg font-semibold text-gray-600'>Loading prayer times...</Text>
-      </View>
+      <LinearGradient
+        colors={['#1d4681', '#3183bf']}
+        style={{ flex: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <View className='flex flex-1 h-screen justify-center items-center'>
+          <Text className='text-lg font-semibold' style={{ color: 'rgba(255,255,255,0.7)' }}>Loading prayer times...</Text>
+        </View>
+      </LinearGradient>
     );
   }
 
   if (!prayerTimesWeek || prayerTimesWeek.length === 0) {
     return (
-      <View className='flex flex-1 h-screen justify-center items-center bg-white'>
-        <Text className='text-lg font-semibold text-gray-600'>No prayer times available</Text>
-      </View>
+      <LinearGradient
+        colors={['#1d4681', '#3183bf']}
+        style={{ flex: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <View className='flex flex-1 h-screen justify-center items-center'>
+          <Text className='text-lg font-semibold' style={{ color: 'rgba(255,255,255,0.7)' }}>No prayer times available</Text>
+        </View>
+      </LinearGradient>
     );
   }
 
@@ -1238,17 +1252,17 @@ export default function Index() {
 
   return (
     <LinearGradient
-      colors={['#e8f4fc', '#f5fafd']}
+      colors={['#1d4681', '#3183bf']}
       style={{ flex: 1 }}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
     >
-      <StatusBar barStyle={"dark-content"} />
+      <StatusBar barStyle={"light-content"} />
       
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 80 }} bounces={false}>
         {/* Header */}
         <View style={{ paddingTop: 10, paddingBottom: 8, alignItems: 'center' }}>
-          <Text style={{ color: '#1d4681', fontSize: 24, fontWeight: '700' }}>Prayer Times</Text>
+          <Text style={{ color: 'white', fontSize: 24, fontWeight: '700' }}>Prayer Times</Text>
         </View>
 
         <View style={{ flex: 1 }}

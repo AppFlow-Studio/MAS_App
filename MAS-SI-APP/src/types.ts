@@ -9,6 +9,7 @@ export type Lectures ={
     lecture_date: string | "N/A",
     lecture_time: string
     lecture_key_notes : string[]
+    lecture_program?: string
 }
 export type Program = {
     id : number,

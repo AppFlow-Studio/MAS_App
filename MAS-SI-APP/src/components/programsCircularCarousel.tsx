@@ -51,7 +51,7 @@ export default function ProgramsCircularCarousel() {
           height={240}
           autoPlay={true}
           autoPlayInterval={2000}
-          data={programsData}
+          data={programsData || []}
           loop={true}
           pagingEnabled={true}
           snapEnabled={true}

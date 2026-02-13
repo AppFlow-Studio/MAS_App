@@ -135,7 +135,7 @@ const fillStyle = useAnimatedStyle(() => {
     <View className='bg-white mt-4'>
       <Pressable>
       <View className='mr-[5] flex-row items-center' >
-        <Link href={`/menu/program/lectures/${lecture.lecture_id}`} asChild>
+        <Link href={`/menu/program/${lecture.lecture_program}?lectureId=${lecture.lecture_id}`} asChild>
           <Pressable className='flex-row items-center'>
             <View className='w-[35] h-[25] items-center justify-center mb-1'>
               <Text className='text-xl font-bold text-gray-400 ml-2' >{length - index}</Text>

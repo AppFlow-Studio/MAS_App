@@ -135,7 +135,7 @@ const RenderMyLibraryProgramLectures = ( {lecture, index, speaker, setPlayAnimat
       <View className='bg-white mt-2'>
         <Pressable>
         <View className='flex-row items-center' >
-          <Link href={`/myPrograms/lectures/${lecture.lecture_id}`} asChild>
+          <Link href={`/myPrograms/programs/${lecture.lecture_program}?lectureId=${lecture.lecture_id}`} asChild>
             <Pressable className='flex-row items-center'>
               <View className='w-[35] h-[25] items-center justify-center mb-2'>
                 <Text className='text-xl font-bold text-gray-400' >{length - index}</Text>

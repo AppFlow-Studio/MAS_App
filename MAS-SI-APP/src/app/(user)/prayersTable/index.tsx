@@ -32,7 +32,7 @@ import Animated, {
 import { TaraweehSessionBottomSheet, TaraweehSessionBottomSheetRef, TaraweehSessionData } from '@/src/components/TaraweehSessionBottomSheet';
 import { TaraweehNotificationBottomSheet, TaraweehNotificationBottomSheetRef } from '@/src/components/TaraweehNotificationBottomSheet';
 import { CapacityStatusLight, CapacityStatus } from '@/src/components/CapacityStatusLight';
-import { useIsRamadan } from '@/src/lib/ramadanConfig';
+import { useIsRamadan, getTaraweehTimes } from '@/src/lib/ramadanConfig';
 
 // ============================================
 // TARAWEEH TIMELINE COMPONENT
@@ -1245,10 +1245,11 @@ export default function Index() {
 
 
 
-  const FirstTaraweehTime = setTimeToCurrentDate(convertTo24Hour(prayerTimesWeek[0].iqa_isha))
-  const FirstTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1)
-  const SecondTaraweehTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 1, FirstTaraweehTime.getMinutes() + 20)
-  const SecondTaraweehEndTime = new Date(FirstTaraweehTime).setHours(FirstTaraweehTime.getHours() + 2, FirstTaraweehTime.getMinutes() + 20)
+  const taraweehTimes = getTaraweehTimes(prayerTimesWeek[0].iqa_isha);
+  const FirstTaraweehTime = taraweehTimes.firstStart;
+  const FirstTaraweehEndTime = taraweehTimes.firstEnd;
+  const SecondTaraweehTime = taraweehTimes.secondStart;
+  const SecondTaraweehEndTime = taraweehTimes.secondEnd;
 
   return (
     <LinearGradient
@@ -1409,43 +1410,6 @@ export default function Index() {
             <Text className='text-xs'>End Time: <Text className='font-bold text-md'>{format(SecondTaraweehEndTime, 'p')}</Text></Text>
           </ImageBackground>
         </View> */}
-
-function setTimeToCurrentDate(timeString: string) {
-
-  const currentDate = new Date(); // Get current date
-
-  // Split the time string into hours, minutes, and seconds
-  const [hours, minutes, seconds] = timeString.split(':').map(Number);
-  // Create a new Date object with the current date
-  const timestampWithTimeZone = new Date();
-
-  // Set the time with setHours (adjust based on local timezone or UTC as needed)
-  timestampWithTimeZone.setHours(hours, minutes, seconds, 0); // No milliseconds
-
-  // Convert to ISO format with timezone (to ensure it's interpreted as a TIMESTAMPTZ)
-  const timestampISO = timestampWithTimeZone // This gives a full timestamp with timezone in UTC
-
-  return timestampISO
-}
-
-function convertTo24Hour(timeStr: string) {
-  // Extract the period ("AM"/"PM") and the time part ("7:15")
-  const period = timeStr.slice(-2).toUpperCase();
-  const [hourStr, minuteStr] = timeStr.slice(0, -2).split(":");
-  let hour = parseInt(hourStr, 10);
-
-  // Adjust hour based on period
-  if (period === 'PM' && hour !== 12) {
-    hour += 12;
-  } else if (period === 'AM' && hour === 12) {
-    hour = 0;
-  }
-
-  // Format hour and minute to two digits and add seconds ":00"
-  const hh = hour.toString().padStart(2, '0');
-  const mm = minuteStr.padStart(2, '0');
-  return `${hh}:${mm}:00`;
-}
 
 // ============================================
 // STYLES

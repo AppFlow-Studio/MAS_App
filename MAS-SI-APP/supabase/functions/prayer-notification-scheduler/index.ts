@@ -18,6 +18,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { format } from 'https://esm.sh/date-fns@4.1.0/format.mjs'
 import { isBefore } from 'https://esm.sh/date-fns@4.1.0'
+import { isAfter, isToday } from "date-fns"
 
 // Use service role for admin operations (scheduling notifications for all users)
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -351,8 +352,9 @@ async function scheduleAllNotifications() {
   // ==========================================================================
   // STEP 6: Taraweeh notifications (Ramadan only)
   // ==========================================================================
-  const ramadanEnd = new Date(2025, 2, 28) // March 28, 2025
-  if (isBefore(todaysDate, ramadanEnd)) {
+  const ramadanEnd = new Date(2026, 2, 18) // March 28, 2025
+  const ramadanStart = new Date(2026, 1, 17)
+  if ( isBefore(todaysDate, ramadanEnd) && (isAfter(todaysDate, ramadanStart) || isToday(ramadanStart) ) ) {
     const ishaData = prayerMap.get('isha')
     if (ishaData) {
       const ishaIqamahUTC = localTimeToUTC(ishaData.iqamah_time)
@@ -361,7 +363,7 @@ async function scheduleAllNotifications() {
       const firstTime = ishaIqamahUTC
       const firstTimeMinus30 = new Date(firstTime.getTime() - 30 * 60 * 1000)
 
-      // Second Taraweeh = 1 hour 20 min after Isha iqamah
+      // Second Taraweeh = 1 hour 30 min after Isha iqamah
       const secondTime = new Date(ishaIqamahUTC.getTime() + 80 * 60 * 1000)
       const secondTimeMinus30 = new Date(secondTime.getTime() - 30 * 60 * 1000)
 

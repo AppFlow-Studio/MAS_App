@@ -369,7 +369,7 @@ const SignIn = () => {
                 </View>
 
                 {/* Forgot Password */}
-                <Pressable style={{ alignSelf: 'flex-end', marginBottom: 20 }}>
+                <Pressable onPress={() => router.push('/ForgotPassword')} style={{ alignSelf: 'flex-end', marginBottom: 20 }}>
                   <Text style={{
                     color: '#0E519F',
                     fontWeight: '500',

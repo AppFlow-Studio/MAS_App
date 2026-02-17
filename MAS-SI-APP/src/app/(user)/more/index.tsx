@@ -23,7 +23,8 @@ import {
   Store,
   Briefcase,
   Camera,
-  CreditCard
+  CreditCard,
+  Receipt
 } from 'lucide-react-native';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
@@ -581,6 +582,7 @@ export default function MoreScreen() {
           <Text style={styles.sectionLabel}>DONATION</Text>
               <View style={styles.menuCard}>
                 <MenuButton icon={Heart} label="Phase 2" onPress={() => donationSheetRef.current?.open()} />
+                <MenuButton icon={Receipt} label="Payment History" onPress={() => router.push('/more/PaymentHistory')} />
               </View>
 
           {/* MAS SHOP */}

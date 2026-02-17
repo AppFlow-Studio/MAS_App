@@ -18,13 +18,13 @@ import { Ionicons } from '@expo/vector-icons'
 
 const PENDING_CHECKOUT_SESSION_KEY = '@BusinessAds/pending_checkout_session_id'
 
-type ProcessingState = 'verifying' | 'saving' | 'success' | 'error'
+type ProcessingState = 'saving' | 'success' | 'error'
 
 const PaymentProcessing = () => {
     const { sessionId } = useLocalSearchParams<{ sessionId: string }>()
     const router = useRouter()
     const insets = useSafeAreaInsets()
-    const [state, setState] = useState<ProcessingState>('verifying')
+    const [state, setState] = useState<ProcessingState>('saving')
     const [errorMessage, setErrorMessage] = useState<string>('')
     const hasProcessed = useRef(false)
     
@@ -39,8 +39,8 @@ const PaymentProcessing = () => {
 
     const showSuccessAlert = () => {
         Alert.alert(
-            'Application Complete!',
-            'Your business ad has been submitted for review. We\'ll notify you once it\'s approved.',
+            'Application Submitted!',
+            'Your card has been saved and your application is under review. You will only be charged once your ad is approved.',
             [{
                 text: 'View Status',
                 onPress: () => {
@@ -69,25 +69,7 @@ const PaymentProcessing = () => {
         
         const processPayment = async () => {
             try {
-                console.log('PaymentProcessing: Verifying session:', sessionId)
-                setState('verifying')
-                
-                // Verify the payment session
-                const verificationResult = await verifySubscriptionSession(sessionId)
-                console.log('PaymentProcessing: Verification result:', JSON.stringify(verificationResult))
-                
-                if (!verificationResult.success) {
-                    setState('error')
-                    setErrorMessage(verificationResult.error || 'Payment verification failed. Please try again.')
-                    Alert.alert(
-                        'Payment Error',
-                        verificationResult.error || 'Payment verification failed. Please try again.',
-                        [{ text: 'OK', onPress: () => router.replace('/more/BusinessAds') }]
-                    )
-                    return
-                }
-                
-                // Save the submission
+                // Save the submission first — this is the critical step
                 console.log('PaymentProcessing: Saving submission...')
                 setState('saving')
                 
@@ -96,17 +78,24 @@ const PaymentProcessing = () => {
                 
                 if (!saved) {
                     setState('error')
-                    setErrorMessage('Payment was successful but we could not save your submission. Please contact support.')
+                    setErrorMessage('We could not save your submission. Please try again or contact support.')
                     Alert.alert(
                         'Submission Error',
-                        'Payment was successful but we could not save your submission. Please contact support.',
-                        [{ text: 'OK', onPress: () => router.replace('/more/BusinessStatus') }]
+                        'We could not save your submission. Please try again or contact support.',
+                        [{ text: 'OK', onPress: () => router.replace('/more/BusinessAds') }]
                     )
                     return
                 }
                 
                 // Clear the pending session
                 await AsyncStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY)
+                
+                // Fire-and-forget: verify session in background to set default payment method
+                verifySubscriptionSession(sessionId).then((result) => {
+                    console.log('PaymentProcessing: Background verify result:', JSON.stringify(result))
+                }).catch((err) => {
+                    console.log('PaymentProcessing: Background verify error (non-blocking):', err)
+                })
                 
                 // Success!
                 console.log('PaymentProcessing: Success!')
@@ -130,12 +119,10 @@ const PaymentProcessing = () => {
 
     const getStatusText = () => {
         switch (state) {
-            case 'verifying':
-                return 'Verifying your payment...'
             case 'saving':
-                return 'Saving your submission...'
+                return 'Saving your application...'
             case 'success':
-                return 'Payment successful!'
+                return 'Application submitted!'
             case 'error':
                 return 'Something went wrong'
             default:
@@ -211,28 +198,22 @@ const PaymentProcessing = () => {
                         textAlign: 'center',
                         lineHeight: 24,
                     }}>
-                        {state === 'verifying' && 'Please wait while we confirm your payment with Stripe.'}
-                        {state === 'saving' && 'Almost there! Submitting your business ad application.'}
-                        {state === 'success' && 'Your application has been submitted for review.'}
+                        {state === 'saving' && 'Please wait while we submit your business ad application.'}
+                        {state === 'success' && 'Your application is under review. You will only be charged after approval.'}
                         {state === 'error' && errorMessage}
                     </Text>
                     
                     {/* Processing Steps */}
-                    {(state === 'verifying' || state === 'saving') && (
+                    {state === 'saving' && (
                         <View style={{ marginTop: 48, width: '100%' }}>
                             <ProcessingStep 
-                                label="Payment verification" 
-                                isComplete={state === 'saving' || state === 'success'} 
-                                isActive={state === 'verifying'}
-                            />
-                            <ProcessingStep 
-                                label="Submitting application" 
-                                isComplete={state === 'success'} 
-                                isActive={state === 'saving'}
+                                label="Saving application" 
+                                isComplete={false} 
+                                isActive={true}
                             />
                             <ProcessingStep 
                                 label="All done!" 
-                                isComplete={state === 'success'} 
+                                isComplete={false} 
                                 isActive={false}
                             />
                         </View>

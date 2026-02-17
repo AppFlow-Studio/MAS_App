@@ -46,6 +46,8 @@ const RootLayoutNav = () => {
       <Stack.Screen name="(user)" options={{ headerShown: false, animation: 'none' }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'none' }} />
       <Stack.Screen name="WhatsNew" options={{ headerShown: false, animation: 'fade' }} />
+      <Stack.Screen name="AppStorePreview" options={{ headerShown: false, animation: 'fade' }} />
+      <Stack.Screen name="ForgotPassword" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="+not-found" options={{ animation: 'none' }} />
     </Stack>
   )
@@ -95,7 +97,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView>
       <QueryClientProvider client={queryClient}>
-        <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!} urlScheme="MAS-SI-APP">
+        <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!} merchantIdentifier="merchant.com.MAS-SI-APP" urlScheme="MAS-SI-APP">
           <AuthProvider>
             <DeepLinkProvider>
               <NotificationProvider>

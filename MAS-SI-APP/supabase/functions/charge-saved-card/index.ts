@@ -42,6 +42,8 @@ serve(async (req) => {
       payment_method: paymentMethodId,
       off_session: true,
       confirm: true,
+      description: 'Donation to MAS Staten Island',
+      metadata: { product_type: 'donation' },
     });
 
     return new Response(JSON.stringify({ 

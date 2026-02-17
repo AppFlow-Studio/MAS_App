@@ -32,6 +32,8 @@ serve(async (req) => {
       amount: amount,
       currency: 'usd',
       customer: customer,
+      description: 'Donation to MAS Staten Island',
+      metadata: { product_type: 'donation' },
       automatic_payment_methods: {
         enabled: true,
       },

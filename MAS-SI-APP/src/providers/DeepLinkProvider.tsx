@@ -46,6 +46,7 @@ function isSubscriptionCancelUrl(url: string): boolean {
     return url.includes('subscription-cancel');
 }
 
+
 const DeepLinkContext = createContext<DeepLinkContextData>({
     subscriptionState: initialSubscriptionState,
     clearSubscriptionState: () => {},

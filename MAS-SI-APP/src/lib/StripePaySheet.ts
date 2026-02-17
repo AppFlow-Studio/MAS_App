@@ -296,18 +296,23 @@ export interface SubscriptionCheckoutResult {
 }
 
 /**
- * Create a Stripe Checkout Session for a subscription
- * @param priceId The Stripe Price ID for the subscription
+ * Create a Stripe Checkout Session in setup mode (saves card without charging).
+ * The actual charge happens when admin approves via activate-business-subscription.
+ * @param priceId Optional Stripe Price ID (stored in metadata for later activation)
+ * @param onboardingFeeCents Optional one-time onboarding fee in cents (stored for later)
+ * @param planDuration The selected plan duration string (e.g. 'Monthly Subscription')
  * @param successUrl Optional custom success URL
  * @param cancelUrl Optional custom cancel URL
  * @returns SubscriptionCheckoutResult with checkout URL or error
  */
 export const createBusinessSubscription = async (
-    priceId: string,
+    priceId?: string,
+    onboardingFeeCents: number = 0,
+    planDuration?: string,
     successUrl?: string,
     cancelUrl?: string
 ): Promise<SubscriptionCheckoutResult> => {
-    console.log('Creating business subscription for price:', priceId)
+    console.log('Creating setup checkout for plan:', planDuration, 'priceId:', priceId, 'onboardingFee:', onboardingFeeCents)
     
     // Check if user is authenticated
     const { data: { session } } = await supabase.auth.getSession()
@@ -320,14 +325,25 @@ export const createBusinessSubscription = async (
         const { data, error } = await supabase.functions.invoke('create-business-subscription', {
             body: { 
                 priceId,
+                onboardingFeeCents,
+                planDuration,
                 successUrl,
                 cancelUrl
             }
         })
         
         if (error) {
-            console.log('Error creating subscription:', error)
-            return { success: false, error: error.message || 'Failed to create subscription' }
+            console.log('Error creating subscription:', JSON.stringify(error))
+            // Try to extract the actual error from the response body
+            let actualError = error.message || 'Failed to create subscription'
+            try {
+                if (error.context) {
+                    const body = await error.context.json()
+                    if (body?.error) actualError = body.error
+                }
+            } catch (_e) { /* ignore parse errors */ }
+            console.log('Actual error:', actualError)
+            return { success: false, error: actualError }
         }
         
         if (data?.error) {

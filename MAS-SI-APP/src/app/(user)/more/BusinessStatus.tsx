@@ -251,7 +251,7 @@ const ApplicationDetailView = ({
             
             <ScrollView 
                 style={{ flex: 1 }} 
-                contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 24 }}
+                contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 100 }}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Status Badge */}

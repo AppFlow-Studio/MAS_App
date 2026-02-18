@@ -38,7 +38,7 @@ const getStatusIndex = (status: string): number => {
         case 'REJECT':
             return 3
         case 'POSTED':
-            return 4
+            return 5
         case 'CANCELLED':
             return 0
         default:
@@ -296,7 +296,7 @@ const ApplicationDetailView = ({
                 {/* Step Progress */}
                 <View style={{ marginBottom: 24 }}>
                     <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 8 }}>
-                        STEP {currentStep} OF {totalSteps}
+                        STEP {Math.min(currentStep, totalSteps)} OF {totalSteps}
                     </Text>
                     <View style={{
                         height: 6,
@@ -306,8 +306,8 @@ const ApplicationDetailView = ({
                     }}>
                         <View style={{
                             height: '100%',
-                            width: `${(currentStep / totalSteps) * 100}%`,
-                            backgroundColor: submission.status === 'REJECT' ? '#DC2626' : '#2563EB',
+                            width: `${Math.min((currentStep / totalSteps) * 100, 100)}%`,
+                            backgroundColor: submission.status === 'REJECT' ? '#DC2626' : submission.status === 'POSTED' ? '#16A34A' : '#2563EB',
                             borderRadius: 3,
                         }} />
                     </View>

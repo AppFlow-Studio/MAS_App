@@ -125,17 +125,38 @@ const ApproveBusinessScreen = () => {
       .from('business_ads_submissions')
       .update({ status: 'POSTED' })
       .eq('submission_id', submission)
-    setIsProcessing(false)
 
     if (error) {
+      setIsProcessing(false)
       Alert.alert('Error', 'Failed to approve this ad. Please try again.')
+      return
+    }
+
+    // Trigger payment charge using saved card
+    const { data, error: chargeError } = await supabase.functions.invoke('activate-business-subscription', {
+      body: { submission_id: submission }
+    })
+
+    setIsProcessing(false)
+
+    if (chargeError || !data?.success) {
+      Alert.alert(
+        'Approved but Payment Failed',
+        'The ad was approved but the payment could not be processed. Check Stripe dashboard.',
+      )
+      router.back()
       return
     }
 
     Toast.show({
       type: 'success',
+<<<<<<< testflight
       text1: 'Ad Approved & Posted',
       text2: 'It will now show in Home and Prayer table screen',
+=======
+      text1: 'Ad Approved & Payment Processed',
+      text2: 'The ad is now live and the user has been charged',
+>>>>>>> TemurDev
       position: 'top',
       topOffset: 50,
     })

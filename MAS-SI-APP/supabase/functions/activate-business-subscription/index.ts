@@ -170,20 +170,28 @@ serve(async (req) => {
 
       // Create the subscription — charges immediately using the customer's default payment method
       console.log('Creating subscription with price:', planConfig.priceId);
+      // const subscription = await stripe.subscriptions.create({
+      //   customer: customerId,
+      //   items: [{ price: planConfig.priceId }],
+      //   metadata: {
+      //     product_type: 'business_ad',
+      //     submission_id: submission.submission_id || '',
+      //   },
+      //   payment_settings: {
+      //     payment_intent_data: {
+      //       metadata: {
+      //         product_type: 'business_ad',
+      //         submission_id: submission.submission_id || '',
+      //       },
+      //     },
+      //   },
+      // });
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: planConfig.priceId }],
         metadata: {
           product_type: 'business_ad',
           submission_id: submission.submission_id || '',
-        },
-        payment_settings: {
-          payment_intent_data: {
-            metadata: {
-              product_type: 'business_ad',
-              submission_id: submission.submission_id || '',
-            },
-          },
         },
       });
 

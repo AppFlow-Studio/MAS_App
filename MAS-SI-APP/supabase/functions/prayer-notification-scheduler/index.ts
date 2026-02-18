@@ -364,7 +364,7 @@ async function scheduleAllNotifications() {
       const firstTimeMinus30 = new Date(firstTime.getTime() - 30 * 60 * 1000)
 
       // Second Taraweeh = 1 hour 30 min after Isha iqamah
-      const secondTime = new Date(ishaIqamahUTC.getTime() + 80 * 60 * 1000)
+      const secondTime = new Date(ishaIqamahUTC.getTime() + 90 * 60 * 1000)
       const secondTimeMinus30 = new Date(secondTime.getTime() - 30 * 60 * 1000)
 
       const firstDisplay = formatLocalTime(firstTime)

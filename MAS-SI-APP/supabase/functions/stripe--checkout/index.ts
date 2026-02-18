@@ -50,6 +50,8 @@ Deno.serve(async (req) => {
       amount: TotalAmount,
       currency: 'usd',
       customer: customer,
+      description: 'Donation to MAS Staten Island',
+      metadata: { product_type: 'donation' },
       automatic_payment_methods: {
         enabled: true,
       },

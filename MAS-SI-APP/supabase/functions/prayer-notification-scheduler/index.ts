@@ -17,8 +17,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { format } from 'https://esm.sh/date-fns@4.1.0/format.mjs'
-import { isBefore } from 'https://esm.sh/date-fns@4.1.0'
-import { isAfter, isToday } from "date-fns"
+import { isBefore,isAfter, isToday  } from 'https://esm.sh/date-fns@4.1.0'
+
 
 // Use service role for admin operations (scheduling notifications for all users)
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!

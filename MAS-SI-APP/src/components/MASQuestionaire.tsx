@@ -1,4 +1,4 @@
-import { View, Text, Image, useWindowDimensions, Pressable, Alert, FlatList } from 'react-native'
+import { View, Text, Image, useWindowDimensions, Pressable, Alert, FlatList, Linking } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import Animated, { Easing, FadeIn, FadeInUp, FadeOut, FadeOutUp, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useForm, SubmitHandler, Controller } from "react-hook-form"
@@ -77,6 +77,19 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
     }
     }
     const onSelectImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+        if (status !== 'granted') {
+            Alert.alert(
+                'Permission Required',
+                'MAS Staten Island needs access to your photo library so you can select a profile picture, upload images for events and programs, or add photos to your playlists and business ads.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                ]
+            )
+            return
+        }
+
         const options : ImagePicker.ImagePickerOptions = {
             mediaTypes : ImagePicker.MediaTypeOptions.Images,
             allowsEditing : true

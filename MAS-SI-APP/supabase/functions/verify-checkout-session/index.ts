@@ -1,8 +1,3 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
-// Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { stripe } from "../_utils/stripe.ts";
 
@@ -12,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -26,31 +20,64 @@ serve(async (req) => {
 
     console.log('Verifying checkout session:', sessionId);
 
-    // Retrieve the checkout session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['subscription'],
+      expand: ['setup_intent', 'subscription'],
     });
 
     console.log('Session status:', session.status);
-    console.log('Payment status:', session.payment_status);
+    console.log('Session mode:', session.mode);
 
-    // Check if payment was successful
-    const isComplete = session.payment_status === 'paid' && 
-                       session.status === 'complete';
+    if (session.mode === 'setup') {
+      // Setup mode: card was saved, no charge yet
+      const isComplete = session.status === 'complete';
 
-    return new Response(
-      JSON.stringify({
-        success: isComplete,
-        subscriptionId: typeof session.subscription === 'object' ? session.subscription?.id : session.subscription,
-        customerId: session.customer,
-        status: session.status,
-        paymentStatus: session.payment_status,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+      // Set the saved payment method as the customer's default for future invoices
+      if (isComplete && session.setup_intent) {
+        const setupIntent = typeof session.setup_intent === 'object'
+          ? session.setup_intent
+          : await stripe.setupIntents.retrieve(session.setup_intent);
+        
+        if (setupIntent.payment_method) {
+          console.log('Setting default payment method:', setupIntent.payment_method);
+          await stripe.customers.update(session.customer as string, {
+            invoice_settings: {
+              default_payment_method: setupIntent.payment_method as string,
+            },
+          });
+          console.log('Default payment method set successfully');
+        }
       }
-    );
+
+      return new Response(
+        JSON.stringify({
+          success: isComplete,
+          customerId: session.customer,
+          status: session.status,
+          mode: 'setup',
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    } else {
+      // Subscription/payment mode (legacy support)
+      const isComplete = session.payment_status === 'paid' && session.status === 'complete';
+
+      return new Response(
+        JSON.stringify({
+          success: isComplete,
+          subscriptionId: typeof session.subscription === 'object' ? session.subscription?.id : session.subscription,
+          customerId: session.customer,
+          status: session.status,
+          paymentStatus: session.payment_status,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
   } catch (error) {
     console.error('Error verifying session:', error);
     return new Response(
@@ -62,15 +89,3 @@ serve(async (req) => {
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/verify-checkout-session' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"sessionId": "cs_test_xxx"}'
-
-*/

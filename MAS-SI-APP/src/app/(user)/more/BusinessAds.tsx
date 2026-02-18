@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Dimensions, Image, Alert, StatusBar, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, ScrollView, Pressable, Dimensions, Image, Alert, StatusBar, KeyboardAvoidingView, Platform, Linking } from 'react-native'
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { Icon, ActivityIndicator } from 'react-native-paper'
 import * as ImagePicker from "expo-image-picker"
@@ -44,7 +44,7 @@ type FormField = {
 }
 
 const DURATION_OPTIONS = [
-    { value: 'Monthly Subscription', price: '$50/mo', priceInCents: 5000, description: 'Auto-renews monthly', isSubscription: true, priceId: 'price_1Sv2YcRWBa8XSkKT6U1mMHca' },
+    { value: 'Monthly Subscription', price: '$50/mo', priceInCents: 5000, description: 'Auto-renews monthly', isSubscription: true, priceId: 'plan_TfNqBwd94S8YT5' },
     { value: '3 Months', price: '$135', priceInCents: 13500, description: 'Save 10%', isSubscription: false },
     { value: '1 Year', price: '$480', priceInCents: 48000, description: 'Best value - Save 20%', isSubscription: false },
 ]
@@ -156,6 +156,7 @@ const BusinessAds = () => {
                     .from('business_ads_submissions')
                     .select('id')
                     .eq('user_id', session.user.id)
+                    .eq('status', 'POSTED')
                     .limit(1)
                 
                 if (error) {
@@ -235,6 +236,19 @@ const BusinessAds = () => {
     }
 
     const onSelectImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+        if (status !== 'granted') {
+            Alert.alert(
+                'Permission Required',
+                'MAS Staten Island needs access to your photo library so you can select a profile picture, upload images for events and programs, or add photos to your playlists and business ads.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Open Settings', onPress: () => Linking.openSettings() },
+                ]
+            )
+            return
+        }
+
         const options: ImagePicker.ImagePickerOptions = {
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
@@ -328,141 +342,86 @@ const BusinessAds = () => {
             return
         }
 
-        const { total: totalAmountCents } = getTotalAmount()
+        if (!businessFlyer) {
+            Alert.alert('Error', 'Please upload a business flyer before continuing.')
+            return
+        }
 
         setIsPaymentProcessing(true)
         
         try {
-            let success = false
+            const { onboardingFee } = getTotalAmount()
 
-            // Handle subscription payments differently
-            if (durationOption.isSubscription && durationOption.priceId) {
-                console.log('Processing subscription payment for price:', durationOption.priceId)
-                
-                // Don't pass custom redirect URLs - Stripe will show its default success page
-                // User manually returns to app, and our fallback mechanism handles verification
-                const subscriptionResult = await createBusinessSubscription(
-                    durationOption.priceId
-                    // No success/cancel URLs - stay on Stripe's page after payment
-                )
-                
-                if (!subscriptionResult.success || !subscriptionResult.url) {
-                    Alert.alert('Subscription Error', subscriptionResult.error || 'Failed to create subscription. Please try again.')
-                    setIsPaymentProcessing(false)
-                    return
-                }
-                if (!businessFlyer) {
-                    Alert.alert('Error', 'Please upload a business flyer before continuing.')
-                    setIsPaymentProcessing(false)
-                    return
-                }
-
-                // Persist submission data so it survives app background/kill when user goes to Safari
-                const flyerPath = legacyDocumentDirectory ? `${legacyDocumentDirectory}${PENDING_FLYER_FILENAME}` : null
-                if (!flyerPath) {
-                    Alert.alert('Error', 'Unable to prepare submission. Please try again.')
-                    setIsPaymentProcessing(false)
-                    return
-                }
-                await copyFileAsync({ from: businessFlyer.uri, to: flyerPath })
-                const personalInfo = personalMethods.getValues()
-                const businessInfo = businessMethods.getValues()
-                await AsyncStorage.setItem(
-                    PENDING_SUBMISSION_KEY,
-                    JSON.stringify({
-                        personalInfo: { name: personalInfo.name, phoneNumber: personalInfo.phoneNumber, email: personalInfo.email },
-                        businessInfo: {
-                            businessName: businessInfo.businessName,
-                            address: businessInfo.address,
-                            city: businessInfo.city,
-                            state: businessInfo.state,
-                            businessPhoneNumber: businessInfo.businessPhoneNumber,
-                            businessEmail: businessInfo.businessEmail,
-                        },
-                        selectedDuration,
-                        flyerPath,
-                        userId: session?.user.id ?? '',
-                    })
-                )
-                // Store session ID for fallback recovery BEFORE opening browser
-                // (in case app is killed while user is in Safari)
-                if (subscriptionResult.sessionId) {
-                    await AsyncStorage.setItem('@BusinessAds/pending_checkout_session_id', subscriptionResult.sessionId)
-                }
-
-                // Open Stripe Checkout in slide-up in-app browser
-                // After payment, user closes the browser and we check for the pending session
-                console.log('Opening Stripe checkout in-app browser:', subscriptionResult.url)
-                
-                const result = await WebBrowser.openBrowserAsync(subscriptionResult.url, {
-                    presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
-                    controlsColor: '#6366f1',
-                })
-                
-                console.log('Browser closed with result:', result.type)
-                
-                // When browser is dismissed, navigate to PaymentProcessing screen
-                if (subscriptionResult.sessionId) {
-                    console.log('Browser closed, navigating to PaymentProcessing screen')
-                    setIsPaymentProcessing(false)
-                    router.replace({
-                        pathname: '/more/PaymentProcessing',
-                        params: { sessionId: subscriptionResult.sessionId }
-                    })
-                    return
-                }
-                
+            // Setup mode: saves the card securely without charging.
+            // The actual charge happens when admin approves the application.
+            const checkoutResult = await createBusinessSubscription(
+                durationOption.priceId,
+                onboardingFee,
+                selectedDuration
+            )
+            
+            if (!checkoutResult.success || !checkoutResult.url) {
+                Alert.alert('Error', checkoutResult.error || 'Failed to initialize card setup. Please try again.')
                 setIsPaymentProcessing(false)
                 return
-            } else {
-                // Handle one-time payments with existing flow
-                // If a saved card is selected, charge it directly
-                if (selectedSavedCard) {
-                    const result = await chargeWithSavedCard(selectedSavedCard, totalAmountCents)
-                    
-                    if (result.success) {
-                        success = true
-                    } else if (result.requiresAction) {
-                        Alert.alert(
-                            'Authentication Required',
-                            'Your card requires additional verification. Please use the payment form instead.',
-                            [{ text: 'OK', onPress: () => setSelectedSavedCard(null) }]
-                        )
-                        setIsPaymentProcessing(false)
-                        return
-                    } else {
-                        Alert.alert('Payment Failed', result.error || 'Please try again.')
-                        setIsPaymentProcessing(false)
-                        return
-                    }
-                } else {
-                    // Use payment sheet for new card
-                    // Pass saveCardForFuture to determine if card should be saved
-                    const paymentIntent = await setupStripePaymentSheet(totalAmountCents, saveCardForFuture)
-                    
-                    if (!paymentIntent) {
-                        Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.')
-                        setIsPaymentProcessing(false)
-                        return
-                    }
+            }
 
-                    success = await openStripePaymentSheet()
-                }
+            // Persist submission data so it survives app background/kill when user goes to Stripe
+            const flyerPath = legacyDocumentDirectory ? `${legacyDocumentDirectory}${PENDING_FLYER_FILENAME}` : null
+            if (!flyerPath) {
+                Alert.alert('Error', 'Unable to prepare submission. Please try again.')
+                setIsPaymentProcessing(false)
+                return
+            }
+            await copyFileAsync({ from: businessFlyer.uri, to: flyerPath })
+            const personalInfo = personalMethods.getValues()
+            const businessInfo = businessMethods.getValues()
+            await AsyncStorage.setItem(
+                PENDING_SUBMISSION_KEY,
+                JSON.stringify({
+                    personalInfo: { name: personalInfo.name, phoneNumber: personalInfo.phoneNumber, email: personalInfo.email },
+                    businessInfo: {
+                        businessName: businessInfo.businessName,
+                        address: businessInfo.address,
+                        city: businessInfo.city,
+                        state: businessInfo.state,
+                        businessPhoneNumber: businessInfo.businessPhoneNumber,
+                        businessEmail: businessInfo.businessEmail,
+                    },
+                    selectedDuration,
+                    flyerPath,
+                    userId: session?.user.id ?? '',
+                })
+            )
+
+            if (checkoutResult.sessionId) {
+                await AsyncStorage.setItem('@BusinessAds/pending_checkout_session_id', checkoutResult.sessionId)
+            }
+
+            // Open Stripe Checkout (setup mode) in slide-up in-app browser
+            console.log('Opening Stripe setup checkout:', checkoutResult.url)
+            
+            const result = await WebBrowser.openBrowserAsync(checkoutResult.url, {
+                presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+                controlsColor: '#6366f1',
+            })
+            
+            console.log('Browser closed with result:', result.type)
+            
+            // When browser is dismissed, navigate to PaymentProcessing screen to verify & save
+            if (checkoutResult.sessionId) {
+                setIsPaymentProcessing(false)
+                router.replace({
+                    pathname: '/more/PaymentProcessing',
+                    params: { sessionId: checkoutResult.sessionId }
+                })
+                return
             }
             
-            if (success) {
-                setIsSubmitting(true)
-                const saved = await saveSubmission()
-                
-                if (saved) {
-                    router.replace('/more/BusinessStatus')
-                } else {
-                    Alert.alert('Submission Error', 'Payment was successful but we failed to save your submission. Please contact support.')
-                }
-            }
+            setIsPaymentProcessing(false)
         } catch (error) {
-            console.log('Payment error:', error)
-            Alert.alert('Payment Error', 'Something went wrong. Please try again.')
+            console.log('Submit error:', error)
+            Alert.alert('Error', 'Something went wrong. Please try again.')
         } finally {
             setIsPaymentProcessing(false)
             setIsSubmitting(false)
@@ -1150,7 +1109,7 @@ const BusinessAds = () => {
                         <View style={{ height: 1, backgroundColor: '#E5E7EB', marginVertical: 12 }} />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <Text style={{ fontSize: 16, color: '#111827', fontWeight: '600' }}>
-                                {durationOption?.isSubscription ? 'Due Today' : 'Total'}
+                                Due After Approval
                             </Text>
                             <Text style={{ fontSize: 20, color: '#111827', fontWeight: '700' }}>
                                 ${(getTotalAmount().total / 100).toFixed(0)}
@@ -1169,113 +1128,35 @@ const BusinessAds = () => {
                     )}
                 </View>
 
-                {/* Saved Cards Section */}
-                {savedCards.length > 0 && (
-                    <View style={{ marginBottom: 24 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginBottom: 12 }}>
-                            Payment Method
-                        </Text>
-                        
-                        {/* Saved Cards List */}
-                        {savedCards.map((card) => (
-                            <Pressable
-                                key={card.id}
-                                onPress={() => setSelectedSavedCard(selectedSavedCard === card.id ? null : card.id)}
-                                style={{
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: 16,
-                                    borderRadius: 12,
-                                    borderWidth: 2,
-                                    borderColor: selectedSavedCard === card.id ? '#111827' : '#E5E7EB',
-                                    backgroundColor: selectedSavedCard === card.id ? '#F9FAFB' : '#FFFFFF',
-                                    marginBottom: 10,
-                                }}
-                            >
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Icon 
-                                        source="credit-card-outline" 
-                                        size={24} 
-                                        color={selectedSavedCard === card.id ? '#111827' : '#6B7280'} 
-                                    />
-                                    <View style={{ marginLeft: 12 }}>
-                                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
-                                            {getCardBrandDisplayName(card.brand)}
-                                        </Text>
-                                        <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
-                                            •••• {card.last4} | Expires {card.expMonth}/{card.expYear}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View 
-                                    style={{
-                                        width: 22,
-                                        height: 22,
-                                        borderRadius: 11,
-                                        borderWidth: 2,
-                                        borderColor: selectedSavedCard === card.id ? '#111827' : '#D1D5DB',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    {selectedSavedCard === card.id && (
-                                        <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: '#111827' }} />
-                                    )}
-                                </View>
-                            </Pressable>
-                        ))}
-
-                        {/* Use New Card Option */}
-                        <Pressable
-                            onPress={() => setSelectedSavedCard(null)}
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                paddingVertical: 14,
-                                borderRadius: 12,
-                                borderWidth: 1.5,
-                                borderColor: '#E5E7EB',
-                                borderStyle: 'dashed',
-                            }}
-                        >
-                            <Icon source="plus" size={18} color="#2563EB" />
-                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#2563EB', marginLeft: 8 }}>
-                                {selectedSavedCard ? 'Use a different card' : 'Enter card at checkout'}
-                            </Text>
-                        </Pressable>
+                {/* Deferred Payment Notice */}
+                <View style={{
+                    backgroundColor: '#EFF6FF',
+                    borderRadius: 12,
+                    padding: 14,
+                    marginBottom: 24,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                }}>
+                    <View style={{
+                        backgroundColor: '#DBEAFE',
+                        borderRadius: 12,
+                        width: 28,
+                        height: 28,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginRight: 12,
+                    }}>
+                        <Icon source="shield-check-outline" size={16} color="#2563EB" />
                     </View>
-                )}
-
-                {/* Save Card Checkbox - only show if not using a saved card */}
-                {!selectedSavedCard && (
-                    <Pressable 
-                        onPress={() => setSaveCardForFuture(!saveCardForFuture)}
-                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
-                    >
-                        <View 
-                            style={{
-                                width: 22,
-                                height: 22,
-                                borderRadius: 6,
-                                borderWidth: 2,
-                                borderColor: saveCardForFuture ? '#111827' : '#D1D5DB',
-                                backgroundColor: saveCardForFuture ? '#E5E7EB' : '#FFFFFF',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                marginRight: 12,
-                            }}
-                        >
-                            {saveCardForFuture && (
-                                <Icon source="check" size={14} color="#111827" />
-                            )}
-                        </View>
-                        <Text style={{ fontSize: 14, color: '#6B7280' }}>
-                            Save card for future purchases
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E40AF' }}>
+                            Your card will not be charged today
                         </Text>
-                    </Pressable>
-                )}
+                        <Text style={{ fontSize: 12, color: '#3B82F6', marginTop: 2 }}>
+                            We'll securely save your payment method. You'll only be charged once your ad is approved.
+                        </Text>
+                    </View>
+                </View>
 
                 {/* Terms Checkbox */}
                 <Pressable 
@@ -1301,7 +1182,7 @@ const BusinessAds = () => {
                         )}
                     </View>
                     <Text style={{ flex: 1, fontSize: 14, color: '#6B7280', lineHeight: 20 }}>
-                        I agree to the terms and conditions. I understand my ad will be reviewed before being posted and payment is non-refundable once the ad is approved.
+                        I agree to the terms and conditions. I understand my ad will be reviewed before being posted and I will be charged after approval.
                     </Text>
                 </Pressable>
             </>
@@ -1408,9 +1289,9 @@ const BusinessAds = () => {
                     ) : (
                         <>
                             <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF', marginRight: 8 }}>
-                                {isReviewStep ? `Pay $${(getTotalAmount().total / 100).toFixed(0)}` : currentStep === 0 ? 'Start Application' : 'Continue'}
+                                {isReviewStep ? 'Save Card & Submit' : currentStep === 0 ? 'Start Application' : 'Continue'}
                             </Text>
-                            <Icon source={isReviewStep ? "credit-card-outline" : "arrow-right"} size={20} color="#FFFFFF" />
+                            <Icon source={isReviewStep ? "shield-check-outline" : "arrow-right"} size={20} color="#FFFFFF" />
                         </>
                     )}
                 </Pressable>

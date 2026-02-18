@@ -24,9 +24,9 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = MASStatenIsland/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = MASStatenIsland/Info.plist; sourceTree = "<group>"; };
 		1A125C21248FD1869D9DBBEE /* Pods-MASStatenIsland.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MASStatenIsland.release.xcconfig"; path = "Target Support Files/Pods-MASStatenIsland/Pods-MASStatenIsland.release.xcconfig"; sourceTree = "<group>"; };
-		7F01981AD19889C068ABCC82 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = MASStatenIsland/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7F01981AD19889C068ABCC82 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = MASStatenIsland/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		82AAB408F7F5652D6EBD9BB7 /* libPods-MASStatenIsland.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MASStatenIsland.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		9BA80A01B6164ECE8340CBEA /* Mas-SI-Glass.icon */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Mas-SI-Glass.icon"; path = "MASStatenIsland/Mas-SI-Glass.icon"; sourceTree = "<group>"; };
+		9BA80A01B6164ECE8340CBEA /* Mas-SI-Glass.icon */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Mas-SI-Glass.icon"; path = "MASStatenIsland/Mas-SI-Glass.icon"; sourceTree = "<group>"; };
 		9CFE5A5B67818DBCC1610987 /* Pods-MASStatenIsland.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MASStatenIsland.debug.xcconfig"; path = "Target Support Files/Pods-MASStatenIsland/Pods-MASStatenIsland.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = MASStatenIsland/SplashScreen.storyboard; sourceTree = "<group>"; };
 		AB5576C968B94F1BA6B48778 /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "MASStatenIsland/noop-file.swift"; sourceTree = "<group>"; };
@@ -125,7 +125,6 @@
 				9CFE5A5B67818DBCC1610987 /* Pods-MASStatenIsland.debug.xcconfig */,
 				1A125C21248FD1869D9DBBEE /* Pods-MASStatenIsland.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -400,7 +399,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "Mas-SI-Glass";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = MASStatenIsland/MASStatenIsland.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 65XQ88ASFM;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -421,6 +423,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.MAS-SI-APP";
 				PRODUCT_NAME = MASStatenIsland;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "MASStatenIsland/MASStatenIsland-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -436,7 +439,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "Mas-SI-Glass";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = MASStatenIsland/MASStatenIsland.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 65XQ88ASFM;
 				INFOPLIST_FILE = MASStatenIsland/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -452,6 +458,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.MAS-SI-APP";
 				PRODUCT_NAME = MASStatenIsland;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "MASStatenIsland/MASStatenIsland-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

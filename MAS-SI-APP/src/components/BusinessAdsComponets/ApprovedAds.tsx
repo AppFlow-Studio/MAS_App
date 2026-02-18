@@ -14,18 +14,25 @@ function formatPhoneNumber( phoneNumberString : number ) {
 }
 
 // Helper functions for contact actions
+const openURL = async (url: string) => {
+  const supported = await Linking.canOpenURL(url);
+  if (supported) {
+    await Linking.openURL(url);
+  }
+};
+
 const handleCall = (phoneNumber: number) => {
   const cleaned = ('' + phoneNumber).replace(/\D/g, '');
-  Linking.openURL(`tel:${cleaned}`);
+  openURL(`tel:${cleaned}`);
 };
 
 const handleSMS = (phoneNumber: number) => {
   const cleaned = ('' + phoneNumber).replace(/\D/g, '');
-  Linking.openURL(`sms:${cleaned}`);
+  openURL(`sms:${cleaned}`);
 };
 
 const handleEmail = (email: string) => {
-  Linking.openURL(`mailto:${email}`);
+  openURL(`mailto:${email}`);
 };
 
 const handleOpenMaps = (address: string) => {
@@ -35,7 +42,7 @@ const handleOpenMaps = (address: string) => {
     android: `geo:0,0?q=${encodedAddress}`,
   });
   if (url) {
-    Linking.openURL(url);
+    openURL(url);
   }
 };
 

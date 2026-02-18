@@ -42,7 +42,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.googleusercontent.apps.991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf</string>
+          <string>com.googleusercontent.apps.954205600936-3fvho6btee6op0l226scerlhsirsjprc</string>
         </array>
       </dict>
     </array>
@@ -50,6 +50,13 @@
     <string>1</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>tel</string>
+      <string>sms</string>
+      <string>mailto</string>
+      <string>maps</string>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -62,19 +69,25 @@
       <true/>
     </dict>
     <key>NSCameraUsageDescription</key>
-    <string>Allow camera access to scan your credit card for faster payment entry.</string>
+    <string>$(PRODUCT_NAME) uses your camera to let you take a new photo for your profile picture or capture images to upload to community events, programs, and business ads.</string>
+    <!-- Unused: Location permissions commented out — no location APIs are used in the app
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
+    -->
+    <!-- Unused: Microphone permission commented out — expo-av is only used for playback, not recording
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    -->
+    <!-- Unused: Motion permission commented out — expo-sensors is installed but never used
     <key>NSMotionUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your device motion</string>
+    -->
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your photos</string>
+    <string>$(PRODUCT_NAME) uses your photo library to let you personalize your experience. For example, you can select a photo from your library to use as your profile picture, upload flyer images when creating community events or Islamic programs, add cover artwork to your Quran playlists, or attach promotional images to business ad submissions.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

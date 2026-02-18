@@ -155,6 +155,20 @@ const ApproveBusinessScreen = () => {
       return
     }
 
+    // Send rejection email (non-blocking)
+    supabase.functions.invoke('resend', {
+      body: {
+        type: 'rejection',
+        submission: {
+          personal_full_name: submissionInfo.personal_full_name,
+          personal_email: submissionInfo.personal_email,
+          business_name: submissionInfo.business_name,
+          business_flyer_duration: submissionInfo.business_flyer_duration,
+          created_at: submissionInfo.created_at,
+        }
+      }
+    }).catch(err => console.error('Failed to send rejection email:', err))
+
     Toast.show({
       type: 'success',
       text1: 'Ad Rejected',

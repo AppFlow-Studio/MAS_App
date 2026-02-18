@@ -56,6 +56,9 @@ serve(async (req) => {
     const formattedPayments = await Promise.all(
       relevantIntents.map(async (pi) => {
         let paymentMethodDetails = null;
+        let isRefunded = false;
+        let isPartiallyRefunded = false;
+        let amountRefunded = 0;
 
         if (pi.status === 'succeeded') {
           try {
@@ -63,6 +66,10 @@ serve(async (req) => {
             if (pi.latest_charge) {
               const chargeId = typeof pi.latest_charge === 'string' ? pi.latest_charge : pi.latest_charge.id;
               const charge = await stripe.charges.retrieve(chargeId);
+
+              isRefunded = charge.refunded === true;
+              isPartiallyRefunded = !isRefunded && (charge.amount_refunded ?? 0) > 0;
+              amountRefunded = charge.amount_refunded ?? 0;
               
               if (charge.payment_method_details?.card) {
                 const card = charge.payment_method_details.card;
@@ -135,11 +142,12 @@ serve(async (req) => {
           id: pi.id,
           amount: pi.amount,
           currency: pi.currency,
-          status: pi.status,
+          status: isRefunded ? 'refunded' : isPartiallyRefunded ? 'partially_refunded' : pi.status,
           created: pi.created,
           description: pi.description,
           label,
           paymentMethod: paymentMethodDetails,
+          amount_refunded: amountRefunded,
         };
       })
     );

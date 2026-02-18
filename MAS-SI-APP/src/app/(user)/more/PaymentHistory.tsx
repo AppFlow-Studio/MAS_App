@@ -24,6 +24,7 @@ interface Payment {
     description: string | null
     label: string
     paymentMethod: PaymentMethod | null
+    amount_refunded?: number
 }
 
 interface GroupedPayments {
@@ -55,6 +56,10 @@ const getStatusDisplay = (status: string) => {
         case 'requires_payment_method':
         case 'requires_action':
             return { badge: 'PENDING', badgeColor: '#0E519F', badgeBg: '#DBEAFE', icon: 'clock-outline' }
+        case 'refunded':
+            return { badge: 'REFUNDED', badgeColor: '#DC2626', badgeBg: '#FEE2E2', icon: 'cash-refund' }
+        case 'partially_refunded':
+            return { badge: 'PARTIAL REFUND', badgeColor: '#D97706', badgeBg: '#FEF3C7', icon: 'cash-refund' }
         case 'canceled':
             return { badge: 'CANCELED', badgeColor: '#6B7280', badgeBg: '#F3F4F6', icon: 'close-circle' }
         default:
@@ -197,6 +202,11 @@ const PaymentCard = ({ payment, index }: { payment: Payment; index: number }) =>
                                         {getPaymentMethodDisplay(payment.paymentMethod)}
                                     </Text>
                                 </View>
+                                {(payment.amount_refunded ?? 0) > 0 && (
+                                    <Text style={{ fontSize: 12, color: '#DC2626', fontWeight: '500', marginTop: 3 }}>
+                                        Refunded {formatAmount(payment.amount_refunded!, payment.currency)}
+                                    </Text>
+                                )}
                             </View>
                         </View>
                         

@@ -74,9 +74,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let processedSubmissionId: string | null = null;
+
   try {
-    // This can be called by a Supabase Database Webhook when status changes to APPROVED
-    // or by the app when it detects an approved submission
+    // Called by the app when admin approves a submission
     const body = await req.json();
 
     // Support both webhook format (record) and direct call (submission_id)
@@ -108,12 +109,30 @@ serve(async (req) => {
     }
     
     const submission = submissions[0];
+    processedSubmissionId = submission.submission_id;
 
     // Only process APPROVED submissions
     if (submission.status !== 'APPROVED') {
       console.log('Submission is not APPROVED, skipping. Status:', submission.status);
       return new Response(
         JSON.stringify({ success: false, error: 'Submission is not in APPROVED status' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    // Atomic guard: set status to PROCESSING to prevent duplicate charges
+    // from retries. Only proceeds if status is still APPROVED.
+    const { data: guardResult, error: guardError } = await supabaseAdmin
+      .from('business_ads_submissions')
+      .update({ status: 'PROCESSING' })
+      .eq('submission_id', submission.submission_id)
+      .eq('status', 'APPROVED')
+      .select('submission_id');
+
+    if (guardError || !guardResult || guardResult.length === 0) {
+      console.log('Another call is already processing this submission, skipping.');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Submission is already being processed' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
@@ -158,6 +177,17 @@ serve(async (req) => {
       // --- SUBSCRIPTION PLAN ---
       // Add onboarding fee as a pending invoice item (gets included on the first invoice)
       if (onboardingFee > 0) {
+        // Clear any stale pending onboarding fees to prevent duplicate charges
+        const existingItems = await stripe.invoiceItems.list({
+          customer: customerId,
+          pending: true,
+        });
+        for (const item of existingItems.data) {
+          if (item.description === 'Business Ad Onboarding Fee (one-time)') {
+            await stripe.invoiceItems.del(item.id);
+          }
+        }
+
         console.log('Adding onboarding fee as invoice item:', onboardingFee);
         await stripe.invoiceItems.create({
           customer: customerId,
@@ -166,28 +196,23 @@ serve(async (req) => {
           description: 'Business Ad Onboarding Fee (one-time)',
         });
       }
+      // Get the customer's payment methods
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card',
+        limit: 1,
+      });
 
-      // Create the subscription — charges immediately using the customer's default payment method
-      console.log('Creating subscription with price:', planConfig.priceId);
-      // const subscription = await stripe.subscriptions.create({
-      //   customer: customerId,
-      //   items: [{ price: planConfig.priceId }],
-      //   metadata: {
-      //     product_type: 'business_ad',
-      //     submission_id: submission.submission_id || '',
-      //   },
-      //   payment_settings: {
-      //     payment_intent_data: {
-      //       metadata: {
-      //         product_type: 'business_ad',
-      //         submission_id: submission.submission_id || '',
-      //       },
-      //     },
-      //   },
-      // });
+      if (!paymentMethods.data.length) {
+        throw new Error('No payment method found for customer');
+      }
+
+      const defaultPm = paymentMethods.data[0].id;
+
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: planConfig.priceId }],
+        default_payment_method: defaultPm,
         metadata: {
           product_type: 'business_ad',
           submission_id: submission.submission_id || '',
@@ -260,6 +285,20 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Error activating business subscription:', error);
+
+    // Reset status back to APPROVED so admin can retry
+    if (processedSubmissionId) {
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      await supabaseAdmin
+        .from('business_ads_submissions')
+        .update({ status: 'APPROVED' })
+        .eq('submission_id', processedSubmissionId)
+        .eq('status', 'PROCESSING');
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }

@@ -2,17 +2,17 @@ import { useMemo } from 'react';
 
 // Ramadan 2026 date range
 // First night of Taraweeh prayers: Feb 17, 2026
-// Last night: March 18, 2026
+// Last night: March 19, 2026
 export const RAMADAN_CONFIG = {
   startDate: new Date(2026, 1, 17), // Feb 17, 2026 (months are 0-indexed)
-  endDate: new Date(2026, 2, 18),   // March 20, 2026 (end of day March 19)
+  endDate: new Date(2026, 2, 20),   // March 20, 2026 (end of day March 19)
 };
 
 // Toggle for testing:
 // null  = auto (date-based)
 // true  = force Ramadan mode ON
 // false = force Ramadan mode OFF
-export const FORCE_RAMADAN_MODE: boolean | null = true;
+export const FORCE_RAMADAN_MODE: boolean | null = null;
 
 /**
  * Plain function to check if Ramadan is currently active.

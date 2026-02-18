@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
 
     // --- Path 1: Donation receipt email ---
     if (donation_amount !== undefined) {
+     
       const authHeader = req.headers.get('Authorization')
       if (!authHeader) {
         return new Response(
@@ -72,6 +73,7 @@ Deno.serve(async (req) => {
         signature: { line1: 'With sincere gratitude,', line2: 'MAS Staten Island', line3: 'Muslim American Society' },
       })
 
+
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -113,6 +115,7 @@ Deno.serve(async (req) => {
         ],
       })
 
+
       const adminRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -145,6 +148,7 @@ Deno.serve(async (req) => {
           ]},
         ],
       })
+
 
       const userRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',

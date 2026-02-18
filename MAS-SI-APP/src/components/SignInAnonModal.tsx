@@ -20,8 +20,8 @@ import {
 
 // Configure Google Sign-In once at module level
 GoogleSignin.configure({
-  iosClientId: '954205600936-3fvho6btee6op0l226scerlhsirsjprc.apps.googleusercontent.com',
-  webClientId: '954205600936-pb00kg6p7dojg8es9ub8bb7l09j5kj36.apps.googleusercontent.com',
+  iosClientId: '991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf.apps.googleusercontent.com',
+  webClientId: '991344123272-p3p68bb5kk77j6f36fij21t42ovhcr93.apps.googleusercontent.com',
   scopes: ['profile', 'email'],
   offlineAccess: false,
 });

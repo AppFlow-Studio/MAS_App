@@ -17,8 +17,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { format } from 'https://esm.sh/date-fns@4.1.0/format.mjs'
-import { isBefore,isAfter, isToday  } from 'https://esm.sh/date-fns@4.1.0'
-
+import { isBefore, isAfter, isToday } from 'https://esm.sh/date-fns@4.1.0'
 
 // Use service role for admin operations (scheduling notifications for all users)
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -352,7 +351,7 @@ async function scheduleAllNotifications() {
   // ==========================================================================
   // STEP 6: Taraweeh notifications (Ramadan only)
   // ==========================================================================
-  const ramadanEnd = new Date(2026, 2, 18) // March 28, 2025
+  const ramadanEnd = new Date(2026, 2, 20) // March 20, 2026
   const ramadanStart = new Date(2026, 1, 17)
   if ( isBefore(todaysDate, ramadanEnd) && (isAfter(todaysDate, ramadanStart) || isToday(ramadanStart) ) ) {
     const ishaData = prayerMap.get('isha')

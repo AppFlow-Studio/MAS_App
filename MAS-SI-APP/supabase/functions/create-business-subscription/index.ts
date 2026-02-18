@@ -1,38 +1,79 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
-// Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { stripe } from "../_utils/stripe.ts";
-import { createOrRetrieveProfile } from '../_utils/supabase.ts';
+import Stripe from 'https://esm.sh/stripe@16.6.0?target=deno&deno-std=0.132.0&no-check';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const stripe = Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
+  httpClient: Stripe.createFetchHttpClient(),
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function createOrRetrieveCustomer(req: Request): Promise<string> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) throw new Error('No authorization header provided');
+
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  const supabaseAdmin = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
+  const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+  if (userError) throw new Error(`Auth error: ${userError.message}`);
+  if (!user) throw new Error('No user found');
+
+  const { data: profile, error } = await supabaseClient
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error) throw new Error(`Profile fetch error: ${error.message}`);
+  if (!profile) throw new Error('Profile not found');
+
+  if (profile.stripe_id) {
+    try {
+      const existing = await stripe.customers.retrieve(profile.stripe_id);
+      if (!existing.deleted) return profile.stripe_id;
+    } catch (_e) {
+      console.log('Customer not found in Stripe, creating new one...');
+    }
+  }
+
+  const customer = await stripe.customers.create({
+    email: user.email,
+    metadata: { uid: user.id },
+  });
+
+  await supabaseAdmin
+    .from('profiles')
+    .update({ stripe_id: customer.id })
+    .eq('id', user.id);
+
+  return customer.id;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { priceId, successUrl, cancelUrl } = await req.json();
-    
-    if (!priceId) {
-      throw new Error('Price ID is required');
-    }
+    const { priceId, onboardingFeeCents = 0, planDuration, successUrl, cancelUrl } = await req.json();
 
-    // Get or create Stripe customer for the authenticated user
-    const customerId = await createOrRetrieveProfile(req);
-    
-    console.log('Creating subscription checkout session for customer:', customerId);
-    console.log('Price ID:', priceId);
+    const customerId = await createOrRetrieveCustomer(req);
 
-    // Use Universal Links (https) when domain is set; otherwise use a neutral page
-    // that won't try to redirect back to the app (user returns manually)
+    console.log('Creating SETUP checkout for customer:', customerId);
+    console.log('Plan:', planDuration, '| PriceId:', priceId, '| Onboarding:', onboardingFeeCents);
+
     const universalLinkDomain = Deno.env.get('UNIVERSAL_LINK_DOMAIN');
     const successUrlFinal =
       successUrl ||
@@ -45,58 +86,31 @@ serve(async (req) => {
         ? `https://${universalLinkDomain}/subscription-cancel`
         : 'https://example.com/?payment=cancelled');
 
-    // Create a Stripe Checkout Session for subscription
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      mode: 'subscription',
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      mode: 'setup',
+      currency: 'usd',
       success_url: successUrlFinal,
       cancel_url: cancelUrlFinal,
-      subscription_data: {
-        metadata: {
-          product_type: 'business_ad',
-        },
+      metadata: {
+        product_type: 'business_ad',
+        price_id: priceId || '',
+        plan_duration: planDuration || '',
+        onboarding_fee_cents: String(onboardingFeeCents),
       },
     });
 
-    console.log('Checkout session created:', session.id);
-    console.log('Checkout URL:', session.url);
+    console.log('Setup session created:', session.id);
 
     return new Response(
-      JSON.stringify({
-        sessionId: session.id,
-        url: session.url,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({ sessionId: session.id, url: session.url }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
-    console.error('Error creating subscription:', error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/create-business-subscription' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"priceId": "price_1Sv2YcRWBa8XSkKT6U1mMHca"}'
-
-*/

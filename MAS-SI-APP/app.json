@@ -19,11 +19,10 @@
       "usesAppleSignIn": true,
       "newArchEnabled": true,
       "userInterfaceStyle": "light",
-      "associatedDomains": ["applinks:yourdomain.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIUserInterfaceStyle": "Light",
-        "NSCameraUsageDescription": "Allow camera access to scan your credit card for faster payment entry."
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) uses your camera to let you take a new photo for your profile picture or capture images to upload to community events, programs, and business ads."
       }
     },
     "android": {
@@ -40,7 +39,7 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.991344123272-nk55l8nc7dcloc56m6mmnvnkhdtjfcbf"
+          "iosUrlScheme": "com.googleusercontent.apps.954205600936-3fvho6btee6op0l226scerlhsirsjprc"
         }
       ],
       "expo-web-browser",

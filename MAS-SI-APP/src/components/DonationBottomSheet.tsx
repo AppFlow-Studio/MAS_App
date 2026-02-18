@@ -17,7 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { CardForm, useConfirmPayment, CardFormView } from '@stripe/stripe-react-native';
+import { CardForm, useConfirmPayment, CardFormView, PlatformPayButton, isPlatformPaySupported, confirmPlatformPayPayment, PlatformPay } from '@stripe/stripe-react-native';
 import { supabase } from '@/src/lib/supabase';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
@@ -52,6 +52,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
   const [saveCardForFuture, setSaveCardForFuture] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [applePaySupported, setApplePaySupported] = useState(false);
   const { confirmPayment, loading: confirmLoading } = useConfirmPayment();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(0);
@@ -61,6 +62,14 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
   const paymentContentOpacity = useSharedValue(0);
   const savedCardsContentOpacity = useSharedValue(0);
   const successContentOpacity = useSharedValue(0);
+
+  // Check if Apple Pay is available on this device
+  useEffect(() => {
+    (async () => {
+      const supported = await isPlatformPaySupported();
+      setApplePaySupported(supported);
+    })();
+  }, []);
 
   // Keyboard event listeners to expand sheet when keyboard is visible
   useEffect(() => {
@@ -332,17 +341,95 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
         if (insertError) console.log('Insert error:', insertError);
 
         // Send confirmation email
-        const { error: emailError } = await supabase.functions.invoke('donation-confirmation-email', {
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('donation-confirmation-email', {
           body: { donation_amount: amount }
         });
 
-        if (emailError) console.log('Email error:', emailError);
+        if (emailError) {
+          console.log('Email error:', emailError);
+          try {
+            const errorBody = await emailError.context?.json?.();
+            console.log('Email error details:', JSON.stringify(errorBody));
+          } catch (e) {
+            console.log('Could not parse email error body');
+          }
+        } else {
+          console.log('Email sent successfully:', JSON.stringify(emailData));
+        }
 
         // Show success animation
         showSuccessScreen(amount);
       }
     } catch (error) {
       console.log('Payment error:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Payment Failed', 'Please try again.');
+    }
+  };
+
+  // Process Apple Pay payment
+  const handleApplePayPayment = async () => {
+    if (!paymentIntentClientSecret) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const amount = getFinalAmount();
+
+    try {
+      const { error } = await confirmPlatformPayPayment(paymentIntentClientSecret, {
+        applePay: {
+          cartItems: [
+            {
+              label: 'MAS Staten Island Donation',
+              amount: amount.toFixed(2),
+              paymentType: PlatformPay.PaymentType.Immediate,
+            },
+          ],
+          merchantCountryCode: 'US',
+          currencyCode: 'USD',
+        },
+      });
+
+      if (error) {
+        if (error.code === 'Canceled') return;
+        console.log('Apple Pay error:', error);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert('Payment Failed', error.message || 'Apple Pay payment failed. Please try again.');
+        return;
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Record donation
+      const { error: insertError } = await supabase
+        .from('donations')
+        .insert({
+          amountGiven: amount,
+          project_donated_to: ['1fcda08a-c61d-4d44-af5f-f32ff3af58f9']
+        });
+
+      if (insertError) console.log('Insert error:', insertError);
+
+      // Send confirmation email
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('donation-confirmation-email', {
+        body: { donation_amount: amount }
+      });
+
+      if (emailError) {
+        console.log('Email error:', emailError);
+        try {
+          const errorBody = await emailError.context?.json?.();
+          console.log('Email error details:', JSON.stringify(errorBody));
+        } catch (e) {
+          console.log('Could not parse email error body');
+        }
+      } else {
+        console.log('Email sent successfully:', JSON.stringify(emailData));
+      }
+
+      // Show success animation
+      showSuccessScreen(amount);
+    } catch (error) {
+      console.log('Apple Pay error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Payment Failed', 'Please try again.');
     }
@@ -456,11 +543,21 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
         if (insertError) console.log('Insert error:', insertError);
 
         // Send confirmation email
-        const { error: emailError } = await supabase.functions.invoke('donation-confirmation-email', {
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('donation-confirmation-email', {
           body: { donation_amount: amount }
         });
 
-        if (emailError) console.log('Email error:', emailError);
+        if (emailError) {
+          console.log('Email error:', emailError);
+          try {
+            const errorBody = await emailError.context?.json?.();
+            console.log('Email error details:', JSON.stringify(errorBody));
+          } catch (e) {
+            console.log('Could not parse email error body');
+          }
+        } else {
+          console.log('Email sent successfully:', JSON.stringify(emailData));
+        }
 
         // Show success animation
         showSuccessScreen(amount);
@@ -814,11 +911,26 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   keyboardShouldPersistTaps="handled"
                   bounces={false}
                 >
-                  {/* Label */}
-                  <RNText style={styles.label}>ENTER CARD DETAILS</RNText>
-
                   {/* Amount Display */}
                   <RNText style={styles.paymentAmount}>${getFinalAmount()}</RNText>
+
+                  {/* Apple Pay Button */}
+                  {applePaySupported && Platform.OS === 'ios' && (
+                    <>
+                      <PlatformPayButton
+                        onPress={handleApplePayPayment}
+                        type={PlatformPay.ButtonType.Donate}
+                        appearance={PlatformPay.ButtonStyle.Black}
+                        borderRadius={40}
+                        style={styles.applePayButton}
+                      />
+                      <View style={styles.orDivider}>
+                        <View style={styles.orDividerLine} />
+                        <RNText style={styles.orDividerText}>or pay with card</RNText>
+                        <View style={styles.orDividerLine} />
+                      </View>
+                    </>
+                  )}
 
                   {/* Card Form */}
                   <View style={styles.cardFormContainer}>
@@ -1295,6 +1407,28 @@ const styles = StyleSheet.create({
     color: '#111827',
     textAlign: 'center',
     marginBottom: 20,
+  },
+  applePayButton: {
+    width: '100%',
+    height: 50,
+    marginBottom: 16,
+  },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  orDividerText: {
+    marginHorizontal: 12,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
   },
   cardFormContainer: {
     marginBottom: 16,

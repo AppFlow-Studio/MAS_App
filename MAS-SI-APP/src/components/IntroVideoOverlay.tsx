@@ -14,10 +14,9 @@ export default function IntroVideoOverlay() {
   const whiteOverlayOpacity = useSharedValue(1);
   const insets = useSafeAreaInsets();
 
-  // Show video: during auth load, or for returning user (session + didn't just sign in) until dismissed
+  // Show video only for returning signed-in users (not during initial auth loading)
   const showVideo =
-    (authLoading || (session && !userSignedInThisSession)) &&
-    !videoDismissed;
+    !authLoading && session && !userSignedInThisSession && !videoDismissed;
 
   const videoStyle = useAnimatedStyle(() => ({ opacity: videoOpacity.value }));
   const whiteOverlayStyle = useAnimatedStyle(() => ({ opacity: whiteOverlayOpacity.value }));

@@ -150,13 +150,8 @@ const ApproveBusinessScreen = () => {
 
     Toast.show({
       type: 'success',
-<<<<<<< testflight
-      text1: 'Ad Approved & Posted',
-      text2: 'It will now show in Home and Prayer table screen',
-=======
       text1: 'Ad Approved & Payment Processed',
       text2: 'The ad is now live and the user has been charged',
->>>>>>> TemurDev
       position: 'top',
       topOffset: 50,
     })

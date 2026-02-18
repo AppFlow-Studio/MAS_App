@@ -19,4 +19,4 @@ web-build/
 
 expo-env.d.ts
 # @end expo-cli.env.local
-88
+88.env.local

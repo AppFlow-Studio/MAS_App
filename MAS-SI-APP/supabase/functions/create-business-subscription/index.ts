@@ -79,12 +79,12 @@ serve(async (req) => {
       successUrl ||
       (universalLinkDomain
         ? `https://${universalLinkDomain}/subscription-success?session_id={CHECKOUT_SESSION_ID}`
-        : 'https://example.com/?payment=success');
+        : 'https://massic.org/');
     const cancelUrlFinal =
       cancelUrl ||
       (universalLinkDomain
         ? `https://${universalLinkDomain}/subscription-cancel`
-        : 'https://example.com/?payment=cancelled');
+        : 'https://massic.org/');
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

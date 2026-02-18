@@ -1,6 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { stripe } from "../_utils/stripe.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { generateEmailHtml } from '../_shared/email-template.ts';
+
+const RESEND_API_KEY = Deno.env.get('RESEND_KEY')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +18,57 @@ const PLAN_CONFIG: Record<string, { priceId?: string; amountCents?: number; isSu
 };
 
 const ONBOARDING_FEE_CENTS = 10000; // $100
+
+async function sendAdLiveEmail(submission: any, amountCharged: string) {
+  if (!submission.personal_email || !RESEND_API_KEY) return
+
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  })
+
+  const html = generateEmailHtml({
+    title: 'Your Ad is Live!',
+    subtitle: 'Thank you for advertising with MAS Staten Island',
+    greeting: `Assalamu Alaikum, ${submission.personal_full_name || 'Valued Advertiser'}!`,
+    sections: [
+      { type: 'highlight-box', label: 'YOUR AD IS NOW LIVE', sublabel: 'Visible to the MAS Staten Island community', color: 'green' },
+      { type: 'details-table', title: 'Ad Details', rows: [
+        { label: 'Business Name', value: submission.business_name },
+        { label: 'Plan', value: submission.business_flyer_duration },
+        { label: 'Amount Charged', value: amountCharged },
+        { label: 'Date', value: dateStr },
+      ]},
+      { type: 'text', content: 'Your flyer is now visible to the entire MAS Staten Island community. Thank you for supporting your local masjid and community through advertising with us.' },
+      { type: 'dua', content: 'May Allah (SWT) bless your business and bring you success in this life and the hereafter. Ameen.' },
+      { type: 'text', content: 'If you have any questions about your ad or need to make changes, please do not hesitate to reach out to us.' },
+    ],
+  })
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'MAS Staten Island <no-reply@massic.org>',
+        to: submission.personal_email,
+        subject: 'Your Business Ad is Now Live! - MAS Staten Island',
+        html,
+      }),
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      console.error('Failed to send ad-live email:', err)
+    } else {
+      console.log('Ad-live confirmation email sent to:', submission.personal_email)
+    }
+  } catch (e) {
+    console.error('Error sending ad-live email:', e)
+  }
+}
+
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -142,6 +196,11 @@ serve(async (req) => {
           .update({ status: 'POSTED' })
           .eq('submission_id', submission.submission_id);
         console.log('Submission status updated to POSTED');
+
+        const amountStr = onboardingFee > 0
+          ? `Monthly subscription + $${(onboardingFee / 100).toFixed(2)} onboarding fee`
+          : 'Monthly subscription';
+        await sendAdLiveEmail(submission, amountStr);
       }
 
       return new Response(
@@ -178,6 +237,9 @@ serve(async (req) => {
           .update({ status: 'POSTED' })
           .eq('submission_id', submission.submission_id);
         console.log('Submission status updated to POSTED');
+
+        const amountStr = `$${(totalAmount / 100).toFixed(2)}`;
+        await sendAdLiveEmail(submission, amountStr);
       }
 
       return new Response(

@@ -123,7 +123,7 @@ const ApproveBusinessScreen = () => {
     setIsProcessing(true)
     const { error } = await supabase
       .from('business_ads_submissions')
-      .update({ status: 'APPROVED' })
+      .update({ status: 'POSTED' })
       .eq('submission_id', submission)
     setIsProcessing(false)
 
@@ -134,7 +134,7 @@ const ApproveBusinessScreen = () => {
 
     Toast.show({
       type: 'success',
-      text1: 'Ad Approved',
+      text1: 'Ad Approved & Posted',
       text2: 'It will now show in Home and Prayer table screen',
       position: 'top',
       topOffset: 50,

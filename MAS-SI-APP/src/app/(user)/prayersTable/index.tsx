@@ -12,7 +12,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { usePrayerNotificationSettings } from '@/src/hooks/usePrayerSettings';
 import { ScrollView } from 'react-native';
-import { format, isAfter, isBefore } from 'date-fns';
+import { format } from 'date-fns';
 import Svg, { Path, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -85,6 +85,7 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
   const [now, setNow] = useState(new Date());
   const [taraweeh1NotifEnabled, setTaraweeh1NotifEnabled] = useState(false);
   const [taraweeh2NotifEnabled, setTaraweeh2NotifEnabled] = useState(false);
+  const [trackWidth, setTrackWidth] = useState(0);
   
   // Update time every minute for live countdown
   useEffect(() => {
@@ -148,13 +149,14 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
   // Options: 'before', 'session_one', 'break', 'session_two', 'completed', or null for real time
   const DEMO_STATE = null as TaraweehState | null;
   
-  // Determine current state
+  // Determine current state using >= / < to avoid gaps at exact transition times
   const getCurrentState = (): TaraweehState => {
-    if (DEMO_STATE) return DEMO_STATE; // Demo override
-    if (isBefore(now, sessionOneStart)) return 'before';
-    if (isAfter(now, sessionOneStart) && isBefore(now, new Date(sessionOneEnd))) return 'session_one';
-    if (isAfter(now, new Date(sessionOneEnd)) && isBefore(now, new Date(sessionTwoStart))) return 'break';
-    if (isAfter(now, new Date(sessionTwoStart)) && isBefore(now, new Date(sessionTwoEnd))) return 'session_two';
+    if (DEMO_STATE) return DEMO_STATE;
+    const t = now.getTime();
+    if (t < sessionOneStart.getTime()) return 'before';
+    if (t < new Date(sessionOneEnd).getTime()) return 'session_one';
+    if (t < new Date(sessionTwoStart).getTime()) return 'break';
+    if (t < new Date(sessionTwoEnd).getTime()) return 'session_two';
     return 'completed';
   };
   
@@ -183,6 +185,12 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
   };
   
   const progress = getProgress();
+
+  // Break node position based on actual session durations (session 1 end relative to total)
+  const totalDurationMs = new Date(sessionTwoEnd).getTime() - sessionOneStart.getTime();
+  const breakNodePercent = totalDurationMs > 0
+    ? ((new Date(sessionOneEnd).getTime() - sessionOneStart.getTime()) / totalDurationMs) * 100
+    : 50;
   
   // Animations
   const progressWidth = useSharedValue(0);
@@ -226,8 +234,9 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
     }
   }, [currentState, progress]);
   
+  const lineLength = Math.max(0, trackWidth - 24);
   const progressAnimatedStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.value}%`,
+    width: lineLength > 0 ? (progressWidth.value / 100) * lineLength : 0,
   }));
   
   const pulseStyle = useAnimatedStyle(() => ({
@@ -539,7 +548,10 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
       </LinearGradient>
 
       {/* Timeline Track */}
-      <View style={styles.timelineTrack}>
+      <View
+        style={styles.timelineTrack}
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      >
         {/* Background line */}
         <View style={styles.timelineLineBg} />
         
@@ -567,8 +579,8 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
           <Text style={styles.timelineNodeLabel}>Start</Text>
         </View>
         
-        {/* Node 2 - Break/Session Two Start */}
-        <View style={[styles.timelineNodeContainer, { left: '50%', marginLeft: -12 }]}>
+        {/* Node 2 - Break/Session Two Start (positioned dynamically) */}
+        <View style={[styles.timelineNodeContainer, { left: `${breakNodePercent}%`, marginLeft: -12 }]}>
           <Animated.View style={[
             styles.timelineNode,
             getNodeState(2) === 'completed' && styles.timelineNodeCompleted,
@@ -684,28 +696,21 @@ const SuhoorIftarTimer = ({ todayFajrAthan, tomorrowFajrAthan, todayMaghribAthan
   // Determine which countdown to show and the target time
   let isSuhoorCountdown: boolean;
   let countdownTarget: Date;
-  let displaySuhoorTime: string;
-  let displayIftarTime: string;
   
   if (isBeforeTodayFajr) {
-    // Before Fajr: Show countdown to Suhoor ending (today's Fajr)
     isSuhoorCountdown = true;
     countdownTarget = todayFajr;
-    displaySuhoorTime = todayFajrAthan;
-    displayIftarTime = todayMaghribAthan;
   } else if (isFastingTime) {
-    // Between Fajr and Maghrib: Show countdown to Iftar (today's Maghrib)
     isSuhoorCountdown = false;
     countdownTarget = todayMaghrib;
-    displaySuhoorTime = tomorrowFajrAthan;
-    displayIftarTime = todayMaghribAthan;
   } else {
-    // After Maghrib: Show countdown to next Suhoor ending (tomorrow's Fajr)
     isSuhoorCountdown = true;
     countdownTarget = tomorrowFajr;
-    displaySuhoorTime = tomorrowFajrAthan;
-    displayIftarTime = tomorrowMaghribAthan;
   }
+
+  // Arc labels always reflect today's times to match the visual arc endpoints
+  const displaySuhoorTime = todayFajrAthan;
+  const displayIftarTime = todayMaghribAthan;
   
   const countdownText = formatCountdown(countdownTarget, now);
   
@@ -871,28 +876,29 @@ const SuhoorIftarTimer = ({ todayFajrAthan, tomorrowFajrAthan, todayMaghribAthan
               strokeDasharray="6 4"
             />
             
-            {/* Colored arc (progress) */}
-            {isDaytime && (
+            {/* Colored arc (progress) - visible during daytime and after sunset (completed) */}
+            {(isDaytime || isAfterSunset) && (
               <Path
                 d={generateArcPath()}
                 stroke="url(#arcGradientDark)"
                 strokeWidth="4"
                 fill="none"
                 strokeLinecap="round"
-                strokeDasharray={`${sunPosition * 300} 1000`}
+                strokeDasharray={isAfterSunset ? '1000 0' : `${sunPosition * 300} 1000`}
+                opacity={isAfterSunset ? 0.5 : 1}
               />
             )}
             
             {/* Sunrise point */}
-            <Circle cx={20} cy={arcHeight} r={8} fill="#10b981" opacity={0.5} />
+            <Circle cx={20} cy={arcHeight} r={8} fill="#10b981" opacity={isBeforeSunrise ? 0.8 : 0.5} />
             <Circle cx={20} cy={arcHeight} r={5} fill="#10b981" />
             
             {/* Sunset point */}
-            <Circle cx={arcWidth - 20} cy={arcHeight} r={8} fill="#10b981" opacity={0.5} />
+            <Circle cx={arcWidth - 20} cy={arcHeight} r={8} fill="#10b981" opacity={isAfterSunset ? 0.8 : 0.5} />
             <Circle cx={arcWidth - 20} cy={arcHeight} r={5} fill="#10b981" />
           </Svg>
           
-          {/* Sun indicator */}
+          {/* Sun indicator (daytime) */}
           {isDaytime && (
             <Animated.View 
               style={[
@@ -903,6 +909,36 @@ const SuhoorIftarTimer = ({ todayFajrAthan, tomorrowFajrAthan, todayMaghribAthan
             >
               <Animated.View style={[styles.sunGlow, glowStyle]} />
               <View style={styles.sunCore} />
+            </Animated.View>
+          )}
+
+          {/* Moon indicator at sunrise endpoint (before Fajr - suhoor still open) */}
+          {isBeforeSunrise && (
+            <Animated.View
+              style={[
+                styles.sunIndicator,
+                { left: 20 - 16, top: arcHeight - 16 },
+                sunScaleStyle
+              ]}
+            >
+              <Animated.View style={[styles.sunGlow, { backgroundColor: '#e2e8f0' }, glowStyle]} />
+              <View style={[styles.sunCore, { backgroundColor: '#e2e8f0', borderColor: '#94a3b8' }]}>
+                <Icon source="moon-waning-crescent" size={14} color="#64748b" />
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Sun resting at sunset endpoint (after Maghrib - fasting complete) */}
+          {isAfterSunset && (
+            <Animated.View
+              style={[
+                styles.sunIndicator,
+                { left: arcWidth - 20 - 16, top: arcHeight - 16 },
+                sunScaleStyle
+              ]}
+            >
+              <Animated.View style={[styles.sunGlow, { opacity: 0.3 }, glowStyle]} />
+              <View style={[styles.sunCore, { opacity: 0.7 }]} />
             </Animated.View>
           )}
         </View>

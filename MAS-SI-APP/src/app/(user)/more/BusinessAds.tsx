@@ -55,8 +55,8 @@ const TOTAL_STEPS = 6
 
 const STEP_CONFIG = [
     {
-        title: 'Grow Your Business With Us',
-        subtitle: 'Join the MAS SI community network and expand your local reach instantly.',
+        title: 'Advertise to The Community',
+        subtitle: 'Showcase your business to the MAS SI community and connect with 3000+ local members.',
         fields: [],
         form: 'landing'
     },
@@ -580,12 +580,12 @@ const BusinessAds = () => {
         {
             icon: 'check-circle',
             title: 'Easy setup',
-            description: 'Get your ad running in under 5 minutes',
+            description: 'Get your ad running in 1-3 days',
         },
         {
             icon: 'eye',
             title: 'High visibility',
-            description: 'Reach 2000+ local community members',
+            description: 'Reach 3000+ local community members',
         },
         {
             icon: 'heart',

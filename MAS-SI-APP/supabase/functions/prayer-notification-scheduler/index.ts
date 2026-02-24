@@ -62,6 +62,16 @@ function normalizePrayer(name: string): string {
   return name === 'zuhr' ? 'dhuhr' : name
 }
 
+function normalizeTaraweeh(prayer: string): { isTaraweeh: boolean; session: 'first' | 'second' | null } {
+  if (prayer === 'tarawih one' || prayer === 'taraweeh 1') {
+    return { isTaraweeh: true, session: 'first' }
+  }
+  if (prayer === 'tarawih two' || prayer === 'taraweeh 2') {
+    return { isTaraweeh: true, session: 'second' }
+  }
+  return { isTaraweeh: false, session: null }
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -231,8 +241,8 @@ async function scheduleAllNotifications() {
 
     const normalizedPrayer = normalizePrayer(setting.prayer)
 
-    // Skip tarawih - handled separately
-    if (normalizedPrayer.startsWith('tarawih')) continue
+    // Skip tarawih/taraweeh - handled separately in Step 6
+    if (normalizedPrayer.startsWith('tarawih') || normalizedPrayer.startsWith('taraweeh')) continue
 
     const prayer = prayerMap.get(normalizedPrayer)
     if (!prayer) continue
@@ -369,16 +379,29 @@ async function scheduleAllNotifications() {
       const firstDisplay = formatLocalTime(firstTime)
       const secondDisplay = formatLocalTime(secondTime)
 
-      // Filter tarawih settings from allSettings
-      const tarawihSettings = (allSettings as PrayerNotificationSetting[]).filter(
-        s => s.prayer === 'tarawih one' || s.prayer === 'tarawih two'
-      )
+      // Filter ALL taraweeh settings (both old and new naming conventions)
+      const allTaraweehSettings = (allSettings as PrayerNotificationSetting[]).filter(s => {
+        const { isTaraweeh } = normalizeTaraweeh(s.prayer)
+        return isTaraweeh
+      })
 
-      for (const setting of tarawihSettings) {
+      // Deduplicate per user+session, preferring new names ("taraweeh 1/2") over old ("tarawih one/two")
+      const deduped = new Map<string, PrayerNotificationSetting>()
+      for (const setting of allTaraweehSettings) {
+        const { session } = normalizeTaraweeh(setting.prayer)
+        const key = `${setting.user_id}::${session}`
+        const existing = deduped.get(key)
+        if (!existing || setting.prayer.startsWith('taraweeh')) {
+          deduped.set(key, setting)
+        }
+      }
+
+      for (const setting of deduped.values()) {
         const pushToken = tokenMap.get(setting.user_id)
         if (!pushToken) continue
 
-        const isFirst = setting.prayer === 'tarawih one'
+        const { session } = normalizeTaraweeh(setting.prayer)
+        const isFirst = session === 'first'
         const atTime = isFirst ? firstTime : secondTime
         const beforeTime = isFirst ? firstTimeMinus30 : secondTimeMinus30
         const display = isFirst ? firstDisplay : secondDisplay

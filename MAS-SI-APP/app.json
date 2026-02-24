@@ -19,7 +19,9 @@
       "usesAppleSignIn": true,
       "newArchEnabled": true,
       "userInterfaceStyle": "light",
-      "associatedDomains": ["applinks:yourdomain.com"],
+      "entitlements": {
+        "com.apple.developer.in-app-payments": ["merchant.com.MAS-SI-APP"]
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIUserInterfaceStyle": "Light",

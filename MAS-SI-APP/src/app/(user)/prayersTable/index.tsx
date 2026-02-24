@@ -162,13 +162,12 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
   
   const currentState = getCurrentState();
   
-  // Calculate progress percentage
+  // Calculate progress percentage, remapped so the Break node sits at the visual 50% mark
   const getProgress = (): number => {
-    // Demo progress values for testing
     if (DEMO_STATE) {
       switch (DEMO_STATE) {
         case 'before': return 0;
-        case 'session_one': return 35;
+        case 'session_one': return 25;
         case 'break': return 50;
         case 'session_two': return 75;
         case 'completed': return 100;
@@ -181,16 +180,19 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
     if (currentState === 'before') return 0;
     if (currentState === 'completed') return 100;
     
-    return Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    const realPercent = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    const breakRealPercent = totalDuration > 0
+      ? ((new Date(sessionOneEnd).getTime() - sessionOneStart.getTime()) / totalDuration) * 100
+      : 50;
+
+    // Remap so progress hits 50% exactly when the break starts
+    if (realPercent <= breakRealPercent) {
+      return (realPercent / breakRealPercent) * 50;
+    }
+    return 50 + ((realPercent - breakRealPercent) / (100 - breakRealPercent)) * 50;
   };
   
   const progress = getProgress();
-
-  // Break node position based on actual session durations (session 1 end relative to total)
-  const totalDurationMs = new Date(sessionTwoEnd).getTime() - sessionOneStart.getTime();
-  const breakNodePercent = totalDurationMs > 0
-    ? ((new Date(sessionOneEnd).getTime() - sessionOneStart.getTime()) / totalDurationMs) * 100
-    : 50;
   
   // Animations
   const progressWidth = useSharedValue(0);
@@ -579,8 +581,8 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
           <Text style={styles.timelineNodeLabel}>Start</Text>
         </View>
         
-        {/* Node 2 - Break/Session Two Start (positioned dynamically) */}
-        <View style={[styles.timelineNodeContainer, { left: `${breakNodePercent}%`, marginLeft: -12 }]}>
+        {/* Node 2 - Break/Session Two Start */}
+        <View style={[styles.timelineNodeContainer, { left: '50%', marginLeft: -12 }]}>
           <Animated.View style={[
             styles.timelineNode,
             getNodeState(2) === 'completed' && styles.timelineNodeCompleted,

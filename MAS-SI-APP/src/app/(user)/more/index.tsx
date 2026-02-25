@@ -579,6 +579,12 @@ export default function MoreScreen() {
               </View>
 
           {/* DONATION */}
+              <View style={styles.notificationBanner}>
+                <Heart color="#FDE68A" size={16} strokeWidth={2.5} style={{ marginRight: 8 }} />
+                <Text style={[styles.notificationBannerText, { flex: 1 }]}>
+                  All Payments/Donations that are made in or outside of the app are given to MAS Staten Island
+                </Text>
+              </View>
           <Text style={styles.sectionLabel}>DONATION</Text>
               <View style={styles.menuCard}>
                 <MenuButton icon={Heart} label="Phase 2" onPress={() => donationSheetRef.current?.open()} />

@@ -722,27 +722,14 @@ const BusinessAds = () => {
                 ))}
             </View>
 
-            {/* Pricing Card */}
+            {/* Community Donation Message */}
             <View style={{ 
                 backgroundColor: '#F3F4F6', 
                 borderRadius: 16, 
                 padding: 20,
             }}>
-                <View 
-                    style={{ 
-                        flexDirection: 'row', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center' 
-                    }}
-                >
-                    <View style={{ flexDirection: 'row', alignItems: 'baseline', flex: 1 }}>
-                        <Text style={{ fontSize: 36, fontWeight: '700', color: '#111827' }}>$50</Text>
-                        <Text style={{ fontSize: 16, color: '#6B7280', marginLeft: 4 }}>/ month</Text>
-                    </View>
-                </View>
-                
-                <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 12, lineHeight: 20 }}>
-                    Save with 3-month or yearly plans. Cancel anytime with no hidden costs.
+                <Text style={{ fontSize: 16, color: '#374151', lineHeight: 24 }}>
+                    By donating <Text style={{ fontWeight: '700', color: '#111827' }}>$50 a month</Text> to the community, you get your business advertised to <Text style={{ fontWeight: '700', color: '#111827' }}>3,000+ community members</Text>.
                 </Text>
             </View>
         </>

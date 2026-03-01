@@ -276,12 +276,32 @@ async function signUpWithEmail() {
         <MenuItem title="Recorded Lectures" subtitle="View your recorded lectures" href="/myPrograms/recordedLectures" icon="video" />
       </View>
 
-      {/* My Programs Header */}
-      {userPrograms && userPrograms.length > 0 && (
-        <View style={{ marginTop: 12, paddingHorizontal: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 10, marginLeft: 4 }}>
-            My Programs
-          </Text>
+      {/* My Programs */}
+      <View style={{ marginTop: 12, paddingHorizontal: 16 }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 10, marginLeft: 4 }}>
+          My Programs
+        </Text>
+      </View>
+
+      {(!userPrograms || userPrograms.length === 0) && (
+        <View style={{ paddingHorizontal: 16 }}>
+          <Pressable
+            onPress={() => router.push('/menu/program/upcomingEvents')}
+          >
+            <View style={{
+              width: 150,
+              height: 150,
+              borderRadius: 8,
+              backgroundColor: '#E8EDF4',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Icon source="plus" size={32} color="#0D509D" />
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#0D509D', marginTop: 6 }}>
+                Add Program
+              </Text>
+            </View>
+          </Pressable>
         </View>
       )}
     </>

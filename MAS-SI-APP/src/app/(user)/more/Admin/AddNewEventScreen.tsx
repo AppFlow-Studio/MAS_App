@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, useWindowDimensions, Dimensions } from "react-native";
+import { Text, View, Image, ScrollView, TouchableOpacity, Pressable, Alert, KeyboardAvoidingView, useWindowDimensions, Dimensions, ActivityIndicator } from "react-native";
 import { router, Stack } from "expo-router";
 import { TextInput, Checkbox, Chip, Button, Icon } from "react-native-paper";
 import * as ImagePicker from "expo-image-picker";
@@ -72,6 +72,8 @@ const AddNewEventScreen = () => {
   const layoutHeight = Dimensions.get('screen').height
   const [keyboardOffset, setKeyboardOffset] = useState(0)
   const [submitDisabled, setSubmitDisabled] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isComplete, setIsComplete] = useState(false)
   
   // Preferences state
   const [preferencesBottomSheetOpen, setPreferencesBottomSheetOpen] = useState(false)
@@ -274,122 +276,131 @@ const AddNewEventScreen = () => {
       </View>
     );
   };
-  const onSumbit = async () => {
-    if (eventName && eventDescription && eventDays.length > 0 && eventEndDate && eventStartDate && speakerSelected.length > 0 && eventImage && eventStartTime) {
-      setSubmitDisabled(false)
+  const onSubmit = async () => {
+    if (!(eventName && eventDescription && eventDays.length > 0 && eventEndDate && eventStartDate && speakerSelected.length > 0 && eventImage && eventStartTime)) {
+      Alert.alert('Please Fill All Info Before Proceeding')
+      return
+    }
+
+    setSubmitDisabled(false)
+    setIsSubmitting(true)
+    setIsComplete(false)
+    try {
       const base64 = await new File(eventImage.uri).base64();
-      const filePath = `${eventName.trim().split(" ").join("_")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
+      const filePath = `${eventName.trim().split(" ").join("_")}_${Date.now()}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = eventImage.type === 'image' ? 'image/png' : 'video/mp4';
-      const { data: image, error: image_upload_error } = await supabase.storage.from('event_flyers').upload(filePath, decode(base64));
-      if (image) {
-        const { data: event_img_url } = await supabase.storage.from('event_flyers').getPublicUrl(image?.path)
-        const time = format(eventStartTime!, 'p').trim()
-        
-        // Insert event and get the event_id
-        const { data: createdEvent, error } = await supabase
-          .from('events')
-          .insert({
-            event_name: eventName,
-            event_img: event_img_url.publicUrl,
-            event_desc: eventDescription,
-            event_speaker: speakerSelected,
-            has_lecture: hasLectures,
-            event_start_date: eventStartDate,
-            event_end_date: eventEndDate,
-            is_paid: isPaid,
-            event_price: Number(EventPrice),
-            event_start_time: time,
-            event_days: eventDays,
-            is_outreach: isOutreach,
-            is_social: isSocialService,
-            is_reverts: isReverts,
-            is_fundraiser: isFundraiser,
-            is_breakfast: isBreakfast,
-            paid_link: eventPaidLink,
-            pace: isPace
-          })
-          .select('event_id')
-          .single()
-          
-        if (error) {
-          console.log(error)
-          Alert.alert('Error creating event')
-          setSubmitDisabled(true)
-          return
-        }
-        
-        // Save selected islamic interests to junction table
-        if (createdEvent?.event_id && selectedPreferences.topicInterests.length > 0) {
-          const interestInserts = selectedPreferences.topicInterests.map(interestId => ({
-            event_id: createdEvent.event_id,
-            interest_id: interestId
-          }))
-          
-          const { error: interestError } = await supabase
-            .from('event_islamic_interests')
-            .insert(interestInserts)
-          
-          if (interestError) {
-            console.log('Error saving event interests:', interestError)
-          }
-        }
-        
-        // Save tag assignments (audience, difficulty, life stages, gender)
-        if (createdEvent?.event_id) {
-          // Collect all tag keys to look up
-          const tagKeysToFind: string[] = []
-          
-          // Gender (e.g., 'brothers', 'sisters')
-          if (selectedPreferences.gender && selectedPreferences.gender !== 'all') {
-            tagKeysToFind.push(selectedPreferences.gender)
-          }
-          
-          // Knowledge level (e.g., 'beginner', 'intermediate', 'advanced')
-          if (selectedPreferences.knowledgeLevel) {
-            tagKeysToFind.push(selectedPreferences.knowledgeLevel)
-          }
-          
-          // Target audience (e.g., 'youth', 'families', 'reverts')
-          tagKeysToFind.push(...selectedPreferences.targetAudience)
-          
-          // Life stages (e.g., 'student_college', 'young_professional')
-          tagKeysToFind.push(...selectedPreferences.lifeStages)
-          
-          if (tagKeysToFind.length > 0) {
-            // Query program_tags to get tag IDs
-            const { data: matchingTags, error: tagsError } = await supabase
-              .from('program_tags')
-              .select('id, tag_key')
-              .in('tag_key', tagKeysToFind)
-            
-            if (matchingTags && matchingTags.length > 0 && !tagsError) {
-              const tagAssignments = matchingTags.map(tag => ({
-                event_id: createdEvent.event_id,
-                tag_id: tag.id,
-                relevance_weight: 1.0
-              }))
-              
-              const { error: assignmentError } = await supabase
-                .from('program_tag_assignments')
-                .insert(tagAssignments)
-              
-              if (assignmentError) {
-                console.log('Error saving event tag assignments:', assignmentError)
-              }
-            } else if (tagsError) {
-              console.log('Error fetching program tags:', tagsError)
-            }
-          }
-        }
-        
-        handleSubmit()
-        setSubmitDisabled(true)
-      } else {
-        Alert.alert(image_upload_error.message)
+      const { data: image, error: image_upload_error } = await supabase.storage.from('event_flyers').upload(filePath, decode(base64), { contentType });
+      if (!image) {
+        Alert.alert('Image Upload Error', image_upload_error?.message ?? 'Failed to upload image')
         return
       }
-    } else {
-      Alert.alert('Please Fill All Info Before Proceeding')
+
+      const { data: event_img_url } = await supabase.storage.from('event_flyers').getPublicUrl(image.path)
+      const time = format(eventStartTime!, 'p').trim()
+
+      const { data: createdEvent, error } = await supabase
+        .from('events')
+        .insert({
+          event_name: eventName,
+          event_img: event_img_url.publicUrl,
+          event_desc: eventDescription,
+          event_speaker: speakerSelected,
+          has_lecture: hasLectures,
+          event_start_date: eventStartDate,
+          event_end_date: eventEndDate,
+          is_paid: isPaid,
+          event_price: Number(EventPrice),
+          event_start_time: time,
+          event_days: eventDays,
+          is_outreach: isOutreach,
+          is_social: isSocialService,
+          is_reverts: isReverts,
+          is_fundraiser: isFundraiser,
+          is_breakfast: isBreakfast,
+          paid_link: eventPaidLink,
+          pace: isPace
+        })
+        .select('event_id')
+        .single()
+
+      if (error) {
+        console.log(error)
+        Alert.alert('Error creating event', error.message)
+        return
+      }
+
+      const warnings: string[] = []
+
+      if (createdEvent?.event_id && selectedPreferences.topicInterests.length > 0) {
+        const interestInserts = selectedPreferences.topicInterests.map(interestId => ({
+          event_id: createdEvent.event_id,
+          interest_id: interestId
+        }))
+
+        const { error: interestError } = await supabase
+          .from('event_islamic_interests')
+          .insert(interestInserts)
+
+        if (interestError) {
+          console.log('Error saving event interests:', interestError)
+          warnings.push('Topic interests could not be saved')
+        }
+      }
+
+      if (createdEvent?.event_id) {
+        const tagKeysToFind: string[] = []
+
+        if (selectedPreferences.gender && selectedPreferences.gender !== 'all') {
+          tagKeysToFind.push(selectedPreferences.gender)
+        }
+        if (selectedPreferences.knowledgeLevel) {
+          tagKeysToFind.push(selectedPreferences.knowledgeLevel)
+        }
+        tagKeysToFind.push(...selectedPreferences.targetAudience)
+        tagKeysToFind.push(...selectedPreferences.lifeStages)
+
+        if (tagKeysToFind.length > 0) {
+          const { data: matchingTags, error: tagsError } = await supabase
+            .from('program_tags')
+            .select('id, tag_key')
+            .in('tag_key', tagKeysToFind)
+
+          if (matchingTags && matchingTags.length > 0 && !tagsError) {
+            const tagAssignments = matchingTags.map(tag => ({
+              event_id: createdEvent.event_id,
+              tag_id: tag.id,
+              relevance_weight: 1.0
+            }))
+
+            const { error: assignmentError } = await supabase
+              .from('program_tag_assignments')
+              .insert(tagAssignments)
+
+            if (assignmentError) {
+              console.log('Error saving event tag assignments:', assignmentError)
+              warnings.push('Tag assignments could not be saved')
+            }
+          } else if (tagsError) {
+            console.log('Error fetching program tags:', tagsError)
+            warnings.push('Tag assignments could not be saved')
+          }
+        }
+      }
+
+      setIsComplete(true)
+      handleSubmit()
+
+      if (warnings.length > 0) {
+        Alert.alert('Event Created with Warnings', `The event was created but: ${warnings.join('; ')}`)
+      }
+
+      setTimeout(() => setIsComplete(false), 3000)
+    } catch (err) {
+      console.log('Unexpected error creating event:', err)
+      Alert.alert('Error', 'An unexpected error occurred while creating the event. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+      setSubmitDisabled(true)
     }
   }
   useEffect(() => {
@@ -946,18 +957,38 @@ const AddNewEventScreen = () => {
           </View>
 
           {/* Submit Button */}
-          <Button
-            mode="contained"
-            buttonColor="#6077F5"
-            textColor="white"
-            theme={{ roundness: 12 }}
-            onPress={async () => await onSumbit()}
-            disabled={!submitDisabled}
-            style={{ marginBottom: 24, height: 50, justifyContent: 'center' }}
-            labelStyle={{ fontSize: 16, fontWeight: '600' }}
-          >
-            Submit Event
-          </Button>
+          {isComplete ? (
+            <View className="items-center mb-6" style={{ height: 50, justifyContent: 'center' }}>
+              <View className="bg-green-500 w-14 h-14 rounded-full items-center justify-center" style={{
+                shadowColor: '#22C55E',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 6
+              }}>
+                <Icon source="check-bold" size={28} color="white" />
+              </View>
+              <Text className="text-green-600 font-semibold text-base mt-3">Event Created!</Text>
+            </View>
+          ) : isSubmitting ? (
+            <View className="items-center mb-6" style={{ height: 50, justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color="#6077F5" />
+              <Text className="text-gray-500 font-medium text-sm mt-3">Creating event...</Text>
+            </View>
+          ) : (
+            <Button
+              mode="contained"
+              buttonColor="#6077F5"
+              textColor="white"
+              theme={{ roundness: 12 }}
+              onPress={async () => await onSubmit()}
+              disabled={!submitDisabled}
+              style={{ marginBottom: 24, height: 50, justifyContent: 'center' }}
+              labelStyle={{ fontSize: 16, fontWeight: '600' }}
+            >
+              Submit Event
+            </Button>
+          )}
 
           {/* Bottom Spacer */}
           <View style={{ height: 20 }} />

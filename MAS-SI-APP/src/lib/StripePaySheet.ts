@@ -272,6 +272,36 @@ export const chargeWithSavedCard = async (paymentMethodId: string, amount: numbe
 }
 
 /**
+ * Delete a saved payment method
+ * @param paymentMethodId The Stripe payment method ID to detach
+ * @returns Object with success status or error
+ */
+export const deleteSavedPaymentMethod = async (paymentMethodId: string): Promise<{ success: boolean; error?: string }> => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+        return { success: false, error: 'Login required' }
+    }
+
+    try {
+        const { data, error } = await supabase.functions.invoke('delete-payment-method', {
+            body: { paymentMethodId }
+        })
+
+        if (error) {
+            return { success: false, error: error.message || 'Failed to delete payment method' }
+        }
+
+        if (data?.error) {
+            return { success: false, error: data.error }
+        }
+
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error?.message || 'Failed to delete payment method' }
+    }
+}
+
+/**
  * Get display name for card brand
  */
 export const getCardBrandDisplayName = (brand: string): string => {

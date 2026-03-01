@@ -5,7 +5,7 @@ import Svg, { Circle, Path } from 'react-native-svg'
 import { supabase } from '@/src/lib/supabase'
 import { Icon, TextInput } from 'react-native-paper'
 import { format, set } from 'date-fns'
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import * as ImagePicker from "expo-image-picker";
 import { decode } from 'base64-arraybuffer'
 import Toast from 'react-native-toast-message'
@@ -78,7 +78,7 @@ const CreateNewDonationProject = () => {
   const onSubmit = async () => {
     if (title && thumbnail && hasBarGraph) {
       // Upload new project with title and thumbnail and donation goal
-      const base64 = await FileSystem.readAsStringAsync(thumbnail.uri, { encoding: 'base64' });
+      const base64 = await new File(thumbnail.uri).base64();
       const filePath = `${title.trim()}.${thumbnail.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = thumbnail.type === 'image' ? 'image/png' : 'video/mp4';
       const { data: image, error: image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
@@ -96,7 +96,7 @@ const CreateNewDonationProject = () => {
       }
     } else if (title && thumbnail && !hasBarGraph) {
       // Upload Project With Thumbnail, Return project_id to serve as root folder that holds all other gallery images in supabase storage 'fliers' folder
-      const base64 = await FileSystem.readAsStringAsync(thumbnail.uri, { encoding: 'base64' });
+      const base64 = await new File(thumbnail.uri).base64();
       const filePath = `${title.trim()}.${thumbnail.type === 'image' ? 'png' : 'mp4'}`;
       const { data: image, error: image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));
       if (image) {
@@ -106,7 +106,7 @@ const CreateNewDonationProject = () => {
           if (gallery && gallery.length > 0) {
             await Promise.all(
               gallery.map(async (pic, index) => {
-                const base64 = await FileSystem.readAsStringAsync(pic.uri, { encoding: 'base64' });
+                const base64 = await new File(pic.uri).base64();
                 const filePath = `${project_id.project_id}/${index}.${pic.type === 'image' ? 'png' : 'mp4'}`;
                 const contentType = pic.type === 'image' ? 'image/png' : 'video/mp4';
                 const { data: image, error: image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));

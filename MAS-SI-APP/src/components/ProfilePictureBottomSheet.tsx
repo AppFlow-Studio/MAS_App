@@ -3,7 +3,7 @@ import React, { forwardRef, useImperativeHandle, useEffect, useRef, useState } f
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
 import * as ImagePicker from "expo-image-picker"
-import * as FileSystem from 'expo-file-system/legacy';
+import { File } from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 import { Camera, Image as ImageIcon, X, User } from 'lucide-react-native';
 import { Icon, ActivityIndicator } from 'react-native-paper';
@@ -148,7 +148,7 @@ const ProfilePictureBottomSheet = forwardRef<Ref, ProfilePictureBottomSheetProps
 
             setIsLoading(true)
             try {
-                const base64 = await FileSystem.readAsStringAsync(selectedImage.uri, { encoding: 'base64' });
+                const base64 = await new File(selectedImage.uri).base64();
                 const filePath = `${session.user.id}/profile_${new Date().getTime()}.png`;
                 const { data: image, error: uploadError } = await supabase.storage
                     .from('user_playlist_img')

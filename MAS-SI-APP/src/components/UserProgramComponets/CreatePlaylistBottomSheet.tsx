@@ -3,7 +3,7 @@ import React, { forwardRef, useImperativeHandle, useEffect, useRef, useState } f
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
 import * as ImagePicker from "expo-image-picker"
-import * as FileSystem from 'expo-file-system/legacy';
+import { File } from 'expo-file-system';
 import { Icon, TextInput } from 'react-native-paper';
 import { decode } from 'base64-arraybuffer';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -133,7 +133,7 @@ const CreatePlaylistBottomSheet = forwardRef<Ref, {}>((props, ref) => {
         try {
             if (playlistImg) {
                 setIsReady(false)
-                const base64 = await FileSystem.readAsStringAsync(playlistImg.uri, { encoding: 'base64' });
+                const base64 = await new File(playlistImg.uri).base64();
                 const filePath = `${session?.user.id}/${new Date().getTime()}.${playlistImg.type === 'image' ? 'png' : 'mp4'}`;
                 const { data: image, error: image_upload_error } = await supabase.storage.from('user_playlist_img').upload(filePath, decode(base64));
 

@@ -3,7 +3,7 @@ import React, { forwardRef, useState, useImperativeHandle, useEffect } from 'rea
 import { Icon, TextInput as PaperTextInput, ActivityIndicator } from 'react-native-paper'
 import { supabase } from '@/src/lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
-import * as FileSystem from 'expo-file-system/legacy'
+import { File } from 'expo-file-system'
 import { decode } from 'base64-arraybuffer'
 import Animated, { 
   useSharedValue, 
@@ -205,7 +205,7 @@ export const PersonalizedAccount = forwardRef<Ref, PersonalizedAccountProps>(
           if (profileImage) {
             try {
               // Read file as base64 - the correct approach for React Native
-              const base64 = await FileSystem.readAsStringAsync(profileImage, { encoding: 'base64' })
+              const base64 = await new File(profileImage).base64()
               const filePath = `${user.id}/profile_${new Date().getTime()}.png`
               
               const { data: image, error: uploadError } = await supabase.storage

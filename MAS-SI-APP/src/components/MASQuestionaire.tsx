@@ -10,7 +10,7 @@ import Svg, { Path } from 'react-native-svg';
 import { RunnyCircle } from './ProgramSpinningCircle';
 import { RunnyOuterCircle } from './ProgramSpinningOuterCircle';
 import * as ImagePicker from "expo-image-picker"
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { supabase } from '../lib/supabase';
 import { Program } from '../types';
 import { ExpoPushToken } from 'expo-notifications';
@@ -106,7 +106,7 @@ const MASQuestionaire = ({onCloseQuestionaire} : { onCloseQuestionaire : () => v
     const uploadImage = async () => {
         if( ProfilePic ){
             setIsReady(false)
-            const base64 = await FileSystem.readAsStringAsync(ProfilePic.uri, { encoding: 'base64' });
+            const base64 = await new File(ProfilePic.uri).base64();
             const filePath = `${session?.user.id}/${new Date().getTime()}.${ProfilePic.type === 'image' ? 'png' : 'mp4'}`;
             const contentType = ProfilePic.type === 'image' ? 'image/png' : 'video/mp4';
             const { data : image, error :image_upload_error } = await supabase.storage.from('profile_pic').upload(filePath, decode(base64));

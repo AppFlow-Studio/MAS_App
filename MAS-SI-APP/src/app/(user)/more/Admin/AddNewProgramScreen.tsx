@@ -12,7 +12,7 @@ import {
   MenuOption,
   MenuTrigger,
 } from 'react-native-popup-menu';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import Svg, { Circle, Path } from "react-native-svg";
@@ -233,7 +233,7 @@ const AddNewProgramScreen = () => {
   const onSubmit = async () => {
     if (programName && programDescription && programDays.length > 0 && programEndDate && programStartDate && speakerSelected.length > 0 && programImage && programStartTime) {
       setSubmitDisabled(false)
-      const base64 = await FileSystem.readAsStringAsync(programImage.uri, { encoding: 'base64' });
+      const base64 = await new File(programImage.uri).base64();
       const filePath = `${programName.trim().split(" ").join("")}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = programImage.type === 'image' ? 'image/png' : 'video/mp4';
       const { data: image, error: image_upload_error } = await supabase.storage.from('fliers').upload(filePath, decode(base64));

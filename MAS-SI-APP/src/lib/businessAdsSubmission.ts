@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { readAsStringAsync as readFileAsStringAsync, deleteAsync as deleteFileAsync } from 'expo-file-system/legacy'
+import { File } from 'expo-file-system'
 import { decode } from 'base64-arraybuffer'
 import { supabase } from '@/src/lib/supabase'
 
@@ -30,7 +30,7 @@ export async function savePendingBusinessAdSubmission(): Promise<boolean> {
     if (!pendingJson) return false
 
     const pending = JSON.parse(pendingJson) as PendingSubmission
-    const base64 = await readFileAsStringAsync(pending.flyerPath, { encoding: 'base64' })
+    const base64 = await new File(pending.flyerPath).base64()
     const storagePath = `${pending.userId}/${new Date().getTime()}.png`
     const { data: image, error: image_upload_error } = await supabase.storage
       .from('business_flyers')
@@ -81,7 +81,8 @@ export async function savePendingBusinessAdSubmission(): Promise<boolean> {
     })
 
     await AsyncStorage.removeItem(PENDING_SUBMISSION_KEY)
-    await deleteFileAsync(pending.flyerPath, { idempotent: true })
+    const pendingFile = new File(pending.flyerPath)
+    if (pendingFile.exists) pendingFile.delete()
     return true
   } catch (err) {
     console.log('savePendingBusinessAdSubmission error:', err)

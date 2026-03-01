@@ -5,7 +5,7 @@ import { Link, Stack, router } from "expo-router"
 import { supabase } from '@/src/lib/supabase'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import * as ImagePicker from 'expo-image-picker'
-import * as FileSystem from 'expo-file-system/legacy'
+import { File } from 'expo-file-system'
 import { decode } from 'base64-arraybuffer'
 import Animated, { 
   useSharedValue, 
@@ -424,7 +424,7 @@ const SignUp = () => {
       if (user && profileImage) {
         try {
           // Read file as base64 - the correct approach for React Native
-          const base64 = await FileSystem.readAsStringAsync(profileImage, { encoding: 'base64' })
+          const base64 = await new File(profileImage).base64()
           const filePath = `${user.id}/profile_${new Date().getTime()}.png`
           
           const { data: image, error: uploadError } = await supabase.storage

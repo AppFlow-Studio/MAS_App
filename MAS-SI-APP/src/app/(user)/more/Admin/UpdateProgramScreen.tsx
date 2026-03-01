@@ -14,7 +14,7 @@ import {
 } from 'react-native-popup-menu';
 import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
-import * as FileSystem from 'expo-file-system'
+import { File } from 'expo-file-system'
 import Svg, { Path } from "react-native-svg";
 import { useNavigation } from "expo-router";
 import SelectSpeakerBottomSheet from "@/src/components/AdminComponents/SelectSpeakerBottomSheet";
@@ -186,7 +186,7 @@ const UpdateProgramScreen = () => {
   const onUpdate = async () => {
     if (programName && (imgURL || programImage) && programDescription && programStartDate && programEndDate && programDays && programStartTime && speakerSelected) {
       if (programImage) {
-        const base64 = await FileSystem.readAsStringAsync(programImage.uri, { encoding: 'base64' });
+        const base64 = await new File(programImage.uri).base64();
         if (programName == originalName) {
           const filePath = `${programName.trim().split(" ").join("")}.${programImage.type === 'image' ? 'png' : 'mp4'}`;
           const contentType = programImage.type === 'image' ? 'image/png' : 'video/mp4';

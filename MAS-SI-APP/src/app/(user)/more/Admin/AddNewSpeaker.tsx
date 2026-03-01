@@ -5,7 +5,7 @@ import { Link, router, Stack } from 'expo-router'
 import Svg, { Path } from 'react-native-svg'
 import Toast from 'react-native-toast-message'
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { decode } from 'base64-arraybuffer'
 import { TextInput } from 'react-native-paper'
 
@@ -51,7 +51,7 @@ const AddNewSpeaker = () => {
   const UploadNewSpeaker = async () => {
     if (speakerName && speakerImg) {
       setSubmitDisabled(false)
-      const base64 = await FileSystem.readAsStringAsync(speakerImg.uri, { encoding: 'base64' });
+      const base64 = await new File(speakerImg.uri).base64();
       const filePath = `${speakerName.trim().split(" ").join("_")}.${speakerImg.type === 'image' ? 'png' : 'mp4'}`;
       const contentType = speakerImg.type === 'image' ? 'image/png' : 'video/mp4';
       const { data: image, error: image_upload_error } = await supabase.storage.from('sheikh_img').upload(filePath, decode(base64));

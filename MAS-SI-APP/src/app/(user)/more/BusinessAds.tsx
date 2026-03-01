@@ -2,8 +2,7 @@ import { View, Text, ScrollView, Pressable, Dimensions, Image, Alert, StatusBar,
 import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { Icon, ActivityIndicator } from 'react-native-paper'
 import * as ImagePicker from "expo-image-picker"
-import * as FileSystem from 'expo-file-system';
-import { copyAsync as copyFileAsync, documentDirectory as legacyDocumentDirectory, readAsStringAsync as readFileAsStringAsync, deleteAsync as deleteFileAsync } from 'expo-file-system/legacy';
+import { File, Paths } from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 import { useAuth } from '@/src/providers/AuthProvider'
 import { supabase } from '@/src/lib/supabase'
@@ -271,7 +270,7 @@ const BusinessAds = () => {
 
             // In-app flow: use current state
             if (!businessFlyer) return false
-            const base64 = await FileSystem.readAsStringAsync(businessFlyer.uri, { encoding: 'base64' });
+            const base64 = await new File(businessFlyer.uri).base64();
             const filePath = `${session?.user.id}/${new Date().getTime()}.${businessFlyer.type === 'image' ? 'png' : 'mp4'}`;
             const { data: image, error: image_upload_error } = await supabase.storage.from('business_flyers').upload(filePath, decode(base64));
             
@@ -367,13 +366,9 @@ const BusinessAds = () => {
             }
 
             // Persist submission data so it survives app background/kill when user goes to Stripe
-            const flyerPath = legacyDocumentDirectory ? `${legacyDocumentDirectory}${PENDING_FLYER_FILENAME}` : null
-            if (!flyerPath) {
-                Alert.alert('Error', 'Unable to prepare submission. Please try again.')
-                setIsPaymentProcessing(false)
-                return
-            }
-            await copyFileAsync({ from: businessFlyer.uri, to: flyerPath })
+            const flyerFile = new File(Paths.document, PENDING_FLYER_FILENAME)
+            new File(businessFlyer.uri).copy(flyerFile)
+            const flyerPath = flyerFile.uri
             const personalInfo = personalMethods.getValues()
             const businessInfo = businessMethods.getValues()
             await AsyncStorage.setItem(

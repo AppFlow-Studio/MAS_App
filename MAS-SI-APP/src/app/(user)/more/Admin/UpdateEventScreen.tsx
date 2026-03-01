@@ -11,7 +11,7 @@ import {
   MenuOption,
   MenuTrigger,
 } from 'react-native-popup-menu';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { decode } from "base64-arraybuffer";
 import { format } from "date-fns";
 import { supabase } from "@/src/lib/supabase";
@@ -215,7 +215,7 @@ const UpdateEventScreen = () => {
   const onUpdate = async  () => {
     if ( eventName && eventDescription && eventDays.length > 0 && eventEndDate  &&  eventStartDate &&  speakerSelected.length>0 && (eventImage || imgURL) && eventStartTime) {
       if ( eventImage ){
-        const base64 = await FileSystem.readAsStringAsync(eventImage.uri, { encoding: 'base64' });
+        const base64 = await new File(eventImage.uri).base64();
         if ( eventName == originalName ){
           const filePath = `${eventName.trim().split(" ").join("_")}.${eventImage.type === 'image' ? 'png' : 'mp4'}`;
           const { data : image, error :image_upload_error } = await supabase.storage.from('event_flyers').update(filePath, decode(base64));

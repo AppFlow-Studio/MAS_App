@@ -1,4 +1,4 @@
-import { View, Text, Dimensions, StatusBar, Pressable, Platform, KeyboardAvoidingView, Image, TextInput as RNTextInput, ScrollView } from 'react-native'
+import { View, Text, Dimensions, StatusBar, Pressable, Platform, KeyboardAvoidingView, Image, ScrollView } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
 import { Icon, TextInput, ActivityIndicator } from 'react-native-paper'
 import { Link, Stack, router } from "expo-router"
@@ -39,8 +39,8 @@ GoogleSignin.configure({
 const { width, height } = Dimensions.get('window')
 
 // Step configuration
-// 0: Name, 1: Username, 2: Email, 3: Phone, 4: Verify, 5: Password, 6: Photo
-const TOTAL_STEPS = 7
+// 0: Name, 1: Username, 2: Email, 3: Phone, 4: Password, 5: Photo
+const TOTAL_STEPS = 6
 
 // Password strength indicator - for light theme
 const PasswordStrength = ({ password }: { password: string }) => {
@@ -96,73 +96,12 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   
-  // Verification code states
-  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', ''])
-  const [generatedCode, setGeneratedCode] = useState('')
-  const [codeError, setCodeError] = useState(false)
-  const [resendCountdown, setResendCountdown] = useState(0)
-  const codeInputRefs = useRef<(RNTextInput | null)[]>([])
-  
   // Focus states - tracks which input field is currently focused
   const [focusedField, setFocusedField] = useState<string | null>(null)
 
   // Animation values
   const buttonScale = useSharedValue(1)
   
-  // Countdown timer for resend
-  useEffect(() => {
-    if (resendCountdown > 0) {
-      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [resendCountdown])
-
-  // Generate and "send" verification code
-  const sendVerificationCode = () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
-    setGeneratedCode(code)
-    setResendCountdown(30)
-    setCodeError(false)
-    setVerificationCode(['', '', '', '', '', ''])
-    console.log('Verification code:', code)
-    alert(`Your verification code is: ${code}`) // For demo - remove in production
-  }
-
-  // Handle code input
-  const handleCodeInput = (text: string, index: number) => {
-    setCodeError(false)
-    const newCode = [...verificationCode]
-    
-    // Handle paste of full code
-    if (text.length > 1) {
-      const pastedCode = text.replace(/\D/g, '').slice(0, 6).split('')
-      pastedCode.forEach((digit, i) => {
-        if (i < 6) newCode[i] = digit
-      })
-      setVerificationCode(newCode)
-      if (pastedCode.length === 6) {
-        codeInputRefs.current[5]?.blur()
-      }
-      return
-    }
-    
-    newCode[index] = text.replace(/\D/g, '')
-    setVerificationCode(newCode)
-    
-    // Auto-focus next input
-    if (text && index < 5) {
-      codeInputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  // Handle backspace
-  const handleCodeKeyPress = (key: string, index: number) => {
-    if (key === 'Backspace' && !verificationCode[index] && index > 0) {
-      codeInputRefs.current[index - 1]?.focus()
-    }
-  }
-
-
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }))
@@ -230,20 +169,7 @@ const SignUp = () => {
           return false
         }
         return true
-      case 4: // Verification
-        if (!verificationCode.every(digit => digit !== '')) {
-          setError('Please enter the complete verification code')
-          return false
-        }
-        // Verify the code
-        const enteredCode = verificationCode.join('')
-        if (enteredCode !== generatedCode) {
-          setCodeError(true)
-          setError('Incorrect verification code')
-          return false
-        }
-        return true
-      case 5: // Password
+      case 4: // Password
         if (!password) {
           setError('Please create a password')
           return false
@@ -253,18 +179,11 @@ const SignUp = () => {
           return false
         }
         return true
-      case 6: // Photo (optional)
+      case 5: // Photo (optional)
         return true
       default:
         return true
     }
-  }
-
-  // Check if code is correct for visual feedback
-  const isCodeCorrect = () => {
-    if (currentStep !== 4) return false
-    const enteredCode = verificationCode.join('')
-    return enteredCode.length === 6 && enteredCode === generatedCode
   }
 
   const canProceed = () => {
@@ -278,10 +197,8 @@ const SignUp = () => {
       case 3:
         return phoneNumber.replace(/\D/g, '').length === 10
       case 4:
-        return verificationCode.every(digit => digit !== '')
-      case 5:
         return password.length >= 6
-      case 6:
+      case 5:
         return true
       default:
         return false
@@ -295,11 +212,6 @@ const SignUp = () => {
         withSpring(1, { damping: 10 })
       )
       return
-    }
-
-    // If on phone step, send verification code before moving forward
-    if (currentStep === 3) {
-      sendVerificationCode()
     }
 
     if (currentStep < TOTAL_STEPS - 1) {
@@ -474,9 +386,8 @@ const SignUp = () => {
       case 1: return "Choose a username"
       case 2: return "What's your email?"
       case 3: return "Your phone number"
-      case 4: return "Verify your number"
-      case 5: return "Create a password"
-      case 6: return "Add a profile photo"
+      case 4: return "Create a password"
+      case 5: return "Add a profile photo"
       default: return ""
     }
   }
@@ -487,9 +398,8 @@ const SignUp = () => {
       case 1: return "This is how others will find you"
       case 2: return "We'll use this to keep you updated"
       case 3: return "We'll use this to keep your account secure"
-      case 4: return `Enter the 6-digit code sent to +1 ${phoneNumber}`
-      case 5: return "Make it strong and memorable"
-      case 6: return "Help others recognize you (optional)"
+      case 4: return "Make it strong and memorable"
+      case 5: return "Help others recognize you (optional)"
       default: return ""
     }
   }
@@ -788,92 +698,6 @@ const SignUp = () => {
             entering={SlideInRight.duration(300)}
             exiting={SlideOutLeft.duration(300)}
           >
-            {/* Verification Code Input Boxes */}
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'center',
-              gap: 8,
-              marginBottom: 16,
-            }}>
-              {verificationCode.map((digit, index) => (
-                <RNTextInput
-                  key={index}
-                  ref={(ref) => { codeInputRefs.current[index] = ref }}
-                  value={digit}
-                  onChangeText={(text) => handleCodeInput(text, index)}
-                  onKeyPress={({ nativeEvent }) => handleCodeKeyPress(nativeEvent.key, index)}
-                  onFocus={() => setFocusedField(`code-${index}`)}
-                  onBlur={() => setFocusedField(null)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  selectTextOnFocus
-                  style={{
-                    width: 48,
-                    height: 56,
-                    backgroundColor: codeError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(14, 81, 159, 0.08)',
-                    borderRadius: 12,
-                    borderWidth: 2,
-                    borderColor: codeError 
-                      ? '#ef4444' 
-                      : focusedField === `code-${index}`
-                        ? '#0E519F'
-                        : digit 
-                          ? '#22c55e' 
-                          : 'rgba(14, 81, 159, 0.2)',
-                    fontSize: 24,
-                    fontWeight: '700',
-                    textAlign: 'center',
-                    color: codeError ? '#ef4444' : '#0f172a',
-                  }}
-                />
-              ))}
-            </View>
-
-            {/* Error Message */}
-            {codeError && (
-              <Text style={{
-                fontSize: 13,
-                color: '#ef4444',
-                textAlign: 'center',
-                marginBottom: 12,
-              }}>
-                Incorrect code. Please try again.
-              </Text>
-            )}
-
-            {/* Resend Code */}
-            <View style={{ alignItems: 'center' }}>
-              {resendCountdown > 0 ? (
-                <Text style={{
-                  fontSize: 13,
-                  color: 'rgba(14, 81, 159, 0.5)',
-                  textAlign: 'center',
-                }}>
-                  Resend code in {resendCountdown}s
-                </Text>
-              ) : (
-                <Pressable onPress={sendVerificationCode}>
-                  <Text style={{
-                    fontSize: 14,
-                    color: '#0E519F',
-                    fontWeight: '600',
-                    textAlign: 'center',
-                  }}>
-                    Resend Code
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          </Animated.View>
-        )
-
-      case 5:
-        return (
-          <Animated.View 
-            key="step-5"
-            entering={SlideInRight.duration(300)}
-            exiting={SlideOutLeft.duration(300)}
-          >
             <View style={{
               backgroundColor: 'rgba(14, 81, 159, 0.08)',
               borderRadius: 16,
@@ -917,10 +741,10 @@ const SignUp = () => {
           </Animated.View>
         )
 
-      case 6:
+      case 5:
         return (
           <Animated.View 
-            key="step-6"
+            key="step-5"
             entering={SlideInRight.duration(300)}
             exiting={SlideOutLeft.duration(300)}
             style={{ alignItems: 'center' }}
@@ -1011,7 +835,7 @@ const SignUp = () => {
               <Text style={{ fontSize: 11, color: 'rgba(14, 81, 159, 0.7)', fontWeight: '600', letterSpacing: 1 }}>
                 STEP {currentStep + 1} OF {TOTAL_STEPS}
               </Text>
-              {currentStep === 6 && (
+              {currentStep === 5 && (
                 <Pressable 
                   onPress={handleNext} 
                   style={{ 
@@ -1117,11 +941,9 @@ const SignUp = () => {
                       disabled={loading}
                       style={{
                         height: 50,
-                        backgroundColor: isCodeCorrect() 
-                          ? '#22C55E' 
-                          : canProceed() 
-                            ? '#0E519F' 
-                            : 'rgba(14, 81, 159, 0.3)',
+                        backgroundColor: canProceed() 
+                          ? '#0E519F' 
+                          : 'rgba(14, 81, 159, 0.3)',
                         borderRadius: 25,
                         alignItems: 'center',
                         flexDirection: 'row',
@@ -1138,17 +960,10 @@ const SignUp = () => {
                             color: '#ffffff',
                             fontWeight: '600',
                           }}>
-                            {currentStep === TOTAL_STEPS - 1 
-                              ? 'Create Account' 
-                              : currentStep === 4 
-                                ? (isCodeCorrect() ? 'Verified!' : 'Verify')
-                                : 'Continue'}
+                            {currentStep === TOTAL_STEPS - 1 ? 'Create Account' : 'Continue'}
                           </Text>
-                          {currentStep < TOTAL_STEPS - 1 && currentStep !== 4 && (
+                          {currentStep < TOTAL_STEPS - 1 && (
                             <Icon source="arrow-right" size={20} color="#ffffff" />
-                          )}
-                          {currentStep === 4 && (
-                            <Icon source={isCodeCorrect() ? "check-circle" : "shield-check"} size={20} color="#ffffff" />
                           )}
                         </>
                       )}

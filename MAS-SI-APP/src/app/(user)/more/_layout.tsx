@@ -94,6 +94,24 @@ const MoreLayout = () => {
           }}
         />
         <Stack.Screen
+          name='PaymentMethods'
+          options={{
+            title: 'Payment Methods',
+            headerShown: true,
+            headerStyle: { backgroundColor: '#FFFFFF' },
+            headerTitleStyle: { color: '#111827', fontWeight: '600' },
+            headerTintColor: '#007AFF',
+            headerShadowVisible: false,
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 0 }}>
+                <Ionicons name="chevron-back" size={28} color="#111827" />
+              </TouchableOpacity>
+            ),
+            presentation: 'card',
+            animation: 'default',
+          }}
+        />
+        <Stack.Screen
           name='ProfilePage'
           options={{
             headerShown: false,

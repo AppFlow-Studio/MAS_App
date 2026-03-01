@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { useAuth } from '../providers/AuthProvider';
 import { ArrowLeft } from 'lucide-react-native';
+import { router } from 'expo-router';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -500,6 +501,18 @@ const SignInAnonModal = ({ visible, setVisible, dismissable = true, showLanding 
             selectionColor='rgba(14, 81, 159, 0.3)'
             theme={{ roundness: 12, colors: { onSurfaceVariant: '#000000', primary: '#000000', onSurface: '#000000', outline: '#000000', text: '#000000' } }}
           />
+
+          <Pressable
+            onPress={() => {
+              closeSheet();
+              setTimeout(() => router.push('/ForgotPassword'), 300);
+            }}
+            style={{ alignSelf: 'flex-end', paddingVertical: 4 }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#ffffff' }}>
+              Forgot Password?
+            </Text>
+          </Pressable>
 
         </View>
       ) : (

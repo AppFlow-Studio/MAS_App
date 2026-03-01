@@ -589,6 +589,7 @@ export default function MoreScreen() {
               <View style={styles.menuCard}>
                 <MenuButton icon={Heart} label="Phase 2" onPress={() => donationSheetRef.current?.open()} />
                 <MenuButton icon={Receipt} label="Payment History" onPress={() => router.push('/more/PaymentHistory')} />
+                <MenuButton icon={CreditCard} label="Payment Methods" onPress={() => router.push('/more/PaymentMethods')} />
               </View>
 
           {/* MAS SHOP */}

@@ -212,6 +212,12 @@ export default function homeScreen() {
       {/* Overlapping Widget */}
       <OverlappingWidget />
 
+      {/* Suggestions Grid - Uber-style icons */}
+      <SuggestionsGrid 
+        onDonatePress={() => donationSheetRef.current?.open()}
+        onAdvertisePress={() => router.push('/more/BusinessAds')}
+      />
+
       <Pressable
         className='pt-7 flex-row justify-between w-[100%] px-3'
         onPress={() => router.push('/menu/program/upcomingEvents')}
@@ -228,12 +234,6 @@ export default function homeScreen() {
 
       {/* Ads */}
       <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true)} />
-
-      {/* Suggestions Grid - Uber-style icons */}
-      <SuggestionsGrid 
-        onDonatePress={() => donationSheetRef.current?.open()}
-        onAdvertisePress={() => router.push('/more/BusinessAds')}
-      />
 
       {/* Jummah Schedule */}
       <View className='pt-6'>

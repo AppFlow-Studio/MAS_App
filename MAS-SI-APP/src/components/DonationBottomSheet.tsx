@@ -26,7 +26,7 @@ import { fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName,
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLLAPSED_HEIGHT = 390;
 const EXPANDED_HEIGHT = 540;
-const PAYMENT_HEIGHT = 560;
+const PAYMENT_HEIGHT = 580;
 const PAYMENT_HEIGHT_WITH_KEYBOARD = SCREEN_HEIGHT * 0.92;
 const SAVED_CARDS_HEIGHT = 450;
 const SUCCESS_HEIGHT = 360;
@@ -912,6 +912,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   bounces={false}
                 >
                   {/* Amount Display */}
+                  <RNText style={styles.paymentLabel}>DONATION AMOUNT</RNText>
                   <RNText style={styles.paymentAmount}>${getFinalAmount()}</RNText>
 
                   {/* Apple Pay Button */}
@@ -921,7 +922,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                         onPress={handleApplePayPayment}
                         type={PlatformPay.ButtonType.Donate}
                         appearance={PlatformPay.ButtonStyle.Black}
-                        borderRadius={40}
+                        borderRadius={16}
                         style={styles.applePayButton}
                       />
                       <View style={styles.orDivider}>
@@ -935,7 +936,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   {/* Card Form */}
                   <View style={styles.cardFormContainer}>
                     <CardForm
-                      autofocus={true}
+                      autofocus={false}
                       placeholders={{
                         number: '4242 4242 4242 4242',
                         expiration: 'MM/YY',
@@ -946,11 +947,11 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                         backgroundColor: '#FFFFFF',
                         textColor: '#000000',
                         borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: '#D1D5DB',
+                        borderWidth: 0,
+                        borderColor: 'transparent',
                         fontSize: 16,
-                        placeholderColor: '#6B7280',
-                        cursorColor: '#214E91',
+                        placeholderColor: '#9CA3AF',
+                        cursorColor: '#2563EB',
                         textErrorColor: '#EF4444',
                       }}
                       style={styles.cardForm}
@@ -960,7 +961,7 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                     />
                   </View>
 
-                  {/* Save Card Checkbox */}
+                  {/* Save Card + Pay Button */}
                   <Pressable 
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -974,7 +975,6 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                     <RNText style={styles.saveCardText}>Save card for future donations</RNText>
                   </Pressable>
 
-                  {/* Pay Button */}
                   <Pressable
                     style={[
                       styles.payButton, 
@@ -1158,7 +1158,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 20,
     elevation: 24,
-    overflow: 'hidden',
   },
   handleContainer: {
     alignItems: 'center',
@@ -1392,7 +1391,7 @@ const styles = StyleSheet.create({
   // Payment View Styles
   paymentView: {
     flex: 1,
-    paddingTop: 8,
+    paddingTop: 4,
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -1401,46 +1400,51 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 10,
   },
+  paymentLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
   paymentAmount: {
-    fontSize: 36,
+    fontSize: 34,
     fontWeight: '700',
     color: '#111827',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   applePayButton: {
     width: '100%',
-    height: 50,
-    marginBottom: 16,
+    height: 48,
+    marginBottom: 12,
   },
   orDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   orDividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#D1D5DB',
   },
   orDividerText: {
-    marginHorizontal: 12,
-    fontSize: 13,
+    marginHorizontal: 14,
+    fontSize: 12,
     fontWeight: '500',
     color: '#9CA3AF',
-    textTransform: 'uppercase',
   },
   cardFormContainer: {
-    marginBottom: 16,
-    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    padding: 4,
   },
   cardForm: {
     width: '100%',
-    height: 200,
+    height: 190,
   },
   payButton: {
     backgroundColor: '#2563EB',
@@ -1551,7 +1555,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   saveCardCheckbox: {
     width: 22,

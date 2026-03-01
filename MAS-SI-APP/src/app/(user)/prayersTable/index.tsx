@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Image, Pressable, StatusBar, Dimensions, ImageBackground, StyleSheet } from 'react-native';
+import { View, Text, FlatList, Image, Pressable, StatusBar, Dimensions, ImageBackground, StyleSheet, RefreshControl } from 'react-native';
 import Paginator from '@/src/components/paginator';
 import Table from "@/src/components/prayerTimeTable";
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
@@ -33,6 +33,8 @@ import { TaraweehSessionBottomSheet, TaraweehSessionBottomSheetRef, TaraweehSess
 import { TaraweehNotificationBottomSheet, TaraweehNotificationBottomSheetRef } from '@/src/components/TaraweehNotificationBottomSheet';
 import { CapacityStatusLight, CapacityStatus } from '@/src/components/CapacityStatusLight';
 import { useIsRamadan, getTaraweehTimes } from '@/src/lib/ramadanConfig';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 // ============================================
 // TARAWEEH TIMELINE COMPONENT
@@ -1126,7 +1128,7 @@ const QuranTracker = ({ currentSurah, showInfo, onToggleInfo }: QuranTrackerProp
 export default function Index() {
   // ALL hooks must be called unconditionally at the top
   const isRamadan = useIsRamadan();
-  const { data: prayerTimesWeek, isLoading } = usePrayerTimes();
+  const { data: prayerTimesWeek, isLoading, refetch } = usePrayerTimes();
   const currentPrayer = useCurrentPrayer();
   const upcomingPrayer = useUpcomingPrayer();
   const timeToNextPrayer = useTimeToNextPrayer();
@@ -1152,6 +1154,8 @@ export default function Index() {
       capacity_status?: CapacityStatus;
     };
   } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
   const { height } = Dimensions.get('window');
   const tableWidth = Dimensions.get('screen').width * .95;
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
@@ -1194,6 +1198,21 @@ export default function Index() {
       });
     }
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const minDelay = new Promise(resolve => setTimeout(resolve, 800));
+      await Promise.all([
+        minDelay,
+        refetch(),
+        ...(isRamadan ? [GetRamadanTracker(), getTaraweehLineup()] : []),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch, isRamadan]);
 
   // ALL useEffect hooks must be called before early returns
   useEffect(() => {
@@ -1298,7 +1317,19 @@ export default function Index() {
     >
       <StatusBar barStyle={"light-content"} />
       
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 80 }} bounces={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 80 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="white"
+            colors={['white']}
+            progressBackgroundColor="#1d4681"
+          />
+        }
+      >
         {/* Header */}
         <View style={{ paddingTop: 10, paddingBottom: 8, alignItems: 'center' }}>
           <Text style={{ color: 'white', fontSize: 24, fontWeight: '700' }}>Prayer Times</Text>
@@ -1324,9 +1355,6 @@ export default function Index() {
             maxToRenderPerBatch={10}
             className='h-[100%] p-0'
           />
-          {/* Business Ads */}
-          <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true)} />
-          
           {/* ==================== RAMADAN COMPONENTS ==================== */}
 
           {isRamadan && (
@@ -1341,7 +1369,14 @@ export default function Index() {
                 sessionOneLineup={taraweehLineup?.sessionOne}
                 sessionTwoLineup={taraweehLineup?.sessionTwo}
               />
+            </>
+          )}
 
+          {/* Business Ads */}
+          <ApprovedAds setRenderedFalse={() => setIsRendered(false)} setRenderedTrue={() => setIsRendered(true)} />
+
+          {isRamadan && (
+            <>
               {/* Suhoor & Iftar Timer - Redesigned */}
               <SuhoorIftarTimer
                 todayFajrAthan={prayerTimesWeek[0].athan_fajr}

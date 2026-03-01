@@ -34,7 +34,12 @@ export const useApprovedAds = () => {
         .in('submission_id', submissionIds)
       if (adsError) throw adsError
 
-      return (adsData ?? []) as AdItem[]
+      const results = (adsData ?? []) as AdItem[]
+      for (let i = results.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [results[i], results[j]] = [results[j], results[i]];
+      }
+      return results
     },
     staleTime: 5 * 60 * 1000,
   })

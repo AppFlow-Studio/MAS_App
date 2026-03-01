@@ -176,8 +176,7 @@ const PaymentMethods = () => {
               elevation: 3,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                <Icon source="shield-check" size={18} color="#10B981" />
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981', marginLeft: 6, letterSpacing: 0.3 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981', letterSpacing: 0.3 }}>
                   SECURED BY
                 </Text>
                 <Image

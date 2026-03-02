@@ -26,6 +26,14 @@ import IntroVideoOverlay from '@/src/components/IntroVideoOverlay';
 // Version tracking key for What's New screen
 export const WHATS_NEW_VERSION_KEY = 'whats_new_seen_version';
 
+// Cached app version so check and save always use the same value (avoids showing What's New again if Constants was inconsistent)
+let _cachedAppVersion: string | null = null;
+export function getAppVersion(): string {
+  if (_cachedAppVersion !== null) return _cachedAppVersion;
+  _cachedAppVersion = Constants.expoConfig?.version ?? '1.0.0';
+  return _cachedAppVersion;
+}
+
 // Persist that we've already asked the user to enable notifications (so we don't ask every app open)
 export const NOTIFICATION_PROMPT_ASKED_KEY = 'notification_prompt_asked';
 

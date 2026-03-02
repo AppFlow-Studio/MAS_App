@@ -21,8 +21,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Icon } from 'react-native-paper'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import Constants from 'expo-constants'
-import { WHATS_NEW_VERSION_KEY } from './_layout'
+import { WHATS_NEW_VERSION_KEY, getAppVersion } from './_layout'
 
 const { width, height } = Dimensions.get('window')
 
@@ -161,8 +160,8 @@ export default function WhatsNew() {
   }
 
   const handleComplete = async () => {
-    // Save current version to AsyncStorage
-    const currentVersion = Constants.expoConfig?.version || '1.0.0'
+    // Save current version to AsyncStorage (use getAppVersion so it matches the check in user layout)
+    const currentVersion = getAppVersion()
     await AsyncStorage.setItem(WHATS_NEW_VERSION_KEY, currentVersion)
     
     // Navigate to main app
@@ -170,8 +169,8 @@ export default function WhatsNew() {
   }
 
   const handleSkip = async () => {
-    // Save current version to AsyncStorage
-    const currentVersion = Constants.expoConfig?.version || '1.0.0'
+    // Save current version to AsyncStorage (use getAppVersion so it matches the check in user layout)
+    const currentVersion = getAppVersion()
     await AsyncStorage.setItem(WHATS_NEW_VERSION_KEY, currentVersion)
     
     // Navigate to main app

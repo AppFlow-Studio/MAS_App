@@ -1,70 +1,10 @@
-// // supabase/functions/send-prayer-notification-safe/index.ts
-// // 
-// // TIMEOUT-SAFE QUICK FIX
-// // Works with your existing prayer_notification_schedule and program_notification_schedule tables
-// // 
-// // Key features:
-// // 1. Parallel chunk sending (not sequential)
-// // 2. Hard timeout protection
-// // 3. Graceful degradation
-// //
-
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-async function sendToExpo(
-  messages: {
-    to: string,
-    title: string,
-    sound: string,
-    body: string,
-    data?: {
-      [key: string]: string
-    }
-  }[], 
-  accessToken?: string
-): Promise<{
-  status: 'ok' | 'error',
-  id?: string,
-  details?: {
-    error?: string
-  }
-}[]> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  }
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`
-  }
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-  const response = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(messages),
-  })
-
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`Expo API ${response.status}: ${text}`)
-  }
-
-  const result = await response.json()
-  return result.data // Array of tickets
-}
-
-// Token validation (replaces Expo.isExpoPushToken):
-function isExpoPushToken(token: string): boolean {
-  return typeof token === 'string' && 
-    (token.startsWith('ExponentPushToken[') || token.startsWith('ExpoPushToken['))
-}
-
-// Chunking (replaces expo.chunkPushNotifications):
-function chunkArray<T>(array: T[], size = 100): T[][] {
-  const chunks: T[][] = []
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size))
-  }
-  return chunks
-}
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+)
 
 // ============================================================================
 // CONFIGURATION
@@ -73,12 +13,17 @@ const CONFIG = {
   // Hard timeout - return response before Edge Function kills us
   // Edge function has 150s idle timeout, we exit at 100s to be very safe
   HARD_TIMEOUT_MS: 100_000,
-  
+
   // Timeout per Expo API call
   EXPO_CALL_TIMEOUT_MS: 25_000,
-  
+
   // Max parallel Expo requests
   MAX_PARALLEL: 3,
+
+  // Retry settings
+  MAX_RETRIES: 3,
+  RETRY_BASE_DELAY_MS: 1_000,
+  RETRY_MAX_DELAY_MS: 10_000,
 }
 
 // ============================================================================
@@ -103,36 +48,127 @@ interface SendResult {
   errors: string[]
   timedOut: boolean
   duration_ms: number
+  totalRetries: number
+  tokensCleanedUp: number
+  ticketsStored: number
 }
 
 interface ExpoPushMessage {
-  to: string,
-  title: string,
-  sound: string,
-  body: string,
-  data?: {
-    [key: string]: string
-  }
+  to: string
+  title: string
+  sound: string
+  body: string
+  data?: { [key: string]: string }
 }
 
 interface ExpoPushTicket {
-  status: 'ok' | 'error',
-  id?: string,
-  details?: {
-    error?: string
+  status: 'ok' | 'error'
+  id?: string
+  details?: { error?: string }
+}
+
+// ============================================================================
+// TOKEN VALIDATION & CHUNKING
+// ============================================================================
+function isExpoPushToken(token: string): boolean {
+  return typeof token === 'string' &&
+    (token.startsWith('ExponentPushToken[') || token.startsWith('ExpoPushToken['))
+}
+
+function chunkArray<T>(array: T[], size = 100): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
+
+// ============================================================================
+// EXPO API WITH RETRY
+// ============================================================================
+class ExpoApiError extends Error {
+  constructor(public statusCode: number, public retryAfter: number | null, message: string) {
+    super(message)
   }
 }
+
+async function sendToExpo(messages: ExpoPushMessage[]): Promise<ExpoPushTicket[]> {
+  const response = await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(messages),
+  })
+
+  if (!response.ok) {
+    const retryAfterHeader = response.headers.get('Retry-After')
+    const retryAfter = retryAfterHeader ? Math.min(parseInt(retryAfterHeader, 10) * 1000, CONFIG.RETRY_MAX_DELAY_MS) : null
+    const text = await response.text()
+    throw new ExpoApiError(response.status, retryAfter, `Expo API ${response.status}: ${text}`)
+  }
+
+  const result = await response.json()
+  return result.data
+}
+
+function isRetryable(error: unknown): boolean {
+  if (error instanceof ExpoApiError) {
+    return error.statusCode === 429 || error.statusCode >= 500
+  }
+  // Network errors are retryable
+  return error instanceof TypeError
+}
+
+function getRetryDelay(attempt: number, error: unknown): number {
+  // Respect Retry-After for 429s
+  if (error instanceof ExpoApiError && error.retryAfter !== null) {
+    return error.retryAfter
+  }
+  // Exponential backoff with jitter: 1s, 2s, 4s + random 0-500ms
+  const exponentialDelay = CONFIG.RETRY_BASE_DELAY_MS * Math.pow(2, attempt)
+  const jitter = Math.random() * 500
+  return Math.min(exponentialDelay + jitter, CONFIG.RETRY_MAX_DELAY_MS)
+}
+
+async function sendToExpoWithRetry(
+  messages: ExpoPushMessage[],
+  shouldExit: () => boolean
+): Promise<{ tickets: ExpoPushTicket[]; retries: number }> {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= CONFIG.MAX_RETRIES; attempt++) {
+    if (attempt > 0 && shouldExit()) {
+      break
+    }
+    try {
+      const tickets = await sendToExpo(messages)
+      return { tickets, retries: attempt }
+    } catch (error) {
+      lastError = error
+      if (attempt < CONFIG.MAX_RETRIES && isRetryable(error) && !shouldExit()) {
+        const delay = getRetryDelay(attempt, error)
+        console.log(`Retry ${attempt + 1}/${CONFIG.MAX_RETRIES} after ${Math.round(delay)}ms: ${(error as Error).message}`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      } else if (!isRetryable(error)) {
+        throw error
+      }
+    }
+  }
+  throw lastError
+}
+
 // ============================================================================
 // TIMEOUT UTILITIES
 // ============================================================================
 function createTimeoutPromise<T>(ms: number): Promise<T> {
-  return new Promise((_, reject) => 
+  return new Promise((_, reject) =>
     setTimeout(() => reject(new Error('TIMEOUT')), ms)
   )
 }
 
 async function withTimeout<T>(
-  promise: Promise<T>, 
+  promise: Promise<T>,
   ms: number,
   fallback: T
 ): Promise<{ result: T; timedOut: boolean }> {
@@ -151,42 +187,119 @@ async function withTimeout<T>(
 // PARALLEL PROCESSING
 // ============================================================================
 async function processChunksParallel(
-    chunks:ExpoPushMessage[][],
-  // expo: Expo,
+  chunks: ExpoPushMessage[][],
   maxParallel: number,
-  timeoutMs: number
-): Promise<{ allTickets: ExpoPushTicket[][]; errors: string[] }> {
+  timeoutMs: number,
+  shouldExit: () => boolean
+): Promise<{ allTickets: ExpoPushTicket[][]; errors: string[]; totalRetries: number }> {
   const allTickets: ExpoPushTicket[][] = []
   const errors: string[] = []
-  
-  // Process in batches of maxParallel
+  let totalRetries = 0
+
   for (let i = 0; i < chunks.length; i += maxParallel) {
+    if (shouldExit()) {
+      errors.push(`Skipped chunks ${i}+ due to timeout budget`)
+      break
+    }
+
     const batch = chunks.slice(i, i + maxParallel)
-    
+
     const batchPromises = batch.map(async (chunk, idx) => {
       try {
         const { result, timedOut } = await withTimeout(
-          sendToExpo(chunk),
+          sendToExpoWithRetry(chunk, shouldExit),
           timeoutMs,
-          [] as ExpoPushTicket[]
+          { tickets: [] as ExpoPushTicket[], retries: 0 }
         )
-        
+
         if (timedOut) {
           errors.push(`Chunk ${i + idx} timed out`)
         }
-        
-        return result
+
+        totalRetries += result.retries
+        return result.tickets
       } catch (error) {
-        errors.push(`Chunk ${i + idx}: ${error?.details?.error || 'Unknown error'}`)
+        errors.push(`Chunk ${i + idx}: ${(error as Error).message || 'Unknown error'}`)
         return [] as ExpoPushTicket[]
       }
     })
-    
+
     const batchResults = await Promise.all(batchPromises)
     allTickets.push(...batchResults)
   }
-  
-  return { allTickets, errors }
+
+  return { allTickets, errors, totalRetries }
+}
+
+// ============================================================================
+// TOKEN CLEANUP
+// ============================================================================
+async function cleanupInvalidTokens(
+  invalidTokenPairs: { token: string; userId: string }[]
+): Promise<number> {
+  if (invalidTokenPairs.length === 0) return 0
+
+  // Deduplicate by token
+  const seen = new Set<string>()
+  const unique = invalidTokenPairs.filter(p => {
+    if (seen.has(p.token)) return false
+    seen.add(p.token)
+    return true
+  })
+
+  let cleaned = 0
+  // Process in chunks of 100 for Supabase .in() limit
+  const tokenChunks = chunkArray(unique, 100)
+
+  for (const chunk of tokenChunks) {
+    // Batch update: set push_notification_token = null where id AND token match
+    // This prevents race conditions if user re-registered a new token
+    for (const { token, userId } of chunk) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ push_notification_token: null })
+        .eq('id', userId)
+        .eq('push_notification_token', token)
+
+      if (error) {
+        console.error(`Failed to clean token for user ${userId}: ${error.message}`)
+      } else {
+        cleaned++
+      }
+    }
+  }
+
+  if (cleaned > 0) {
+    console.log(`Cleaned up ${cleaned} invalid push tokens from profiles`)
+  }
+
+  return cleaned
+}
+
+// ============================================================================
+// TICKET STORAGE
+// ============================================================================
+async function storeTickets(
+  ticketRows: { ticket_id: string; push_token: string; user_id: string | null }[]
+): Promise<number> {
+  if (ticketRows.length === 0) return 0
+
+  let stored = 0
+  const insertChunks = chunkArray(ticketRows, 1000)
+
+  for (const chunk of insertChunks) {
+    const { error } = await supabase
+      .from('push_notification_tickets')
+      .insert(chunk)
+
+    if (error) {
+      console.error(`Failed to store ${chunk.length} tickets: ${error.message}`)
+    } else {
+      stored += chunk.length
+    }
+  }
+
+  return stored
 }
 
 // ============================================================================
@@ -194,7 +307,7 @@ async function processChunksParallel(
 // ============================================================================
 Deno.serve(async (req) => {
   const startTime = Date.now()
-  
+
   const result: SendResult = {
     total: 0,
     sent: 0,
@@ -203,16 +316,19 @@ Deno.serve(async (req) => {
     invalidTokens: [],
     errors: [],
     timedOut: false,
-    duration_ms: 0
+    duration_ms: 0,
+    totalRetries: 0,
+    tokensCleanedUp: 0,
+    ticketsStored: 0,
   }
-  
+
   // Set up hard timeout
   const hardTimeoutAt = startTime + CONFIG.HARD_TIMEOUT_MS
   const shouldExit = () => Date.now() > hardTimeoutAt - 5000 // 5s buffer
-  
+
   try {
     const { notifications_batch } = await req.json()
-    
+
     if (!notifications_batch || !Array.isArray(notifications_batch) || notifications_batch.length === 0) {
       result.duration_ms = Date.now() - startTime
       return new Response(
@@ -220,10 +336,9 @@ Deno.serve(async (req) => {
         { headers: { 'Content-Type': 'application/json' } }
       )
     }
-    
+
     result.total = notifications_batch.length
-    
-    // Check timeout
+
     if (shouldExit()) {
       result.timedOut = true
       result.skipped = result.total
@@ -233,53 +348,52 @@ Deno.serve(async (req) => {
         { headers: { 'Content-Type': 'application/json' } }
       )
     }
-    
-    // const expo = new Expo({ accessToken: expoPushToken })
-    
+
     // Build messages, tracking which index maps to which notification
     const messages: ExpoPushMessage[] = []
     const indexToNotification: Map<number, Notification> = new Map()
-    
+    const invalidTokenPairs: { token: string; userId: string }[] = []
+
     for (const notification of notifications_batch as Notification[]) {
-      // Validate token
       if (!notification.push_notification_token) {
         result.failed++
         result.errors.push(`ID ${notification.id}: Missing token`)
         continue
       }
-      
+
       if (!isExpoPushToken(notification.push_notification_token)) {
         result.failed++
         result.invalidTokens.push(notification.push_notification_token)
         result.errors.push(`ID ${notification.id}: Invalid token format`)
+        // Track for cleanup
+        if (notification.user_id) {
+          invalidTokenPairs.push({ token: notification.push_notification_token, userId: notification.user_id })
+        }
         continue
       }
-      
+
       indexToNotification.set(messages.length, notification)
-      
+
       messages.push({
         to: notification.push_notification_token,
         title: notification.title || 'MAS Staten Island',
         body: notification.message,
         sound: 'default',
-        // priority: 'high',
-        // data: { 
-        //   notificationId: notification.id,
-        //   prayer: notification.prayer,
-        //   program: notification.program_event_name
-        // },
       })
     }
-    
+
     if (messages.length === 0) {
+      // Still clean up invalid tokens even if no valid messages
+      if (invalidTokenPairs.length > 0) {
+        result.tokensCleanedUp = await cleanupInvalidTokens(invalidTokenPairs)
+      }
       result.duration_ms = Date.now() - startTime
       return new Response(
         JSON.stringify({ message: 'No valid notifications', ...result }),
         { headers: { 'Content-Type': 'application/json' } }
       )
     }
-    
-    // Check timeout
+
     if (shouldExit()) {
       result.timedOut = true
       result.skipped = messages.length
@@ -289,62 +403,91 @@ Deno.serve(async (req) => {
         { headers: { 'Content-Type': 'application/json' } }
       )
     }
-    
+
     // Chunk messages (Expo limit is 100 per request)
     const chunks = chunkArray(messages)
-    
+
     console.log(`Sending ${messages.length} notifications in ${chunks.length} chunks (parallel: ${CONFIG.MAX_PARALLEL})`)
-    
+
     // =========================================================================
-    // PARALLEL SENDING - Much faster than sequential!
+    // PARALLEL SENDING WITH RETRY
     // =========================================================================
-    const { allTickets, errors: chunkErrors } = await processChunksParallel(
+    const { allTickets, errors: chunkErrors, totalRetries } = await processChunksParallel(
       chunks,
       CONFIG.MAX_PARALLEL,
-      CONFIG.EXPO_CALL_TIMEOUT_MS
+      CONFIG.EXPO_CALL_TIMEOUT_MS,
+      shouldExit
     )
-    
+
     result.errors.push(...chunkErrors)
-    
+    result.totalRetries = totalRetries
+
     // Process tickets
+    const ticketRows: { ticket_id: string; push_token: string; user_id: string | null }[] = []
     let globalIndex = 0
+
     for (let chunkIdx = 0; chunkIdx < allTickets.length; chunkIdx++) {
       const tickets = allTickets[chunkIdx]
-      const chunkSize = chunks[chunkIdx].length
-      
+      const chunkSize = chunks[chunkIdx]?.length ?? 0
+
       if (tickets.length === 0) {
-        // Entire chunk failed
         result.failed += chunkSize
         globalIndex += chunkSize
         continue
       }
-      
+
       for (let i = 0; i < tickets.length; i++) {
         const ticket = tickets[i]
         const notification = indexToNotification.get(globalIndex + i)
-        
+
         if (ticket.status === 'ok') {
           result.sent++
+          // Store ticket ID for receipt checking (Phase 3B)
+          if (ticket.id && notification) {
+            ticketRows.push({
+              ticket_id: ticket.id,
+              push_token: notification.push_notification_token,
+              user_id: notification.user_id || null,
+            })
+          }
         } else {
           result.failed++
-          
+
           if (notification) {
             result.errors.push(`ID ${notification.id}: ${ticket?.details?.error || 'Unknown error'}`)
-            
+
             if (ticket.details?.error === 'DeviceNotRegistered') {
               result.invalidTokens.push(notification.push_notification_token)
+              if (notification.user_id) {
+                invalidTokenPairs.push({ token: notification.push_notification_token, userId: notification.user_id })
+              }
             }
           }
         }
       }
-      
+
       globalIndex += chunkSize
     }
-    
+
+    // =========================================================================
+    // POST-SEND: Token cleanup + ticket storage (best-effort, don't block response)
+    // =========================================================================
+    if (!shouldExit()) {
+      const [cleaned, stored] = await Promise.all([
+        cleanupInvalidTokens(invalidTokenPairs),
+        storeTickets(ticketRows),
+      ])
+      result.tokensCleanedUp = cleaned
+      result.ticketsStored = stored
+    }
+
     result.duration_ms = Date.now() - startTime
-    
-    console.log(`Completed in ${result.duration_ms}ms: ${result.sent} sent, ${result.failed} failed`)
-    
+
+    console.log(
+      `Completed in ${result.duration_ms}ms: ${result.sent} sent, ${result.failed} failed, ` +
+      `${result.totalRetries} retries, ${result.tokensCleanedUp} tokens cleaned, ${result.ticketsStored} tickets stored`
+    )
+
     return new Response(
       JSON.stringify({
         message: `Sent ${result.sent}/${result.total} notifications in ${result.duration_ms}ms`,
@@ -352,11 +495,11 @@ Deno.serve(async (req) => {
       }),
       { headers: { 'Content-Type': 'application/json' } }
     )
-    
+
   } catch (error) {
     console.error('Fatal error:', error)
     result.duration_ms = Date.now() - startTime
-    
+
     return new Response(
       JSON.stringify({
         message: 'Fatal error',
@@ -367,85 +510,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-
-
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
-// Setup type definitions for built-in Supabase Runtime APIs
-
-// import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-// import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-// // import {Expo} from 'https://esm.sh/expo-server-sdk@3.7.0';
-// console.log("Hello from Functions!")
-
-
-// serve(async (req) => {
-//   // const prayer_push_token = Deno.env.get('EXPO_PUBLIC_PRAYER_PUSH_TOKEN')
-//   const {  notifications_batch } = await req.json()
-//   // let expo = new Expo({
-//   //   accessToken : prayer_push_token
-//   // })
-//   console.log(notifications_batch)
-//   const messages = notifications_batch?.map(( notification : { push_notification_token: string, title: string, message: string } ) => (
-//     {
-//       to: notification.push_notification_token,
-//       title : notification.title ? notification.title : 'MAS Staten Island',
-//       sound: 'default',
-//       body: notification.message,
-//     }
-//   ))  
-  
-//   if( !messages || messages?.length === 0 ){
-//     return new Response(
-//       JSON.stringify({ message: 'No notifications to send' }),
-//       { headers: { 'Content-Type': 'application/json' } }
-//     )
-//   }
-
-//   let chunks = chunkArray(messages);
-//   let tickets = [];
-//   (async () => {
-//     // Send the chunks to the Expo push notification service. There are
-//     // different strategies you could use. A simple one is to send one chunk at a
-//     // time, which nicely spreads the load out over time:
-//     for (let chunk of chunks) {
-//       console.log(chunk)
-//       try {
-//         let ticketChunk = await sendToExpo(chunk);
-//         console.log(ticketChunk);
-//         tickets.push(...ticketChunk);
-//         // NOTE: If a ticket contains an error code in ticket.details.error, you
-//         // must handle it appropriately. The error codes are listed in the Expo
-//         // documentation:
-//         // https://docs.expo.io/push-notifications/sending-notifications/#individual-errors
-//       } catch (error) {
-//         console.log(error);
-//       }
-//     }
-//   })();
-//   const data = {
-//     message: `${notifications_batch}`,
-//   }
-
-//   return new Response(
-//     JSON.stringify(data),
-//     { headers: { "Content-Type": "application/json" } },
-//   )
-// })
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/send-prayer-notification' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"notifications_batch": "curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/send-prayer-notification' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"notifications_batch": "[{"id":74,"user_id":"ed0da2c2-fee3-43e4-a0c4-64dd45c6a70b","prayer":"zuhr","message":"Time to pray zuhr","created_at":"2024-10-13T23:46:26.762904+00:00","push_notification_token":"ExponentPushToken[-hrjeHFbAxLBK20lfmpzoG]","is_sent":false,"notification_time":"2024-10-13T16:42:00+00:00"},{"id":75,"user_id":"ed0da2c2-fee3-43e4-a0c4-64dd45c6a70b","prayer":"fajr","message":"Time to pray fajr","created_at":"2024-10-13T23:46:26.76296+00:00","push_notification_token":"ExponentPushToken[-hrjeHFbAxLBK20lfmpzoG]","is_sent":false,"notification_time":"2024-10-13T09:51:00+00:00"},{"id":76,"user_id":"ed0da2c2-fee3-43e4-a0c4-64dd45c6a70b","prayer":"isha","message":"Time to pray isha","created_at":"2024-10-13T23:46:26.826916+00:00","push_notification_token":"ExponentPushToken[-hrjeHFbAxLBK20lfmpzoG]","is_sent":false,"notification_time":"2024-10-14T00:33:00+00:00"},{"id":77,"user_id":"ed0da2c2-fee3-43e4-a0c4-64dd45c6a70b","prayer":"asr","message":"Time to pray asr","created_at":"2024-10-13T23:46:26.830188+00:00","push_notification_token":"ExponentPushToken[-hrjeHFbAxLBK20lfmpzoG]","is_sent":false,"notification_time":"2024-10-13T19:49:00+00:00"},{"id":78,"user_id":"ed0da2c2-fee3-43e4-a0c4-64dd45c6a70b","prayer":"maghrib","message":"Time to pray maghrib","created_at":"2024-10-13T23:46:26.83537+00:00","push_notification_token":"ExponentPushToken[-hrjeHFbAxLBK20lfmpzoG]","is_sent":false,"notification_time":"2024-10-13T22:18:00+00:00"}]"}'
-
-*/

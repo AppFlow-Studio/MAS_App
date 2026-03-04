@@ -80,6 +80,21 @@ interface TaraweehTimelineProps {
 
 type TaraweehState = 'before' | 'session_one' | 'break' | 'session_two' | 'completed';
 
+// Official Quran juz boundaries (api.quran.com): first verse (surah, ayah) of each juz 1–30
+const JUZ_STARTS: [number, number][] = [
+  [1, 1], [2, 142], [2, 253], [3, 93], [4, 24], [4, 148], [5, 82], [6, 111], [7, 88], [8, 41],
+  [9, 93], [11, 6], [12, 53], [15, 1], [17, 1], [18, 75], [21, 1], [23, 1], [25, 21], [27, 56],
+  [29, 46], [33, 31], [36, 28], [39, 32], [41, 47], [46, 1], [51, 31], [58, 1], [67, 1], [78, 1],
+];
+
+function getJuzNumber(surah: number, ayah: number): number {
+  for (let j = JUZ_STARTS.length; j >= 1; j--) {
+    const [startSurah, startAyah] = JUZ_STARTS[j - 1];
+    if (surah > startSurah || (surah === startSurah && ayah >= startAyah)) return j;
+  }
+  return 1;
+}
+
 const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, sessionTwoEnd, currentSurah, sessionOneLineup, sessionTwoLineup }: TaraweehTimelineProps) => {
   const sessionBottomSheetRef = useRef<TaraweehSessionBottomSheetRef>(null);
   const notificationBottomSheetRef = useRef<TaraweehNotificationBottomSheetRef>(null);
@@ -369,7 +384,7 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
   ];
   const currentVerseNumber = (versesBeforeSurah[currentSurah.surah - 1] || 0) + currentSurah.ayah_num;
   const quranProgressPercent = Math.min(100, Math.round((currentVerseNumber / totalVerses) * 100));
-  const juzNumber = Math.min(30, Math.ceil((currentVerseNumber / totalVerses) * 30));
+  const juzNumber = getJuzNumber(currentSurah.surah, currentSurah.ayah_num);
 
   // Helper to determine node state
   const getNodeState = (nodeIndex: number): 'completed' | 'active' | 'upcoming' => {
@@ -584,7 +599,7 @@ const TaraweehTimeline = ({ sessionOneStart, sessionOneEnd, sessionTwoStart, ses
         </View>
         
         {/* Node 2 - Break/Session Two Start */}
-        <View style={[styles.timelineNodeContainer, { left: '50%', marginLeft: -12 }]}>
+        <View style={[styles.timelineNodeContainer, trackWidth > 0 ? { left: (trackWidth - 24) / 2 } : { left: '50%', marginLeft: -12 }]}>
           <Animated.View style={[
             styles.timelineNode,
             getNodeState(2) === 'completed' && styles.timelineNodeCompleted,
@@ -1001,9 +1016,7 @@ const QuranTracker = ({ currentSurah, showInfo, onToggleInfo }: QuranTrackerProp
   
   const currentVerseNumber = (versesBeforeSurah[currentSurah.surah - 1] || 0) + currentSurah.ayah_num;
   const progressPercent = Math.min(100, Math.round((currentVerseNumber / totalVerses) * 100));
-  
-  // Juz calculation (approximate)
-  const juzNumber = Math.min(30, Math.ceil((currentVerseNumber / totalVerses) * 30));
+  const juzNumber = getJuzNumber(currentSurah.surah, currentSurah.ayah_num);
 
   useEffect(() => {
     infoHeight.value = withSpring(showInfo ? 60 : 0, {
@@ -1576,7 +1589,9 @@ const styles = StyleSheet.create({
   timelineNodeContainer: {
     position: 'absolute',
     top: 0,
+    width: 24,
     alignItems: 'center',
+    overflow: 'visible',
   },
   timelineNode: {
     width: 24,
@@ -1604,7 +1619,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   timelineNodeLabel: {
-    marginTop: 4,
+    position: 'absolute',
+    top: 28,
+    width: 50,
+    left: -13,
+    textAlign: 'center',
     fontSize: 10,
     color: '#64748b',
     fontWeight: '500',

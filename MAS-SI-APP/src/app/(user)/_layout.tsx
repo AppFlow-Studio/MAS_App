@@ -29,9 +29,11 @@ import { supabase } from '@/src/lib/supabase';
 import { OnboardingProvider, useOnboarding } from '@/src/providers/OnboardingProvider';
 import { useNotifications } from '@/src/providers/NotificationProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { WHATS_NEW_VERSION_KEY, NOTIFICATION_PROMPT_ASKED_KEY } from '../_layout';
 import { userSignedInThisSession } from '../(auth)/_layout';
+
+// Session guard: don't show What's New again in the same app session after user has dismissed it (layout remounts when returning from WhatsNew)
+let _lastShownWhatsNewVersion = false;
 
 // const toastConfig = {
 //   addProgramToNotificationsToast: ({ props }: any) => (
@@ -261,7 +263,7 @@ const UserLayoutContent = () => {
   const notificationAlertShownRef = useRef(false);
   const { isEnabled: notificationsEnabled, requestPermission } = useNotifications();
 
-  // Check if user needs to see What's New screen (after app update)
+  // Check if user needs to see What's New screen — only show once ever; if they've already dismissed it before, don't show again on updates
   useEffect(() => {
     const checkWhatsNew = async () => {
       // Only check once, and only for authenticated users
@@ -270,14 +272,14 @@ const UserLayoutContent = () => {
       whatsNewCheckedRef.current = true; // Mark as checked immediately to prevent re-runs
       
       try {
-        const currentVersion = Constants.expoConfig?.version || '1.0.0';
         const seenVersion = await AsyncStorage.getItem(WHATS_NEW_VERSION_KEY);
-        
-        // If user hasn't seen this version's What's New, redirect them
-        if (seenVersion !== currentVersion) {
-          router.replace('/WhatsNew');
-          return;
-        }
+        // Only show What's New if they've never seen it (first time). Once dismissed, never show again on any version.
+        if (seenVersion != null && seenVersion !== '') return;
+        // Session guard: if we already showed What's New this app session, don't show again (layout can remount after they dismiss)
+        if (_lastShownWhatsNewVersion) return;
+
+        _lastShownWhatsNewVersion = true;
+        router.replace('/WhatsNew');
       } catch (error) {
         console.log('Error checking What\'s New version:', error);
       }

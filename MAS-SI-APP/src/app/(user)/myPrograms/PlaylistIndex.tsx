@@ -3,6 +3,7 @@ import { Link, Stack, useRouter } from 'expo-router'
 import React, { useRef, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { TouchableOpacity } from 'react-native-gesture-handler'
+import { BlurView } from 'expo-blur'
 import { useAuth } from "@/src/providers/AuthProvider"
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated'
@@ -202,13 +203,17 @@ const PlaylistIndex = () => {
           headerTransparent: true,
           headerShadowVisible: false,
           headerLeft: () => (
-            <TouchableOpacity 
-              onPress={() => router.back()}
-              activeOpacity={0.5}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="chevron-back" size={28} color="#000000" />
-            </TouchableOpacity>
+            <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden' }}>
+              <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+              <TouchableOpacity 
+                onPress={() => router.back()}
+                activeOpacity={0.5}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="chevron-back" size={22} color="#000000" />
+              </TouchableOpacity>
+            </View>
           ),
         }} 
       />

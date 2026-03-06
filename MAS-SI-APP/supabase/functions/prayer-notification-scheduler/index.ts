@@ -419,7 +419,7 @@ async function scheduleAllNotifications() {
             })
           }
 
-          if (notifType === 'Alert 30 Mins Before') {
+          if (notifType === 'Alert 30 Mins Before' || notifType === 'Alert 30 mins before next prayer') {
             insertRows.push({
               user_id: setting.user_id,
               notification_time: beforeTime,

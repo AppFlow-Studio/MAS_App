@@ -64,6 +64,12 @@ export const NotificationProvider = ({ children }: PropsWithChildren) => {
     }
     setPushToken(newToken);
     if (session?.user.id) {
+      await supabase
+        .from('profiles')
+        .update({ push_notification_token: null })
+        .eq('push_notification_token', newToken)
+        .neq('id', session.user.id);
+
       const { error } = await supabase
         .from('profiles')
         .update({ push_notification_token: newToken })

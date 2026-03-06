@@ -24,7 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { fetchSavedPaymentMethods, chargeWithSavedCard, getCardBrandDisplayName, SavedPaymentMethod } from '@/src/lib/StripePaySheet';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLLAPSED_HEIGHT = 390;
+const COLLAPSED_HEIGHT = 320;
 const EXPANDED_HEIGHT = 540;
 const PAYMENT_HEIGHT = 580;
 const PAYMENT_HEIGHT_WITH_KEYBOARD = SCREEN_HEIGHT * 0.92;
@@ -221,6 +221,37 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
     return selectedAmount;
   };
 
+  const fetchDonationPaymentIntent = async (amount: number, saveCard: boolean) => {
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      Alert.alert('Login Required', 'Please log in to make a donation.');
+      return null;
+    }
+
+    // Fetch payment intent from edge function
+    console.log('Calling stripe--checkout with amount:', Math.floor(amount * 100), 'saveCard:', saveCard);
+    const { data, error } = await supabase.functions.invoke('stripe--checkout', {
+      body: { TotalAmount: Math.floor(amount * 100), saveCard }
+    });
+
+    console.log('Edge function response:', JSON.stringify(data, null, 2));
+    console.log('Edge function error:', error);
+
+    if (error || !data?.paymentIntent) {
+      console.log('Payment intent error:', error || data);
+      Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.');
+      return null;
+    }
+
+    // Log the keys for debugging
+    console.log('PaymentIntent client secret (first 20 chars):', data.paymentIntent?.substring(0, 20));
+    console.log('Server publishable key:', data.publishableKey);
+    console.log('Client publishable key:', process.env.STRIPE_PUBLISHABLE_KEY);
+
+    return data.paymentIntent as string;
+  };
+
   // Fetch payment intent and show card input
   const handlePayment = async () => {
     if (isProcessing) return;
@@ -239,36 +270,13 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
     setIsProcessing(true);
 
     try {
-      // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        Alert.alert('Login Required', 'Please log in to make a donation.');
+      const paymentIntent = await fetchDonationPaymentIntent(amount, saveCardForFuture);
+      if (!paymentIntent) {
         setIsProcessing(false);
         return;
       }
 
-      // Fetch payment intent from edge function
-      console.log('Calling stripe--checkout with amount:', Math.floor(amount * 100), 'saveCard:', saveCardForFuture);
-      const { data, error } = await supabase.functions.invoke('stripe--checkout', { 
-        body: { TotalAmount: Math.floor(amount * 100), saveCard: saveCardForFuture }
-      });
-
-      console.log('Edge function response:', JSON.stringify(data, null, 2));
-      console.log('Edge function error:', error);
-
-      if (error || !data?.paymentIntent) {
-        console.log('Payment intent error:', error || data);
-        Alert.alert('Payment Error', 'Failed to initialize payment. Please try again.');
-        setIsProcessing(false);
-        return;
-      }
-
-      // Log the keys for debugging
-      console.log('PaymentIntent client secret (first 20 chars):', data.paymentIntent?.substring(0, 20));
-      console.log('Server publishable key:', data.publishableKey);
-      console.log('Client publishable key:', process.env.STRIPE_PUBLISHABLE_KEY);
-
-      setPaymentIntentClientSecret(data.paymentIntent);
+      setPaymentIntentClientSecret(paymentIntent);
       
       // Transition to payment view
       if (viewState === 'select') {
@@ -292,6 +300,29 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
     } catch (error) {
       console.log('Payment setup error:', error);
       Alert.alert('Payment Error', 'Something went wrong. Please try again.');
+      setIsProcessing(false);
+    }
+  };
+
+  const handleToggleSaveCardInPayment = async () => {
+    if (isProcessing || confirmLoading) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const nextValue = !saveCardForFuture;
+    setSaveCardForFuture(nextValue);
+
+    if (viewState !== 'payment') return;
+
+    const amount = getFinalAmount();
+    setIsProcessing(true);
+    try {
+      const paymentIntent = await fetchDonationPaymentIntent(amount, nextValue);
+      if (!paymentIntent) {
+        setSaveCardForFuture(!nextValue);
+        return;
+      }
+      setPaymentIntentClientSecret(paymentIntent);
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -774,20 +805,6 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                 <RNText style={styles.customLinkText}>Enter custom amount</RNText>
               </Pressable>
 
-              {/* Save Card Checkbox */}
-              <Pressable 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSaveCardForFuture(!saveCardForFuture);
-                }}
-                style={styles.saveCardRow}
-              >
-                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
-                  {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
-                </View>
-                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
-              </Pressable>
-
               {/* Pay Button */}
               <Pressable
                 style={[styles.donateButton, isProcessing && styles.donateButtonDisabled]}
@@ -859,20 +876,6 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   <RNText style={styles.quickChipBtnTextActive}>Other</RNText>
                 </View>
               </View>
-
-              {/* Save Card Checkbox */}
-              <Pressable 
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSaveCardForFuture(!saveCardForFuture);
-                }}
-                style={styles.saveCardRowCustom}
-              >
-                <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
-                  {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
-                </View>
-                <RNText style={styles.saveCardText}>Save card for future donations</RNText>
-              </Pressable>
 
               {/* Review Button */}
               <Pressable
@@ -963,11 +966,9 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
 
                   {/* Save Card + Pay Button */}
                   <Pressable 
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setSaveCardForFuture(!saveCardForFuture);
-                    }}
+                    onPress={handleToggleSaveCardInPayment}
                     style={styles.saveCardRowPayment}
+                    disabled={isProcessing || confirmLoading}
                   >
                     <View style={[styles.saveCardCheckbox, saveCardForFuture && styles.saveCardCheckboxChecked]}>
                       {saveCardForFuture && <Icon source="check" size={14} color="#FFFFFF" />}
@@ -978,10 +979,10 @@ const DonationBottomSheet = forwardRef<DonationBottomSheetRef>((_, ref) => {
                   <Pressable
                     style={[
                       styles.payButton, 
-                      (!cardComplete || confirmLoading) && styles.payButtonDisabled
+                      (!cardComplete || !paymentIntentClientSecret || confirmLoading || isProcessing) && styles.payButtonDisabled
                     ]}
                     onPress={handleConfirmPayment}
-                    disabled={!cardComplete || confirmLoading}
+                    disabled={!cardComplete || !paymentIntentClientSecret || confirmLoading || isProcessing}
                   >
                     {confirmLoading ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />

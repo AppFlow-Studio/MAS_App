@@ -24,6 +24,9 @@ export const initializePaymentSheet = async ( amount : number ) => {
 
     const { error } = await initPaymentSheet({
         merchantDisplayName : 'MAS Staten Island',
+        applePay: {
+            merchantCountryCode: 'US',
+        },
         paymentIntentClientSecret : paymentIntent,
         customerId : customer,
         customerEphemeralKeySecret : ephemeralKey,

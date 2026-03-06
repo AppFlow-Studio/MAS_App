@@ -26,15 +26,14 @@ export const getVideoIdFromUrl = (url: string): string | null => {
  */
 export const formatPhoneNumber = (text: string): string => {
   const cleaned = text.replace(/\D/g, '').slice(0, 10);
-  let formatted = '';
-  if (cleaned.length > 0) {
-    formatted = '(' + cleaned.slice(0, 3);
+  if (cleaned.length === 0) {
+    return '';
   }
-  if (cleaned.length >= 3) {
-    formatted += ') ' + cleaned.slice(3, 6);
+  if (cleaned.length <= 3) {
+    return `(${cleaned}`;
   }
-  if (cleaned.length >= 6) {
-    formatted += '-' + cleaned.slice(6, 10);
+  if (cleaned.length <= 6) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
   }
-  return formatted || cleaned;
+  return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
 };

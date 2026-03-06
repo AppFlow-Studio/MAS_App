@@ -1,4 +1,4 @@
-import { Tabs, Redirect, useSegments, router } from "expo-router";
+import { Tabs, Redirect, useSegments, router, useRouter } from "expo-router";
 import * as Animatable from 'react-native-animatable';
 import { Pressable, TouchableOpacity, Modal, StyleSheet, Platform, useWindowDimensions, Alert } from "react-native";
 import { useEffect, useRef, useState } from "react";
@@ -22,6 +22,8 @@ import AccountModal from '../../components/AccountModal';
 import ClassicTabBar from '../../components/ClassicTabBar';
 // import TutorialOverlay from "@/src/components/TutorialOverlay";
 import { NativeTabs, Label, Icon } from 'expo-router/unstable-native-tabs';
+import { Icon as PaperIcon } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PersonalizedAccount } from '@/src/components/PersonalizedAccount';
 import { CreateProfilePopup } from '@/src/components/CreateProfilePopup';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -187,6 +189,88 @@ let _lastShownWhatsNewVersion = false;
 //   );
 // }
 
+const PILL_TABS = [
+  { name: 'menu', title: 'Home', icon: 'home' },
+  { name: 'myPrograms', title: 'My Library', icon: 'book-outline' },
+  { name: 'prayersTable', title: 'Prayer Times', icon: 'clock-outline' },
+  { name: 'more', title: 'More', icon: 'chat-processing-outline' },
+] as const;
+
+const PillTabBar = ({ activeTab }: { activeTab: string }) => {
+  const insets = useSafeAreaInsets();
+  const pillRouter = useRouter();
+
+  return (
+    <View style={{
+      position: 'absolute',
+      left: 12,
+      right: 12,
+      bottom: Math.max(insets.bottom - 8, 4),
+    }}>
+      <BlurView
+        intensity={40}
+        tint="light"
+        style={{
+          borderRadius: 28,
+          overflow: 'hidden',
+        }}
+      >
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          paddingVertical: 8,
+          paddingHorizontal: 4,
+          minHeight: 56,
+          backgroundColor: 'rgba(255,255,255,0.25)',
+        }}>
+          {PILL_TABS.map((tab) => {
+            const isFocused = activeTab === tab.name;
+            return (
+              <Pressable
+                key={tab.name}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  pillRouter.navigate(`/(user)/${tab.name}` as any);
+                }}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 4,
+                }}
+              >
+                {isFocused && (
+                  <View style={{
+                    position: 'absolute',
+                    top: 0, bottom: 0, left: 6, right: 6,
+                    backgroundColor: 'rgba(13, 80, 157, 0.1)',
+                    borderRadius: 16,
+                  }} />
+                )}
+                <PaperIcon
+                  source={tab.icon}
+                  size={22}
+                  color={isFocused ? '#0D509D' : '#8E8E93'}
+                />
+                <Text style={{
+                  fontSize: 10,
+                  textAlign: 'center',
+                  color: isFocused ? '#0D509D' : '#8E8E93',
+                  fontWeight: isFocused ? '600' : '400',
+                  marginTop: 2,
+                }}>
+                  {tab.title}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </BlurView>
+    </View>
+  );
+};
+
 // Notification Badge Component with count (no animation)
 const NotificationBadge = ({ count = 1 }: { count?: number }) => {
   const { width: screenWidth } = useWindowDimensions();
@@ -262,6 +346,8 @@ const UserLayoutContent = () => {
   const whatsNewCheckedRef = useRef(false);
   const notificationAlertShownRef = useRef(false);
   const { isEnabled: notificationsEnabled, requestPermission } = useNotifications();
+  const iOSVersion = Platform.OS === 'ios' ? parseInt(String(Platform.Version), 10) : 0;
+  const useNativeTabBar = Platform.OS === 'ios' && iOSVersion >= 26;
 
   // Check if user needs to see What's New screen — only show once ever; if they've already dismissed it before, don't show again on updates
   useEffect(() => {
@@ -508,42 +594,60 @@ const UserLayoutContent = () => {
     return <Redirect href={'/(auth)/GreetingScreen'} />;
   }
 
+  const activeTab = segments[1] || 'menu';
+
   return (
     <BottomSheetModalProvider>
-      <NativeTabs>
-        {/* {TabArray.map((tab, i) => (
-          <NativeTabs.Trigger key={i} name={`${tab.name}`} >
-            <Label>{tab.title}</Label>
-            <Icon sf={tab.icon as any} drawable="custom_android_drawable" />
+      {useNativeTabBar ? (
+        <NativeTabs>
+          <NativeTabs.Trigger name="menu">
+            <Label>Home</Label>
+            <Icon sf="house.fill" drawable="custom_android_drawable" />
           </NativeTabs.Trigger>
-        ))} */}
-        <NativeTabs.Trigger name="menu">
-          <Label>Home</Label>
-          <Icon sf="house.fill" drawable="custom_android_drawable" />
-        </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="myPrograms">
-          <Label>My Library</Label>
-          <Icon sf="book" drawable="custom_android_drawable" />
-        </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="prayersTable">
-          <Label>Prayer Times</Label>
-          <Icon sf="clock" drawable="custom_android_drawable" />
-        </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="more">
-          <Label>More</Label>
-          <Icon sf="ellipsis.bubble.fill" drawable="custom_android_drawable" />
-        </NativeTabs.Trigger>
-      </NativeTabs>
+          <NativeTabs.Trigger name="myPrograms">
+            <Label>My Library</Label>
+            <Icon sf="book" drawable="custom_android_drawable" />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="prayersTable">
+            <Label>Prayer Times</Label>
+            <Icon sf="clock" drawable="custom_android_drawable" />
+          </NativeTabs.Trigger>
+          <NativeTabs.Trigger name="more">
+            <Label>More</Label>
+            <Icon sf="ellipsis.bubble.fill" drawable="custom_android_drawable" />
+          </NativeTabs.Trigger>
+        </NativeTabs>
+      ) : (
+        <>
+          <NativeTabs
+            backgroundColor="transparent"
+            blurEffect="none"
+            shadowColor="transparent"
+            disableTransparentOnScrollEdge
+            iconColor={{ default: 'transparent', selected: 'transparent' }}
+            labelStyle={{ default: { color: 'transparent' }, selected: { color: 'transparent' } }}
+          >
+            <NativeTabs.Trigger name="menu">
+              <Label>Home</Label>
+              <Icon sf="house.fill" drawable="custom_android_drawable" />
+            </NativeTabs.Trigger>
+            <NativeTabs.Trigger name="myPrograms">
+              <Label>My Library</Label>
+              <Icon sf="book" drawable="custom_android_drawable" />
+            </NativeTabs.Trigger>
+            <NativeTabs.Trigger name="prayersTable">
+              <Label>Prayer Times</Label>
+              <Icon sf="clock" drawable="custom_android_drawable" />
+            </NativeTabs.Trigger>
+            <NativeTabs.Trigger name="more">
+              <Label>More</Label>
+              <Icon sf="ellipsis.bubble.fill" drawable="custom_android_drawable" />
+            </NativeTabs.Trigger>
+          </NativeTabs>
 
-      {/* Complete profile bottom sheet - moved to more/index.tsx */}
-
-      {/* Create Profile popup for guest users - DISABLED */}
-      {/* {showGuestPopup && (
-        <CreateProfilePopup
-          ref={guestPopupRef}
-          onDismiss={handleGuestPopupDismiss}
-        />
-      )} */}
+          <PillTabBar activeTab={activeTab} />
+        </>
+      )}
 
       {/* Enhanced Badge indicator with notification count */}
       {notificationCount > 0 && (

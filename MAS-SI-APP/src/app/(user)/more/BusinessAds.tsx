@@ -43,9 +43,9 @@ type FormField = {
 }
 
 const DURATION_OPTIONS = [
-    { value: 'Monthly Subscription', price: '$50/mo', priceInCents: 5000, description: 'Auto-renews monthly', isSubscription: true, priceId: 'plan_TfNqBwd94S8YT5' },
-    { value: '3 Months', price: '$135', priceInCents: 13500, description: 'Save 10%', isSubscription: false },
-    { value: '1 Year', price: '$480', priceInCents: 48000, description: 'Best value - Save 20%', isSubscription: false },
+    { value: 'Monthly Subscription (Auto-Renewal)', price: '$50/mo', priceInCents: 5000, description: 'Monthly donation that automatically renews until canceled', isSubscription: true, priceId: 'plan_TfNqBwd94S8YT5' },
+    { value: '3 Months', price: '$135', priceInCents: 13500, description: '3-month donation (save 10%)', isSubscription: false },
+    { value: '1 Year', price: '$480', priceInCents: 48000, description: '1-year donation (save 20%)', isSubscription: false },
 ]
 
 const ONBOARDING_FEE_CENTS = 10000 // $100 onboarding fee for first-time advertisers
@@ -724,8 +724,27 @@ const BusinessAds = () => {
                 padding: 20,
             }}>
                 <Text style={{ fontSize: 16, color: '#374151', lineHeight: 24 }}>
-                    By donating <Text style={{ fontWeight: '700', color: '#111827' }}>$50 a month</Text> to the community, you get your business advertised to <Text style={{ fontWeight: '700', color: '#111827' }}>3,000+ community members</Text>.
+                    By donating <Text style={{ fontWeight: '700', color: '#111827' }}>$50 a month</Text> to the community, you get your business advertised through the app to <Text style={{ fontWeight: '700', color: '#111827' }}>3,000+ community members</Text>.
                 </Text>
+                <Text style={{ fontSize: 14, color: '#6B7280', lineHeight: 20, marginTop: 8 }}>
+                    A one-time <Text style={{ fontWeight: '700', color: '#111827' }}>$100 onboarding donation fee</Text> applies.
+                </Text>
+            </View>
+
+            {/* Mock Ad Preview */}
+            <View style={{ marginTop: 18 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 10 }}>
+                    Example of your in-app ad
+                </Text>
+                <BusinessAdPreview
+                    businessName="Your Business Name"
+                    address="123 Main St"
+                    city="Staten Island"
+                    state="NY"
+                    phoneNumber="(555) 555-5555"
+                    email="contact@yourbusiness.com"
+                    compact
+                />
             </View>
         </>
     )

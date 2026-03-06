@@ -1,18 +1,21 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, StatusBar, Platform, Alert, TextInput, KeyboardAvoidingView } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, StatusBar, Platform, Alert, TextInput, KeyboardAvoidingView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
 import { Profile } from '@/src/types';
+import { useProfile } from '@/src/hooks/useProfile';
+import { queryKeys } from '@/src/lib/queryKeys';
 import ProfilePictureBottomSheet from '@/src/components/ProfilePictureBottomSheet';
 import { Svg, Path } from 'react-native-svg';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { session } = useAuth();
-  const [profile, setProfile] = useState<Profile>();
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: profile, isLoading, refetch, isRefetching } = useProfile(session?.user?.id);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState({
     first_name: '',
@@ -21,28 +24,17 @@ export default function ProfilePage() {
   });
   const profilePictureSheetRef = useRef<{ present: () => void; dismiss: () => void }>(null);
 
-  const getProfile = async () => {
-    if (!session?.user?.id) return;
-    
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-    
-    if (data) {
-      setProfile(data);
-    }
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    getProfile();
-  }, [session]);
+  const onRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   const handleProfilePicUpdated = (newUrl: string | null) => {
-    setProfile(prev => prev ? { ...prev, profile_pic: newUrl || undefined } : prev);
+    if (session?.user?.id) {
+      queryClient.setQueryData(
+        queryKeys.profile.detail(session.user.id),
+        (old: Profile | undefined) => old ? { ...old, profile_pic: newUrl || undefined } : old
+      );
+    }
   };
 
   const handleSignOut = () => {
@@ -117,12 +109,16 @@ export default function ProfilePage() {
       
       if (error) throw error;
       
-      setProfile(prev => prev ? {
-        ...prev,
-        first_name: editedProfile.first_name,
-        last_name: editedProfile.last_name,
-        phone_number: editedProfile.phone_number,
-      } : prev);
+      queryClient.setQueryData(
+        queryKeys.profile.detail(session.user.id),
+        (old: Profile | undefined) => old ? {
+          ...old,
+          first_name: editedProfile.first_name,
+          last_name: editedProfile.last_name,
+          phone_number: editedProfile.phone_number,
+        } : old
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.detail(session.user.id) });
       
       setIsEditing(false);
     } catch (error) {
@@ -204,6 +200,14 @@ export default function ProfilePage() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={onRefresh}
+              tintColor="#0E519F"
+              colors={['#0E519F']}
+            />
+          }
         >
         {/* Name */}
         <Text style={styles.profileName}>

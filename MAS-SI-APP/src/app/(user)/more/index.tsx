@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Share, Platform, Linking, StatusBar, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Share, Platform, Linking, StatusBar, Image, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, Link } from 'expo-router';
 import {
@@ -26,9 +26,12 @@ import {
   CreditCard,
   Receipt
 } from 'lucide-react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { supabase } from '@/src/lib/supabase';
 import { Profile } from '@/src/types';
+import { useProfile, usePreferencesCompleted } from '@/src/hooks/useProfile';
+import { queryKeys } from '@/src/lib/queryKeys';
 import SignInAnonModal from '@/src/components/SignInAnonModal';
 import { useOnboarding } from '@/src/providers/OnboardingProvider';
 import ProfilePictureBottomSheet from '@/src/components/ProfilePictureBottomSheet';
@@ -69,12 +72,13 @@ import FeedbackBottomSheet, { FeedbackBottomSheetRef } from '@/src/components/Fe
 export default function MoreScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const [profile, setProfile] = useState<Profile>();
-  const [anonStatus, setAnonStatus] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: profile, refetch: refetchProfile, isRefetching: isProfileRefetching } = useProfile(session?.user?.id);
+  const { data: preferencesCompleted = true, refetch: refetchPreferences, isRefetching: isPrefsRefetching } = usePreferencesCompleted(session?.user?.id);
+  const anonStatus = !!session?.user?.is_anonymous;
   const [signInModalVisible, setSignInModalVisible] = useState(false);
   const { isOnboardingIncomplete, setOnboardingIncomplete, onboardingSheetRef } = useOnboarding();
   const [visible, setVisible] = useState(false);
-  const [preferencesCompleted, setPreferencesCompleted] = useState(true);
   const [guestAuthModalVisible, setGuestAuthModalVisible] = useState(false);
   const profilePictureSheetRef = useRef<{ present: () => void; dismiss: () => void }>(null);
   const donationSheetRef = useRef<DonationBottomSheetRef>(null);
@@ -82,12 +86,18 @@ export default function MoreScreen() {
   const { isEnabled: notificationsEnabled } = useNotifications();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
+  const isRefreshing = isProfileRefetching || isPrefsRefetching;
+
+  const onRefresh = useCallback(() => {
+    refetchProfile();
+    refetchPreferences();
+  }, [refetchProfile, refetchPreferences]);
+
   const handleOnboardingComplete = async () => {
     setShowOnboarding(false);
     setOnboardingIncomplete(false);
-    // Refresh profile to get updated phone number
-    await getProfile();
-    console.log('Profile personalization completed successfully');
+    refetchProfile();
+    refetchPreferences();
   };
 
   const handleOnboardingSkip = () => {
@@ -103,60 +113,13 @@ export default function MoreScreen() {
   };
 
   const handleProfilePicUpdated = (newUrl: string | null) => {
-    setProfile(prev => prev ? { ...prev, profile_pic: newUrl || undefined } : prev);
-  };
-
-  const getProfile = async () => {
-    if (!session?.user?.id) return;
-    
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single();
-    if (data) {
-      console.log('Profile data:', data);
-      setProfile(data);
-    }
-    
-    // Check if user has completed personalization preferences using new tables
-    const { data: userInterests } = await supabase
-      .from('user_islamic_interests')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .limit(1);
-    
-    // User has completed preferences if they have at least one interest selected
-    const hasCompletedPreferences = !!(userInterests && userInterests.length > 0);
-    setPreferencesCompleted(hasCompletedPreferences);
-  };
-
-  // const checkIfAnon = async () => {
-  //   if (session?.user.is_anonymous) {
-  //     setAnonStatus(true);
-  //   } else {
-  //     setAnonStatus(false);
-  //   }
-  // };
-  // const getProfile = async () => {
-  //   if (!session?.user.id) return;
-  //   const { data, error } = await supabase.from('profiles').select('*').eq('id', session?.user.id).single();
-  //   if (data) {
-  //     setProfile(data);
-  //   }
-  // };
-
-  const checkIfAnon = () => {
-    if (session?.user.is_anonymous) {
-      setAnonStatus(true);
-    } else {
-      setAnonStatus(false);
+    if (session?.user?.id) {
+      queryClient.setQueryData(
+        queryKeys.profile.detail(session.user.id),
+        (old: Profile | undefined) => old ? { ...old, profile_pic: newUrl || undefined } : old
+      );
     }
   };
-
-  useEffect(() => {
-    getProfile();
-  }, [session]);
-
-  useEffect(() => {
-    checkIfAnon();
-  }, [session]);
 
   // Show guest auth modal every time anonymous user enters/focuses on this screen
   useFocusEffect(
@@ -236,7 +199,18 @@ export default function MoreScreen() {
       style={styles.container}
     >
       <StatusBar barStyle="light-content" />
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} bounces={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor="#ffffff"
+            colors={['#ffffff']}
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Account</Text>

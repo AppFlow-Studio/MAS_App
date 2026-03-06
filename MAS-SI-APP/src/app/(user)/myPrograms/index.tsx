@@ -236,7 +236,6 @@ async function signUpWithEmail() {
 
   const ListHeader = useMemo(() => (
     <>
-      <StatusBar barStyle={"dark-content"}/>
 
       {/* Auth Modal - uses the same SignInAnonModal as More screen */}
       <SignInAnonModal

@@ -121,9 +121,11 @@ const ApproveBusinessScreen = () => {
 
   const onApprove = async () => {
     setIsProcessing(true)
+    // activate-business-subscription only charges APPROVED submissions and
+    // moves them to POSTED itself once the payment succeeds
     const { error } = await supabase
       .from('business_ads_submissions')
-      .update({ status: 'POSTED' })
+      .update({ status: 'APPROVED' })
       .eq('submission_id', submission)
 
     if (error) {
@@ -140,9 +142,13 @@ const ApproveBusinessScreen = () => {
     setIsProcessing(false)
 
     if (chargeError || !data?.success) {
+      let reason = data?.error
+      try {
+        if (!reason && chargeError?.context) reason = (await chargeError.context.json())?.error
+      } catch (_e) { /* ignore parse errors */ }
       Alert.alert(
         'Approved but Payment Failed',
-        'The ad was approved but the payment could not be processed. Check Stripe dashboard.',
+        `The ad was approved but the payment could not be processed, so it is not live yet.${reason ? `\n\n${reason}` : ''}`,
       )
       router.back()
       return

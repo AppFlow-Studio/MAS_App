@@ -102,7 +102,8 @@ const ProgramsEventNotificationScreen = () => {
     getUsers()
   }, [])
   return (
-    <>
+    // Host the preview Modal inside this screen; the root PaperProvider portal renders behind native modals
+    <Portal.Host>
       <Stack.Screen
         options={{
           title: "Create Program Notification",
@@ -234,7 +235,7 @@ const ProgramsEventNotificationScreen = () => {
           </Portal>
         </ScrollView>
       </View>
-    </>
+    </Portal.Host>
   );
 };
 

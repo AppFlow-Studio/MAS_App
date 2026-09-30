@@ -69,10 +69,30 @@ const PaymentProcessing = () => {
         
         const processPayment = async () => {
             try {
-                // Save the submission first — this is the critical step
-                console.log('PaymentProcessing: Saving submission...')
                 setState('saving')
-                
+
+                // Confirm the card was actually saved in Stripe Checkout before submitting.
+                // The browser closing (e.g. user tapped Done/cancel) is not proof of setup.
+                // This also sets the card as the customer's default for the charge on approval.
+                const verification = await verifySubscriptionSession(sessionId)
+                console.log('PaymentProcessing: Verify result:', JSON.stringify(verification))
+
+                if (!verification.success) {
+                    await AsyncStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY)
+                    const message = verification.status === 'open'
+                        ? 'Your card was not saved. Please try again and finish adding your card.'
+                        : 'We could not confirm your card. Please try again or contact support.'
+                    setState('error')
+                    setErrorMessage(message)
+                    Alert.alert(
+                        'Card Not Saved',
+                        message,
+                        [{ text: 'OK', onPress: () => router.replace('/more/BusinessAds') }]
+                    )
+                    return
+                }
+
+                console.log('PaymentProcessing: Saving submission...')
                 const saved = await savePendingBusinessAdSubmission()
                 console.log('PaymentProcessing: Save result:', saved)
                 
@@ -89,14 +109,7 @@ const PaymentProcessing = () => {
                 
                 // Clear the pending session
                 await AsyncStorage.removeItem(PENDING_CHECKOUT_SESSION_KEY)
-                
-                // Fire-and-forget: verify session in background to set default payment method
-                verifySubscriptionSession(sessionId).then((result) => {
-                    console.log('PaymentProcessing: Background verify result:', JSON.stringify(result))
-                }).catch((err) => {
-                    console.log('PaymentProcessing: Background verify error (non-blocking):', err)
-                })
-                
+
                 // Success!
                 console.log('PaymentProcessing: Success!')
                 setState('success')

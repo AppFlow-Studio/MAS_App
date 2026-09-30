@@ -13,9 +13,28 @@ const corsHeaders = {
 // Map business_flyer_duration to Stripe plan details
 const PLAN_CONFIG: Record<string, { priceId?: string; amountCents?: number; isSubscription: boolean }> = {
   'Monthly Subscription': { priceId: 'plan_TfNqBwd94S8YT5', isSubscription: true },
+  // Label the app has submitted since the donation-flow redesign
+  'Monthly Subscription (Auto-Renewal)': { priceId: 'plan_TfNqBwd94S8YT5', isSubscription: true },
   '3 Months': { amountCents: 13500, isSubscription: false },
   '1 Year': { amountCents: 48000, isSubscription: false },
 };
+
+// Card saved during setup checkout: the customer's default, else their first card
+async function getSavedPaymentMethod(customerId: string): Promise<string> {
+  const customer = await stripe.customers.retrieve(customerId);
+  const defaultPm = !customer.deleted ? customer.invoice_settings?.default_payment_method : null;
+  if (defaultPm) return typeof defaultPm === 'string' ? defaultPm : defaultPm.id;
+
+  const paymentMethods = await stripe.paymentMethods.list({
+    customer: customerId,
+    type: 'card',
+    limit: 1,
+  });
+  if (!paymentMethods.data.length) {
+    throw new Error('No payment method found for customer');
+  }
+  return paymentMethods.data[0].id;
+}
 
 const ONBOARDING_FEE_CENTS = 10000; // $100
 
@@ -197,18 +216,7 @@ serve(async (req) => {
           description: 'Business Ad Onboarding Fee (one-time)',
         });
       }
-      // Get the customer's payment methods
-      const paymentMethods = await stripe.paymentMethods.list({
-        customer: customerId,
-        type: 'card',
-        limit: 1,
-      });
-
-      if (!paymentMethods.data.length) {
-        throw new Error('No payment method found for customer');
-      }
-
-      const defaultPm = paymentMethods.data[0].id;
+      const defaultPm = await getSavedPaymentMethod(customerId);
 
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
@@ -249,8 +257,10 @@ serve(async (req) => {
       const totalAmount = (planConfig.amountCents || 0) + onboardingFee;
       
       console.log('Creating one-time charge for:', totalAmount);
+      const paymentMethod = await getSavedPaymentMethod(customerId);
       const paymentIntent = await stripe.paymentIntents.create({
         customer: customerId,
+        payment_method: paymentMethod,
         amount: totalAmount,
         currency: 'usd',
         confirm: true,

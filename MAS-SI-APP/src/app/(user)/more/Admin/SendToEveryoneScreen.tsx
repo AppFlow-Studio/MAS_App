@@ -1,4 +1,4 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Button, Modal, Portal, TextInput } from "react-native-paper";
 import { BlurView } from "expo-blur";
@@ -10,6 +10,7 @@ const SendToEveryoneScreen = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [ notificationTitle, setNotificationTitle ] = useState("");
   const [previewModal, setPreviewModal] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [ userInfo, setUserInfo ] = useState<any[]>([])
   const getUsersInfo = async () => {
     // Paginated fetch to handle 1,000+ users
@@ -42,30 +43,49 @@ const SendToEveryoneScreen = () => {
     setUserInfo(allUsers)
   }
 
+  // Returns the number of batches that failed
   const onSend = async () => {
-    if (userInfo.length === 0) return
-
     // Send in batches of 500 to avoid payload/timeout issues
     const SEND_BATCH_SIZE = 500
+    let failedBatches = 0
     for (let i = 0; i < userInfo.length; i += SEND_BATCH_SIZE) {
       const batch = userInfo.slice(i, i + SEND_BATCH_SIZE)
       const { error } = await supabase.functions.invoke('send-prayer-notification', { body: { notifications_batch: batch } })
       if (error) {
+        failedBatches++
         console.log(`Error sending batch ${Math.floor(i / SEND_BATCH_SIZE) + 1}:`, error)
       }
     }
     console.log(`Sent notifications to ${userInfo.length} users`)
+    return failedBatches
   }
   const characterLimit = 150;
   const titleLimit = 30;
   const hideModal = () => setPreviewModal(false);
-  const sendNotification = async () =>{
-    setPreviewModal(!previewModal),
-    await onSend()
+  const sendNotification = async () => {
+    if (!notificationMessage.trim()) {
+      Alert.alert('Message Required', 'Please enter a notification message.')
+      return
+    }
+    if (userInfo.length === 0) {
+      Alert.alert('No Recipients', 'No users with notifications enabled were found.')
+      return
+    }
+    setIsSending(true)
+    const failedBatches = await onSend()
+    setIsSending(false)
+    setPreviewModal(false)
+    if (failedBatches > 0) {
+      Alert.alert('Send Failed', 'Some notifications could not be sent. Please try again.')
+      return
+    }
+    Alert.alert('Notification Sent', `Sent to ${userInfo.length} users.`)
     setNotificationMessage('')
     setNotificationTitle('')
   }
   return (
+    // Host the preview Modal inside this screen; the root PaperProvider portal renders behind native modals
+    <Portal.Host>
     <View className='flex-1 bg-gray-50'>
       <Stack.Screen 
          options={{
@@ -217,6 +237,8 @@ const SendToEveryoneScreen = () => {
                 style={{ marginTop: 24, height: 50, justifyContent: 'center' }}
                 labelStyle={{ fontSize: 16, fontWeight: '600' }}
                 onPress={sendNotification}
+                loading={isSending}
+                disabled={isSending}
               >
                 Send Notification
               </Button>
@@ -225,6 +247,7 @@ const SendToEveryoneScreen = () => {
         </Modal>
       </Portal>
     </View>
+    </Portal.Host>
   );
 };
 

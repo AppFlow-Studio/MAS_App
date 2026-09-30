@@ -101,7 +101,8 @@ const EventsNotificationScreen = () => {
     getUsers()
   }, [])
   return (
-    <>
+    // Host the preview Modal inside this screen; the root PaperProvider portal renders behind native modals
+    <Portal.Host>
       <Stack.Screen
         options={{
           headerBackTitleVisible: false,
@@ -239,7 +240,7 @@ const EventsNotificationScreen = () => {
           </Portal>
         </ScrollView>
       </View>
-    </>
+    </Portal.Host>
   );
 };
 
